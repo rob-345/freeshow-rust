@@ -285,6 +285,10 @@ The local emoji package was extracted from `fonts-noto-color-emoji_2.047-0ubuntu
 
 These machine-specific variables are not required on a normal machine with Tauri's system development packages installed.
 
+## First expanded native CI run
+
+Run [39147987362](https://github.com/rob-345/freeshow-rust/actions/runs/39147987362) on `c9e62492` passed Linux/macOS/Windows core, the full Linux desktop workflow and the macOS native build/Clippy/host tests. Windows native build and Clippy also passed; one lookup host test expected a mixed-separator fixture path while the service correctly returned native separators. The fixture now joins separate path components without weakening value/cache assertions. The system integration and fixture correction are receiving a fresh six-job run. Windows/macOS GUI/hardware parity remains unverified.
+
 ## Expanded native verification completed
 
 Run [39148628386](https://github.com/rob-345/freeshow-rust/actions/runs/39148628386) on `6e44a93e` passed **all six jobs**: core on Linux/Windows/macOS, native build/Clippy/host tests on Windows/macOS and the real Linux desktop workflow. The fixture correction retained exact value/cache assertions. This run includes native OS/hostname/RAM execution on all three platforms, 18 host tests and 97 Linux editor steps, four menu checks and file drops at scales 1 and 2. Downloaded Linux receipts were checked separately. It does not certify Windows/macOS GUI/hardware or whole-application parity.
