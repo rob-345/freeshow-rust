@@ -328,7 +328,10 @@ impl Parents {
         let mut cursor = PathBuf::new();
         for component in path.components() {
             cursor.push(component.as_os_str());
-            if !cursor.is_absolute() {
+            // Windows considers a verbatim drive prefix absolute even before
+            // its root separator. That intermediate spelling (\\?\C:) is not
+            // a directory; inspect the complete root and all descendants.
+            if matches!(component, Component::Prefix(_)) || !cursor.is_absolute() {
                 continue;
             }
             budget.check()?;

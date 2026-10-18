@@ -284,6 +284,9 @@ test("real REST service matches original TypeScript/Express on both ports, auth 
                 rows.push({ status: response.status, json: response.status < 400 || response.status === 401 ? response.json : undefined })
                 assert.equal(response.headers["access-control-allow-origin"], undefined)
             }
+            // HTTP completion does not flush the separate event channel used by
+            // the native harness. Observe every source trigger before comparing.
+            if (server === service) await until(() => normalizedEvents(server.events).length === results[0].events.length)
             results.push({ rows, events: normalizedEvents(server.events) })
             stopAuto()
             await server.stop()
@@ -908,6 +911,7 @@ test("Express JSON Unicode body charsets match real iconv decoding, including UT
                 const response = await httpRequest(port + 1, { method: "POST", headers: { "content-type": `application/json; charset=${charset}` }, body: sourceEncode(text, encoding) })
                 statuses.push(response.status)
             }
+            await until(() => normalizedEvents(server.events).length === 5)
             outputs.push({ statuses, events: normalizedEvents(server.events) })
             await server.stop()
         }
@@ -968,6 +972,7 @@ test("authorized production wildcard binding accepts local IPv4 and IPv6 like or
                     statuses.push((await httpRequest(target, { hostname, path: "/?action=denied" })).status)
                 }
             }
+            await until(() => normalizedEvents(server.events).length === (ipv6 ? 4 : 2))
             outputs.push({ statuses, events: normalizedEvents(server.events) })
             await server.stop()
         }

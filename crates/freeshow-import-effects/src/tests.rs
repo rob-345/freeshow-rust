@@ -98,6 +98,32 @@ fn effect_files(root: &Path) -> Vec<PathBuf> {
     found
 }
 
+#[cfg(windows)]
+#[tokio::test]
+async fn parent_guards_cover_complete_windows_roots_and_all_existing_ancestors() {
+    let fixture = Fixture::new(&[("image.png", b"media")]).await;
+    for base in [
+        fixture.base.clone(),
+        fixture._temporary.path().to_path_buf(),
+    ] {
+        let mut budget = Budget {
+            plan: &fixture.prepared.plan,
+            config: EffectConfig::default(),
+            started: Instant::now(),
+            operations: 0,
+        };
+        let mut parents = Parents::default();
+        parents.absolute(&base, false, &mut budget).unwrap();
+        let expected: Vec<_> = base.ancestors().map(Path::to_path_buf).collect();
+        assert_eq!(parents.0.len(), expected.len());
+        for ancestor in expected {
+            assert!(parents.0.contains_key(&ancestor), "{}", ancestor.display());
+            parents.observe(&ancestor).unwrap();
+        }
+    }
+    fixture.finish().await;
+}
+
 #[test]
 fn rollback_diagnostics_are_utf8_bounded_without_skipping_later_cleanup() {
     let temporary = tempfile::tempdir().unwrap();
