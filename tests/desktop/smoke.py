@@ -42,7 +42,7 @@ def free_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -64,6 +64,7 @@ def run():
         subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=8000:duration=1", "-c:a", "flac", "-threads", "1", "-metadata", "title=Native 敬拜 café", "-metadata", "artist=Artist Ελληνικά", "-metadata", "replaygain_album_gain=+9.0 dB", "-metadata", "replaygain_track_peak=0.8", "-y", str(audio_fixture)], check=True, timeout=15)
         expected_audio = json.loads(subprocess.check_output(["node", "tests/desktop/audio_oracle.mjs", str(audio_fixture)], cwd=ROOT, text=True, timeout=15))
         assert expected_audio["common"]["title"] == "Native 敬拜 café" and expected_audio["replayGainMultiplier"] == 1.25
+        expected_system = json.loads(subprocess.check_output(["node", "tests/desktop/system_oracle.mjs"], cwd=ROOT, text=True, timeout=15))
 
         def assert_audio_metadata(actual, expected):
             if isinstance(expected, float):
@@ -88,7 +89,7 @@ def run():
             if isinstance(value, list):
                 return [entry for index, child in enumerate(value) for entry in audio_key_order(child, [*path, index])]
             return []
-        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"),
+        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"), HOSTNAME="freeshow-spoofed-environment.local",
                    XDG_DATA_HOME=str(temp / "xdg-data"), XDG_CACHE_HOME=str(temp / "xdg-cache"),
                    XDG_CONFIG_HOME=str(temp / "xdg-config"), GSETTINGS_BACKEND="memory",
                    TAURI_WEBVIEW_AUTOMATION="true", WEBKIT_DISABLE_COMPOSITING_MODE="1",
@@ -708,10 +709,10 @@ def run():
                             const keys=Object.keys(value);
                             return [[path,keys],...keys.flatMap(key=>keyOrder(value[key],[...path,key]))];
                         }
-                        for(const command of ['FFMPEG_CHECK','MEDIA_CODEC','MEDIA_TRACKS','READ_AUDIO_METADATA','LOCATE_MEDIA_FILE','GET_MEDIA_FOLDER_PATH']) {
+                        for(const command of ['FFMPEG_CHECK','MEDIA_CODEC','MEDIA_TRACKS','READ_AUDIO_METADATA','LOCATE_MEDIA_FILE','GET_MEDIA_FOLDER_PATH','GET_OS','GET_DEVICE_NAME','CHECK_RAM_USAGE']) {
                             const data=command==='READ_AUDIO_METADATA'?{filePath:arguments[1]}:
                                 command==='LOCATE_MEDIA_FILE'?{filePath:arguments[0],folders:[]}:
-                                command==='GET_MEDIA_FOLDER_PATH'?null:{path:arguments[0],future:{kept:true}};
+                                ['GET_MEDIA_FOLDER_PATH','GET_OS','GET_DEVICE_NAME','CHECK_RAM_USAGE'].includes(command)?null:{path:arguments[0],future:{kept:true}};
                             const events=await window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context,listenerId:'native-'+command,data:{channel:command,data}}});
                             replies.push({command,events,...(command==='READ_AUDIO_METADATA'?{keyOrder:keyOrder(events[0].message.data)}:{})});
                         }
@@ -736,6 +737,16 @@ def run():
                     elif reply["command"] == "GET_MEDIA_FOLDER_PATH":
                         assert result == str(Path(media_result["context"]["dataPath"]) / "Media"), result
                         assert Path(result).is_dir()
+                    elif reply["command"] == "GET_OS":
+                        assert result == expected_system["os"], result
+                        assert result["name"] != env["HOSTNAME"]
+                    elif reply["command"] == "GET_DEVICE_NAME":
+                        assert result == expected_system["deviceName"], result
+                    elif reply["command"] == "CHECK_RAM_USAGE":
+                        assert result["total"] == expected_system["ram"]["total"]
+                        assert result["total"] > 0 and result["free"] >= 0
+                        captured_system = json.loads(subprocess.check_output(["node", "tests/desktop/system_oracle.mjs", json.dumps(result)], cwd=ROOT, text=True, timeout=15))
+                        assert result == captured_system["ram"], (result, captured_system)
                     else:
                         assert result["path"] == str(media_fixture) and result["future"] == {"kept": True}
                         if reply["command"] == "MEDIA_CODEC":
@@ -752,7 +763,10 @@ def run():
                 steps.append("Native FLAC tags and clamped ReplayGain match actual original music-metadata during ZIP compression")
                 steps.append("Native existing-file lookup preserves path, context and correlation during ZIP compression")
                 steps.append("Native media-folder query reads its committed snapshot and resolves the default during ZIP compression")
+                steps.append("Native OS and device names match original kernel queries despite spoofed environment during ZIP compression")
+                steps.append("Native RAM and optimized-mode decision match original source on captured inputs during ZIP compression")
                 (ARTIFACTS / "media-locate.json").write_text(json.dumps({"context":media_result["context"],"replies":[reply for reply in media_result["replies"] if reply["command"] in ["LOCATE_MEDIA_FILE","GET_MEDIA_FOLDER_PATH"]]}, indent=2))
+                (ARTIFACTS / "system-info.json").write_text(json.dumps({"context":media_result["context"],"source":expected_system,"capturedSource":captured_system,"replies":[reply for reply in media_result["replies"] if reply["command"] in ["GET_OS","GET_DEVICE_NAME","CHECK_RAM_USAGE"]]}, indent=2))
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as receiver:
                     receiver.bind(("127.0.0.1", 0))
                     receiver.settimeout(2)

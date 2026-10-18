@@ -87,7 +87,7 @@ jobs:
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --locked
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets --locked -- -D warnings
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --locked
 
   desktop-linux:
     runs-on: ubuntu-24.04
@@ -118,7 +118,7 @@ jobs:
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets -- -D warnings
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
       - run: cargo build --workspace --all-targets

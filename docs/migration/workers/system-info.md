@@ -1,6 +1,6 @@
 # Native system information
 
-Owned slice: `crates/freeshow-system/**`, `tests/parity/system-info.test.mjs`, this document. Shared manifests/runtime/bridge/frontend and the completed media-files slice remain untouched. The crate has a temporary standalone `[workspace]`, manifest/lock and development profile for isolated validation; coordinator integration can remove those standalone declarations and add it to the shared workspace.
+Owned slice: `crates/freeshow-system/**`, `tests/parity/system-info.test.mjs`, this document. The worker initially left shared integration files untouched and validated a standalone crate. Coordinator integration now uses the root workspace/shared locks and `src-tauri/src/system.rs`; host tests are in `src-tauri/tests/system.rs`.
 
 ## Host integration
 
@@ -62,3 +62,7 @@ FREESHOW_SYSTEM_PARITY="$PWD/target/system/debug/freeshow-system-parity" xvfb-ru
 ```
 
 Cross checks use the same isolated target with `--target x86_64-pc-windows-gnu` and `--target aarch64-apple-darwin`, `--all-targets --locked`; clippy adds `-- -D warnings`. After integration, the test/probe default is `target/debug/freeshow-system-parity` (`.exe` on Windows). `FREESHOW_ELECTRON_BIN` selects the extracted official executable and `FREESHOW_SYSTEM_ARTIFACTS` overrides receipt location. The packaged probe currently requires Linux/Xvfb. Shared CI/runtime integration remains coordinator-owned.
+
+## Coordinator integration
+
+The three native MAIN commands now use this service. The host validates the captured context before admission and again before publishing, retaining listener IDs and rejecting obsolete/missing contexts. Native closing drains this worker alongside other independent services. The prior GET_OS environment-variable fallback has been removed; hostname now comes from the native OS. Three host tests exercise replies while the ordered library owner is deliberately blocked, context rejection and terminal shutdown. The Linux GUI probe compares actual source OS/device/total-memory results despite a spoofed HOSTNAME environment, then re-evaluates the original RAM decision on the exact native captured total/free values during real ZIP compression. Free readings taken at different instants are never asserted equal. Startup keeps the existing Svelte optimized-mode handler. Combined local validation passed 100 Rust, 104 Node and 20 frontend tests (224), plus 18 native host tests, 97 editor steps, four GTK menu checks and drops at both scales. Linux/Windows GNU Clippy and macOS ARM64 system-crate Clippy passed with warnings denied. Native Windows/macOS execution remains pending in CI.

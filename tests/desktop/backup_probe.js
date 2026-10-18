@@ -64,7 +64,7 @@ invoke("ipc_dispatch", { request: { channel: "MAIN", listenerId: "backup-respons
                 })
                 window.api.send("OUTPUT", { channel: "OUTPUTS", data: cueData })
                 const probeStart = performance.now()
-                const controls = Promise.all([invoke("runtime_context"), invoke("ipc_dispatch", { request: { channel: "MAIN", data: { channel: "MAXIMIZED" } } }), invoke("ipc_dispatch", { request: { channel: "MAIN", data: { channel: "GET_OS" } } })]).then(([current, maximized, os]) => ({ current, maximized, os, elapsedMs: performance.now() - probeStart }))
+                const controls = Promise.all([invoke("runtime_context"), invoke("ipc_dispatch", { request: { channel: "MAIN", data: { channel: "MAXIMIZED" } } }), invoke("ipc_dispatch", { request: { channel: "MAIN", context, data: { channel: "GET_OS" } } })]).then(([current, maximized, os]) => ({ current, maximized, os, elapsedMs: performance.now() - probeStart }))
                 const diskReads = Promise.all(
                     ids.map(async (id) => {
                         const readStart = performance.now()

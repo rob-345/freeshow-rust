@@ -67,7 +67,11 @@
         "tests/desktop/menu.py",
         "tests/parity/native-drop.test.mjs",
         "src-tauri/tests/drop.rs",
-        "tests/desktop/drop.py"
+        "tests/desktop/drop.py",
+        "tests/parity/system-info.test.mjs",
+        "crates/freeshow-system/src/tests.rs",
+        "src-tauri/tests/system.rs",
+        "tests/desktop/system_oracle.mjs"
       ],
       "remaining": [
         "native drop: Windows/macOS GUI, virtual/non-file URI payloads, arbitrary File/Blob byte readers, hover feedback and original asynchronous handler context propagation",
@@ -77,9 +81,10 @@
         "cross-platform lifecycle",
         "spellcheck",
         "updates and crash reporting",
-        "folder dialogs and library switching on Windows/macOS"
+        "folder dialogs and library switching on Windows/macOS",
+        "system information: actual cross-platform hostname-provider and RAM backend behavior beyond the source/native test corpus"
       ],
-      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation; localized native menus compared across all bundled locales/platform conditions; actual Linux menu commands and Quit confirmation/final-save/drain workflows; native absolute-path file drops preserve ordered Unicode project/import dispatch through retained Svelte handlers, bounded metadata work and stale gesture/library rejection; actual GTK targeting at scale 1 and 2"
+      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation; localized native menus compared across all bundled locales/platform conditions; actual Linux menu commands and Quit confirmation/final-save/drain workflows; native absolute-path file drops preserve ordered Unicode project/import dispatch through retained Svelte handlers, bounded metadata work and stale gesture/library rejection; actual GTK targeting at scale 1 and 2; GET_OS, GET_DEVICE_NAME and CHECK_RAM_USAGE use one bounded native OS worker, source-compatible aliases/hostname/RAM decisions and tagged readonly replies"
     },
     {
       "id": "editor",

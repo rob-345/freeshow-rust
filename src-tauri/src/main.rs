@@ -4,6 +4,7 @@ mod drop;
 mod files;
 mod menu;
 mod output;
+mod system;
 
 use freeshow_audio::{AudioConfig, AudioService};
 use freeshow_core::{
@@ -15,6 +16,7 @@ use freeshow_core::{
 use freeshow_files::{FilesService, Limits as FilesLimits};
 use freeshow_media::{MediaConfig, MediaService};
 use freeshow_network::{OscSender, OscSenderConfig};
+use freeshow_system::{Limits as SystemLimits, SystemService};
 use serde_json::json;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -28,6 +30,7 @@ struct AppState {
     media: MediaService,
     audio: AudioService,
     files: files::NativeFiles,
+    system: SystemService,
     osc: OscSender,
     app_data: PathBuf,
     error_log: PathBuf,
@@ -100,6 +103,10 @@ async fn ipc_dispatch(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if system::COMMANDS.contains(&command) {
+            let state = app.state::<AppState>();
+            return system::dispatch(&state.library, &state.system, request).await;
+        }
         if files::COMMANDS.contains(&command) {
             let state = app.state::<AppState>();
             return files::dispatch(&state.library, &state.files, request, window.label()).await;
@@ -236,21 +243,19 @@ async fn ipc_dispatch(
                 if !discard {
                     drained.map_err(WireError::from)?;
                 }
-                let (_, _, _, files_result) = tokio::join!(
+                let (_, _, _, files_result, system_result) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
                     state.osc.shutdown(),
-                    state.files.shutdown()
+                    state.files.shutdown(),
+                    state.system.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
+                system_result
+                    .map_err(|error| WireError::new("system_worker", error.to_string()))?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
-            }
-            "GET_OS" => {
-                return Ok(reply(
-                    json!({"platform": match std::env::consts::OS { "windows" => "win32", "macos" => "darwin", other => other }, "arch": match std::env::consts::ARCH { "x86_64" => "x64", "aarch64" => "arm64", other => other }, "name": std::env::var("HOSTNAME").unwrap_or_default() }),
-                ))
             }
             "GET_PATHS" => {
                 let paths = window.app_handle().path();
@@ -569,12 +574,14 @@ fn main() {
             })?;
             let audio = AudioService::new(AudioConfig::default())?;
             let files = files::NativeFiles::new(FilesService::start(FilesLimits::default())?);
+            let system = SystemService::start(SystemLimits::default())?;
             app.manage(AppState {
                 library: LibraryService::start(runtime)?,
                 outputs,
                 media,
                 audio,
                 files,
+                system,
                 osc,
                 app_data,
                 error_log,

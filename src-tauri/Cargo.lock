@@ -1078,6 +1078,7 @@ dependencies = [
  "freeshow-files",
  "freeshow-media",
  "freeshow-network",
+ "freeshow-system",
  "serde_json",
  "tauri",
  "tauri-build",
@@ -1117,6 +1118,18 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "freeshow-system"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "mach2",
+ "serde",
+ "serde_json",
+ "tokio",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2091,6 +2104,12 @@ name = "log"
 version = "0.4.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
+
+[[package]]
+name = "mach2"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0d28e293f2b8c9d2b2d1c0193bd3c1cbdc0d2cf396888dc01162f7cf9d6c3f3"
 
 [[package]]
 name = "markup5ever"
