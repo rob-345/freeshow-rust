@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/freeshow-core"]
+members = ["crates/freeshow-core", "crates/freeshow-media", "crates/freeshow-network"]
 exclude = ["src-tauri"]
 resolver = "2"
 

@@ -12,12 +12,13 @@ import { test } from "node:test"
 import ts from "typescript"
 import { clean, root, upstreamFunctions } from "./oracle.mjs"
 
-const binary = process.env.FREESHOW_MEDIA_BIN || path.join(root, "crates/freeshow-media/target/debug", process.platform === "win32" ? "freeshow-media.exe" : "freeshow-media")
+const binary = process.env.FREESHOW_MEDIA_BIN || path.join(root, "target/debug", process.platform === "win32" ? "freeshow-media.exe" : "freeshow-media")
 const require = createRequire(import.meta.url)
 const execFileAsync = promisify(execFile)
 const ffmpeg = process.env.FREESHOW_TEST_FFMPEG || "ffmpeg"
 const ffprobe = process.env.FREESHOW_TEST_FFPROBE || "ffprobe"
 const available = [ffmpeg, ffprobe].every((file) => spawnSync(file, ["-version"], { encoding: "utf8", timeout: 10000 }).status === 0)
+if (process.env.FREESHOW_REQUIRE_MEDIA_TOOLS === "1" && !available) throw new Error("Required real media parity needs working ffmpeg and ffprobe binaries")
 const encoders = available ? spawnSync(ffmpeg, ["-hide_banner", "-encoders"], { encoding: "utf8", timeout: 10000 }).stdout : ""
 
 function sourceVariables(filename, names) {

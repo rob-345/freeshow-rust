@@ -5,9 +5,6 @@ edition = "2021"
 license = "GPL-3.0-only"
 repository = "https://github.com/rob-345/freeshow-rust"
 
-# Kept independent until the coordinator integrates this feature crate.
-[workspace]
-
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

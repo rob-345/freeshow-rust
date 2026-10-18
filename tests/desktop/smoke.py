@@ -26,6 +26,8 @@ import gi
 
 gi.require_version("Atspi", "2.0")
 from gi.repository import Atspi
+from menu import native_menu, find as find_native_menu
+from script_receipts import wrap_script
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "test-output-rust" / "desktop"
@@ -40,7 +42,7 @@ def free_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -55,6 +57,9 @@ def run():
         temp = Path(temporary)
         data_dir = temp / "selected-data"
         data_dir.mkdir()
+        assert shutil.which("ffmpeg") and shutil.which("ffprobe"), "Native media integration requires ffmpeg and ffprobe"
+        media_fixture = temp / "原音 native probe.m4a"
+        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=8000:duration=1", "-c:a", "aac", "-b:a", "32k", "-threads", "1", "-y", str(media_fixture)], check=True, timeout=15)
         env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"),
                    XDG_DATA_HOME=str(temp / "xdg-data"), XDG_CACHE_HOME=str(temp / "xdg-cache"),
                    XDG_CONFIG_HOME=str(temp / "xdg-config"), GSETTINGS_BACKEND="memory",
@@ -69,10 +74,15 @@ def run():
         process = subprocess.Popen([driver, "--port", str(port), "--native-port", str(native_port), "--native-driver", native],
                                    env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         base = f"http://127.0.0.1:{port}"
+        native_base = f"http://127.0.0.1:{native_port}"
 
         def http(method, route, payload=None):
             data = None if payload is None else json.dumps(payload).encode()
-            request = urllib.request.Request(base + route, data=data, method=method, headers={"Content-Type": "application/json"})
+            # tauri-driver 2.1.0 only transforms POST /session capabilities.
+            # Its remaining routes are an unchanged HTTP proxy. Use the same
+            # native session directly to avoid its pooled upstream disconnects.
+            endpoint = base if method == "POST" and route == "/session" else native_base
+            request = urllib.request.Request(endpoint + route, data=data, method=method, headers={"Content-Type": "application/json"})
             # The WebKit proxy occasionally resets an idle connection while
             # finding an element or selecting an existing WebView. These reads
             # and exact window selections can be repeated in the same session.
@@ -104,24 +114,7 @@ def run():
             # listener installation or other side effect. Errors are retained
             # too; a new WebView/session is not substituted after a failure.
             key = str(next(script_sequence))
-            wrapped = """
-                const receipts=window.__desktopScriptReceipts ||= new Map();
-                const key=KEY;
-                if(!receipts.has(key)) {
-                    const entry={state:'running'};
-                    receipts.set(key,entry);
-                    if(receipts.size>128)receipts.delete(receipts.keys().next().value);
-                    try {
-                        entry.value=(function(){ SOURCE }).apply(window,arguments);
-                        entry.state='done';
-                    } catch(error) {
-                        entry.state='error';entry.error=String(error);throw error;
-                    }
-                }
-                const entry=receipts.get(key);
-                if(entry.state!=='done')throw new Error(entry.error || 'Script still running');
-                return entry.value;
-            """.replace("KEY", json.dumps(key), 1).replace("SOURCE", source, 1)
+            wrapped = wrap_script(key, source)
             for attempt in range(3):
                 try:
                     return command("POST", "/execute/sync", {"script": wrapped, "args": list(args)})
@@ -212,8 +205,15 @@ def run():
 
         def fill(selector, text):
             found = element(selector)
-            command("POST", f"/element/{found}/clear", {})
-            command("POST", f"/element/{found}/value", {"text": text})
+            reference = {ELEMENT: found}
+            try:
+                command("POST", f"/element/{found}/clear", {})
+            except (RemoteDisconnected, ConnectionResetError):
+                assert script("return arguments[0].value", reference) == "", "Disconnected clear did not leave the field empty"
+            try:
+                command("POST", f"/element/{found}/value", {"text": text})
+            except (RemoteDisconnected, ConnectionResetError):
+                assert script("return arguments[0].value", reference) == text, "Disconnected typing did not complete the expected value"
 
         def save_shortcut():
             command("POST", "/actions", {"actions": [{"type": "key", "id": "keyboard", "actions": [
@@ -383,7 +383,7 @@ def run():
                 },'native-show-read-test');
                 window.api.send=(channel,message,listener)=>{
                     if(channel==='MAIN' && message.channel==='SHOW') window.__showReadRequests.push({data:structuredClone(message.data),listenerId:listener,at:performance.now()});
-                    if(channel==='MAIN' && message.channel==='SAVE') window.__saveRequests.push({token:message.data?.runtimeSaveToken,names:Object.values(message.data?.showsCache || {}).map(show=>show.name),at:performance.now()});
+                    if(channel==='MAIN' && message.channel==='SAVE') window.__saveRequests.push({token:message.data?.runtimeSaveToken,closeWhenFinished:message.data?.closeWhenFinished,names:Object.values(message.data?.showsCache || {}).map(show=>show.name),at:performance.now()});
                     if(channel==='OUTPUT' && message.channel==='OUTPUTS' && !message.data?.id) {
                         window.__latestOutputData=structuredClone(message.data);
                         window.__outputSnapshotVersion++;
@@ -612,6 +612,53 @@ def run():
                 cold_status = invoke("library_status")
                 assert cold_status["activeJob"]["listenerId"] == "backup-responsiveness"
                 assert cold_status["activeJob"]["phase"] == "backupCompression"
+                media_result = script("""
+                    return (async()=>{
+                        const started=performance.now(), context=window.api.getRuntimeContext(), replies=[];
+                        for(const command of ['FFMPEG_CHECK','MEDIA_CODEC','MEDIA_TRACKS']) {
+                            const events=await window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context,listenerId:'native-'+command,data:{channel:command,data:{path:arguments[0],future:{kept:true}}}}});
+                            replies.push({command,events});
+                        }
+                        return {context,replies,elapsedMs:performance.now()-started};
+                    })();
+                """, str(media_fixture))
+                for reply in media_result["replies"]:
+                    assert len(reply["events"]) == 1, reply
+                    event = reply["events"][0]
+                    assert event["context"] == media_result["context"]
+                    assert event["listenerId"] == "native-" + reply["command"]
+                    assert event["message"]["channel"] == reply["command"]
+                    result = event["message"]["data"]
+                    if reply["command"] == "FFMPEG_CHECK":
+                        assert result["installed"] is True and result["path"]
+                    else:
+                        assert result["path"] == str(media_fixture) and result["future"] == {"kept": True}
+                        if reply["command"] == "MEDIA_CODEC":
+                            assert result["codecs"] == ["mp4a.40.2"], result
+                            assert result["mimeType"] == "application/octet-stream"
+                            assert result["mimeCodec"] == 'application/octet-stream; codecs="mp4a.40.2"'
+                        else:
+                            assert result["tracks"] == []
+                assert media_result["elapsedMs"] < 1500, media_result
+                media_status = invoke("library_status")
+                assert media_status["activeJob"]["listenerId"] == "backup-responsiveness" and media_status["activeJob"]["phase"] == "backupCompression", media_status
+                (ARTIFACTS / "media-probe.json").write_text(json.dumps(media_result, indent=2))
+                steps.append("Native FFmpeg/AAC metadata replies preserve payload, context and correlation during ZIP compression")
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as receiver:
+                    receiver.bind(("127.0.0.1", 0))
+                    receiver.settimeout(2)
+                    osc_started = time.monotonic()
+                    script("window.api.send('MAIN',{channel:'EMIT_OSC',data:{signal:{host:'127.0.0.1',port:arguments[0]},data:'/native 42 true'}})", receiver.getsockname()[1])
+                    packet, address = receiver.recvfrom(65507)
+                    # OSC address/type padding and int32 bytes for the known
+                    # reference message; full encoder parity is source-driven.
+                    assert packet.hex() == "2f6e6174697665002c6954000000002a", packet.hex()
+                    assert address[0] == "127.0.0.1"
+                    osc_result = {"packetHex":packet.hex(), "sender":list(address), "elapsedMs":(time.monotonic()-osc_started)*1000}
+                osc_status = invoke("library_status")
+                assert osc_status["activeJob"]["listenerId"] == "backup-responsiveness" and osc_status["activeJob"]["phase"] == "backupCompression", osc_status
+                (ARTIFACTS / "osc-loopback.json").write_text(json.dumps(osc_result, indent=2))
+                steps.append("Retained window.api emits a real OSC UDP datagram during ZIP compression")
                 cold_read = script("const request=window.__showReadRequests.find(request=>request.data?.id==='uncached-show');const reply=window.__showReadReplies.find(reply=>reply.listenerId===request?.listenerId);return {request,reply,elapsedMs:reply?.at-request?.at}")
                 assert cold_read["reply"]["data"]["content"][0] == "uncached-show", cold_read
                 assert cold_read["elapsedMs"] < 1500, cold_read
@@ -696,6 +743,71 @@ def run():
             command("POST", "/window", {"handle": main_window})
             assert script("return window.__testErrors") == []
             errors = script("return window.__testRuntimeErrors")
+            # Use the real Quit control while a second compression owns the IO
+            # thread. The legacy saved flag is true, but Quit must still send a
+            # final snapshot and preserve earlier native writes before exit.
+            def app_pids():
+                found = []
+                for entry in Path("/proc").iterdir():
+                    if not entry.name.isdecimal():
+                        continue
+                    try:
+                        pid = int(entry.name)
+                        if os.getpgid(pid) == process.pid and (entry / "exe").resolve() == binary.resolve():
+                            found.append(pid)
+                    except (OSError, RuntimeError):
+                        pass
+                return found
+
+            pids = app_pids()
+            assert len(pids) == 1, pids
+            backup_folder = Path(observed["backup"]["path"]).parent
+            previous_backups = set(backup_folder.glob("*.zip"))
+            close_requests = script("return window.__saveRequests.length")
+            try:
+                for path in workload:
+                    with path.open("wb") as output:
+                        for piece in [b'{"benchmarkPadding":"', *([chunk] * 32), b'"}']:
+                            output.write(piece)
+                assert not script("return !!document.querySelector('.top .unsaved')")
+                script("""
+                    const context=window.api.getRuntimeContext();
+                    window.__closeJobs=[];
+                    const dispatch=(channel,data)=>window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context,data:{channel,data}}}).then(value=>window.__closeJobs.push({channel,value})).catch(error=>window.__closeJobs.push({channel,error}));
+                    dispatch('SAVE',{customTriggers:{backup:true,isAutoBackup:true},closeWhenFinished:false});
+                """)
+                wait(lambda: (invoke("library_status").get("activeJob") or {}).get("phase") == "backupCompression", "Quit workload compression started")
+                script("const context=window.api.getRuntimeContext();window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context,data:{channel:'SET_STORE_VALUE',data:{file:'config',key:'closeDrainSentinel',value:true}}}}).then(value=>window.__closeJobs.push({channel:'SET_STORE_VALUE',value})).catch(error=>window.__closeJobs.push({channel:'SET_STORE_VALUE',error}))")
+                wait(lambda: invoke("library_status")["queuedJobs"] >= 1, "Native write admitted before Quit")
+                menu_bar = wait(native_menu, "Native GTK menu ready for Quit")
+                file_menu = find_native_menu(menu_bar, "File")
+                assert file_menu and file_menu.get_action_iface().do_action(0)
+                quit_item = wait(lambda: find_native_menu(native_menu(), "Quit"), "Native Quit item", record=False)
+                assert quit_item.get_state_set().contains(Atspi.StateType.ENABLED)
+                assert quit_item.get_action_iface().do_action(0)
+                final_request = wait(lambda: script("return window.__saveRequests.slice(arguments[0]).find(request=>request.closeWhenFinished)", close_requests), "Saved-state Quit captured a final snapshot")
+                close_status = invoke("library_status")
+                assert (close_status.get("activeJob") or {}).get("phase") == "backupCompression", close_status
+                assert app_pids() == pids
+                assert not json.loads(config_path.read_text()).get("closeDrainSentinel")
+                errors = script("return window.__testRuntimeErrors")
+                assert script("return window.__testErrors") == []
+                wait(lambda: not app_pids(), "Quit exited after pending backup and writes", seconds=90)
+                assert json.loads(config_path.read_text())["closeDrainSentinel"] is True
+                completed_backups = set(backup_folder.glob("*.zip")) - previous_backups
+                assert len(completed_backups) == 1, completed_backups
+                completed_backup = next(iter(completed_backups))
+                with zipfile.ZipFile(completed_backup) as archive:
+                    assert archive.testzip() is None
+                    for path, expected in workload.items():
+                        info = archive.getinfo("SHOWS/" + path.name)
+                        assert info.file_size == expected["size"] and info.CRC == expected["crc"]
+                assert "Keep edits after the save snapshot" in latest_path.read_text()
+                (ARTIFACTS / "close-drain.json").write_text(json.dumps({"pid":pids[0],"finalSave":final_request,"pending":close_status,"backup":str(completed_backup),"configWritePersisted":True,"processExited":True}, indent=2))
+                steps.append("Real Quit preserved a queued native config write, completed ZIP and final save before process exit")
+            finally:
+                for path in workload:
+                    path.unlink(missing_ok=True)
             # Unsupported features remain visible in the receipt; they are never
             # interpreted as successful parity checks.
             (ARTIFACTS / "receipt.json").write_text(json.dumps({"steps": steps, "runtimeErrors": errors, "platform": "Linux WebKitGTK"}, indent=2))

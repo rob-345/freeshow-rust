@@ -4,8 +4,8 @@ import vm from "node:vm"
 import { test } from "node:test"
 import { root } from "./oracle.mjs"
 
-const source = fs.readFileSync(`${root}/tests/desktop/smoke.py`, "utf8")
-const wrapper = source.match(/wrapped = """([\s\S]*?)"""\.replace\("KEY"/)[1]
+const source = fs.readFileSync(`${root}/tests/desktop/script_receipts.py`, "utf8")
+const wrapper = source.match(/WRAPPER = """([\s\S]*?)"""/)[1]
 
 function execute(context, key, script) {
     const code = wrapper.replace("KEY", JSON.stringify(key)).replace("SOURCE", script)

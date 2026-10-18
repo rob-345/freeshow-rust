@@ -30,10 +30,10 @@
         "array length and unusual property edge cases",
         "automatic recovery after a crash during library selection",
         "unavailable selected volumes and recovery UI",
-        "excluded/minor fields, asynchronous load/cloud/close state and edits during the library commit",
+        "excluded fields changing after capture, asynchronous load/cloud/teardown and edits during the library commit",
         "recovery UI and explicit reapplication of retained save snapshots"
       ],
-      "scope": "Compatible store/save operations, library provenance and ordered persistence on a bounded IO worker; transactional clearing of old live presentation references on selection; remaining cases below are uncertified; bounded SHOW readers share an IO barrier and wait for earlier mutation phases while copied backups compress; snapshot-token acknowledgments preserve newer tracked edits and guard the pre-switch save interval"
+      "scope": "Compatible store/save operations, library provenance and ordered persistence on a bounded IO worker; transactional clearing of old live presentation references on selection; remaining cases below are uncertified; bounded SHOW readers share an IO barrier and wait for earlier mutation phases while copied backups compress; snapshot-token acknowledgments preserve newer tracked edits and guard the pre-switch save interval; terminal FIFO admission/drain barrier and token-checked normal final saves before native exit"
     },
     {
       "id": "ipc",
@@ -61,11 +61,14 @@
       "tests": [
         "tests/parity/dialog.test.mjs",
         "tests/desktop/smoke.py",
-        "tests/parity/desktop-harness.test.mjs"
+        "tests/parity/desktop-harness.test.mjs",
+        "tests/parity/menu.test.mjs",
+        "src-tauri/tests/menu.rs",
+        "tests/desktop/menu.py"
       ],
       "remaining": [
         "native drag/drop",
-        "menus and accelerators",
+        "macOS/Windows native menu roles and keyboard accelerators; untested Linux role actions",
         "clipboard",
         "display hotplug and DPI",
         "cross-platform lifecycle",
@@ -73,7 +76,7 @@
         "updates and crash reporting",
         "folder dialogs and library switching on Windows/macOS"
       ],
-      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation"
+      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation; localized native menus compared across all bundled locales/platform conditions; actual Linux menu commands and Quit confirmation/final-save/drain workflows"
     },
     {
       "id": "editor",
@@ -90,9 +93,9 @@
         "editing, undo/redo, layouts and settings workflows",
         "visual snapshots across WebView2, WKWebView and WebKitGTK",
         "native clipboard, keyboard and accessibility parity",
-        "excluded/minor-field and asynchronous load/cloud/close saved state; remaining overlap variants"
+        "excluded fields changing after final capture, timed-out teardown callbacks, asynchronous load/cloud/legacy-drive closing paths and remaining overlap variants"
       ],
-      "scope": "Initial native editing plus source-driven save-token/revision checks; real newer-song creation behind a queued save remains unsaved until a second save"
+      "scope": "Initial native editing plus source-driven save-token/revision checks; real newer-song creation behind a queued save remains unsaved until a second save; normal Quit captures even when legacy saved=true, defers behind saving, and rechecks tracked edits after awaited cleanup"
     },
     {
       "id": "outputs",
@@ -140,24 +143,42 @@
     },
     {
       "id": "media-and-audio",
-      "status": "pending",
-      "tests": [],
+      "status": "partial",
+      "tests": [
+        "tests/parity/media-probe.test.mjs",
+        "crates/freeshow-media/src/lib.rs",
+        "crates/freeshow-media/src/process.rs",
+        "crates/freeshow-media/src/metadata.rs",
+        "tests/desktop/smoke.py"
+      ],
       "remaining": [
         "video codecs and seeking",
         "audio mixing, routing, effects and recording",
         "camera and desktop capture",
-        "Spotify and now-playing"
-      ]
+        "Spotify and now-playing",
+        "exhaustive MP4Box edge cases, unsupported VP8/VP9/VVC/encrypted/stxt configurations and uncommon AAC descriptors",
+        "binary packaging/downloads, whole-request discovery deadlines, descendant cleanup and blocked-filesystem cancellation",
+        "Windows/macOS subprocess and native media workflows"
+      ],
+      "scope": "FFMPEG_CHECK plus MP4Box-compatible MEDIA_CODEC/MEDIA_TRACKS corpus through bounded supervised ffprobe; diagnostics preserve unsupported capabilities; native replies retain payload/context/correlation independently of library compression"
     },
     {
       "id": "network-and-control",
-      "status": "pending",
-      "tests": [],
+      "status": "partial",
+      "tests": [
+        "tests/parity/osc.test.mjs",
+        "crates/freeshow-network/src/osc_tests.rs",
+        "crates/freeshow-network/tests/osc_loopback.rs",
+        "tests/desktop/smoke.py"
+      ],
       "remaining": [
         "remote, stage, controller and output-stream servers",
         "Socket.IO, REST and WebSocket compatibility",
-        "OSC, MIDI, MTC and LTC"
-      ]
+        "OSC receiving/action APIs, MIDI, MTC and LTC",
+        "pending sends across library switches; one bounded OS DNS lookup cannot be interrupted",
+        "other protocol servers/providers and full cross-platform application workflows"
+      ],
+      "scope": "Outbound EMIT_OSC string-handler coercion/bytes compared with original TS/osc-js, bounded FIFO/DNS, cancellation/deadlines and real loopback; native window.api send runs independently of library compression"
     },
     {
       "id": "broadcast-hardware",
@@ -213,7 +234,7 @@
         "output p50/p95/p99 frame timing",
         "sustained playback and streaming",
         "uncached projected content and responsiveness under other background IO/CPU workloads",
-        "bounded parallel CPU work and supervised media subprocesses"
+        "bounded parallel CPU pools; comparable measurements for supervised media and async networking under sustained load"
       ],
       "scope": "Helper microbenchmark plus Linux debug controls, paired disk SHOW reads, a real uncached presenting UI load and two warm cached projections during 64 MiB ZIP compression; DOM/CSS/RAF progress measured without physical scanout or application-level speedup certification"
     },

@@ -5,9 +5,6 @@ edition = "2021"
 license = "GPL-3.0-only"
 repository = "https://github.com/rob-345/freeshow-rust"
 
-# Temporary isolation: coordinator removes this when adding the crate to the root workspace.
-[workspace]
-
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }

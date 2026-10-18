@@ -5,6 +5,8 @@ Build the native application with custom-protocol, then run under
 Uses the same local driver/native-header environment as smoke.py.
 """
 import json
+import itertools
+from http.client import RemoteDisconnected
 import os
 from pathlib import Path
 import shutil
@@ -19,6 +21,7 @@ import gi
 
 gi.require_version("Atspi", "2.0")
 from gi.repository import Atspi
+from script_receipts import wrap_script
 from gi.repository import GLib
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -109,15 +112,27 @@ def run():
 
         def http(method, route, payload=None):
             data = None if payload is None else json.dumps(payload).encode()
-            request = urllib.request.Request(f"http://127.0.0.1:{port}" + route,
+            endpoint = port if method == "POST" and route == "/session" else native_port
+            # Only session capability mapping needs tauri-driver's proxy; all
+            # other commands address this same real native driver/session.
+            request = urllib.request.Request(f"http://127.0.0.1:{endpoint}" + route,
                                              data=data, method=method, headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(request, timeout=35) as response:
                 value = json.load(response)["value"]
             assert not isinstance(value, dict) or "error" not in value, value
             return value
 
+        script_sequence = itertools.count()
+
         def script(code, *args):
-            return http("POST", f"/session/{session}/execute/sync", {"script": code, "args": list(args)})
+            wrapped = wrap_script(next(script_sequence), code)
+            for attempt in range(3):
+                try:
+                    return http("POST", f"/session/{session}/execute/sync", {"script": wrapped, "args": list(args)})
+                except (RemoteDisconnected, ConnectionResetError):
+                    if attempt == 2 or process.poll() is not None:
+                        raise
+                    time.sleep(0.1)
 
         def click(menu, item):
             group = wait(lambda: find(native_menu(), menu), "Native GTK menu present: " + menu)

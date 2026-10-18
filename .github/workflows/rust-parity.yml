@@ -79,10 +79,20 @@ jobs:
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol -- -D warnings
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      - run: cargo build --workspace --all-targets
+      - run: node --test tests/parity/media-probe.test.mjs tests/parity/osc.test.mjs
+        env:
+          FREESHOW_REQUIRE_MEDIA_TOOLS: "1"
       - run: cargo install tauri-driver --version 2.1.0 --locked
       - run: xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py
+      - run: xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/menu.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: desktop-linux-evidence
-          path: test-output-rust/desktop
+          path: |
+            test-output-rust/desktop
+            test-output-rust/native-menu

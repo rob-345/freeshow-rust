@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod menu;
 mod output;
 
 use freeshow_core::{
@@ -8,6 +9,8 @@ use freeshow_core::{
     service::{LibraryService, LibraryStatus},
     WireError,
 };
+use freeshow_media::{MediaConfig, MediaService};
+use freeshow_network::{OscSender, OscSenderConfig};
 use serde_json::json;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -18,6 +21,8 @@ use tauri_plugin_opener::OpenerExt;
 struct AppState {
     library: LibraryService,
     outputs: output::OutputService,
+    media: MediaService,
+    osc: OscSender,
     app_data: PathBuf,
     error_log: PathBuf,
     allow_exit: AtomicBool,
@@ -89,6 +94,57 @@ async fn ipc_dispatch(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if command == "EMIT_OSC" {
+            let state = app.state::<AppState>();
+            state
+                .library
+                .contextualize(&request, &mut [])
+                .map_err(WireError::from)?;
+            state
+                .osc
+                .emit(&request.data["data"])
+                .await
+                .map_err(|error| {
+                    WireError::new("osc_error", format!("{:?}: {}", error.kind, error.message))
+                })?;
+            return Ok(vec![]);
+        }
+        if freeshow_media::COMMANDS.contains(&command) {
+            let state = app.state::<AppState>();
+            state
+                .library
+                .contextualize(&request, &mut [])
+                .map_err(WireError::from)?;
+            let result = state
+                .media
+                .dispatch(command, request.data["data"].clone())
+                .await
+                .map_err(|error| WireError::new(error.code(), error.to_string()))?;
+            for diagnostic in &result.diagnostics {
+                eprintln!("{}: {}", diagnostic.code, diagnostic.message);
+            }
+            if command != "FFMPEG_CHECK" && !result.diagnostics.is_empty() {
+                return Err(WireError::new(
+                    "media_capability_error",
+                    result
+                        .diagnostics
+                        .iter()
+                        .map(|diagnostic| format!("{}: {}", diagnostic.code, diagnostic.message))
+                        .collect::<Vec<_>>()
+                        .join("; "),
+                ));
+            }
+            return contextual_events(
+                app,
+                &request,
+                vec![Event::reply(
+                    "MAIN",
+                    command,
+                    result.data,
+                    request.listener_id.clone(),
+                )],
+            );
+        }
         let reply = |data| {
             vec![Event::reply(
                 "MAIN",
@@ -99,6 +155,10 @@ async fn ipc_dispatch(
         };
         let native_error = |error: tauri::Error| WireError::new("window_error", error.to_string());
         match command {
+            "LANGUAGE" => {
+                menu::set_language(app, &request.data["data"]["strings"])?;
+                return Ok(vec![]);
+            }
             "MAXIMIZED" => return Ok(reply(json!(window.is_maximized().map_err(native_error)?))),
             "MINIMIZE" => {
                 window.minimize().map_err(native_error)?;
@@ -125,6 +185,7 @@ async fn ipc_dispatch(
                 if !discard {
                     drained.map_err(WireError::from)?;
                 }
+                tokio::join!(state.media.shutdown(), state.osc.shutdown());
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -433,15 +494,34 @@ fn main() {
             let error_log = runtime.stores.path("ERROR_LOG")?;
             let outputs = output::OutputService::start(runtime.context())
                 .map_err(|error| std::io::Error::other(error.message))?;
+            let media = MediaService::new(MediaConfig {
+                local_bin_dir: Some(app_data.join("bin")),
+                ffmpeg_candidates: std::env::var_os("FREESHOW_RUST_FFMPEG")
+                    .map(PathBuf::from)
+                    .into_iter()
+                    .collect(),
+                ffprobe_candidates: std::env::var_os("FREESHOW_RUST_FFPROBE")
+                    .map(PathBuf::from)
+                    .into_iter()
+                    .collect(),
+                ..MediaConfig::default()
+            })?;
+            let osc = tauri::async_runtime::block_on(async {
+                OscSender::start(OscSenderConfig::default())
+            })?;
             app.manage(AppState {
                 library: LibraryService::start(runtime)?,
                 outputs,
+                media,
+                osc,
                 app_data,
                 error_log,
                 allow_exit: AtomicBool::new(false),
             });
+            menu::install(app.handle()).map_err(|error| std::io::Error::other(error.message))?;
             Ok(())
         })
+        .on_menu_event(menu::on_menu_event)
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {

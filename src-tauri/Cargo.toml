@@ -16,9 +16,11 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde_json = { version = "1", features = ["preserve_order"] }
 freeshow-core = { path = "../crates/freeshow-core" }
+freeshow-media = { path = "../crates/freeshow-media" }
+freeshow-network = { path = "../crates/freeshow-network" }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
-tokio = { version = "1", features = ["sync"] }
+tokio = { version = "1", features = ["sync", "macros"] }
 
 [profile.dev]
 debug = 0
