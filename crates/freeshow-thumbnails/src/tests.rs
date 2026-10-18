@@ -661,3 +661,49 @@ async fn capture_start_is_one_shot_and_rejects_cancelled_or_nonpending_plans() {
     drop(invalid);
     service.shutdown().await.unwrap();
 }
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn cleanup_barrier_waits_for_released_staging_without_closing_or_waiting_for_retained_plans()
+{
+    let dir = tempfile::tempdir().unwrap();
+    let input = dir.path().join("cleanup.png");
+    std::fs::write(&input, b"source").unwrap();
+    let roots = ThumbnailRoots {
+        cache_root: dir.path().join("cache"),
+    };
+    let service = ThumbnailService::new(ThumbnailConfig {
+        max_prepared: 1,
+        ..ThumbnailConfig::default()
+    })
+    .unwrap();
+    let retained = service
+        .prepare_capture(input.to_str().unwrap(), 3, &roots, CancellationToken::new())
+        .await
+        .unwrap();
+    let stage = retained.staging_directory().unwrap().to_path_buf();
+    tokio::time::timeout(Duration::from_secs(2), service.finish_cleanup())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(stage.is_dir());
+    assert_eq!(
+        service
+            .prepare_capture(input.to_str().unwrap(), 3, &roots, CancellationToken::new())
+            .await
+            .err()
+            .unwrap()
+            .code,
+        "thumbnail_busy"
+    );
+    drop(retained);
+    service.finish_cleanup().await.unwrap();
+    assert!(!stage.exists());
+    let next = service
+        .prepare_capture(input.to_str().unwrap(), 3, &roots, CancellationToken::new())
+        .await
+        .unwrap();
+    assert_eq!(next.outcome, ThumbnailOutcome::CapturePending);
+    drop(next);
+    service.shutdown().await.unwrap();
+}

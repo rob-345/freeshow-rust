@@ -238,6 +238,11 @@ impl ThumbnailService {
         self.submit(Task::Prepare(input, plan), cancel, request_cancel)
             .await
     }
+    /// Wait for staging already released by callers. Retained plans still own
+    /// their admission; this barrier neither closes admission nor waits for them.
+    pub async fn finish_cleanup(&self) -> Result<()> {
+        self.inner.cleanup.fence().await
+    }
     pub async fn prepare_capture(
         &self,
         input: &str,
