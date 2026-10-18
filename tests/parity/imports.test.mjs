@@ -171,7 +171,9 @@ test("real original project/template/overlay exports remap media and preserve fr
     const actual = await compareOracle(cases)
     for (const item of actual) {
         assert.ok(item.media.length)
-        assert.ok(item.events.at(-1).message.data.data[0].content.includes(importsRoot))
+        const references = JSON.parse(item.events.at(-1).message.data.data[0].content).files
+        assert.ok(references.length)
+        assert.ok(references.every((file) => typeof file === "string" && file.startsWith(importsRoot + path.sep)))
         for (const media of item.media) {
             assert.equal(media.length, media.content.length)
             assert.match(media.sha256, /^[a-f0-9]{64}$/)
