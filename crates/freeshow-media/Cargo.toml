@@ -1,0 +1,20 @@
+[package]
+name = "freeshow-media"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/rob-345/freeshow-rust"
+
+# Temporary isolation: coordinator removes this when adding the crate to the root workspace.
+[workspace]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+thiserror = "2"
+tokio = { version = "1", features = ["fs", "process", "io-util", "sync", "time", "rt", "macros"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+
+[[bin]]
+name = "freeshow-media"
+path = "src/main.rs"
