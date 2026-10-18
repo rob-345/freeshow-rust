@@ -1,0 +1,151 @@
+{
+    "schemaVersion": 1,
+    "upstreamCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "releaseAsset": "FreeShow-1.6.7-beta.2-amd64.deb",
+    "releaseAssetSha256": "1e50bb99dc2c30e09bf6210b7e169ec7025a8d5a6f04627bb5bbb4832cd219da",
+    "runtime": {
+        "node": "22.21.1",
+        "acorn": "8.15.0",
+        "ada": "2.9.2",
+        "amaro": "1.1.4",
+        "ares": "1.34.5",
+        "brotli": "1.0.9",
+        "cjs_module_lexer": "2.1.0",
+        "cldr": "44.1",
+        "icu": "74.2",
+        "llhttp": "9.3.0",
+        "modules": "136",
+        "napi": "10",
+        "nbytes": "0.1.1",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.64.0",
+        "openssl": "0.0.0",
+        "simdjson": "3.13.0",
+        "simdutf": "7.0.0",
+        "sqlite": "3.50.4",
+        "tz": "2025b",
+        "undici": "6.22.0",
+        "unicode": "15.1",
+        "uv": "1.51.0",
+        "uvwasi": "0.0.23",
+        "v8": "13.8.258.32-electron.0",
+        "zlib": "1.3.1",
+        "zstd": "1.5.8",
+        "electron": "37.10.3",
+        "chrome": "138.0.7204.251"
+    },
+    "privateProfile": true,
+    "temporaryRemoved": true,
+    "pngPairs": [
+        {
+            "mode": "alpha",
+            "width": 256,
+            "height": 8,
+            "canvasSha256": "f87e2deee05121eed5d155704ab766221e5425d0194ec8af77d5fe32764cb723",
+            "nativeSha256": "738692c0b74be2d789288c06657d8f6c1e47d116e70a92d1c599087ce8eb9c8c",
+            "rgbaSha256": "57f57660f0e6d142193cb935f445efcf069727abcd18a2c1a1a16801163a747a",
+            "exactRgba": true,
+            "byteEqual": false,
+            "chunks": ["IHDR", "sRGB", "IDAT", "IEND"]
+        },
+        {
+            "mode": "opaque",
+            "width": 256,
+            "height": 8,
+            "canvasSha256": "a619f308b5aa92d2855e6591c6b5e31b8fb17547fdf372d5c4d48be86b108641",
+            "nativeSha256": "c6e6720be787a7ab864b8dd725bdca1a18f3e07d12445d3b55e29ad714b65947",
+            "rgbaSha256": "a0b5d57afb9b6af317c02d0fdcd9a51f8f29a554c2aacdf74db8cc32877bc998",
+            "exactRgba": true,
+            "byteEqual": false,
+            "chunks": ["IHDR", "sRGB", "IDAT", "IEND"]
+        },
+        {
+            "mode": "p3",
+            "width": 256,
+            "height": 8,
+            "canvasSha256": "bf3bf8a6a89f1daefc68c38fd8676990f0b9e4d03264b58717bd3ef9f851a2b2",
+            "nativeSha256": "5c781d82c6eaeb8f43f32a523b503e799ab6e8cab799b8bd7c6cc252ef28be2b",
+            "rgbaSha256": "a0b5d57afb9b6af317c02d0fdcd9a51f8f29a554c2aacdf74db8cc32877bc998",
+            "exactRgba": true,
+            "byteEqual": false,
+            "chunks": ["IHDR", "iCCP", "IDAT", "IEND"]
+        }
+    ],
+    "thumbnails": [
+        {
+            "type": "image",
+            "width": 16,
+            "height": 8,
+            "rgbaSha256": "d57379092737de2e078ac93eb71810c630d44fdd5ea7dbb8cdbae7579d5321b1",
+            "pngSha256": "9864adb835a26137b5cc5e34f1cdfe3333dc04dadcdd555d44d0a777dac7a6f0"
+        },
+        {
+            "type": "image",
+            "width": 8,
+            "height": 4,
+            "rgbaSha256": "ce08f38836771aa45a1a9246dba60c092b0cb4e82d693b45a2726af594e61b63",
+            "pngSha256": "c5996ada4678c5e3f3b82c0665a4b80df11329f4c91375b2b2c7416071d43017"
+        },
+        {
+            "type": "video",
+            "width": 16,
+            "height": 8,
+            "rgbaSha256": "d78553b632abd98db9d604b3a62be3cc6f561f4732ef0034ca645ed32aa84e4c",
+            "pngSha256": "5de28b58ee8771ff4b6d507d8aa90fc16f32072291c83c4adc9ac137f88d9f5b"
+        }
+    ],
+    "sourceSha256": {
+        "src/electron/data/thumbnails.ts": {
+            "doesMediaExist": "db7a611d6645058c95ef6280b3f67636b8345082c7f2b4778c4c39850dc1879a",
+            "deleteThumbnails": "b3a321329d14510b0d77762376812e1f485b42b4f266e3ea7383ee3e98db6a4d",
+            "getThumbnail": "e80b25b18791e98701aff2062f8fee061a3e41e60deea3948cd38b9a58eefad5",
+            "filePathHashCode": "1a4fb0f233f6f43623902ded311555393635d984761dfec31f449bc4574e721e",
+            "generateThumbnail": "4d438d0863e3f2c906d3b1f7e2c0f2b2b6c9d34015fa9f86bf1ada6aee0074f3",
+            "generate": "a6cb2c71f1f8b705d87b55ffee0927f35118f65f64667a84739bd01d6225a00a",
+            "captureWithCanvas": "6b5be6a311113d51c9c85abfe9908f364ba46fbc3409e4c590e831af4e921d67",
+            "saveImage": "f952c74d8c4f5d42e0f42fb84796eb3c2fa8e6e700a73d9d6932e9d2a73549e1",
+            "saveToDisk": "6320990dac85f54b98bba4db2e2edf1c16b30fba07e052c6b9da0c766af1b2e4"
+        },
+        "src/frontend/components/helpers/media.ts": {
+            "captureCanvas": "19204b79209e5619fa4c95ba185ad95f20e3647e1e147c1fe0b14a61bda87594",
+            "getNewSize": "fe089666e84ef096388f54fba3fb3a29842cef8bcd200b97f0cbff5b5adaf087"
+        }
+    },
+    "failures": [
+        {
+            "kind": "missing",
+            "outputEmpty": true,
+            "artifactPresent": false,
+            "sourceMatchesNative": true,
+            "explicitUnsupported": false
+        },
+        {
+            "kind": "corrupt",
+            "outputEmpty": true,
+            "artifactPresent": false,
+            "sourceMatchesNative": true,
+            "explicitUnsupported": false
+        },
+        {
+            "kind": "corruptSizeZero",
+            "outputEmpty": false,
+            "artifactPresent": false,
+            "sourceMatchesNative": true,
+            "explicitUnsupported": false
+        },
+        {
+            "kind": "unsupportedExtension",
+            "outputEmpty": false,
+            "artifactPresent": false,
+            "sourceMatchesNative": false,
+            "explicitUnsupported": true
+        },
+        {
+            "kind": "changeTime",
+            "outputEmpty": false,
+            "artifactPresent": false,
+            "sourceMatchesNative": true,
+            "explicitUnsupported": false
+        }
+    ]
+}
