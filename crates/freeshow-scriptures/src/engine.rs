@@ -1,21 +1,21 @@
 use crate::*;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
 use serde_json::json;
 pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<PreparedScriptureReply> {
     budget.check()?;
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(any(target_os = "linux", target_os = "macos", windows)))]
     {
         let Request { context, id, name } = request;
         drop((context, id, name));
         Err(Error::unsupported(
-            "Scripture filesystem/path backend verified on Linux only",
+            "Scripture filesystem/path backend supports Linux, macOS and Windows",
         ))
     }
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos", windows))]
     {
         let mut diagnostics = Vec::new();
         if !request.context.directory_attempted
-            && !linux::exists(request.context.bibles_root(), budget)?
+            && native::needs_directory_attempt(request.context.bibles_root(), budget)?
         {
             return Ok(PreparedScriptureReply {
                 data: None,
@@ -34,7 +34,7 @@ pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<PreparedS
         }
         budget.charge(primary.len() + legacy.len())?;
         let retained = budget.allocated;
-        let first = linux::load(&primary, &request.id, budget, &mut diagnostics)?;
+        let first = native::load(&primary, &request.id, budget, &mut diagnostics)?;
         let fallback = first.get("error").is_some();
         drop(first);
         // The first source result is intentionally discarded before the second
@@ -48,7 +48,7 @@ pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<PreparedS
                 hook();
             }
         }
-        let mut data = linux::load(
+        let mut data = native::load(
             if fallback { &legacy } else { &primary },
             &request.id,
             budget,
@@ -97,7 +97,7 @@ pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<PreparedS
         })
     }
 }
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
 fn indexed(value: &Value, index: usize) -> Option<&Value> {
     match value {
         Value::Array(values) => values.get(index),
@@ -105,7 +105,7 @@ fn indexed(value: &Value, index: usize) -> Option<&Value> {
         _ => None,
     }
 }
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
 fn indexed_mut(value: &mut Value, index: usize) -> Option<&mut Value> {
     match value {
         Value::Array(values) => values.get_mut(index),
@@ -113,7 +113,7 @@ fn indexed_mut(value: &mut Value, index: usize) -> Option<&mut Value> {
         _ => None,
     }
 }
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
 fn migrate(data: &mut Value, budget: &mut Budget) -> Result<()> {
     let first = data
         .get("content")
@@ -175,24 +175,58 @@ fn migrate(data: &mut Value, budget: &mut Budget) -> Result<()> {
     }
     Ok(())
 }
-#[cfg(target_os = "linux")]
-mod linux {
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
+mod native {
     use super::*;
     use std::{
         fs::{self, OpenOptions},
         io::Read,
-        os::unix::fs::OpenOptionsExt,
     };
     pub(super) fn exists(path: &Path, budget: &mut Budget) -> Result<bool> {
         budget.check()?;
-        use std::os::unix::ffi::OsStrExt;
-        let Ok(path) = std::ffi::CString::new(path.as_os_str().as_bytes()) else {
-            return Ok(false);
+        paths::check_io_path(path)?;
+        #[cfg(unix)]
+        let result = {
+            use std::os::unix::ffi::OsStrExt;
+            let Ok(path) = std::ffi::CString::new(path.as_os_str().as_bytes()) else {
+                return Ok(false);
+            };
+            // SAFETY: owned C string lives through access; F_OK has no writes.
+            unsafe { libc::access(path.as_ptr(), libc::F_OK) == 0 }
         };
-        // SAFETY: the valid owned C string lives through access; F_OK has no writes.
-        let result = unsafe { libc::access(path.as_ptr(), libc::F_OK) } == 0;
+        #[cfg(windows)]
+        let result = fs::metadata(path).is_ok();
         budget.check()?;
         Ok(result)
+    }
+    pub(super) fn needs_directory_attempt(path: &Path, budget: &mut Budget) -> Result<bool> {
+        if !exists(path, budget)? {
+            return Ok(true);
+        }
+        budget.check()?;
+        let result = fs::symlink_metadata(path)
+            .map_err(|_| Error::unsupported("Source createFolder lstat failed"))?;
+        budget.check()?;
+        Ok(!result.is_dir())
+    }
+    fn directory_error() -> std::io::Error {
+        #[cfg(unix)]
+        return std::io::Error::from_raw_os_error(libc::EISDIR);
+        // Do not mislabel POSIX EISDIR as a raw Windows system error.
+        #[cfg(windows)]
+        std::io::Error::from(std::io::ErrorKind::IsADirectory)
+    }
+    #[cfg(windows)]
+    fn disk_file(file: &fs::File) -> bool {
+        use std::os::windows::io::AsRawHandle;
+        #[link(name = "kernel32")]
+        extern "system" {
+            fn GetFileType(handle: *mut std::ffi::c_void) -> u32;
+        }
+        // SAFETY: File owns a valid handle through this nonmutating query.
+        unsafe {
+            GetFileType(file.as_raw_handle()) == 1 /* FILE_TYPE_DISK */
+        }
     }
     fn diagnostic(
         diagnostics: &mut Vec<Diagnostic>,
@@ -238,11 +272,7 @@ mod linux {
         };
         budget.check()?;
         if metadata.is_dir() {
-            diagnostic(
-                diagnostics,
-                "readFile",
-                Some(&std::io::Error::from_raw_os_error(libc::EISDIR)),
-            );
+            diagnostic(diagnostics, "readFile", Some(&directory_error()));
             return Ok(None);
         }
         if !metadata.is_file() {
@@ -256,11 +286,14 @@ mod linux {
             return Err(Error::limit("Aggregate scripture read bound"));
         }
         budget.check()?;
-        let mut file = match OpenOptions::new()
-            .read(true)
-            .custom_flags(libc::O_NONBLOCK | libc::O_CLOEXEC)
-            .open(path)
+        let mut options = OpenOptions::new();
+        options.read(true);
+        #[cfg(unix)]
         {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.custom_flags(libc::O_NONBLOCK | libc::O_CLOEXEC);
+        }
+        let mut file = match options.open(path) {
             Ok(file) => file,
             Err(error) => {
                 diagnostic(diagnostics, "readFile", Some(&error));
@@ -268,6 +301,12 @@ mod linux {
             }
         };
         budget.check()?;
+        #[cfg(windows)]
+        if !disk_file(&file) {
+            return Err(Error::unsupported(
+                "Opened scripture target is not a disk file",
+            ));
+        }
         let metadata = match file.metadata() {
             Ok(meta) => meta,
             Err(error) => {
@@ -276,11 +315,7 @@ mod linux {
             }
         };
         if metadata.is_dir() {
-            diagnostic(
-                diagnostics,
-                "readFile",
-                Some(&std::io::Error::from_raw_os_error(libc::EISDIR)),
-            );
+            diagnostic(diagnostics, "readFile", Some(&directory_error()));
             return Ok(None);
         }
         if !metadata.is_file() {

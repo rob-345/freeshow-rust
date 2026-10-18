@@ -14,7 +14,7 @@ pub struct ScriptureService {
 struct Shared {
     cancel: CancellationToken,
     active: AtomicUsize,
-    #[cfg(all(test, target_os = "linux"))]
+    #[cfg(all(test, any(target_os = "linux", target_os = "macos", windows)))]
     hooks: Arc<Hooks>,
 }
 struct Inner {
@@ -41,7 +41,7 @@ impl Drop for CancelOnDrop {
         self.0.cancel();
     }
 }
-#[cfg(all(test, target_os = "linux"))]
+#[cfg(all(test, any(target_os = "linux", target_os = "macos", windows)))]
 #[derive(Default)]
 pub(crate) struct Hooks {
     pub process: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
@@ -63,7 +63,7 @@ impl ScriptureService {
         let shared = Arc::new(Shared {
             cancel: CancellationToken::new(),
             active: AtomicUsize::new(0),
-            #[cfg(all(test, target_os = "linux"))]
+            #[cfg(all(test, any(target_os = "linux", target_os = "macos", windows)))]
             hooks: Arc::new(Hooks::default()),
         });
         let mut workers = Vec::new();
@@ -85,7 +85,7 @@ impl ScriptureService {
                     };
                     shared.active.fetch_add(1, Ordering::AcqRel);
                     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        #[cfg(all(test, target_os = "linux"))]
+                        #[cfg(all(test, any(target_os = "linux", target_os = "macos", windows)))]
                         {
                             let hook = budget.hooks.process.lock().unwrap().clone();
                             if let Some(hook) = hook {
@@ -189,7 +189,7 @@ impl ScriptureService {
             deadline,
             stats: Stats::default(),
             allocated: 0,
-            #[cfg(all(test, target_os = "linux"))]
+            #[cfg(all(test, any(target_os = "linux", target_os = "macos", windows)))]
             hooks: self.inner.shared.hooks.clone(),
         };
         budget.charge(
@@ -314,7 +314,7 @@ impl ScriptureService {
         }
         Ok(())
     }
-    #[cfg(all(test, target_os = "linux"))]
+    #[cfg(all(test, any(target_os = "linux", target_os = "macos", windows)))]
     pub(crate) fn hooks(&self) -> Arc<Hooks> {
         self.inner.shared.hooks.clone()
     }

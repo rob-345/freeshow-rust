@@ -1,6 +1,6 @@
 //! Read-only local .fsb preparation. Trusted host owns directory effects/context.
 mod engine;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
 mod json;
 mod service;
 use serde::Serialize;
@@ -153,27 +153,8 @@ impl ScriptureContext {
         next
     }
 }
-fn join(parent: &str, child: &str) -> String {
-    #[cfg(target_os = "linux")]
-    {
-        let text = format!("{parent}/{child}");
-        let mut parts = Vec::new();
-        for part in text.split('/') {
-            match part {
-                "" | "." => {}
-                ".." => {
-                    parts.pop();
-                }
-                _ => parts.push(part),
-            }
-        }
-        format!("/{}", parts.join("/"))
-    }
-    #[cfg(not(target_os = "linux"))]
-    {
-        Path::new(parent).join(child).to_string_lossy().into_owned()
-    }
-}
+mod paths;
+use paths::join;
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum FolderIntent {
@@ -225,7 +206,7 @@ struct Budget {
     deadline: Instant,
     stats: Stats,
     allocated: usize,
-    #[cfg(all(test, target_os = "linux"))]
+    #[cfg(all(test, any(target_os = "linux", target_os = "macos", windows)))]
     hooks: std::sync::Arc<service::Hooks>,
 }
 impl Budget {
@@ -258,7 +239,7 @@ impl Budget {
         Ok(())
     }
 }
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", windows))]
 fn truthy(value: &Value) -> bool {
     match value {
         Value::Null => false,
@@ -268,5 +249,5 @@ fn truthy(value: &Value) -> bool {
         _ => true,
     }
 }
-#[cfg(all(test, target_os = "linux"))]
+#[cfg(all(test, any(target_os = "linux", target_os = "macos", windows)))]
 mod tests;

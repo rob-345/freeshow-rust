@@ -40,7 +40,6 @@ async fn load(
         .unwrap()
 }
 #[tokio::test]
-#[cfg(target_os = "linux")]
 async fn migration_gate_preserves_unknowns_falsy_text_and_source_values() {
     let (_root, context) = fixture();
     let service = ScriptureService::new(Limits::default()).unwrap();
@@ -73,7 +72,6 @@ async fn migration_gate_preserves_unknowns_falsy_text_and_source_values() {
     service.shutdown().await.unwrap();
 }
 #[tokio::test]
-#[cfg(target_os = "linux")]
 async fn second_read_is_fresh_and_fallback_is_selected_only_by_first_result() {
     let (_root, context) = fixture();
     let service = ScriptureService::new(Limits::default()).unwrap();
@@ -111,7 +109,6 @@ async fn second_read_is_fresh_and_fallback_is_selected_only_by_first_result() {
     service.shutdown().await.unwrap();
 }
 #[tokio::test]
-#[cfg(target_os = "linux")]
 async fn preparation_has_no_writes_and_failed_host_mkdir_still_allows_legacy() {
     let root = tempfile::tempdir().unwrap();
     let context =
@@ -132,7 +129,6 @@ async fn preparation_has_no_writes_and_failed_host_mkdir_still_allows_legacy() {
     service.shutdown().await.unwrap();
 }
 #[tokio::test]
-#[cfg(target_os = "linux")]
 async fn json_binary64_duplicates_utf8_repair_and_explicit_unsupported_shapes() {
     let (_root, context) = fixture();
     let service = ScriptureService::new(Limits::default()).unwrap();
@@ -191,7 +187,6 @@ async fn json_binary64_duplicates_utf8_repair_and_explicit_unsupported_shapes() 
     service.shutdown().await.unwrap();
 }
 #[tokio::test]
-#[cfg(target_os = "linux")]
 async fn independent_hard_limits_fail_without_source_success() {
     let (_root, context) = fixture();
     write(
@@ -303,7 +298,6 @@ async fn wait_for(mut condition: impl FnMut() -> bool) {
     }
 }
 #[tokio::test]
-#[cfg(target_os = "linux")]
 async fn admission_cancel_drop_and_shutdown_retain_work_until_workers_really_finish() {
     let (_root, context) = fixture();
     write(&context, "test", &json!(["id", {}]));
@@ -365,7 +359,6 @@ async fn admission_cancel_drop_and_shutdown_retain_work_until_workers_really_fin
     );
 }
 #[tokio::test]
-#[cfg(target_os = "linux")]
 async fn deadlines_and_shutdown_timeouts_are_explicit_and_retry_can_join() {
     let (_root, context) = fixture();
     write(&context, "test", &json!(["id", {}]));
@@ -428,17 +421,45 @@ async fn cancellation_before_admission_and_nonregular_files_never_claim_content(
         "scripture_deadline"
     );
     assert_eq!(service.status().admitted, 0);
-    let fifo =
-        std::ffi::CString::new(context.bibles_root().join("fifo.fsb").to_str().unwrap()).unwrap();
-    // SAFETY: valid C path lives through mkfifo; test owns the private temp root.
-    assert_eq!(unsafe { libc::mkfifo(fifo.as_ptr(), 0o600) }, 0);
+    #[cfg(unix)]
+    {
+        let fifo = std::ffi::CString::new(context.bibles_root().join("fifo.fsb").to_str().unwrap())
+            .unwrap();
+        // SAFETY: valid C path lives through mkfifo; test owns the private temp root.
+        assert_eq!(unsafe { libc::mkfifo(fifo.as_ptr(), 0o600) }, 0);
+        assert_eq!(
+            service
+                .load(&context, &json!({"name":"fifo"}), CancellationToken::new())
+                .await
+                .unwrap_err()
+                .code,
+            "scripture_unsupported"
+        );
+    }
+    service.shutdown().await.unwrap();
+}
+
+#[tokio::test]
+async fn obstructing_root_requires_one_host_attempt_then_falls_back_without_writes() {
+    let (_root, context) = fixture();
+    fs::remove_dir(context.bibles_root()).unwrap();
+    fs::write(context.bibles_root(), b"original obstruction").unwrap();
+    fs::write(
+        context.legacy_root().join("book.fsb"),
+        b"[\"stored\",{\"from\":\"legacy\"}]",
+    )
+    .unwrap();
+    let service = ScriptureService::new(Limits::default()).unwrap();
+    let pending = load(&service, &context, "book").await;
+    assert!(!pending.is_complete());
+    assert_eq!(pending.folder_intents.len(), 1);
+    assert!(pending.stats.load_paths.is_empty());
+    let actual = load(&service, &context.after_directory_attempt(), "book").await;
+    assert!(actual.is_complete());
+    assert_eq!(actual.data.unwrap()["content"][1]["from"], "legacy");
     assert_eq!(
-        service
-            .load(&context, &json!({"name":"fifo"}), CancellationToken::new())
-            .await
-            .unwrap_err()
-            .code,
-        "scripture_unsupported"
+        fs::read(context.bibles_root()).unwrap(),
+        b"original obstruction"
     );
     service.shutdown().await.unwrap();
 }
