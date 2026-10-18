@@ -34,6 +34,41 @@ fn runtime() -> tokio::runtime::Runtime {
         .build()
         .unwrap()
 }
+#[tokio::test]
+async fn real_worker_panic_closes_admission_drains_every_owner_and_remains_a_failed_teardown() {
+    let (_dir, context, config, file) = setup();
+    let stage = config.staging_root.clone().unwrap();
+    let service = MediaCopyService::new(config).unwrap();
+    *service.inner.hooks.worker.lock().unwrap() =
+        Some(Box::new(|| panic!("controlled real copy worker panic")));
+    assert_eq!(
+        service
+            .prepare("MEDIA_FOLDER_COPY", &json!({"paths":[file]}), &context)
+            .await
+            .err()
+            .unwrap()
+            .code,
+        "copy_worker_error"
+    );
+    assert_eq!(
+        service
+            .prepare("MEDIA_FOLDER_COPY", &json!({"paths":[]}), &context)
+            .await
+            .err()
+            .unwrap()
+            .code,
+        "copy_worker_error"
+    );
+    for _ in 0..2 {
+        assert_eq!(
+            service.shutdown().await.err().unwrap().code,
+            "copy_worker_error"
+        );
+        assert!(service.inner.workers.lock().unwrap().is_empty());
+        assert!(service.inner.cleanup_thread.lock().unwrap().is_none());
+        assert_eq!(std::fs::read_dir(&stage).unwrap().count(), 0);
+    }
+}
 #[cfg(target_os = "linux")]
 async fn drained(service: &MediaCopyService) {
     for _ in 0..100 {

@@ -16,6 +16,7 @@ struct Inner {
     leases: Arc<Semaphore>,
     sender: Mutex<Option<mpsc::SyncSender<Work>>>,
     workers: Mutex<Vec<JoinHandle<()>>>,
+    worker_failed: Arc<AtomicBool>,
     cleanup: Cleanup,
     cleanup_thread: Mutex<Option<JoinHandle<()>>>,
     shutdown: tokio::sync::Mutex<()>,
@@ -193,6 +194,7 @@ fn reaper(receiver: mpsc::Receiver<Clean>, failed: Arc<AtomicBool>) {
 #[cfg(test)]
 #[derive(Default)]
 pub(crate) struct Hooks {
+    pub worker: Mutex<Option<Box<dyn FnOnce() + Send>>>,
     pub before: Mutex<Option<Box<dyn FnOnce() + Send>>>,
     pub after: Mutex<Option<Box<dyn FnOnce() + Send>>>,
     pub process: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
@@ -226,50 +228,80 @@ impl MediaCopyService {
         let (sender, receiver) = mpsc::sync_channel::<Work>(WORKERS + config.queued_jobs);
         let receiver = Arc::new(Mutex::new(receiver));
         let mut workers = vec![];
+        let worker_failed = Arc::new(AtomicBool::new(false));
         for index in 0..WORKERS {
             let receive = receiver.clone();
             let clean = cleanup.clone();
+            let failed = worker_failed.clone();
             let worker = std::thread::Builder::new()
                 .name(format!("freeshow-copy-{index}"))
-                .spawn(move || loop {
-                    let work = receive.lock().expect("copy queue poisoned").recv();
-                    let Ok(Work {
-                        command,
-                        payload,
-                        context,
-                        mut budget,
-                        lease,
-                        job,
-                        response,
-                    }) = work
-                    else {
-                        break;
+                .spawn(move || {
+                    // Report an unexpected real thread exit independently of
+                    // whether an IPC caller still waits for its response.
+                    struct Exit {
+                        failed: Arc<AtomicBool>,
+                        orderly: bool,
+                    }
+                    impl Drop for Exit {
+                        fn drop(&mut self) {
+                            if !self.orderly {
+                                self.failed.store(true, Ordering::Release);
+                            }
+                        }
+                    }
+                    let mut exit = Exit {
+                        failed: failed.clone(),
+                        orderly: false,
                     };
-                    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    loop {
+                        let work = receive.lock().expect("copy queue poisoned").recv();
+                        let Ok(Work {
+                            command,
+                            payload,
+                            context,
+                            mut budget,
+                            lease,
+                            job,
+                            response,
+                        }) = work
+                        else {
+                            break;
+                        };
                         #[cfg(test)]
                         {
-                            let hook = budget.hooks.process.lock().unwrap().clone();
+                            let hook = budget.hooks.worker.lock().unwrap().take();
                             if let Some(hook) = hook {
                                 hook();
                             }
                         }
-                        engine::prepare(
-                            &command,
-                            payload,
-                            context,
-                            &mut budget,
-                            lease,
-                            clean.clone(),
-                        )
-                    }))
-                    .unwrap_or_else(|_| {
-                        Err(CopyError::new(
-                            "copy_worker_error",
-                            "Media copy worker panicked",
-                        ))
-                    });
-                    drop(job);
-                    let _ = response.send(result);
+                        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            #[cfg(test)]
+                            {
+                                let hook = budget.hooks.process.lock().unwrap().clone();
+                                if let Some(hook) = hook {
+                                    hook();
+                                }
+                            }
+                            engine::prepare(
+                                &command,
+                                payload,
+                                context,
+                                &mut budget,
+                                lease,
+                                clean.clone(),
+                            )
+                        }))
+                        .unwrap_or_else(|_| {
+                            failed.store(true, Ordering::Release);
+                            Err(CopyError::new(
+                                "copy_worker_error",
+                                "Media copy worker panicked",
+                            ))
+                        });
+                        drop(job);
+                        let _ = response.send(result);
+                    }
+                    exit.orderly = true;
                 });
             match worker {
                 Ok(worker) => workers.push(worker),
@@ -296,6 +328,7 @@ impl MediaCopyService {
                 cancel: CancellationToken::new(),
                 sender: Mutex::new(Some(sender)),
                 workers: Mutex::new(workers),
+                worker_failed,
                 cleanup,
                 cleanup_thread: Mutex::new(Some(cleanup_thread)),
                 shutdown: tokio::sync::Mutex::new(()),
@@ -323,6 +356,12 @@ impl MediaCopyService {
         context: &CopyContext,
         request_cancel: CancellationToken,
     ) -> Result<PreparedMediaCopy> {
+        if self.inner.worker_failed.load(Ordering::Acquire) {
+            return Err(CopyError::new(
+                "copy_worker_error",
+                "Media copy worker failed; admission closed",
+            ));
+        }
         let started = Instant::now();
         if !COMMANDS.contains(&command) {
             return Err(CopyError::new(
@@ -527,7 +566,9 @@ impl MediaCopyService {
             tokio::time::sleep(Duration::from_millis(1)).await;
         }
         for worker in self.inner.workers.lock().unwrap().drain(..) {
-            let _ = worker.join();
+            if worker.join().is_err() {
+                self.inner.worker_failed.store(true, Ordering::Release);
+            }
         }
         if self.inner.cleanup_thread.lock().unwrap().is_some() {
             if !self
@@ -569,6 +610,12 @@ impl MediaCopyService {
                     self.inner.cleanup.failed.store(true, Ordering::Release);
                 }
             }
+        }
+        if self.inner.worker_failed.load(Ordering::Acquire) {
+            return Err(CopyError::new(
+                "copy_worker_error",
+                "Media copy worker failed; teardown remains failed",
+            ));
         }
         if self.cleanup_failed() {
             return Err(CopyError::new(
