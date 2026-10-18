@@ -17,7 +17,8 @@
         "tests/parity/core.test.mjs",
         "crates/freeshow-core/tests/storage.rs",
         "crates/freeshow-core/tests/location.rs",
-        "crates/freeshow-core/tests/context.rs"
+        "crates/freeshow-core/tests/context.rs",
+        "crates/freeshow-core/src/service.rs"
       ],
       "remaining": [
         "external edits during saves and multiple-instance locking",
@@ -29,13 +30,15 @@
         "unavailable selected volumes and recovery UI",
         "edits made while a save or library change is in flight",
         "recovery UI and explicit reapplication of retained save snapshots"
-      ]
+      ],
+      "scope": "Compatible store/save operations, library provenance and ordered persistence on a bounded IO worker; remaining cases below are uncertified"
     },
     {
       "id": "ipc",
       "status": "partial",
       "tests": [
-        "tests/parity/bridge.test.mjs"
+        "tests/parity/bridge.test.mjs",
+        "crates/freeshow-core/src/service.rs"
       ],
       "remaining": [
         "binary ArrayBuffer transport",
@@ -44,9 +47,11 @@
         "all command payload variants",
         "mutable IPC payload snapshot semantics",
         "multi-window context propagation",
-        "cancellation of pending requests after library changes"
+        "cancellation of pending requests after library changes",
+        "IPC payload-byte and waiting-caller limits",
+        "bounded native dialog/read concurrency"
       ],
-      "scope": "tested legacy bridge plus Rust session/library provenance, ordered mutations, and rejection of obsolete replies"
+      "scope": "tested legacy bridge plus Rust session/library provenance, ordered mutations, and rejection of obsolete replies; bounded library admission, dropped callers, worker shutdown and independent context/status snapshots"
     },
     {
       "id": "desktop",
@@ -176,7 +181,8 @@
       "id": "performance",
       "status": "pending",
       "tests": [
-        "scripts/migration/benchmark.mjs"
+        "scripts/migration/benchmark.mjs",
+        "tests/desktop/smoke.py"
       ],
       "remaining": [
         "comparable Electron baseline",
@@ -184,8 +190,11 @@
         "process-tree memory",
         "large library latency",
         "output p50/p95/p99 frame timing",
-        "sustained playback and streaming"
-      ]
+        "sustained playback and streaming",
+        "output responsiveness under background IO/CPU load",
+        "bounded parallel CPU work and supervised media subprocesses"
+      ],
+      "scope": "Initial helper microbenchmark and debug-build control latency during real ZIP compression; no application-level speedup certified"
     },
     {
       "id": "distribution",

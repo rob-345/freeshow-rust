@@ -5,6 +5,7 @@ pub mod location;
 pub mod protocol;
 pub mod restore;
 pub mod runtime;
+pub mod service;
 pub mod show;
 pub mod storage;
 mod transaction;
@@ -13,6 +14,8 @@ use serde::Serialize;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("library worker unavailable: {0}")]
+    WorkerUnavailable(String),
     #[error("request belongs to a previous library or runtime session")]
     StaleLibrary {
         recovery_path: Option<std::path::PathBuf>,
@@ -56,6 +59,7 @@ impl From<Error> for WireError {
     fn from(error: Error) -> Self {
         let mut wire = Self::new(
             match &error {
+                Error::WorkerUnavailable(_) => "library_worker_unavailable",
                 Error::StaleLibrary { .. } => "stale_library",
                 Error::Unsupported(_) => "unsupported_command",
                 Error::Invalid(_) => "invalid_request",

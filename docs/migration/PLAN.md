@@ -17,6 +17,23 @@ Keep the upstream Electron implementation runnable as an oracle until parity is 
 
 The Rust fork uses the separate application identifier `app.freeshow.rust`; its data defaults to an isolated `Data` directory inside its own application profile. A selected data library is persisted across restart. `FREESHOW_RUST_APP_DATA` and `FREESHOW_RUST_DATA_DIR` override those locations for tests. Existing Electron user data is not imported or modified implicitly. Library selection preserves shows/media in their existing folders and copies missing portable stores. Bulk relocation, legacy profile import, concurrent-save isolation and crash recovery need further verification and implementation.
 
+### Concurrency
+
+Use Rust's ownership and concurrency facilities to keep presentation control responsive during background work. The following boundaries guide the port:
+
+| Work | Ownership and execution | Verification |
+| --- | --- | --- |
+| Library persistence, selection and restore | One owner on a dedicated IO thread, with a bounded async request queue. Dependent writes remain ordered. | Queue backpressure, write order, failure propagation, stale-context rejection and dropped callers. |
+| Library context and job status | Small immutable snapshots behind a short lock, never held during filesystem IO or compression. | Queries complete while the IO worker is blocked and while a real ZIP backup runs. |
+| Output windows and cue routing | Independent output state and queues; slide changes must not join the library queue. | Cue latency, event ordering and frame timing during saves, backups and imports. Pending implementation. |
+| Remote/control and provider connections | Async sockets and cancellable per-connection tasks, with explicit bounded queues. | Protocol replay, reconnection, slow clients, cancellation and backpressure. Pending implementation. |
+| CPU work such as indexing and media analysis | Bounded worker pools. Snapshot input before offloading; validate its library generation before applying results. | Saturation tests, control latency, stale-result rejection and resource limits. Pending implementation. |
+| Media tools, capture and native SDKs that can crash | Supervised subprocesses where isolation is useful, with bounded transport and explicit restart/cleanup. | Worker crashes, hangs, cancellation, process-tree memory and hardware loopback. Pending implementation. |
+
+The first library worker admits up to eight waiting jobs and one active job. Awaiting admission does not occupy an async executor's blocking thread. This bounds admitted job count, not IPC payload bytes or the number of callers waiting outside the queue. Native dialogs/read callbacks still use the desktop blocking pool. Per-request size limits, output workers, parallel library reads, CPU pools and subprocess supervision need separate implementation and measurement. Closing the application must explicitly await accepted writes; detached worker shutdown alone is not a process-exit guarantee.
+
+Add responsiveness and concurrency tests alongside functionality tests. Measure latency under sustained load before increasing parallelism: dependency ordering, disk contention and output timing matter more than the number of workers.
+
 ## Development
 
 Install Node >=22.12, the pinned Rust toolchain, and [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). On Ubuntu, the core desktop packages are `libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `librsvg2-dev`, build tools, and OpenSSL development headers. Optional hardware features will require additional libraries.

@@ -3,30 +3,35 @@
 use freeshow_core::{
     protocol::{Event, Request, RuntimeContext},
     runtime::Runtime,
+    service::{LibraryService, LibraryStatus},
     WireError,
 };
 use serde_json::json;
-use std::{path::PathBuf, sync::Mutex};
+use std::path::PathBuf;
 use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
 struct AppState {
-    runtime: Mutex<Runtime>,
+    library: LibraryService,
+    app_data: PathBuf,
+    error_log: PathBuf,
 }
 
 #[tauri::command]
-async fn runtime_context(app: tauri::AppHandle) -> Result<RuntimeContext, WireError> {
-    tauri::async_runtime::spawn_blocking(move || {
-        let state = app.state::<AppState>();
-        let runtime = state
-            .runtime
-            .lock()
-            .map_err(|_| WireError::new("runtime_error", "Runtime lock poisoned"))?;
-        Ok(runtime.context())
-    })
-    .await
-    .map_err(|error| WireError::new("runtime_error", error.to_string()))?
+fn runtime_context(app: tauri::AppHandle) -> Result<RuntimeContext, WireError> {
+    app.state::<AppState>()
+        .library
+        .context()
+        .map_err(WireError::from)
+}
+
+#[tauri::command]
+fn library_status(app: tauri::AppHandle) -> Result<LibraryStatus, WireError> {
+    app.state::<AppState>()
+        .library
+        .status()
+        .map_err(WireError::from)
 }
 
 fn contextual_events(
@@ -34,15 +39,10 @@ fn contextual_events(
     request: &Request,
     mut events: Vec<Event>,
 ) -> Result<Vec<Event>, WireError> {
-    let state = app.state::<AppState>();
-    let runtime = state
-        .runtime
-        .lock()
-        .map_err(|_| WireError::new("runtime_error", "Runtime lock poisoned"))?;
-    runtime.validate_context(request).map_err(WireError::from)?;
-    for event in &mut events {
-        event.context = Some(runtime.context());
-    }
+    app.state::<AppState>()
+        .library
+        .contextualize(request, &mut events)
+        .map_err(WireError::from)?;
     Ok(events)
 }
 
@@ -103,210 +103,251 @@ async fn ipc_dispatch(
         }
     }
     let label = window.label().to_string();
-    let state = window.app_handle().clone();
-    // Filesystem and JSON work run off the GUI event loop. The mutex runs writes
-    // one at a time; context checks reject requests for an obsolete library.
-    tauri::async_runtime::spawn_blocking(move || {
-        let app = state;
-        let native_error = |error: String| WireError::new("native_error", error);
-        let to_path = |file: tauri_plugin_dialog::FilePath| {
-            file.into_path()
-                .map_err(|error| native_error(error.to_string()))
-        };
-        let command = request.data["channel"].as_str().unwrap_or("").to_string();
-        let data = request.data["data"].clone();
-        let mut request = request;
-        if request.channel == "MAIN" {
-            match command.as_str() {
-                "URL" => {
-                    let url = data
-                        .as_str()
-                        .ok_or_else(|| native_error("URL must be a string".into()))?;
-                    app.opener()
-                        .open_url(url, None::<&str>)
-                        .map_err(|error| native_error(error.to_string()))?;
-                    return Ok(vec![]);
-                }
-                "SYSTEM_OPEN" | "OPEN_FOLDER_PATH" | "OPEN_APPDATA" | "OPEN_CACHE" | "OPEN_LOG" => {
-                    let selected = if matches!(command.as_str(), "SYSTEM_OPEN" | "OPEN_FOLDER_PATH")
-                    {
-                        PathBuf::from(
-                            data.as_str()
-                                .ok_or_else(|| native_error("path must be a string".into()))?,
-                        )
-                    } else {
-                        let state = app.state::<AppState>();
-                        let runtime = state
-                            .runtime
-                            .lock()
-                            .map_err(|_| native_error("Runtime lock poisoned".into()))?;
-                        match command.as_str() {
-                            "OPEN_CACHE" => runtime.stores.app_data.join("Thumbnails"),
-                            "OPEN_LOG" => {
-                                runtime.stores.path("ERROR_LOG").map_err(WireError::from)?
-                            }
-                            _ => runtime.stores.app_data.clone(),
-                        }
-                    };
-                    if !selected.exists() {
-                        return Ok(vec![Event::reply(
-                            "MAIN",
-                            "ALERT",
-                            json!("This does not exist!"),
-                            None,
-                        )]);
-                    }
-                    if command == "SYSTEM_OPEN" {
-                        app.opener()
-                            .reveal_item_in_dir(&selected)
-                            .map_err(|error| native_error(error.to_string()))?;
-                    } else if app
-                        .opener()
-                        .open_path(selected.to_string_lossy(), None::<&str>)
-                        .is_err()
-                    {
-                        app.opener()
-                            .reveal_item_in_dir(&selected)
-                            .map_err(|error| native_error(error.to_string()))?;
-                    }
-                    return Ok(vec![]);
-                }
-                "OPEN_FOLDER" => {
-                    let mut picker = app.dialog().file();
-                    if let Some(parent) = app.get_webview_window("main") {
-                        picker = picker.set_parent(&parent);
-                    }
-                    if let Some(title) = data["title"].as_str() {
-                        picker = picker.set_title(title);
-                    }
-                    if let Some(path) = data["path"].as_str().filter(|path| !path.is_empty()) {
-                        picker = picker.set_directory(path);
-                    }
-                    let selected = picker.blocking_pick_folder().map(to_path).transpose()?;
-                    let mut events = Vec::new();
-                    if selected.is_some() && data["channel"] == "SHOWS" {
-                        let state = app.state::<AppState>();
-                        let mut runtime = state
-                            .runtime
-                            .lock()
-                            .map_err(|_| native_error("Runtime lock poisoned".into()))?;
-                        for command in ["FULL_SHOWS_LIST", "SHOWS"] {
-                            events.extend(
-                                runtime
-                                    .dispatch(
-                                        Request {
-                                            channel: "MAIN".into(),
-                                            data: json!({"channel":command}),
-                                            listener_id: None,
-                                            context: request.context.clone(),
-                                        },
-                                        &label,
-                                    )
-                                    .map_err(WireError::from)?,
-                            );
-                        }
-                    }
-                    events.extend(
-                        freeshow_core::dialog::folder_selected(&data, selected.as_deref())
+    let app = window.app_handle().clone();
+    let command = request.data["channel"].as_str().unwrap_or("").to_string();
+    let data = &request.data["data"];
+    let automatic_backup = data["customTriggers"]["isAutoBackup"]
+        .as_bool()
+        .unwrap_or(false);
+    // Only native pickers/openers use the blocking pool. Ordinary library work
+    // awaits bounded admission without occupying a pool thread while queued.
+    let needs_native = request.channel == "MAIN"
+        && (matches!(
+            command.as_str(),
+            "URL"
+                | "SYSTEM_OPEN"
+                | "OPEN_FOLDER_PATH"
+                | "OPEN_APPDATA"
+                | "OPEN_CACHE"
+                | "OPEN_LOG"
+                | "OPEN_FOLDER"
+                | "OPEN_FILE"
+        ) || (command == "RESTORE"
+            && data["path"].as_str().is_none_or(|path| path.is_empty())
+            && data.get("paths").is_none()));
+    let prepared = if needs_native {
+        let app = app.clone();
+        tauri::async_runtime::spawn_blocking(move || prepare_native(app, request))
+            .await
+            .map_err(|error| WireError::new("native_error", error.to_string()))??
+    } else {
+        Prepared::Forward(request)
+    };
+    let library = app.state::<AppState>().library.clone();
+    let events = match prepared {
+        Prepared::Forward(request) => library
+            .dispatch(request, &label)
+            .await
+            .map_err(WireError::from)?,
+        Prepared::Reply(events) => events,
+        Prepared::Contextual {
+            request,
+            events,
+            refresh_shows,
+        } => {
+            let mut events = contextual_events(&app, &request, events)?;
+            if refresh_shows {
+                let mut refreshed = Vec::new();
+                for command in ["FULL_SHOWS_LIST", "SHOWS"] {
+                    refreshed.extend(
+                        library
+                            .dispatch(
+                                Request {
+                                    channel: "MAIN".into(),
+                                    data: json!({"channel":command}),
+                                    listener_id: None,
+                                    context: request.context.clone(),
+                                },
+                                &label,
+                            )
+                            .await
                             .map_err(WireError::from)?,
                     );
-                    return contextual_events(&app, &request, events);
                 }
-                "OPEN_FILE" | "RESTORE"
-                    if command == "OPEN_FILE"
-                        || (data["path"].as_str().is_none_or(|path| path.is_empty())
-                            && data.get("paths").is_none()) =>
+                refreshed.append(&mut events);
+                contextual_events(&app, &request, refreshed)?
+            } else {
+                events
+            }
+        }
+    };
+    if command == "SAVE" && !automatic_backup {
+        let paths = events
+            .iter()
+            .filter(|event| event.message.channel == "BACKUP")
+            .filter_map(|event| {
+                event
+                    .message
+                    .data
+                    .as_ref()?
+                    .get("path")?
+                    .as_str()
+                    .map(String::from)
+            })
+            .collect::<Vec<_>>();
+        if !paths.is_empty() {
+            tauri::async_runtime::spawn_blocking(move || {
+                for path in paths {
+                    if app.opener().open_path(&path, None::<&str>).is_err() {
+                        let _ = app.opener().reveal_item_in_dir(&path);
+                    }
+                }
+            })
+            .await
+            .map_err(|error| WireError::new("native_error", error.to_string()))?;
+        }
+    }
+    Ok(events)
+}
+
+enum Prepared {
+    Forward(Request),
+    Reply(Vec<Event>),
+    Contextual {
+        request: Request,
+        events: Vec<Event>,
+        refresh_shows: bool,
+    },
+}
+
+fn prepare_native(app: tauri::AppHandle, mut request: Request) -> Result<Prepared, WireError> {
+    let native_error = |error: String| WireError::new("native_error", error);
+    let to_path = |file: tauri_plugin_dialog::FilePath| {
+        file.into_path()
+            .map_err(|error| native_error(error.to_string()))
+    };
+    let command = request.data["channel"].as_str().unwrap_or("").to_string();
+    let data = request.data["data"].clone();
+    if request.channel == "MAIN" {
+        match command.as_str() {
+            "URL" => {
+                let url = data
+                    .as_str()
+                    .ok_or_else(|| native_error("URL must be a string".into()))?;
+                app.opener()
+                    .open_url(url, None::<&str>)
+                    .map_err(|error| native_error(error.to_string()))?;
+                return Ok(Prepared::Reply(vec![]));
+            }
+            "SYSTEM_OPEN" | "OPEN_FOLDER_PATH" | "OPEN_APPDATA" | "OPEN_CACHE" | "OPEN_LOG" => {
+                let selected = if matches!(command.as_str(), "SYSTEM_OPEN" | "OPEN_FOLDER_PATH") {
+                    PathBuf::from(
+                        data.as_str()
+                            .ok_or_else(|| native_error("path must be a string".into()))?,
+                    )
+                } else {
+                    let state = app.state::<AppState>();
+                    match command.as_str() {
+                        "OPEN_CACHE" => state.app_data.join("Thumbnails"),
+                        "OPEN_LOG" => state.error_log.clone(),
+                        _ => state.app_data.clone(),
+                    }
+                };
+                if !selected.exists() {
+                    return Ok(Prepared::Reply(vec![Event::reply(
+                        "MAIN",
+                        "ALERT",
+                        json!("This does not exist!"),
+                        None,
+                    )]));
+                }
+                if command == "SYSTEM_OPEN" {
+                    app.opener()
+                        .reveal_item_in_dir(&selected)
+                        .map_err(|error| native_error(error.to_string()))?;
+                } else if app
+                    .opener()
+                    .open_path(selected.to_string_lossy(), None::<&str>)
+                    .is_err()
                 {
-                    let mut picker = app.dialog().file();
-                    if let Some(parent) = app.get_webview_window("main") {
-                        picker = picker.set_parent(&parent);
-                    }
-                    if let Some(title) = data["title"].as_str() {
-                        picker = picker.set_title(title);
-                    }
-                    if command == "RESTORE" {
-                        let state = app.state::<AppState>();
-                        let runtime = state
-                            .runtime
-                            .lock()
-                            .map_err(|_| native_error("Runtime lock poisoned".into()))?;
-                        picker = picker
-                            .set_title("Restore FreeShow Backup")
-                            .set_directory(runtime.stores.data.join("Backups"))
-                            .add_filter("FreeShow Backup Files", &["json", "zip"]);
-                    } else {
-                        let extensions = data["filter"]["extensions"]
-                            .as_array()
-                            .map(|extensions| {
-                                extensions
-                                    .iter()
-                                    .filter_map(|value| value.as_str())
-                                    .collect::<Vec<_>>()
-                            })
-                            .unwrap_or_default();
-                        if !extensions.is_empty() && !extensions.contains(&"*") {
-                            picker = picker.add_filter(
-                                data["filter"]["name"].as_str().unwrap_or("Files"),
-                                &extensions,
-                            );
-                        }
-                    }
-                    let multiple =
-                        command == "RESTORE" || data["multiple"].as_bool().unwrap_or(true);
-                    let selected = if multiple {
-                        picker.blocking_pick_files().unwrap_or_default()
-                    } else {
-                        picker.blocking_pick_file().into_iter().collect()
-                    };
-                    let paths = selected
-                        .into_iter()
-                        .map(to_path)
-                        .collect::<Result<Vec<_>, WireError>>()?;
-                    if command == "OPEN_FILE" {
-                        let events = freeshow_core::dialog::files_selected(&data, &paths)
-                            .map_err(WireError::from)?;
-                        return contextual_events(&app, &request, events);
-                    }
-                    request.data["data"] = json!({"paths":paths});
+                    app.opener()
+                        .reveal_item_in_dir(&selected)
+                        .map_err(|error| native_error(error.to_string()))?;
                 }
-                _ => {}
+                return Ok(Prepared::Reply(vec![]));
             }
-        }
-        let state = app.state::<AppState>();
-        let mut runtime = state
-            .runtime
-            .lock()
-            .map_err(|_| WireError::new("runtime_error", "Runtime lock poisoned"))?;
-        let mut events = runtime.dispatch(request, &label).map_err(WireError::from)?;
-        let context = runtime.context();
-        for event in &mut events {
-            event.context = Some(context.clone());
-        }
-        drop(runtime);
-        if command == "SAVE"
-            && !data["customTriggers"]["isAutoBackup"]
-                .as_bool()
-                .unwrap_or(false)
-        {
-            for event in &events {
-                if event.message.channel == "BACKUP" {
-                    if let Some(path) = event
-                        .message
-                        .data
-                        .as_ref()
-                        .and_then(|data| data["path"].as_str())
-                    {
-                        if app.opener().open_path(path, None::<&str>).is_err() {
-                            let _ = app.opener().reveal_item_in_dir(path);
-                        }
+            "OPEN_FOLDER" => {
+                let mut picker = app.dialog().file();
+                if let Some(parent) = app.get_webview_window("main") {
+                    picker = picker.set_parent(&parent);
+                }
+                if let Some(title) = data["title"].as_str() {
+                    picker = picker.set_title(title);
+                }
+                if let Some(path) = data["path"].as_str().filter(|path| !path.is_empty()) {
+                    picker = picker.set_directory(path);
+                }
+                let selected = picker.blocking_pick_folder().map(to_path).transpose()?;
+                let refresh_shows = selected.is_some() && data["channel"] == "SHOWS";
+                let events = freeshow_core::dialog::folder_selected(&data, selected.as_deref())
+                    .map_err(WireError::from)?;
+                return Ok(Prepared::Contextual {
+                    request,
+                    events,
+                    refresh_shows,
+                });
+            }
+            "OPEN_FILE" | "RESTORE"
+                if command == "OPEN_FILE"
+                    || (data["path"].as_str().is_none_or(|path| path.is_empty())
+                        && data.get("paths").is_none()) =>
+            {
+                let mut picker = app.dialog().file();
+                if let Some(parent) = app.get_webview_window("main") {
+                    picker = picker.set_parent(&parent);
+                }
+                if let Some(title) = data["title"].as_str() {
+                    picker = picker.set_title(title);
+                }
+                if command == "RESTORE" {
+                    let state = app.state::<AppState>();
+                    let context = state.library.context().map_err(WireError::from)?;
+                    picker = picker
+                        .set_title("Restore FreeShow Backup")
+                        .set_directory(context.data_path.join("Backups"))
+                        .add_filter("FreeShow Backup Files", &["json", "zip"]);
+                } else {
+                    let extensions = data["filter"]["extensions"]
+                        .as_array()
+                        .map(|extensions| {
+                            extensions
+                                .iter()
+                                .filter_map(|value| value.as_str())
+                                .collect::<Vec<_>>()
+                        })
+                        .unwrap_or_default();
+                    if !extensions.is_empty() && !extensions.contains(&"*") {
+                        picker = picker.add_filter(
+                            data["filter"]["name"].as_str().unwrap_or("Files"),
+                            &extensions,
+                        );
                     }
                 }
+                let multiple = command == "RESTORE" || data["multiple"].as_bool().unwrap_or(true);
+                let selected = if multiple {
+                    picker.blocking_pick_files().unwrap_or_default()
+                } else {
+                    picker.blocking_pick_file().into_iter().collect()
+                };
+                let paths = selected
+                    .into_iter()
+                    .map(to_path)
+                    .collect::<Result<Vec<_>, WireError>>()?;
+                if command == "OPEN_FILE" {
+                    let events = freeshow_core::dialog::files_selected(&data, &paths)
+                        .map_err(WireError::from)?;
+                    return Ok(Prepared::Contextual {
+                        request,
+                        events,
+                        refresh_shows: false,
+                    });
+                }
+                request.data["data"] = json!({"paths":paths});
             }
+            _ => {}
         }
-        Ok(events)
-    })
-    .await
-    .map_err(|error| WireError::new("runtime_error", error.to_string()))?
+    }
+    Ok(Prepared::Forward(request))
 }
 
 fn main() {
@@ -318,8 +359,12 @@ fn main() {
                 .map(PathBuf::from)
                 .unwrap_or(app.path().app_data_dir()?);
             let data = std::env::var_os("FREESHOW_RUST_DATA_DIR").map(PathBuf::from);
+            let runtime = Runtime::open(app_data.clone(), data)?;
+            let error_log = runtime.stores.path("ERROR_LOG")?;
             app.manage(AppState {
-                runtime: Mutex::new(Runtime::open(app_data, data)?),
+                library: LibraryService::start(runtime)?,
+                app_data,
+                error_log,
             });
             Ok(())
         })
@@ -334,7 +379,11 @@ fn main() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![ipc_dispatch, runtime_context])
+        .invoke_handler(tauri::generate_handler![
+            ipc_dispatch,
+            runtime_context,
+            library_status
+        ])
         .run(tauri::generate_context!())
         .expect("FreeShow Rust could not start");
 }

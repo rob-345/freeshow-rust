@@ -10,6 +10,7 @@ from http.client import RemoteDisconnected
 import json
 import os
 from pathlib import Path
+import random
 import shutil
 import signal
 import socket
@@ -19,6 +20,7 @@ import time
 import urllib.error
 import urllib.request
 import zipfile
+import zlib
 import gi
 
 gi.require_version("Atspi", "2.0")
@@ -37,7 +39,7 @@ def free_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "library-switch.png", "stale-save-recovery.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -354,6 +356,73 @@ def run():
             assert not (other / "Shows" / "Rejected old-library song.show").exists()
             wait(lambda: script("return document.body.innerText.includes('previous library or session') && document.body.innerText.includes('Recovery file:')"), "Old save retained with visible recovery location")
             (ARTIFACTS / "stale-save-recovery.json").write_text(json.dumps(recovery, indent=2))
+
+            # Real compression, not a test-only sleep: four 16 MiB JSON files
+            # make a reproducible workload without sending large data over IPC.
+            # They are backup fixtures, not a large-library performance claim.
+            workload = {}
+            chunk = random.Random(20261018).randbytes(256 * 1024).hex().encode()
+            try:
+                for index in range(4):
+                    path = other / "Shows" / f"__backup_workload_{index}.show"
+                    crc = 0
+                    with path.open("wb") as output:
+                        for piece in [b'{"benchmarkPadding":"', *([chunk] * 32), b'"}']:
+                            output.write(piece)
+                            crc = zlib.crc32(piece, crc)
+                    workload[path] = {"size": path.stat().st_size, "crc": crc}
+                script("""
+                    const invoke=window.__TAURI__.core.invoke;
+                    const context=window.api.getRuntimeContext();
+                    const observed=window.__responsiveness={samples:[],done:false,probesComplete:false,context};
+                    const started=performance.now();
+                    invoke('ipc_dispatch',{request:{channel:'MAIN',listenerId:'backup-responsiveness',context,data:{channel:'SAVE',data:{customTriggers:{backup:true,isAutoBackup:true},closeWhenFinished:false}}}})
+                        .then(events=>{observed.backup=events.find(e=>e.message.channel==='BACKUP' && e.message.data.finished)?.message.data;observed.backupMs=performance.now()-started;observed.done=true})
+                        .catch(error=>{observed.error=error;observed.done=true});
+                    (async()=>{
+                        try {
+                            while(!observed.done && performance.now()-started<90000 && observed.samples.length<1024) {
+                                const before=await invoke('library_status');
+                                if(before.activeJob?.listenerId==='backup-responsiveness') {
+                                    const probeStart=performance.now();
+                                    const [current,maximized,os]=await Promise.all([
+                                        invoke('runtime_context'),
+                                        invoke('ipc_dispatch',{request:{channel:'MAIN',data:{channel:'MAXIMIZED'}}}),
+                                        invoke('ipc_dispatch',{request:{channel:'MAIN',data:{channel:'GET_OS'}}})
+                                    ]);
+                                    const elapsedMs=performance.now()-probeStart;
+                                    const after=await invoke('library_status');
+                                    if(after.activeJob?.listenerId==='backup-responsiveness' && !observed.done) {
+                                        observed.samples.push({elapsedMs,sinceBackupStartMs:performance.now()-started,current,maximized,os,queueCapacity:after.queueCapacity});
+                                    }
+                                }
+                                await new Promise(resolve=>setTimeout(resolve,100));
+                            }
+                        } catch(error) { observed.probeError=String(error) }
+                        observed.probesComplete=true;
+                    })();
+                """)
+                observed = wait(lambda: script("return window.__responsiveness.done && window.__responsiveness.probesComplete ? window.__responsiveness : null"), "Backup and independent control probes completed", seconds=90)
+                (ARTIFACTS / "responsiveness.json").write_text(json.dumps(observed, indent=2))
+                assert "error" not in observed and "probeError" not in observed, observed
+                assert len(observed["samples"]) >= 8, observed
+                for sample in observed["samples"]:
+                    assert sample["elapsedMs"] < 1500, sample
+                    assert sample["current"] == observed["context"]
+                    assert sample["maximized"][0]["message"]["channel"] == "MAXIMIZED"
+                    assert isinstance(sample["maximized"][0]["message"]["data"], bool)
+                    assert sample["os"][0]["message"]["data"]["platform"] == "linux"
+                    assert sample["queueCapacity"] == 8
+                with zipfile.ZipFile(observed["backup"]["path"]) as archive:
+                    for path, expected in workload.items():
+                        info = archive.getinfo("SHOWS/" + path.name)
+                        assert info.file_size == expected["size"]
+                        assert info.CRC == expected["crc"]
+                    assert archive.testzip() is None
+                steps.append("Context and window controls respond during real 64 MiB backup; ZIP verified")
+            finally:
+                for path in workload:
+                    path.unlink(missing_ok=True)
             assert script("return window.__testErrors") == []
             errors = script("return window.__testRuntimeErrors")
             # Unsupported features remain visible in the receipt; they are never
