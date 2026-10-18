@@ -130,7 +130,8 @@ async function consumeClosed(socket) {
     socket.on("data", (chunk) => {
         bytes += chunk.length
     })
-    const closed = once(socket, "close").catch(() => {})
+    // Revocation can close the paused socket before this observer is installed.
+    const closed = socket.closed ? Promise.resolve() : once(socket, "close").catch(() => {})
     socket.resume()
     let timer
     try {
