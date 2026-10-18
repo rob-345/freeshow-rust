@@ -202,6 +202,14 @@ Combined local checks passed **80 Rust, 89 Node and 20 frontend tests** (189), p
 
 Independent workers continue bounded media-path lookup, native FreeShow/text import staging and inbound REST/Socket.IO/OSC services. Those slices are not yet part of this verified audio integration.
 
+## Prepared native effects and media settings snapshots (2026-10-18)
+
+The coordinator added a trusted internal `LibraryService::commit` boundary for the pending lookup/import integrations. Prepared effects use the existing bounded FIFO owner and filesystem barrier; their original context is checked before the closure can run. They establish the same dependency fence as other mutations, receive tagged events after publication and join terminal shutdown draining. Dropping an admitted caller does not discard its effects. This API is not a new renderer command or an implementation claim for pending imports/lookup.
+
+Media settings snapshots atomically pair the current context with committed `config.mediaFolderPath`. Only the IO owner reads that config; the short snapshot lock never covers filesystem work. Configuration-changing dispatches and native commits refresh it before backup compression. A refresh failure makes subsequent media settings queries fail explicitly until a valid refresh, while unrelated library work remains available. Queries do not create the fallback Media directory and reject stale contexts or closing admission. External edits outside the owner are not watched by this cache.
+
+All **45 core Rust tests** pass locally, including **16 service tests** covering blocked IO, backup compression, queued versus committed settings, invalid-config recovery, library switches, accepted native effects after caller cancellation, read fences and closed/stale rejection. Core Clippy with warnings denied, Windows GNU target Clippy and formatting passed. Native host integration and its full milestone CI remain pending.
+
 The untouched upstream unit baseline was run before changes: **179 passed, 2 failed** across 12 files. Both failures were in `src/electron/cloud/syncManager.test.ts`:
 
 1. `multiple machines sync scenarios > Scenario 1: if not found locally, and marked as 'deleted' in cloud: skip` (line 845).

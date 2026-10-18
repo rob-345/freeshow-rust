@@ -9,6 +9,7 @@ use crate::{
     Error, Result,
 };
 use serde::Serialize;
+use serde_json::Value;
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
     Arc, Mutex, RwLock,
@@ -44,15 +45,26 @@ pub struct LibraryStatus {
     pub accepting_requests: bool,
 }
 
+/// Committed media configuration and its library provenance, captured together.
+/// Reading this descriptor performs no filesystem work and never joins the IO
+/// queue. Consumers must validate provenance again before publishing effects.
+#[derive(Debug, Clone)]
+pub struct MediaSettingsSnapshot {
+    pub context: RuntimeContext,
+    pub configured_media_folder: Value,
+}
+
 struct Snapshot {
     context: RuntimeContext,
     active_job: Option<ActiveJob>,
     worker_running: bool,
     reader: ShowReader,
     active_reads: usize,
+    media_settings: std::result::Result<Value, String>,
 }
 
 type Reply = oneshot::Receiver<Result<Vec<Event>>>;
+type LibraryCommit = Box<dyn FnOnce(&mut Runtime) -> Result<Vec<Event>> + Send>;
 
 enum Job {
     Drain {
@@ -61,6 +73,7 @@ enum Job {
     Dispatch {
         sequence: Option<u64>,
         request: Box<Request>,
+        commit: Option<LibraryCommit>,
         window: String,
         reply: oneshot::Sender<Result<Vec<Event>>>,
     },
@@ -107,6 +120,7 @@ impl LibraryService {
     }
 
     fn with_capacity(mut runtime: Runtime, capacity: usize) -> Result<Self> {
+        let media_settings = runtime.stores.get_key("config", "mediaFolderPath")?;
         let (jobs, mut receiver) = mpsc::channel(capacity);
         let (completed, progress) = watch::channel(0);
         let (reads, reader_queue) = mpsc::channel(capacity);
@@ -121,6 +135,7 @@ impl LibraryService {
             worker_running: true,
             reader: runtime.show_reader(),
             active_reads: 0,
+            media_settings: Ok(media_settings),
         }));
         for index in 0..READ_WORKERS {
             let queue = reader_queue.clone();
@@ -151,9 +166,17 @@ impl LibraryService {
                         Job::Dispatch {
                             sequence,
                             request,
+                            commit,
                             window,
                             reply,
                         } => {
+                            let refresh_media_settings = commit.is_some()
+                                || (request.channel == "MAIN"
+                                    && (matches!(
+                                        request.data["channel"].as_str(),
+                                        Some("SAVE" | "UPDATE_DATA_PATH" | "RESTORE")
+                                    ) || (request.data["channel"] == "SET_STORE_VALUE"
+                                        && request.data["data"]["file"] == "config")));
                             if let Ok(mut state) = shared.write() {
                                 state.active_job = Some(ActiveJob {
                                     channel: request.channel.clone(),
@@ -165,11 +188,30 @@ impl LibraryService {
                                 break;
                             }
                             let Ok(exclusive) = files.write() else { break };
-                            let prepared = runtime.prepare_dispatch(*request, &window);
+                            let prepared = if let Some(commit) = commit {
+                                runtime
+                                    .validate_context(&request)
+                                    .and_then(|()| commit(&mut runtime))
+                                    .map(Into::into)
+                            } else {
+                                runtime.prepare_dispatch(*request, &window)
+                            };
                             let context = runtime.context();
+                            // Do this on the owner, outside the short snapshot
+                            // lock, even after an error: a multi-file operation
+                            // may have applied an earlier part before failing.
+                            let media_settings = refresh_media_settings.then(|| {
+                                runtime
+                                    .stores
+                                    .get_key("config", "mediaFolderPath")
+                                    .map_err(|error| error.to_string())
+                            });
                             if let Ok(mut state) = shared.write() {
                                 state.context = context.clone();
                                 state.reader = runtime.show_reader();
+                                if let Some(settings) = media_settings {
+                                    state.media_settings = settings;
+                                }
                                 if prepared.as_ref().is_ok_and(|job| job.has_backup()) {
                                     state.active_job.as_mut().unwrap().phase = "backupCompression";
                                 }
@@ -264,6 +306,31 @@ impl LibraryService {
         })
     }
 
+    pub fn media_settings(&self, request: &Request) -> Result<MediaSettingsSnapshot> {
+        let state = self
+            .snapshot
+            .read()
+            .map_err(|_| unavailable("snapshot lock poisoned"))?;
+        if !state.worker_running || !self.accepting.load(Ordering::Acquire) {
+            return Err(unavailable("library is stopped or closing"));
+        }
+        if request.context.as_ref() != Some(&state.context) {
+            return Err(Error::StaleLibrary {
+                recovery_path: None,
+                recovery_error: None,
+            });
+        }
+        let configured_media_folder = state
+            .media_settings
+            .as_ref()
+            .map_err(|error| Error::Invalid(format!("media settings unavailable: {error}")))?
+            .clone();
+        Ok(MediaSettingsSnapshot {
+            context: state.context.clone(),
+            configured_media_folder,
+        })
+    }
+
     /// Native picker callbacks also belong to the library where they started.
     /// Capture one snapshot for both validation and event tagging.
     pub fn contextualize(&self, request: &Request, events: &mut [Event]) -> Result<()> {
@@ -281,6 +348,15 @@ impl LibraryService {
     }
 
     async fn enqueue(&self, request: Request, window: &str) -> Result<Reply> {
+        self.enqueue_operation(request, window, None).await
+    }
+
+    async fn enqueue_operation(
+        &self,
+        request: Request,
+        window: &str,
+        commit: Option<LibraryCommit>,
+    ) -> Result<Reply> {
         let (reply, received) = oneshot::channel();
         // FIFO asynchronous admission makes shutdown wait behind callers that
         // already began admission, including those waiting for queue space.
@@ -297,19 +373,20 @@ impl LibraryService {
         // A read-only or unsupported command waiting behind compression must
         // not make later show reads wait for the ZIP. Only file mutations and
         // index scans (which repair IDs/write caches) establish a dependency.
-        let mutation = request.channel == "MAIN"
-            && matches!(
-                request.data["channel"].as_str(),
-                Some(
-                    "SAVE"
-                        | "UPDATE_DATA_PATH"
-                        | "SET_STORE_VALUE"
-                        | "RESTORE"
-                        | "DELETE_BACKUP"
-                        | "SHOWS"
-                        | "REFRESH_SHOWS"
-                )
-            );
+        let mutation = commit.is_some()
+            || (request.channel == "MAIN"
+                && matches!(
+                    request.data["channel"].as_str(),
+                    Some(
+                        "SAVE"
+                            | "UPDATE_DATA_PATH"
+                            | "SET_STORE_VALUE"
+                            | "RESTORE"
+                            | "DELETE_BACKUP"
+                            | "SHOWS"
+                            | "REFRESH_SHOWS"
+                    )
+                ));
         let sequence = if mutation {
             Some(
                 self.admitted_sequence
@@ -328,6 +405,7 @@ impl LibraryService {
         permit.send(Job::Dispatch {
             sequence,
             request: Box::new(request),
+            commit,
             window: window.into(),
             reply,
         });
@@ -377,6 +455,22 @@ impl LibraryService {
             self.enqueue(request, window).await?
         };
         self.receive_reply(received, read).await
+    }
+
+    /// Apply trusted native preparation results on the existing ordered owner.
+    /// The closure runs only after its original request's context is validated
+    /// under the filesystem barrier. This is not a renderer command registry.
+    /// Once admitted, effects finish even if the caller drops its response wait.
+    pub async fn commit(
+        &self,
+        request: Request,
+        window: &str,
+        operation: impl FnOnce(&mut Runtime) -> Result<Vec<Event>> + Send + 'static,
+    ) -> Result<Vec<Event>> {
+        let received = self
+            .enqueue_operation(request, window, Some(Box::new(operation)))
+            .await?;
+        self.receive_reply(received, false).await
     }
 
     async fn receive_reply(&self, received: Reply, read: bool) -> Result<Vec<Event>> {
@@ -504,6 +598,195 @@ mod tests {
             .unwrap();
         timeout(DEADLINE, received).await.unwrap().unwrap();
         release
+    }
+
+    #[tokio::test]
+    async fn media_settings_remain_available_during_io_and_publish_only_committed_changes() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut runtime = Runtime::new(temp.path().join("app"), temp.path().join("A")).unwrap();
+        runtime
+            .stores
+            .set_key("config", "mediaFolderPath", json!("original 敬拜"))
+            .unwrap();
+        let service = LibraryService::with_capacity(runtime, 1).unwrap();
+        let context = service.context().unwrap();
+        let release = pause(&service).await;
+        let changed = service
+            .enqueue(
+                request(
+                    "SET_STORE_VALUE",
+                    json!({"file":"config","key":"mediaFolderPath","value":"new café"}),
+                    &context,
+                ),
+                "main",
+            )
+            .await
+            .unwrap();
+        let probe = service.clone();
+        let current = context.clone();
+        let (sent, received) = oneshot::channel();
+        std::thread::spawn(move || {
+            let _ = sent.send(probe.media_settings(&request(
+                "LOCATE_MEDIA_FILE",
+                Value::Null,
+                &current,
+            )));
+        });
+        let snapshot = timeout(DEADLINE, received).await.unwrap().unwrap().unwrap();
+        assert_eq!(snapshot.context, context);
+        assert_eq!(snapshot.configured_media_folder, "original 敬拜");
+        release.send(()).unwrap();
+        timeout(DEADLINE, changed).await.unwrap().unwrap().unwrap();
+        assert_eq!(
+            service
+                .media_settings(&request("GET_MEDIA_FOLDER_PATH", Value::Null, &context))
+                .unwrap()
+                .configured_media_folder,
+            "new café"
+        );
+        // A snapshot query must not read or create even the fallback directory.
+        assert!(!temp.path().join("A/Media").exists());
+        service.finish_writes().await.unwrap();
+        assert!(matches!(
+            service.media_settings(&request("LOCATE_MEDIA_FILE", Value::Null, &context)),
+            Err(Error::WorkerUnavailable(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn media_settings_fail_closed_after_a_read_error_and_recover_after_valid_config() {
+        let (temp, service) = service();
+        let context = service.context().unwrap();
+        let config = temp.path().join("app/config.json");
+        fs::write(&config, b"invalid JSON").unwrap();
+        assert!(service
+            .dispatch(
+                request(
+                    "SET_STORE_VALUE",
+                    json!({"file":"config","key":"mediaFolderPath","value":"uncommitted"}),
+                    &context,
+                ),
+                "main",
+            )
+            .await
+            .is_err());
+        assert!(matches!(
+            service.media_settings(&request("LOCATE_MEDIA_FILE", Value::Null, &context)),
+            Err(Error::Invalid(_))
+        ));
+        assert_eq!(service.context().unwrap(), context);
+        service
+            .dispatch(request("PROJECTS", Value::Null, &context), "main")
+            .await
+            .unwrap();
+        fs::write(&config, b"{}").unwrap();
+        service
+            .dispatch(
+                request(
+                    "SET_STORE_VALUE",
+                    json!({"file":"config","key":"mediaFolderPath","value":false}),
+                    &context,
+                ),
+                "main",
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            service
+                .media_settings(&request("LOCATE_MEDIA_FILE", Value::Null, &context))
+                .unwrap()
+                .configured_media_folder,
+            false
+        );
+    }
+
+    #[tokio::test]
+    async fn native_commits_fence_reads_survive_dropped_callers_and_join_terminal_drain() {
+        let (temp, service) = service();
+        let context = service.context().unwrap();
+        let release = pause(&service).await;
+        let called = Arc::new(AtomicBool::new(false));
+        let applied = called.clone();
+        let mut commit = Box::pin(service.commit(
+            request("LOCATE_MEDIA_FILE", Value::Null, &context),
+            "main",
+            move |runtime| {
+                applied.store(true, Ordering::Release);
+                runtime
+                    .stores
+                    .set_key("CACHE_SYNC", "sentinel", json!(true))?;
+                runtime
+                    .stores
+                    .set_key("config", "mediaFolderPath", json!("committed"))?;
+                runtime.save(
+                    &json!({"showsCache":{"song":{"name":"Live","text":"after native commit"}}}),
+                )?;
+                Ok(vec![Event::reply(
+                    "MAIN",
+                    "LOCATE_MEDIA_FILE",
+                    Value::Null,
+                    None,
+                )])
+            },
+        ));
+        assert!(timeout(Duration::from_millis(50), &mut commit)
+            .await
+            .is_err());
+        assert_eq!(service.status().unwrap().queued_jobs, 1);
+        let mut read = Box::pin(service.dispatch(
+            request("SHOW", json!({"id":"song","name":"Live"}), &context),
+            "main",
+        ));
+        assert!(timeout(Duration::from_millis(50), &mut read).await.is_err());
+        assert!(!called.load(Ordering::Acquire));
+        drop(commit);
+        release.send(()).unwrap();
+        let events = timeout(DEADLINE, read).await.unwrap().unwrap();
+        assert_eq!(events[0].context.as_ref(), Some(&context));
+        assert_eq!(
+            events[0].message.data.as_ref().unwrap()["content"][1]["text"],
+            "after native commit"
+        );
+        assert!(called.load(Ordering::Acquire));
+        assert_eq!(
+            service
+                .media_settings(&request("LOCATE_MEDIA_FILE", Value::Null, &context))
+                .unwrap()
+                .configured_media_folder,
+            "committed"
+        );
+        let events = service
+            .commit(
+                request("IMPORT_FILES", Value::Null, &context),
+                "main",
+                |_| {
+                    Ok(vec![Event::reply(
+                        "MAIN",
+                        "IMPORT2",
+                        json!([]),
+                        Some("native".into()),
+                    )])
+                },
+            )
+            .await
+            .unwrap();
+        assert_eq!(events[0].context.as_ref(), Some(&context));
+        assert_eq!(events[0].listener_id.as_deref(), Some("native"));
+        service.finish_writes().await.unwrap();
+        let saved: Value =
+            serde_json::from_slice(&fs::read(temp.path().join("app/cache_sync.json")).unwrap())
+                .unwrap();
+        assert_eq!(saved["sentinel"], true);
+        assert!(matches!(
+            service
+                .commit(
+                    request("IMPORT_FILES", Value::Null, &context),
+                    "main",
+                    |_| panic!("closed commit must not run")
+                )
+                .await,
+            Err(Error::WorkerUnavailable(_))
+        ));
     }
 
     #[tokio::test]
@@ -649,6 +932,11 @@ mod tests {
             service.status().unwrap().active_job.unwrap().phase,
             "backupCompression"
         );
+        let media_settings = service
+            .media_settings(&request("LOCATE_MEDIA_FILE", Value::Null, &context))
+            .unwrap();
+        assert_eq!(media_settings.context, context);
+        assert_eq!(media_settings.configured_media_folder, Value::Null);
         let read = timeout(
             DEADLINE,
             service.dispatch(
@@ -994,10 +1282,32 @@ mod tests {
             )
             .await
             .unwrap();
+        let stale_called = Arc::new(AtomicBool::new(false));
+        let attempted = stale_called.clone();
+        let stale_commit = service
+            .enqueue_operation(
+                request("LOCATE_MEDIA_FILE", Value::Null, &context),
+                "main",
+                Some(Box::new(move |_| {
+                    attempted.store(true, Ordering::Release);
+                    panic!("stale native effects must not run");
+                })),
+            )
+            .await
+            .unwrap();
         let events = timeout(DEADLINE, changed).await.unwrap().unwrap().unwrap();
         let new = service.context().unwrap();
         assert_eq!(new.data_path, fs::canonicalize(destination).unwrap());
         assert_eq!(new.library_generation, context.library_generation + 1);
+        let settings = service
+            .media_settings(&request("LOCATE_MEDIA_FILE", Value::Null, &new))
+            .unwrap();
+        assert_eq!(settings.context, new);
+        assert_eq!(settings.configured_media_folder, Value::Null);
+        assert!(matches!(
+            service.media_settings(&request("LOCATE_MEDIA_FILE", Value::Null, &context)),
+            Err(Error::StaleLibrary { .. })
+        ));
         assert!(events
             .iter()
             .all(|event| event.context.as_ref() == Some(&new)));
@@ -1013,6 +1323,11 @@ mod tests {
                 ..
             }
         ));
+        assert!(matches!(
+            timeout(DEADLINE, stale_commit).await.unwrap().unwrap(),
+            Err(Error::StaleLibrary { .. })
+        ));
+        assert!(!stale_called.load(Ordering::Acquire));
         let events = service
             .dispatch(request("PROJECTS", Value::Null, &new), "main")
             .await
@@ -1065,6 +1380,7 @@ mod tests {
         permit.send(Job::Dispatch {
             sequence: None,
             request: Box::new(request("PROJECTS", Value::Null, &context)),
+            commit: None,
             window: "main".into(),
             reply,
         });
