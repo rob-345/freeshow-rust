@@ -92,9 +92,23 @@ Library context and job status are short snapshots, updated outside filesystem w
 
 Five core tests cover blocked IO with independent snapshot access, bounded admission and cancelled waiting writes, accepted writes whose listeners disappear, failure propagation, ordered root changes rejecting old saves, new-context publication, stopped workers and draining on handle drop. The real desktop workflow also compresses four generated 16 MiB JSON fixtures and probes context/window/OS services while that exact backup job is active, checking both before and after each probe. It verifies ZIP entry sizes, CRCs and decompression. The test has a 1,500 ms control-response bound; raw timings go to `test-output-rust/desktop/responsiveness.json` and CI artifacts. This is a debug-build responsiveness regression, not an Electron comparison or a large-library/rendering benchmark. The final local run recorded 193 overlapping probes at 1–13 ms (median 1 ms) during a 19.98 s backup. [Raw measurements and environment](baselines/control-during-backup-linux.json) are committed.
 
-Latest local suite: **28 Rust tests, 37 Node tests and 17 frontend tests passed** (82 total). The expanded native workflow has 41 recorded steps. Local formatting, core/native Clippy and source snapshot checks passed. Remote run `39130589564` passed Linux core checks, then macOS caught a test comparing its `/var` temporary-directory alias with the canonical `/private/var` library path. The test now compares canonical paths, matching the runtime contract and Windows extended paths. The runtime behavior is unchanged; the correction needs a fresh CI run. The full parity gate still rejects the build.
+Latest local suite: **28 Rust tests, 37 Node tests and 17 frontend tests passed** (82 total). The expanded native workflow has 41 recorded steps. Local formatting, core/native Clippy and source snapshot checks passed. Remote run `39130589564` passed Linux core checks, then macOS caught a test comparing its `/var` temporary-directory alias with the canonical `/private/var` library path. The test now compares canonical paths, matching the runtime contract and Windows extended paths. The runtime behavior is unchanged; remote run [39130745011](https://github.com/rob-345/freeshow-rust/actions/runs/39130745011) on `565fb15a` then passed all four jobs. The full parity gate still rejects the build.
 
 The [concurrency plan](PLAN.md#concurrency) now records independent output ownership/queues, async network tasks, bounded CPU workers and supervised media/native subprocesses. Only the library worker and independent native controls/context are implemented here. Library reads still queue behind writes/backups; queue limits count admitted jobs, not payload bytes or callers waiting outside the queue. Output routing, parallel indexing/media work, network cancellation/backpressure, profile locks and supervised processes remain pending.
+
+## Initial output window and routing port (2026-10-18)
+
+The desktop now creates/replaces output WebViews, toggles visibility, applies bounds and basic always-on-top/lock values, focuses windows and removes them. Native window startup handshakes run outside the library queue. Output lifecycle operations have a separate bounded eight-slot IO-free worker. Cue/state forwarding takes a short registry snapshot and emits to selected windows without waiting for lifecycle or library jobs. The frontend keeps cue order separately from lifecycle and persistence queues, and captures output payloads at send time to preserve mutable Svelte snapshots.
+
+The portable router follows the original `OutputHelper`/`OutputSend` classes: MAIN-containing channels return to main; ordinary messages fan out by output ID, skip unavailable/follower windows, preserve unknown message fields, and narrow OUTPUTS maps for each recipient. JavaScript numeric-key ordering is retained. A differential test executes the actual TypeScript classes on 85 JSON message cases. Another executes original display placement across 384 cases including zero/one/two/three displays, negative coordinates, locks, target screens, automatic placement and macOS rules. These prove the recorded routing/placement corpus, not all native display behavior.
+
+Live testing exposed an event-boundary bug that unit routing alone could not catch: Tauri's global Any subscription also observes addressed events, allowing output state to return to main and feed a loop. The bridge now subscribes explicitly to its native WebView window. A two-window transport regression and the real live-cue workflow cover this isolation.
+
+On a committed library change, old output windows close before the new library reply is delivered. Old queued/in-flight output messages are cancelled and cannot update the new windows. The newly selected settings recreate outputs. A close failure reports an alert, and old contexts remain blocked. The native registry has a read-only status command for window identity/diagnostics; it does not expose hidden renderer state.
+
+Latest local validation: **28 Rust tests, 42 Node tests and 17 frontend tests passed** (87 total). The real Linux workflow passed **53 recorded steps**, including settings-driven output recreation after restore, actual verse/chorus clicks, visible text after transitions, Japanese/emoji screenshots, hiding and old-library window cleanup. Screenshots were visually inspected. CI installs the missing emoji font; local extracted fonts are copied only into the test's temporary XDG profile. GUI assertions wait for visible text/opacity rather than accepting a mid-fade DOM match. If the proxy loses a click response, the harness observes the next required state in the same session without repeating the click.
+
+The original whole-application parity gate still fails. Preview capture, native file/media playback, offscreen/DPI behavior, monitor ID migration/hotplug, native move/resize feedback and drag regions, all value/capture variants, multi-output hardware validation, full transition/frame comparisons and Windows/macOS native behavior remain unverified or unported. One live projection is covered; multiple output windows still need native integration checks. Frame/cue latency under background IO/CPU load is not yet measured. This slice needs its own remote CI run.
 
 The untouched upstream unit baseline was run before changes: **179 passed, 2 failed** across 12 files. Both failures were in `src/electron/cloud/syncManager.test.ts`:
 
@@ -113,14 +127,14 @@ The first release-mode lyric-extraction microbenchmark measured a median **95.93
 
 ## Next work
 
-1. Inspect remote CI for the bounded library-worker slice and fix any platform-specific failures.
-2. Port output window lifecycle and MAIN/output state routing, keeping control independent of long filesystem jobs, then add display/transition/preview tests.
+1. Inspect remote CI for the initial native output/routing slice and fix any platform-specific failures.
+2. Extend the output port to multiple live projections, measure actual cue/renderer responsiveness during backups, and finish display/hotplug, transition and preview behavior. Keep output control independent of long filesystem/CPU jobs.
 3. Finish save/edit acknowledgments and concurrency, profile locking, context propagation across windows and pending-request cancellation. Add assisted recovery of retained snapshots. Continue native menus, shortcuts, close/save/capture lifecycle, unavailable-volume recovery and profile import. Bulk moving shows/media is a separate operation from selecting an existing library.
 4. Suppress unchanged disk writes, preserve cloud edit timestamps and finish array-property semantics. Implement transaction-journal recovery after a crash and verify backup metadata/time zones. Automatic-backup saved-state/queue regressions and queued stale-library rejection are now covered; other overlapping operations remain uncertified.
 5. Continue through media/audio/capture, protocols/remote servers, hardware/broadcast, cloud/providers, AI and distribution as described in [PLAN.md](PLAN.md).
 6. Establish comparable release-build Electron startup/memory/rendering baselines and measure the Rust application before setting numerical acceptance thresholds.
 
-The latest smoke receipt observed unported `MAIN.LANGUAGE`, `MAIN.SPOTIFY_GET_STATE`, `MAIN.START`, `OUTPUT`, `REMOTE`, and `STAGE` requests, plus the deliberately induced permission error. The source inventory/status manifest tracks additional unported features; the receipt is not an exhaustive list. `REFRESH_SHOWS` is now implemented. The passing workflow does not certify other features.
+The latest smoke receipt observed unported `MAIN.LANGUAGE`, `MAIN.SPOTIFY_GET_STATE`, `MAIN.CHECK_RAM_USAGE`, `MAIN.START`, `OUTPUT.CAPTURE`, `OUTPUT.SET_VALUE capture`, `REMOTE`, and `STAGE` requests, plus the deliberately induced permission error. The source inventory/status manifest tracks additional unported features; the receipt is not an exhaustive list. `REFRESH_SHOWS` is now implemented. The passing workflow does not certify other features.
 
 ## Local build environment
 
@@ -132,7 +146,9 @@ export PKG_CONFIG_PATH="/home/rob-admin/.local/share/freeshow-native/usr/lib/x86
 export PKG_CONFIG_SYSROOT_DIR="/home/rob-admin/.local/share/freeshow-native"
 export CARGO_TARGET_DIR="/home/rob-admin/GitHub/freeshow-rust/target"
 cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol -j 3
-GI_TYPELIB_PATH=/home/rob-admin/.local/share/freeshow-native/usr/lib/x86_64-linux-gnu/girepository-1.0 WEBKIT_WEBDRIVER=/home/rob-admin/.local/share/freeshow-native/usr/bin/WebKitWebDriver XDOTOOL=/home/rob-admin/.local/share/freeshow-native/usr/bin/xdotool XDOTOOL_LIBRARY_PATH=/home/rob-admin/.local/share/freeshow-xdotool-libs xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py
+FREESHOW_TEST_FONT_DIR=/home/rob-admin/.local/share/freeshow-test-fonts/usr/share/fonts/truetype/noto GI_TYPELIB_PATH=/home/rob-admin/.local/share/freeshow-native/usr/lib/x86_64-linux-gnu/girepository-1.0 WEBKIT_WEBDRIVER=/home/rob-admin/.local/share/freeshow-native/usr/bin/WebKitWebDriver XDOTOOL=/home/rob-admin/.local/share/freeshow-native/usr/bin/xdotool XDOTOOL_LIBRARY_PATH=/home/rob-admin/.local/share/freeshow-xdotool-libs xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py
 ```
+
+The local emoji package was extracted from `fonts-noto-color-emoji_2.047-0ubuntu0.24.04.1_all.deb` under `/home/rob-admin/.local/share/freeshow-test-fonts`, without system installation.
 
 These machine-specific variables are not required on a normal machine with Tauri's system development packages installed.

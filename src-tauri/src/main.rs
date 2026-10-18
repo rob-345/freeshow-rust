@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod output;
+
 use freeshow_core::{
     protocol::{Event, Request, RuntimeContext},
     runtime::Runtime,
@@ -14,6 +16,7 @@ use tauri_plugin_opener::OpenerExt;
 
 struct AppState {
     library: LibraryService,
+    outputs: output::OutputService,
     app_data: PathBuf,
     error_log: PathBuf,
 }
@@ -34,6 +37,11 @@ fn library_status(app: tauri::AppHandle) -> Result<LibraryStatus, WireError> {
         .map_err(WireError::from)
 }
 
+#[tauri::command]
+fn output_status(app: tauri::AppHandle) -> Result<serde_json::Value, WireError> {
+    app.state::<AppState>().outputs.status()
+}
+
 fn contextual_events(
     app: &tauri::AppHandle,
     request: &Request,
@@ -51,6 +59,32 @@ async fn ipc_dispatch(
     window: tauri::WebviewWindow,
     request: Request,
 ) -> Result<Vec<Event>, WireError> {
+    let app = window.app_handle();
+    if request.channel == "STARTUP" && request.data["channel"] == "READY" {
+        let state = app.state::<AppState>();
+        let role = if window.label() == "main" {
+            serde_json::Value::Null
+        } else if state.outputs.is_output(window.label())? {
+            json!("output")
+        } else {
+            return Err(WireError::new("window_error", "Unknown window role"));
+        };
+        let mut event = Event::reply("STARTUP", "TYPE", role, request.listener_id);
+        event.message.auto_profile = Some(String::new());
+        event.context = Some(state.library.context().map_err(WireError::from)?);
+        return Ok(vec![event]);
+    }
+    if request.channel == "LOADED" {
+        return Ok(Vec::new());
+    }
+    if request.channel == "OUTPUT" {
+        return app
+            .state::<AppState>()
+            .outputs
+            .clone()
+            .dispatch(app.clone(), request)
+            .await;
+    }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
         let reply = |data| {
@@ -134,7 +168,7 @@ async fn ipc_dispatch(
         Prepared::Forward(request)
     };
     let library = app.state::<AppState>().library.clone();
-    let events = match prepared {
+    let mut events = match prepared {
         Prepared::Forward(request) => library
             .dispatch(request, &label)
             .await
@@ -171,6 +205,33 @@ async fn ipc_dispatch(
             }
         }
     };
+    if command == "UPDATE_DATA_PATH" {
+        let context = library.context().map_err(WireError::from)?;
+        match app
+            .state::<AppState>()
+            .outputs
+            .clone()
+            .reset(app.clone(), context.clone())
+            .await
+        {
+            Ok(reset) => events.extend(reset),
+            Err(error) => {
+                // The library commit already succeeded. Deliver its new path
+                // even if a failed output worker cannot clean up old windows.
+                let mut alert = Event::reply(
+                    "MAIN",
+                    "ALERT",
+                    json!(format!(
+                        "The library changed, but output cleanup failed: {}",
+                        error.message
+                    )),
+                    None,
+                );
+                alert.context = Some(context);
+                events.push(alert);
+            }
+        }
+    }
     if command == "SAVE" && !automatic_backup {
         let paths = events
             .iter()
@@ -361,8 +422,11 @@ fn main() {
             let data = std::env::var_os("FREESHOW_RUST_DATA_DIR").map(PathBuf::from);
             let runtime = Runtime::open(app_data.clone(), data)?;
             let error_log = runtime.stores.path("ERROR_LOG")?;
+            let outputs = output::OutputService::start(runtime.context())
+                .map_err(|error| std::io::Error::other(error.message))?;
             app.manage(AppState {
                 library: LibraryService::start(runtime)?,
+                outputs,
                 app_data,
                 error_log,
             });
@@ -372,17 +436,24 @@ fn main() {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {
                     api.prevent_close();
-                    let _ = window.emit(
+                    let _ = window.emit_to(
+                        "main",
                         "freeshow://ipc",
                         Event::reply("MAIN", "CLOSE", json!(false), None),
                     );
+                }
+            }
+            if matches!(event, tauri::WindowEvent::Destroyed) {
+                if let Some(state) = window.app_handle().try_state::<AppState>() {
+                    state.outputs.destroyed(window.app_handle(), window.label());
                 }
             }
         })
         .invoke_handler(tauri::generate_handler![
             ipc_dispatch,
             runtime_context,
-            library_status
+            library_status,
+            output_status
         ])
         .run(tauri::generate_context!())
         .expect("FreeShow Rust could not start");

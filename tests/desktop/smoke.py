@@ -39,7 +39,7 @@ def free_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -60,6 +60,10 @@ def run():
                    TAURI_WEBVIEW_AUTOMATION="true", WEBKIT_DISABLE_COMPOSITING_MODE="1",
                    LANG=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"), LC_ALL=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"))
         env.pop("FREESHOW_RUST_DATA_DIR", None)
+        if os.environ.get("FREESHOW_TEST_FONT_DIR"):
+            # Fontconfig includes XDG_DATA_HOME/fonts. Keep locally extracted
+            # test fonts inside this isolated profile, outside the user profile.
+            shutil.copytree(os.environ["FREESHOW_TEST_FONT_DIR"], temp / "xdg-data/fonts", dirs_exist_ok=True)
         log = (ARTIFACTS / "driver.log").open("w")
         process = subprocess.Popen([driver, "--port", str(port), "--native-port", str(native_port), "--native-driver", native],
                                    env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
@@ -94,6 +98,22 @@ def run():
         def script(source, *args):
             return command("POST", "/execute/sync", {"script": source, "args": list(args)})
 
+        def visible_lyric(text):
+            return script("""
+                return [...document.querySelectorAll('.textContainer')].some(node=>{
+                    if(!node.textContent.includes(arguments[0]))return false;
+                    const rect=node.getBoundingClientRect();
+                    if(rect.width<=0 || rect.height<=0)return false;
+                    let opacity=1;
+                    for(let element=node;element;element=element.parentElement){
+                        const style=getComputedStyle(element);
+                        if(style.display==='none' || style.visibility==='hidden')return false;
+                        opacity*=Number(style.opacity);
+                    }
+                    return opacity>=0.98;
+                });
+            """, text)
+
         def wait(predicate, label, seconds=25, record=True):
             deadline = time.monotonic() + seconds
             last_error = None
@@ -119,7 +139,15 @@ def run():
             # Observe the hit target before the one actual WebDriver click. A
             # fading Svelte backdrop can cover a button after its popup unmounts.
             wait(lambda: script("const e=arguments[0],r=e.getBoundingClientRect();return r.width>0 && r.height>0 && e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))", reference), "Clickable " + label, record=False)
-            command("POST", f"/element/{found}/click", {})
+            try:
+                command("POST", f"/element/{found}/click", {})
+            except (RemoteDisconnected, ConnectionResetError):
+                if process.poll() is not None:
+                    raise
+                # A native picker can interrupt the proxy's click response.
+                # Never click twice: the caller must observe the resulting UI
+                # (or fail its next assertion) in this same live session.
+                print("Click response disconnected; observing resulting state:", label, flush=True)
 
         def click(selector):
             click_element(element(selector), selector)
@@ -266,6 +294,9 @@ def run():
 
             # Simulate a changed show on disk, then recover it through the real
             # restore picker. The restored data must match the backup exactly.
+            wait(lambda: len(command("GET", "/window/handles")) >= 2, "Initial native output lifecycle completed")
+            before_restore_main = command("GET", "/window")
+            before_restore_outputs = set(command("GET", "/window/handles")) - {before_restore_main}
             changed = json.loads(json.dumps(saved))
             changed[1]["slides"] = {}
             show_path.write_text(json.dumps(changed))
@@ -273,6 +304,9 @@ def run():
             choose_native_file("Restore FreeShow Backup", backup_path)
             wait(lambda: script("return window.__nativeEvents.some(m=>m.channel==='RESTORE2' && m.data.finished===true)"), "Native restore picker and transaction completed")
             assert json.loads(show_path.read_text()) == saved
+            # Restoring settings schedules output recreation. Observe that
+            # replacement before configuring a window for the cue tests.
+            wait(lambda: before_restore_outputs.isdisjoint(command("GET", "/window/handles")) and len(command("GET", "/window/handles")) >= 2, "Restored settings recreated the native output")
 
             script("window.__cancelResult=null;window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context:window.api.getRuntimeContext(),data:{channel:'OPEN_FOLDER',data:{channel:'NATIVE_TEST',title:'Cancel FreeShow Folder Selection'}}}}).then(events=>window.__cancelResult=events)")
             folder = wait(lambda: native_dialog("Cancel FreeShow Folder Selection"), "Native folder picker")
@@ -280,6 +314,56 @@ def run():
             native_keys("key", "--clearmodifiers", "Escape")
             wait(lambda: script("return Array.isArray(window.__cancelResult)"), "Native folder cancellation completed")
             assert script("return window.__cancelResult") == []
+
+            click_text("Rust parity test")
+            wait(lambda: script("return document.body.innerText.includes('Amazing grace')"), "Restored show reopened for output cues")
+
+            # Use the renderer's real initial-state sender and actual slide
+            # clicks. Only window placement is configured through native IPC.
+            main_window = command("GET", "/window")
+            script("""
+                const send=window.api.send.bind(window.api);
+                window.__latestOutputData=null;window.__outputStates=[];
+                window.api.send=(channel,message,listener)=>{
+                    if(channel==='OUTPUT' && message.channel==='OUTPUTS') window.__latestOutputData=structuredClone(message.data);
+                    return send(channel,message,listener);
+                };
+                window.api.receive('OUTPUT',m=>{if(m.channel==='OUTPUT_STATE')window.__outputStates.push(m.data)},'native-output-test');
+                window.api.send('OUTPUT',{channel:'REQUEST_DATA_MAIN'});
+            """)
+            initial_outputs = wait(lambda: script("return window.__latestOutputData"), "Initial output state routed through main renderer")
+            output_id = next(key for key, value in initial_outputs.items() if value.get("enabled"))
+            output_config = {**initial_outputs[output_id], "id": output_id, "alwaysOnTop": False, "bounds": {"x": 40, "y": 40, "width": 640, "height": 360}}
+            script("window.api.send('OUTPUT',{channel:'CREATE',data:arguments[0]});window.api.send('OUTPUT',{channel:'TOGGLE_OUTPUTS',data:{outputs:[arguments[0]],state:true,autoPosition:false}})", output_config)
+            wait(lambda: script("return window.__outputStates.some(states=>states.some(s=>s.id===arguments[0] && s.active===true))", output_id), "Native output window shown")
+            wait(lambda: len(command("GET", "/window/handles")) >= 2, "Output WebView registered with desktop driver")
+            script("window.__nativeOutputRegistry=null;window.__TAURI__.core.invoke('output_status').then(s=>window.__nativeOutputRegistry=s)")
+            native_outputs = wait(lambda: script("return window.__nativeOutputRegistry"), "Native output registry observed")
+            output_label = next(entry["label"] for entry in native_outputs["outputs"] if entry["id"] == output_id)
+            output_window = None
+            for handle in command("GET", "/window/handles"):
+                if handle == main_window:
+                    continue
+                command("POST", "/window", {"handle":handle})
+                if script("return window.__TAURI_INTERNALS__.metadata.currentWindow.label") == output_label:
+                    output_window = handle
+                    break
+            assert output_window is not None, native_outputs
+            script("window.__outputMessages=[];window.api.receive('OUTPUT',m=>{window.__outputMessages.push(m);if(window.__outputMessages.length>100)window.__outputMessages.shift()},'output-evidence')")
+            command("POST", "/window", {"handle":main_window})
+            wait(lambda: script("return document.querySelectorAll('#showArea .grid .slide.context').length>=2"), "Two live slide controls available")
+            click_element(command("POST", "/elements", {"using":"css selector","value":"#showArea .grid .slide.context"})[0][ELEMENT], "Verse slide")
+            command("POST", "/window", {"handle": output_window})
+            wait(lambda: visible_lyric("Amazing grace") and script("return !document.body.innerText.includes('Unicode 日本語')"), "Verse visible after native output transition")
+            (ARTIFACTS / "output-verse.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
+            command("POST", "/window", {"handle": main_window})
+            click_element(command("POST", "/elements", {"using":"css selector","value":"#showArea .grid .slide.context"})[1][ELEMENT], "Chorus slide")
+            command("POST", "/window", {"handle": output_window})
+            wait(lambda: visible_lyric("Unicode 日本語 🙌") and script("return !document.body.innerText.includes('Amazing grace')"), "Chorus and Unicode visible after live cue")
+            (ARTIFACTS / "output-chorus.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
+            command("POST", "/window", {"handle": main_window})
+            script("window.api.send('OUTPUT',{channel:'TOGGLE_OUTPUTS',data:{outputs:[arguments[0]],state:false,autoPosition:false}})", output_config)
+            wait(lambda: script("return window.__outputStates.at(-1)?.some(s=>s.id===arguments[0] && s.active===false)", output_id), "Native output hidden")
             settings_path = temp / "app" / "settings.json"
             previous_settings = settings_path.read_bytes()
             mode = settings_path.stat().st_mode & 0o777
@@ -326,6 +410,7 @@ def run():
             click('[data-testid="folder-picker-DATA_LOCATION_SETTINGS"] .button-trigger')
             choose_native_file("Data location", other)
             wait(lambda: json.loads(config_path.read_text()).get("dataPath") == str(other), "Existing library selected after confirmed save")
+            wait(lambda: output_window not in command("GET", "/window/handles"), "Previous-library output window closed")
             pending_show = json.loads((data_dir / "Shows" / "Pending before switch.show").read_text())
             pending_lyrics = json.dumps(pending_show)
             assert "Keep this unsaved song" in pending_lyrics
@@ -344,7 +429,7 @@ def run():
             previous_settings = settings_path.read_bytes()
             previous_show = (other / "Shows" / "Second library.show").read_bytes()
             script("window.api.send('MAIN',{channel:'SAVE',data:{runtimeContext:arguments[0],SETTINGS:{stale:true},PROJECTS:{stale:true},showsCache:{old:{name:'Rejected old-library song',slides:{}}}}})", old_context)
-            stale = wait(lambda: script("return window.__testRuntimeErrors.find(e=>e.error?.code==='stale_library')?.error"), "Previous-library save rejected")
+            stale = wait(lambda: script("return window.__testRuntimeErrors.find(e=>e.error?.code==='stale_library' && e.request?.channel==='MAIN' && e.request?.data?.channel==='SAVE')?.error"), "Previous-library save rejected")
             recovery_path = Path(stale["recoveryPath"])
             assert recovery_path.parent == temp / "app" / "Recovery"
             recovery = json.loads(recovery_path.read_text())
@@ -434,9 +519,18 @@ def run():
                 subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "x11grab", "-i", os.environ["DISPLAY"], "-frames:v", "1", str(ARTIFACTS / "failed-desktop.png")], timeout=10)
             if session:
                 try:
+                    if "output_window" in locals() and output_window:
+                        command("POST", "/window", {"handle":output_window})
+                        (ARTIFACTS / "failed-output-dom.txt").write_text(script("return document.body.innerText"))
+                        (ARTIFACTS / "failed-output-state.json").write_text(json.dumps(script("return {context:window.api?.getRuntimeContext(),messages:window.__outputMessages,role:window.__TAURI_INTERNALS__?.metadata.currentWindow.label}"), indent=2))
+                except Exception:
+                    pass
+                try:
+                    if "main_window" in locals():
+                        command("POST", "/window", {"handle": main_window})
                     (ARTIFACTS / "failed.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
                     (ARTIFACTS / "failed-dom.txt").write_text(script("return document.body.innerText"))
-                    (ARTIFACTS / "failed-errors.json").write_text(json.dumps(script("return {runtime:window.__testRuntimeErrors,errors:window.__testErrors,clicks:window.__testClicks,navigation:[...document.querySelectorAll('.top button')].map(e=>{const r=e.getBoundingClientRect();return {title:e.dataset.title,rect:r.toJSON(),cover:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,400)}})}"), indent=2))
+                    (ARTIFACTS / "failed-errors.json").write_text(json.dumps(script("return {runtime:window.__testRuntimeErrors,errors:window.__testErrors,clicks:window.__testClicks,outputData:window.__latestOutputData,outputStates:window.__outputStates,navigation:[...document.querySelectorAll('.top button')].map(e=>{const r=e.getBoundingClientRect();return {title:e.dataset.title,rect:r.toJSON(),cover:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,400)}})}"), indent=2))
                 except Exception:
                     pass
             raise

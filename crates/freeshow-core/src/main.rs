@@ -13,6 +13,23 @@ fn evaluate(input: Value, runtime: &mut Runtime) -> Result<Value> {
     Ok(match input["op"].as_str().unwrap_or("") {
         "capabilities" => json!({"main": IMPLEMENTED_MAIN}),
         "runtime.context" => json!(runtime.context()),
+        "output.route" => {
+            let endpoints: Vec<freeshow_core::output::Endpoint> =
+                serde_json::from_value(input["endpoints"].clone())?;
+            serde_json::to_value(freeshow_core::output::route(&input["message"], &endpoints)?)?
+        }
+        "output.bounds" => {
+            let displays: Vec<freeshow_core::output::Display> =
+                serde_json::from_value(input["displays"].clone())?;
+            let main = serde_json::from_value(input["main"].clone())?;
+            serde_json::to_value(freeshow_core::output::resolve_bounds(
+                &input["output"],
+                &displays,
+                main,
+                input["autoPosition"].as_bool().unwrap_or(false),
+                input["isMac"].as_bool().unwrap_or(false),
+            )?)?
+        }
         "batch" => Value::Array(
             input["cases"]
                 .as_array()

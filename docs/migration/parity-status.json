@@ -45,13 +45,13 @@
         "MessagePort audio/video transport",
         "backend-initiated request correlation",
         "all command payload variants",
-        "mutable IPC payload snapshot semantics",
-        "multi-window context propagation",
+        "mutable IPC payload snapshot semantics outside output and save",
+        "multi-window context propagation for remaining window types; output recreation is covered",
         "cancellation of pending requests after library changes",
         "IPC payload-byte and waiting-caller limits",
         "bounded native dialog/read concurrency"
       ],
-      "scope": "tested legacy bridge plus Rust session/library provenance, ordered mutations, and rejection of obsolete replies; bounded library admission, dropped callers, worker shutdown and independent context/status snapshots"
+      "scope": "tested legacy bridge plus Rust session/library provenance, ordered mutations, and rejection of obsolete replies; bounded library admission, dropped callers, worker shutdown and independent context/status snapshots; separate ordered output/lifecycle queues, output send-time snapshots and scoped native event subscriptions"
     },
     {
       "id": "desktop",
@@ -69,7 +69,8 @@
         "spellcheck",
         "updates and crash reporting",
         "folder dialogs and library switching on Windows/macOS"
-      ]
+      ],
+      "scope": "Linux editor/native dialogs and initial main/output lifecycle; live projection text checked with an emoji font after transitions"
     },
     {
       "id": "editor",
@@ -90,14 +91,22 @@
     },
     {
       "id": "outputs",
-      "status": "pending",
-      "tests": [],
+      "status": "partial",
+      "tests": [
+        "tests/parity/output.test.mjs",
+        "tests/parity/bridge.test.mjs",
+        "tests/desktop/smoke.py"
+      ],
       "remaining": [
-        "multi-window state and slide routing",
-        "multi-monitor alignment and transparency",
-        "frame-accurate transitions",
-        "preview capture"
-      ]
+        "multiple live projection windows and shared-render follower creation",
+        "monitor ID migration, native alignment/hotplug, mixed DPI and transparency",
+        "native move/resize feedback and drag regions",
+        "capture/offscreen and all SET_VALUE variants",
+        "frame-accurate transitions and visual baselines across operating systems",
+        "preview capture",
+        "cue/frame latency during background IO/CPU work"
+      ],
+      "scope": "Source-compared routing and placement corpus, isolated main/output events, bounded lifecycle, and one live Linux projection with lyric cues and library cleanup"
     },
     {
       "id": "files-and-import-export",

@@ -19,11 +19,19 @@ export function upstreamFunctions(filename, names, injected = {}, prelude = "") 
         if (!node) throw new Error(`Upstream function ${name} missing in ${filename}`)
         return node.getText(ast).replace(/^export\s+/, "")
     })
-    const context = vm.createContext({ ...injected, console: { error() {}, warn() {}, info() {} } })
+    const context = vm.createContext({
+        ...injected,
+        console: { error() {}, warn() {}, info() {} }
+    })
     const javascript = ts.transpileModule(prelude + "\n" + declarations.join("\n") + `\nglobalThis.result = {${names.join(",")}}`, {
-        compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS }
+        compilerOptions: {
+            target: ts.ScriptTarget.ES2022,
+            module: ts.ModuleKind.CommonJS
+        }
     }).outputText
-    new vm.Script(javascript, { filename }).runInContext(context, { timeout: 1000 })
+    new vm.Script(javascript, { filename }).runInContext(context, {
+        timeout: 1000
+    })
     return context.result
 }
 
@@ -32,6 +40,30 @@ export const fileOracle = upstreamFunctions("src/electron/utils/files.ts", ["par
 
 export const clean = (value) => JSON.parse(JSON.stringify(value))
 
+export function upstreamClasses(sources, injected = {}) {
+    const declarations = sources.map(([filename, name]) => {
+        const source = fs.readFileSync(path.join(root, filename), "utf8")
+        const ast = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true)
+        const declaration = ast.statements.find((node) => ts.isClassDeclaration(node) && node.name?.text === name)
+        if (!declaration) throw new Error(`Upstream class ${name} missing in ${filename}`)
+        return declaration.getText(ast).replace(/^export\s+/, "")
+    })
+    const context = vm.createContext({
+        ...injected,
+        console: { error() {}, warn() {}, info() {} }
+    })
+    const javascript = ts.transpileModule(declarations.join("\n") + `\nglobalThis.result = {${sources.map(([, name]) => name).join(",")}}`, {
+        compilerOptions: {
+            target: ts.ScriptTarget.ES2022,
+            module: ts.ModuleKind.CommonJS
+        }
+    }).outputText
+    new vm.Script(javascript, {
+        filename: "upstream-output-classes"
+    }).runInContext(context, { timeout: 1000 })
+    return context.result
+}
+
 export function fixtureShow(seed) {
     const words = ["Amazing Grace", "Hallelujah", "Ελληνικά", "日本語", "مَرْحَبًا", "🙌🏾", "", " line\n"]
     const slides = {}
@@ -39,7 +71,18 @@ export function fixtureShow(seed) {
     for (const [index, key] of ["z", "10", "2", "a"].entries()) {
         slides[key] = {
             items: [
-                { type: "text", lines: Array.from({ length: (seed + index) % 4 }, (_, line) => ({ text: [{ value: words[(seed + line) % words.length], font: { size: 80 } }, { value: words[(seed + line + index + 1) % words.length] }] })) },
+                {
+                    type: "text",
+                    lines: Array.from({ length: (seed + index) % 4 }, (_, line) => ({
+                        text: [
+                            {
+                                value: words[(seed + line) % words.length],
+                                font: { size: 80 }
+                            },
+                            { value: words[(seed + line + index + 1) % words.length] }
+                        ]
+                    }))
+                },
                 { type: "media", src: "fixtures/background.jpg" }
             ]
         }
@@ -65,9 +108,20 @@ export function createSaveOracle(appData, dataDir) {
         fs.mkdirSync(path.dirname(file), { recursive: true })
         fs.writeFileSync(file, content)
     }
-    new Conf({ cwd: appData, projectName: "freeshow-parity", configName: "config", defaults: defaults.defaultConfig })
+    new Conf({
+        cwd: appData,
+        projectName: "freeshow-parity",
+        configName: "config",
+        defaults: defaults.defaultConfig
+    })
     for (const [id, data] of Object.entries(storeDefinitions)) {
-        stores[id] = new Conf({ cwd: data.portable ? path.join(dataDir, "Config") : appData, projectName: "freeshow-parity", configName: data.fileName, defaults: data.defaults, accessPropertiesByDotNotation: id !== "MEDIA" })
+        stores[id] = new Conf({
+            cwd: data.portable ? path.join(dataDir, "Config") : appData,
+            projectName: "freeshow-parity",
+            configName: data.fileName,
+            defaults: data.defaults,
+            accessPropertiesByDotNotation: id !== "MEDIA"
+        })
     }
     const events = []
     const getDataFolderPath = (id) => {
@@ -107,8 +161,16 @@ export function createSaveOracle(appData, dataDir) {
                 }
             },
             ToMain: { SAVE2: "SAVE2" },
-            sendToMain: (channel, data) => events.push({ channel: "MAIN", message: { channel, data: clean(data) } }),
-            sendMain: (channel, data) => events.push({ channel: "MAIN", message: { channel, data: clean(data) } })
+            sendToMain: (channel, data) =>
+                events.push({
+                    channel: "MAIN",
+                    message: { channel, data: clean(data) }
+                }),
+            sendMain: (channel, data) =>
+                events.push({
+                    channel: "MAIN",
+                    message: { channel, data: clean(data) }
+                })
         },
         'let isSaving = false; const TRACK_FILE_MODIFIED = ["EVENTS", "THEMES", "MEDIA"];'
     )
