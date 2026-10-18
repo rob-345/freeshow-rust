@@ -662,6 +662,15 @@ async fn send_packet(prepared: PreparedOsc) -> Result<EmitOutcome, OscError> {
     let socket = UdpSocket::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0))
         .await
         .map_err(|error| OscError::new(OscErrorKind::BindFailed, error.to_string()))?;
+    // The pinned Node sender fails after coercing a truthy string "0".
+    // Bare UDP send_to can accept port zero on Windows; preserve the original
+    // send failure without changing prepare_emit's JavaScript coercion.
+    if prepared.port == 0 {
+        return Err(OscError::new(
+            OscErrorKind::SendFailed,
+            "The original UDP sender rejects destination port zero",
+        ));
+    }
     let bytes = socket
         .send_to(prepared.message.packet(), address)
         .await

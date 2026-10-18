@@ -64,10 +64,13 @@
         "tests/parity/desktop-harness.test.mjs",
         "tests/parity/menu.test.mjs",
         "src-tauri/tests/menu.rs",
-        "tests/desktop/menu.py"
+        "tests/desktop/menu.py",
+        "tests/parity/native-drop.test.mjs",
+        "src-tauri/tests/drop.rs",
+        "tests/desktop/drop.py"
       ],
       "remaining": [
-        "native drag/drop",
+        "native drop: Windows/macOS GUI, virtual/non-file URI payloads, arbitrary File/Blob byte readers, hover feedback and original asynchronous handler context propagation",
         "macOS/Windows native menu roles and keyboard accelerators; untested Linux role actions",
         "clipboard",
         "display hotplug and DPI",
@@ -76,7 +79,7 @@
         "updates and crash reporting",
         "folder dialogs and library switching on Windows/macOS"
       ],
-      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation; localized native menus compared across all bundled locales/platform conditions; actual Linux menu commands and Quit confirmation/final-save/drain workflows"
+      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation; localized native menus compared across all bundled locales/platform conditions; actual Linux menu commands and Quit confirmation/final-save/drain workflows; native absolute-path file drops preserve ordered Unicode project/import dispatch through retained Svelte handlers, bounded metadata work and stale gesture/library rejection; actual GTK targeting at scale 1 and 2"
     },
     {
       "id": "editor",

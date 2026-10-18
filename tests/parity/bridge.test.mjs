@@ -6,18 +6,26 @@ import ts from "typescript"
 import { root } from "./oracle.mjs"
 
 const source = fs.readFileSync(path.join(root, "src/frontend/rust/bridge.ts"), "utf8")
-const javascript = ts.transpileModule(source, {
-    compilerOptions: {
-        module: ts.ModuleKind.ES2022,
-        target: ts.ScriptTarget.ES2022
-    }
+const nativeDrop = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/nativeDrop.ts"), "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 }
 }).outputText
+const nativeDropUrl = `data:text/javascript;base64,${Buffer.from(nativeDrop).toString("base64")}`
+const javascript = ts
+    .transpileModule(source, {
+        compilerOptions: {
+            module: ts.ModuleKind.ES2022,
+            target: ts.ScriptTarget.ES2022
+        }
+    })
+    .outputText.replace('from "./nativeDrop"', `from "${nativeDropUrl}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
 
 test("native event subscriptions isolate main and output windows", async () => {
     const listeners = []
     const makeWindow = (label) => ({
+        addEventListener() {},
+        removeEventListener() {},
         __TAURI__: {
             core: { invoke: async () => ({ runtimeId: "process", libraryGeneration: 0, dataPath: "/A" }) },
             webviewWindow: { getCurrentWebviewWindow: () => ({ label }) },
@@ -41,8 +49,12 @@ test("native event subscriptions isolate main and output windows", async () => {
         listeners.forEach((listener) => {
             // Global Any listeners observe addressed events too. Each renderer
             // must subscribe with its own window target to prevent feedback.
-            if (!listener.target || listener.target.kind === "Any" || listener.target.label === label) listener.callback({ payload: { channel: "OUTPUT", message } })
+            if (listener.name === "freeshow://ipc" && (!listener.target || listener.target.kind === "Any" || listener.target.label === label)) listener.callback({ payload: { channel: "OUTPUT", message } })
         })
+    assert.deepEqual(
+        listeners.filter((listener) => listener.name === "freeshow://drop").map((listener) => listener.target),
+        [{ kind: "WebviewWindow", label: "main" }]
+    )
     emitTo("output-A", { channel: "OUTPUTS", data: { A: { out: { slide: { index: 1 } } } } })
     emitTo("main", { channel: "REQUEST_DATA_MAIN" })
     assert.deepEqual(mainMessages, [{ channel: "REQUEST_DATA_MAIN" }])
@@ -179,8 +191,10 @@ test("named listener replacement, anonymous receivers, removal and callback isol
 })
 
 test("native event registration completes before window.api is exposed", async () => {
-    let receiveEvent, finish
+    let receiveEvent, finish, finishDrop
     const target = {
+        addEventListener() {},
+        removeEventListener() {},
         __TAURI__: {
             webviewWindow: { getCurrentWebviewWindow: () => ({ label: "main" }) },
             core: {
@@ -191,10 +205,14 @@ test("native event registration completes before window.api is exposed", async (
                 })
             },
             event: {
-                listen: (_name, callback) => {
-                    receiveEvent = callback
+                listen: (name, callback) => {
+                    if (name === "freeshow://ipc") receiveEvent = callback
                     return new Promise((resolve) => {
-                        finish = resolve
+                        if (name === "freeshow://ipc") finish = resolve
+                        else {
+                            assert.equal(name, "freeshow://drop")
+                            finishDrop = resolve
+                        }
                     })
                 }
             }
@@ -204,6 +222,9 @@ test("native event registration completes before window.api is exposed", async (
     await tick()
     assert.equal(target.api, undefined)
     finish(() => {})
+    await tick()
+    assert.equal(target.api, undefined, "Native drop subscription is part of the startup barrier")
+    finishDrop(() => {})
     await installing
     const received = []
     target.api.receive("OUTPUT", (message) => received.push(message))
@@ -233,15 +254,17 @@ test("native rejections are reported without creating a successful reply", async
     assert.deepEqual(errors[0][0], error)
 })
 
-test("missing native file path reports incomplete support", () => {
+test("browser Files keep their real bytes and return an empty native path", async () => {
     const errors = []
     const { api } = createRustApi(
         async () => [],
         (...error) => errors.push(error)
     )
     assert.equal(api.showFilePath({ name: "test.show", path: "/test.show" }), "/test.show")
-    assert.equal(api.showFilePath({ name: "test.show" }), "")
-    assert.equal(errors[0][0].code, "unsupported_command")
+    const browser = new File(["real contents"], "test.show")
+    assert.equal(api.showFilePath(browser), "")
+    assert.equal(await browser.text(), "real contents")
+    assert.deepEqual(errors, [])
 })
 
 const contextA = {

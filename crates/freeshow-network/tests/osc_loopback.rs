@@ -89,10 +89,10 @@ async fn send_error_recovers_and_shutdown_closes_admission_for_all_clones() {
     let sender = OscSender::start(OscSenderConfig::default()).unwrap();
     let clone = sender.clone();
     let error = sender
-        .emit(&json!({"signal":{"host":"127.0.0.1","port":-1},"data":"/invalid"}))
+        .emit(&json!({"signal":{"host":"127.0.0.1","port":"0"},"data":"/zero"}))
         .await
         .unwrap_err();
-    assert_eq!(error.kind, OscErrorKind::InvalidPort);
+    assert_eq!(error.kind, OscErrorKind::SendFailed);
     let error = sender
         .emit(&json!({"signal":{"host":"::1","port":port},"data":"/ipv6"}))
         .await

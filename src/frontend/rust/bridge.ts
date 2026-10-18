@@ -1,5 +1,7 @@
 // Preserve the existing preload API while the runtime moves to Rust.
 // This module has no dependency on Electron or on the Svelte app.
+import { installNativeDrop } from "./nativeDrop"
+
 type Receiver = (data: any, listenerId?: string) => void
 export type RuntimeContext = {
     runtimeId: string
@@ -101,18 +103,11 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
             removeListener,
             getListeners: () => [...receivers].map(([channel, listeners]) => [channel, listeners.size]),
             showFilePath(file: File) {
-                // Browser File deliberately does not expose native paths. Native
-                // drag/drop integration is a separate pending parity item.
+                // Browser-created Files have real bytes but no native path.
+                // The main-window installer replaces this with its registry
+                // for native drop descriptors, retaining context validation.
                 const nativePath = (file as File & { path?: string }).path
-                if (nativePath) return nativePath
-                reportError(
-                    {
-                        code: "unsupported_command",
-                        message: "Native file drop is not yet ported"
-                    },
-                    { channel: "showFilePath" }
-                )
-                return ""
+                return typeof nativePath === "string" ? nativePath : ""
             }
         }
     }
@@ -143,6 +138,16 @@ export async function installRustBridge(target: Window = window) {
         // Global Any listeners also observe events addressed to other windows.
         { target: { kind: "WebviewWindow", label: nativeWindow.label } }
     )
+    if (nativeWindow.label === "main") {
+        const drop = await installNativeDrop(target, {
+            getRuntimeContext: bridge.api.getRuntimeContext,
+            reportError: (error) => {
+                console.error("FreeShow native file drop failed", error)
+                target.dispatchEvent(new CustomEvent("freeshow:runtime-error", { detail: { error, request: { channel: "native-drop" } } }))
+            }
+        })
+        bridge.api.showFilePath = drop.showFilePath
+    }
     ;(target as any).api = bridge.api
     return bridge
 }

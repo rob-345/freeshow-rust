@@ -323,6 +323,37 @@ def run():
             session = None
             session = http("POST", "/session", {"capabilities": {"alwaysMatch": {"tauri:options": {"application": str(binary)}}}})["sessionId"]
             wait(lambda: script("return !!window.api && document.body.innerText.includes('Rust parity test')"), "Project and song restored after restart")
+            maximize_result = script("""
+                return (async()=>{
+                    const context=window.api.getRuntimeContext();
+                    const query=async()=>{
+                        const events=await window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context,data:{channel:'MAXIMIZED'}}});
+                        return events[0].message.data;
+                    };
+                    const before=await query();
+                    const reply=await new Promise((resolve,reject)=>{
+                        const timer=setTimeout(()=>reject(new Error('MAXIMIZED reply timed out')),3000);
+                        window.api.receive('MAIN',(message,listenerId)=>{
+                            if(listenerId!=='native-maximize')return;
+                            clearTimeout(timer);
+                            window.api.removeListener('MAIN','native-maximize-observer');
+                            resolve({message,listenerId});
+                        },'native-maximize-observer');
+                        window.api.send('MAIN',{channel:'MAXIMIZE'},'native-maximize');
+                    });
+                    const after=await query();
+                    if(after!==before)await window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context,data:{channel:'MAXIMIZE'}}});
+                    // Xvfb without a window manager may not change native state.
+                    // Restore the renderer's state from an actual native query.
+                    window.api.send('MAIN',{channel:'MAXIMIZED'});
+                    return {before,after,reply};
+                })();
+            """)
+            assert maximize_result["reply"]["message"]["channel"] == "MAXIMIZED", maximize_result
+            assert maximize_result["reply"]["message"]["data"] is not maximize_result["before"], maximize_result
+            assert maximize_result["reply"]["listenerId"] == "native-maximize", maximize_result
+            (ARTIFACTS / "maximize-reply.json").write_text(json.dumps(maximize_result, indent=2))
+            steps.append("Retained window.api MAXIMIZE receives the original MAXIMIZED transition channel and correlation")
             assert json.loads(config_path.read_text())["dataPath"] == str(data_dir)
             script("window.__selectedRoot=null;window.api.receive('MAIN',m=>{if(m.channel==='DATA_PATH')window.__selectedRoot=m.data},'root-check');window.api.send('MAIN',{channel:'DATA_PATH'})")
             wait(lambda: script("return window.__selectedRoot === arguments[0]", str(data_dir)), "Selected data library reopened after restart")

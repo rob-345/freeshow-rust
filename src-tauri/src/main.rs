@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod drop;
 mod menu;
 mod output;
 
@@ -165,12 +166,20 @@ async fn ipc_dispatch(
                 return Ok(vec![]);
             }
             "MAXIMIZE" => {
-                if window.is_maximized().map_err(native_error)? {
+                let was_maximized = window.is_maximized().map_err(native_error)?;
+                if was_maximized {
                     window.unmaximize().map_err(native_error)?;
                 } else {
                     window.maximize().map_err(native_error)?;
                 }
-                return Ok(reply(json!(window.is_maximized().map_err(native_error)?)));
+                // Electron announces the requested transition on MAXIMIZED.
+                // Window-manager state changes may complete asynchronously.
+                return Ok(vec![Event::reply(
+                    "MAIN",
+                    "MAXIMIZED",
+                    json!(!was_maximized),
+                    request.listener_id.clone(),
+                )]);
             }
             "FULLSCREEN" => {
                 window
@@ -519,6 +528,11 @@ fn main() {
                 allow_exit: AtomicBool::new(false),
             });
             menu::install(app.handle()).map_err(|error| std::io::Error::other(error.message))?;
+            let main = app
+                .get_webview_window("main")
+                .ok_or_else(|| std::io::Error::other("Main WebView is unavailable"))?;
+            drop::install(&main, app.state::<AppState>().library.clone())
+                .map_err(|error| std::io::Error::other(error.message))?;
             Ok(())
         })
         .on_menu_event(menu::on_menu_event)

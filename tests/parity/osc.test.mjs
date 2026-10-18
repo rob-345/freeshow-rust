@@ -308,15 +308,15 @@ test("Rust UDP sends interoperate with actual osc-js decoder on controlled loopb
         assert.equal((await runtime.request({ signal: { host: "127.0.0.1", port }, data: "" })).error.kind, "invalid_address")
         // Node checks numeric zero before coercing strings. On an already bound
         // socket (as in the original OSC handler), "0" reaches the host's UDP
-        // stack: Linux rejects it, while Windows can accept it. Compare the
-        // actual local Node boundary instead of requiring Linux's send error.
+        // sender. Compare that actual Node boundary, including its wildcard
+        // bind address, rather than the host's bare UDP send_to behavior.
         const probe = dgram.createSocket("udp4")
         try {
-            await new Promise((resolve) => probe.bind(0, "127.0.0.1", resolve))
+            await new Promise((resolve) => probe.bind(0, "0.0.0.0", resolve))
             assert.throws(() => probe.send(Buffer.from([0]), 0, "127.0.0.1"), { code: "ERR_SOCKET_BAD_PORT" })
             const nodeError = await new Promise((resolve) => probe.send(Buffer.from([0]), 0, 1, "0", "127.0.0.1", resolve))
             const actual = await runtime.request({ signal: { host: "127.0.0.1", port: "0" }, data: "/failure" })
-            assert.equal(actual.ok, !nodeError)
+            assert.equal(actual.ok, !nodeError, JSON.stringify({ nodeError: nodeError && { code: nodeError.code, message: nodeError.message }, actual }))
             if (nodeError) assert.equal(actual.error.kind, "send_failed")
             else assert.equal(actual.value.status, "sent")
         } finally {

@@ -83,7 +83,7 @@ jobs:
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol -- -D warnings
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
       - run: cargo build --workspace --all-targets
@@ -93,6 +93,8 @@ jobs:
       - run: cargo install tauri-driver --version 2.1.0 --locked
       - run: xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py
       - run: xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/menu.py
+      - run: GDK_SCALE=1 xvfb-run -a -s '-screen 0 3200x2200x24' dbus-run-session -- /usr/bin/python3 tests/desktop/drop.py
+      - run: GDK_SCALE=2 xvfb-run -a -s '-screen 0 3200x2200x24' dbus-run-session -- /usr/bin/python3 tests/desktop/drop.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -100,3 +102,4 @@ jobs:
           path: |
             test-output-rust/desktop
             test-output-rust/native-menu
+            test-output-rust/native-drop

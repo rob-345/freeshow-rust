@@ -4,6 +4,7 @@ Run with the native smoke-test environment under an isolated Xvfb/DBus session.
 For GDK_SCALE=2 use an Xvfb screen of at least 3200x2200.
 """
 import base64
+from http.client import RemoteDisconnected
 import itertools
 import json
 import os
@@ -18,6 +19,7 @@ import urllib.request
 import wave
 
 from menu import free_port, native_menu, wait
+from script_receipts import wrap_script
 import gi
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -80,7 +82,8 @@ def run():
         process = subprocess.Popen([driver, "--port", str(port), "--native-port", str(native_port), "--native-driver", webkit], env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
 
         def http(method, route, payload=None):
-            request = urllib.request.Request(f"http://127.0.0.1:{port}" + route, data=None if payload is None else json.dumps(payload).encode(), method=method, headers={"Content-Type": "application/json"})
+            endpoint = port if method == "POST" and route == "/session" else native_port
+            request = urllib.request.Request(f"http://127.0.0.1:{endpoint}" + route, data=None if payload is None else json.dumps(payload).encode(), method=method, headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(request, timeout=35) as response:
                 value = json.load(response)["value"]
             assert not isinstance(value, dict) or "error" not in value, value
@@ -89,9 +92,14 @@ def run():
         sequence = itertools.count()
 
         def script(code, *args):
-            key = str(next(sequence))
-            wrapped = "const receipts=window.__dropReceipts||=new Map();const key=" + json.dumps(key) + ";if(!receipts.has(key))receipts.set(key,(function(){" + code + "}).apply(window,arguments));return receipts.get(key)"
-            return http("POST", f"/session/{session}/execute/sync", {"script": wrapped, "args": list(args)})
+            wrapped = wrap_script(next(sequence), code)
+            for attempt in range(3):
+                try:
+                    return http("POST", f"/session/{session}/execute/sync", {"script": wrapped, "args": list(args)})
+                except (RemoteDisconnected, ConnectionResetError):
+                    if attempt == 2 or process.poll() is not None:
+                        raise
+                    time.sleep(0.1)
 
         def keys(*args):
             environment = dict(os.environ)
@@ -132,7 +140,7 @@ def run():
             wait(lambda: script("return window.__nativeDropDOM.length===1"), "Exactly one real Svelte drop delivery")
             wait(lambda: script("return [...document.querySelectorAll('#projectArea .selectElem[data-item]')].map(e=>JSON.parse(e.dataset.item).id).filter(id=>arguments[0].includes(id)).length===2", paths), "Original project dropActions added both media references")
             observation = script("return {native:window.__nativeDropEvents,dom:window.__nativeDropDOM,errors:window.__nativeDropErrors}")
-            assert not any(error.get("channel") == "nativeDrop" for error in observation["errors"]), observation["errors"]
+            assert not any(error.get("channel") == "native-drop" for error in observation["errors"]), observation["errors"]
             assert observation["dom"][0]["paths"] == paths, observation
             accepted_sequence = observation["native"][0]["sequence"]
             accepted_phases = [event["phase"] for event in observation["native"] if event["sequence"] == accepted_sequence and event["phase"] != "over"]

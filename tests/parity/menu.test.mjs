@@ -15,7 +15,10 @@ let probe
 function rust(cases) {
     if (!probe) {
         const directory = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-menu-parity-"))
-        const version = fs.readFileSync(path.join(root, "Cargo.lock"), "utf8").match(/name = "serde_json"\nversion = "([^"]+)"/)[1]
+        const version = fs
+            .readFileSync(path.join(root, "Cargo.lock"), "utf8")
+            .replaceAll("\r\n", "\n")
+            .match(/name = "serde_json"\nversion = "([^"]+)"/)[1]
         fs.mkdirSync(path.join(directory, "src"))
         fs.writeFileSync(path.join(directory, "Cargo.toml"), `[package]\nname="freeshow-menu-parity"\nversion="0.0.0"\nedition="2021"\n[dependencies]\nserde_json={version="=${version}",features=["preserve_order"]}\n`)
         fs.writeFileSync(

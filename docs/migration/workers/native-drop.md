@@ -1,12 +1,10 @@
-Native file-drop worker
-=======================
+# Native file-drop worker
 
 This slice adapts native OS file drags to the retained Svelte handlers. It does
 not change `DropArea.svelte`, `helpers/drop.ts`, `dropActions.ts`, editor drags,
 the pinned Electron preload, shared IPC/runtime code, capabilities or manifests.
 
-Integration API
----------------
+## Integration API
 
 In the native entrypoint, declare `mod drop;`, then install once after managing
 the library service and creating the main WebviewWindow:
@@ -37,9 +35,11 @@ if (nativeWindow.label === "main") {
         getRuntimeContext: bridge.api.getRuntimeContext,
         reportError: (error) => {
             console.error("Native file drop failed", error)
-            target.dispatchEvent(new CustomEvent("freeshow:runtime-error", {
-                detail: { error, request: { channel: "nativeDrop" } }
-            }))
+            target.dispatchEvent(
+                new CustomEvent("freeshow:runtime-error", {
+                    detail: { error, request: { channel: "native-drop" } }
+                })
+            )
         }
     })
     bridge.api.showFilePath = nativeDrop.showFilePath
@@ -51,8 +51,7 @@ permissions suffice. It returns `dispose` for subscription/listener cleanup.
 Ordinary output/browser Files should retain their path property or return an
 empty native path, without the previous pending-port error.
 
-Compatibility and UI marker
----------------------------
+## Compatibility and UI marker
 
 The adapter hit-tests the exact client coordinates and dispatches to the actual
 element inside the nearest `.droparea` or `.timeline-track-wrapper`. Original
@@ -75,8 +74,7 @@ avoids latching it. Leave events balance native Enter events. Genuine internal
 dragstart/dragend bypass native adaptation and keep their original DOM events,
 selection state and editor semantics.
 
-Coordinate evidence
--------------------
+## Coordinate evidence
 
 Installed sources were inspected directly (Wry 0.57.0, Tauri runtime 2.12.2):
 
@@ -99,8 +97,7 @@ The observed native position (143,257 logical) reached the original project area
 at CSS target (143,257.5) in both runs. Actual webview zoom, macOS and Windows GUI
 behavior still need platform execution.
 
-Checks and real desktop probe
------------------------------
+## Checks and real desktop probe
 
 ```sh
 node --test tests/parity/native-drop.test.mjs
@@ -129,7 +126,9 @@ XDOTOOL_LIBRARY_PATH=/home/rob-admin/.local/share/freeshow-xdotool-libs \
 xvfb-run -a -s '-screen 0 3200x2200x24' dbus-run-session -- /usr/bin/python3 tests/desktop/drop.py
 ```
 
-Repeat with `GDK_SCALE=2`. Receipts are
+Repeat with `GDK_SCALE=2`. The coordinator integration reuses the bounded shared script-receipt helper and
+addresses the same native driver/session directly after Tauri maps POST /session.
+Receipts are
 `test-output-rust/native-drop/receipt-1x.json` and `receipt-2x.json`. A separate GTK
 EventBox exports real PNG/WAV URI-list paths and xdotool performs the native
 mouse drag. Both ordered Unicode files arrive in exactly one DOM drop at the
@@ -138,10 +137,9 @@ Escape creates no second drop. Holding another real GTK drag while the bridge
 commits UPDATE_DATA_PATH advances the library generation; releasing it produces
 no stale DOM drop into the new library.
 
-Explicit remaining limits
--------------------------
+## Explicit remaining limits
 
-- Native file input controls and arbitrary File/Blob byte readers are outside
+- Native hover feedback beyond the target marker, file input controls and arbitrary File/Blob byte readers are outside
   this path-only adapter; its descriptors never claim successful empty bytes.
 - The real project flow still reports missing `MAIN.LOCATE_MEDIA_FILE`; image
   loading/playback and other media backends are not established by this probe.

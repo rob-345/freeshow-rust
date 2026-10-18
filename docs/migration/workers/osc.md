@@ -53,7 +53,9 @@ Avoid spawning an unbounded task per request around this bounded sender.
 - `signal.host || "0.0.0.0"` and `signal.port || 8080` use JavaScript truthiness.
   The outdated frontend type's `url` property is ignored; actual emitter inputs
   use `host`. Numeric port zero defaults to 8080, while truthy string `"0"` reaches
-  the OS send as port zero and fails locally on Linux. Numeric port strings,
+  the send boundary as port zero and fails in the pinned Node sender. The Rust
+  sender preserves that failure even when bare UDP send_to accepts zero on
+  Windows. Numeric port strings,
   including hex/exponents and ECMAScript whitespace, use Node-compatible coercion.
 - Split only on literal ASCII space. Repeated/trailing spaces produce empty string
   arguments. Exact lowercase `true`/`false` become booleans. Nonempty numeric
