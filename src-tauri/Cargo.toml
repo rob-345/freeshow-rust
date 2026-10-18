@@ -28,6 +28,7 @@ freeshow-browse = { path = "../crates/freeshow-browse" }
 freeshow-assets = { path = "../crates/freeshow-assets" }
 freeshow-remotes = { path = "../crates/freeshow-remotes" }
 freeshow-encoders = { path = "../crates/freeshow-encoders" }
+freeshow-scriptures = { path = "../crates/freeshow-scriptures" }
 freeshow-exif = { path = "../crates/freeshow-exif" }
 freeshow-documents = { path = "../crates/freeshow-documents" }
 freeshow-thumbnails = { path = "../crates/freeshow-thumbnails" }
@@ -38,6 +39,9 @@ tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tokio = { version = "1", features = ["sync", "macros"] }
 tokio-util = { version = "0.7", features = ["rt"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+glib = "0.18"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

@@ -1340,9 +1340,11 @@ dependencies = [
  "freeshow-media",
  "freeshow-network",
  "freeshow-remotes",
+ "freeshow-scriptures",
  "freeshow-system",
  "freeshow-thumbnail-effects",
  "freeshow-thumbnails",
+ "glib",
  "libc",
  "png 0.18.1",
  "serde_json",
@@ -1471,6 +1473,17 @@ dependencies = [
  "tokio-util",
  "tower",
  "uuid",
+]
+
+[[package]]
+name = "freeshow-scriptures"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]

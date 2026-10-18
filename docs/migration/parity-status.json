@@ -144,11 +144,18 @@
         "crates/freeshow-documents/src/service/tests.rs",
         "src-tauri/tests/file_reads.rs",
         "tests/desktop/file_reads_probe.js",
-        "tests/desktop/file_reads_oracle.mjs"
+        "tests/desktop/file_reads_oracle.mjs",
+        "tests/parity/scriptures.test.mjs",
+        "tests/parity/lib/scriptures-oracle.mjs",
+        "crates/freeshow-scriptures/src/tests.rs",
+        "src-tauri/tests/scriptures.rs",
+        "tests/desktop/scriptures_probe.js",
+        "tests/desktop/scriptures_oracle.mjs",
+        "scripts/migration/probe-documents-path.mjs"
       ],
       "remaining": [
         "other import/export formats",
-        "scriptures and media discovery",
+        "scripture imports/online providers, broader scripture navigation/search/collection workflows and media discovery",
         "PDF and PowerPoint",
         "recording",
         "cloud backup bundle format",
@@ -159,9 +166,10 @@
         "native imports: unsupported formats/archive variants, input/output budgets versus unrestricted source and source alert/completion ordering differences",
         "native import installs: external parent-rename races, indistinguishable Windows metadata, durable crash recovery and whole-batch atomicity",
         "asynchronous retained import conversion across library selection/close, complete project/state overlap workflows and native Windows/macOS GUI verification",
-        "document reads: non-Linux filesystem behavior, non-Unicode paths, hard OS-call cancellation, external directory changes and broader scripture parsing/import"
+        "document reads: non-Linux filesystem behavior, non-Unicode paths, hard OS-call cancellation, external directory changes and broader scripture import/provider and parser edge cases",
+        "local scripture bounds and unsupported JSON/device variants versus unrestricted source, external file replacement, native Windows/macOS GUI and packaged Documents fallback comparison"
       ],
-      "scope": "Source-compared saves/ZIP contents and restores; private disk copies isolate compression from later file edits, with normal success/failure cleanup; native transport for seven FreeShow and three text formats feeds retained converters; two bounded whole-pipeline leases retain private staging through context-validated ordered media installation/cleanup; real Linux editor saves TXT/ChordPro/CSV/show/project imports with Unicode/unknown fields and exact bundled media bytes/remapped references; Linux READ_FILE preserves original BOM/malformed UTF-8 text and READ_BIBLES_FOLDER discovers every entry with source byte ordering/suffix handling, fixed filesystem workers and context-frozen ordered root preparation; independent creation failure ALERTs survive dropped request callers"
+      "scope": "Source-compared saves/ZIP contents and restores; private disk copies isolate compression from later file edits, with normal success/failure cleanup; native transport for seven FreeShow and three text formats feeds retained converters; two bounded whole-pipeline leases retain private staging through context-validated ordered media installation/cleanup; real Linux editor saves TXT/ChordPro/CSV/show/project imports with Unicode/unknown fields and exact bundled media bytes/remapped references; Linux READ_FILE preserves original BOM/malformed UTF-8 text and READ_BIBLES_FOLDER discovers every entry with source byte ordering/suffix handling, fixed filesystem workers and context-frozen ordered root preparation; independent creation failure ALERTs survive dropped request callers; MAIN.BIBLE preserves primary/legacy two-read selection, finite binary64/unknown values, original ID and verse migration through two fixed parser workers and two whole host leases; source directory attempts and independent failure ALERTs run on ordered current-context library IO, with accepted caller-drop ownership, stale-effect rejection and terminal drain; Linux native GLib Documents authority matches the actual official Electron binary in missing/configured/disabled XDG probes; actual Linux WebKit compares complete source BIBLE callbacks before and during real ZIP compression, retained book/chapter navigation and two live scripture projections"
     },
     {
       "id": "media-and-audio",

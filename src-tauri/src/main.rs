@@ -4,6 +4,8 @@ mod api;
 mod assets;
 mod browse;
 mod context_changes;
+#[cfg(target_os = "linux")]
+mod documents_path;
 mod drop;
 mod encoder_inputs;
 mod encoders;
@@ -13,6 +15,7 @@ mod imports;
 mod menu;
 mod output;
 mod remotes;
+mod scriptures;
 mod system;
 mod thumbnails;
 
@@ -40,6 +43,7 @@ struct AppState {
     outputs: output::OutputService,
     media: MediaService,
     encoders: encoders::NativeEncoders,
+    scriptures: scriptures::NativeScriptures,
     audio: AudioService,
     files: files::NativeFiles,
     file_reads: file_reads::NativeFileReads,
@@ -95,6 +99,11 @@ fn thumbnails_status(app: tauri::AppHandle) -> serde_json::Value {
 #[tauri::command]
 fn file_reads_status(app: tauri::AppHandle) -> serde_json::Value {
     app.state::<AppState>().file_reads.status()
+}
+
+#[tauri::command]
+fn scriptures_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().scriptures.status()
 }
 
 #[tauri::command]
@@ -250,6 +259,9 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if scriptures::COMMANDS.contains(&command) {
+            return app.state::<AppState>().scriptures.dispatch(request).await;
+        }
         if encoders::COMMANDS.contains(&command) {
             return app
                 .state::<AppState>()
@@ -497,6 +509,7 @@ async fn dispatch_native(
                     file_reads_result,
                     remotes_result,
                     encoders_result,
+                    scriptures_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -510,7 +523,8 @@ async fn dispatch_native(
                     state.thumbnails.shutdown(),
                     state.file_reads.shutdown(),
                     state.remotes.shutdown(),
-                    state.encoders.shutdown()
+                    state.encoders.shutdown(),
+                    state.scriptures.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
@@ -523,6 +537,7 @@ async fn dispatch_native(
                 file_reads_result?;
                 remotes_result?;
                 encoders_result?;
+                scriptures_result?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -614,6 +629,7 @@ async fn dispatch_native(
         app.state::<AppState>().browse.context_changed(&context);
         app.state::<AppState>().thumbnails.context_changed(&context);
         app.state::<AppState>().file_reads.context_changed(&context);
+        app.state::<AppState>().scriptures.context_changed(&context);
         if let Err(error) = app.state::<AppState>().assets.context_changed(&context) {
             let mut alert = Event::reply(
                 "MAIN",
@@ -954,6 +970,21 @@ fn main() {
                 })
             })
             .map_err(|error| std::io::Error::other(error.message))?;
+            #[cfg(target_os = "linux")]
+            let documents_root = documents_path::resolve();
+            #[cfg(not(target_os = "linux"))]
+            let documents_root = app.path().document_dir()?;
+            let scripture_app = app.handle().clone();
+            let scriptures = scriptures::NativeScriptures::new(
+                library.clone(),
+                documents_root,
+                std::sync::Arc::new(move |event| {
+                    scripture_app
+                        .emit_to("main", "freeshow://ipc", event)
+                        .map_err(|error| error.to_string())
+                }),
+            )
+            .map_err(|error| std::io::Error::other(error.message))?;
             let encoders =
                 encoders::NativeEncoders::new(library.clone(), media.clone(), app_data.clone())
                     .map_err(|error| std::io::Error::other(error.message))?;
@@ -963,6 +994,7 @@ fn main() {
                 outputs,
                 media,
                 encoders,
+                scriptures,
                 audio,
                 files,
                 imports,
@@ -1021,6 +1053,7 @@ fn main() {
             thumbnails_status,
             file_reads_status,
             encoders_status,
+            scriptures_status,
             thumbnail_complete
         ])
         .build(tauri::generate_context!())

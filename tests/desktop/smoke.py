@@ -60,7 +60,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -124,6 +124,11 @@ def run():
                    TAURI_WEBVIEW_AUTOMATION="true", WEBKIT_DISABLE_COMPOSITING_MODE="1",
                    LANG=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"), LC_ALL=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"))
         env.pop("FREESHOW_RUST_DATA_DIR", None)
+        # Exercise the real native OS Documents authority in this private profile.
+        documents_root = temp / "Legacy Documents 敬拜"
+        (documents_root / "Bibles").mkdir(parents=True)
+        (temp / "xdg-config").mkdir()
+        (temp / "xdg-config/user-dirs.dirs").write_text('XDG_DOCUMENTS_DIR="' + str(documents_root) + '"\n')
         if os.environ.get("FREESHOW_TEST_FONT_DIR"):
             # Fontconfig includes XDG_DATA_HOME/fonts. Keep locally extracted
             # test fonts inside this isolated profile, outside the user profile.
@@ -257,7 +262,14 @@ def run():
 
         def click_text(text):
             # Locate by text in the real document, then perform a WebDriver click.
-            literal = json.dumps(text)
+            # XPath has no JSON backslash escapes. Keep Unicode literal and
+            # construct concat() only when the text contains both quote kinds.
+            if '"' not in text:
+                literal = '"' + text + '"'
+            elif "'" not in text:
+                literal = "'" + text + "'"
+            else:
+                literal = "concat(" + ", '\"', ".join('"' + part + '"' for part in text.split('"')) + ")"
             found = command("POST", "/element", {"using": "xpath", "value": f"//*[normalize-space(.)={literal} and not(.//*[normalize-space(.)={literal}])]"})[ELEMENT]
             click_element(found, text)
 
@@ -625,6 +637,33 @@ def run():
                 return observed
             probe_file_reads()
             steps.append("Native document, Bible-folder and EXIF callbacks match pinned source values, byte types, IEEE specials and own undefined properties")
+            scripture_id = "native-scripture-fixture"
+            scripture_name = "Native Bible 敬拜"
+            scripture_value = ["stored-id", {"name":scripture_name,"metadata":{"title":"Native Bible","unknown":{"retained":[True,None]}},"future":{"preserve":"e\u0301 🙌"},"books":[
+                {"number":1,"name":"Genesis","chapters":[
+                    {"number":1,"verses":[{"number":1,"value":"Native scripture first 敬拜","unknown":True},{"number":2,"text":"Native scripture second verse","value":"retained legacy field"}]},
+                    {"number":2,"verses":[{"number":1,"value":"Native scripture next chapter"}]}]},
+                {"number":2,"name":"Exodus","chapters":[{"number":1,"verses":[{"number":1,"value":"Native scripture next book"}]}]}
+            ]}]
+            scripture_root = Path(invoke("runtime_context")["dataPath"]) / "Bibles"
+            (scripture_root / (scripture_name + ".fsb")).write_text(json.dumps(scripture_value,ensure_ascii=False))
+            (documents_root / "Bibles/Legacy native.fsb").write_text(json.dumps(["old",{"unknown":[False,None],"books":[]}]))
+            scripture_payloads = [{"name":scripture_name,"id":scripture_id},{"name":"Legacy native","id":"legacy-request"},{"name":"Missing native","id":{"keep":[False,None]}}]
+            scripture_receipts = {}
+            def probe_scriptures(phase):
+                context = invoke("runtime_context")
+                scripture_fixture = {"dataRoot":context["dataPath"],"documentsRoot":str(documents_root),"payloads":scripture_payloads}
+                scripture_source = json.loads(subprocess.run([os.environ.get("FREESHOW_TEST_NODE", "node"),str(ROOT / "tests/desktop/scriptures_oracle.mjs")],input=json.dumps(scripture_fixture),text=True,capture_output=True,check=True,timeout=10).stdout)
+                scripture_observed = script((ROOT / "tests/desktop/scriptures_probe.js").read_text(),scripture_payloads)
+                assert scripture_observed["context"] == scripture_observed["current"] == context, scripture_observed
+                assert [reply["data"] for reply in scripture_observed["replies"]] == scripture_source["replies"], (scripture_observed,scripture_source)
+                assert all(reply["listenerId"] == reply["expectedListenerId"] for reply in scripture_observed["replies"]), scripture_observed
+                assert scripture_observed["status"]["requests"] == 0 and scripture_source["alerts"] == [], (scripture_observed,scripture_source)
+                scripture_receipts[phase] = {"source":scripture_source,"native":scripture_observed}
+                (ARTIFACTS / "scriptures.json").write_text(json.dumps(scripture_receipts,ensure_ascii=False,indent=2))
+                return scripture_observed
+            probe_scriptures("initial")
+            steps.append("Native BIBLE callbacks preserve complete pinned-source primary, legacy, migration, unknown fields and missing values through retained window.api")
             encoder_cache = temp / "app" / "encoder-detection.json"
             encoder_check = invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":invoke("runtime_context"),"data":{"channel":"FFMPEG_CHECK"}}})[0]["message"]["data"]
             assert encoder_check["installed"] is True
@@ -857,6 +896,27 @@ def run():
             refreshed = wait(lambda: script("return window.__outputSnapshotVersion>arguments[0] ? window.__latestOutputData : null", snapshot_version), "Fresh main-renderer snapshot after targeted cue")
             assert refreshed == snapshot
             steps.append("Primary projection and main state unchanged by targeted secondary cue")
+            invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":invoke("runtime_context"),"data":{"channel":"SET_STORE_VALUE","data":{"file":"SYNCED_SETTINGS","key":"scriptures","value":{scripture_id:{"name":scripture_name}}}}}})
+            script("window.api.send('MAIN',{channel:'SYNCED_SETTINGS'})")
+            click('section.drawer button#scripture')
+            wait(lambda: script("return document.body.innerText.includes(arguments[0])",scripture_name), "Native local Bible appears in the retained scripture drawer")
+            click_text(scripture_name)
+            wait(lambda: script("return document.querySelector('.scripture .verses')?.textContent.includes('Native scripture first 敬拜')"), "Retained Bible reader renders migrated verses from native BIBLE loading")
+            click('.scripture .chapters span[id="2"]')
+            wait(lambda: script("return document.querySelector('.scripture .verses')?.textContent.includes('Native scripture next chapter')"), "Retained Bible chapter navigation uses loaded native content")
+            click('.scripture .books span[id="2"]')
+            wait(lambda: script("return document.querySelector('.scripture .verses')?.textContent.includes('Native scripture next book')"), "Retained Bible book navigation uses loaded native content")
+            # Use the original display button; this invokes original scripture
+            # show construction and output routing, without injecting output data.
+            click('section.drawer .main > .row.right button[data-title="Present"]')
+            for handle, label in [(output_window, "Primary"), (secondary_window, "Secondary")]:
+                command("POST", "/window", {"handle":handle})
+                wait(lambda: visible_lyric("Native scripture next book"), label + " projection displays the retained Bible cue")
+            (ARTIFACTS / "output-scripture.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
+            command("POST", "/window", {"handle":main_window})
+            click('section.drawer button#shows')
+            click_text("Rust parity test")
+            wait(lambda: script("return document.querySelectorAll('#showArea .grid .slide.context').length>=2"), "Original show controls restored after the Bible cue")
             script("window.__outputStates=[];window.api.send('OUTPUT',{channel:'TOGGLE_OUTPUTS',data:{outputs:arguments[0],state:false,autoPosition:false}})", [output_config, secondary_config])
             wait(lambda: script("return arguments[0].every(id=>window.__outputStates.at(-1)?.some(s=>s.id===id && s.active===false))", [output_id, secondary_id]), "Both native projections hidden")
             settings_path = temp / "app" / "settings.json"
@@ -879,6 +939,8 @@ def run():
             other = temp / "other-library"
             (other / "Shows").mkdir(parents=True)
             (other / "Config").mkdir()
+            (other / "Bibles").mkdir()
+            shutil.copyfile(scripture_root / (scripture_name + ".fsb"), other / "Bibles" / (scripture_name + ".fsb"))
             other_show = json.loads(json.dumps(saved))
             other_show[1]["name"] = "Second library"
             layout_id = other_show[1].get("settings", {}).get("activeLayout") or next(iter(other_show[1]["layouts"]))
@@ -1082,6 +1144,11 @@ def run():
                 file_reads_status = invoke("library_status")
                 assert file_reads_status["activeJob"]["listenerId"] == "backup-responsiveness" and file_reads_status["activeJob"]["phase"] == "backupCompression", file_reads_status
                 steps.append("Four concurrent native document/EXIF/Bible reads preserve callback types and current context during the same ZIP compression")
+                scriptures_during_backup = probe_scriptures("backup")
+                assert scriptures_during_backup["elapsedMs"] < 1500, scriptures_during_backup
+                scriptures_status = invoke("library_status")
+                assert scriptures_status["activeJob"]["listenerId"] == "backup-responsiveness" and scriptures_status["activeJob"]["phase"] == "backupCompression", scriptures_status
+                steps.append("Independent native scripture workers preserve full source callbacks and current library while the same real ZIP compression remains active")
                 browse_result = script("""
                     return (async()=>{
                         const started=performance.now(),context=window.api.getRuntimeContext(),replies=[];
@@ -1306,7 +1373,7 @@ def run():
                         command("POST", "/window", {"handle": main_window})
                     (ARTIFACTS / "failed.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
                     (ARTIFACTS / "failed-dom.txt").write_text(script("return document.body.innerText"))
-                    (ARTIFACTS / "failed-errors.json").write_text(json.dumps(script("return {runtime:window.__testRuntimeErrors,errors:window.__testErrors,clicks:window.__testClicks,nativeEvents:window.__nativeEvents,outputData:window.__latestOutputData,outputStates:window.__outputStates,navigation:[...document.querySelectorAll('.top button')].map(e=>{const r=e.getBoundingClientRect();return {title:e.dataset.title,rect:r.toJSON(),cover:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,400)}})}"), indent=2))
+                    (ARTIFACTS / "failed-errors.json").write_text(json.dumps(script("return {runtime:window.__testRuntimeErrors,errors:window.__testErrors,clicks:window.__testClicks,nativeEvents:window.__nativeEvents,outputData:window.__latestOutputData,outputStates:window.__outputStates,drawerButtons:[...document.querySelectorAll('section.drawer button')].map(e=>({title:e.dataset.title,html:e.outerHTML.slice(0,250)})),navigation:[...document.querySelectorAll('.top button')].map(e=>{const r=e.getBoundingClientRect();return {title:e.dataset.title,rect:r.toJSON(),cover:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,400)}})}"), indent=2))
                 except Exception:
                     pass
             raise
