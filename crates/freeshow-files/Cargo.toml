@@ -1,0 +1,29 @@
+[package]
+name = "freeshow-files"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Bounded filesystem services for the retained FreeShow media path contracts"
+
+# Standalone until the coordinator adds this package to the shared workspace.
+[workspace]
+
+[dependencies]
+idna = "=1.1.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["sync"] }
+unicode-normalization = "=0.1.23"
+url = "=2.5.8"
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt", "time"] }
+
+[[bin]]
+name = "freeshow-files-parity"
+path = "src/bin/parity.rs"
+
+[profile.dev]
+debug = 0
+incremental = false
