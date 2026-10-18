@@ -89,20 +89,31 @@ async fn connect(address: SocketAddr) -> (String, String) {
         engine["sid"].as_str().unwrap()
     );
     assert_eq!(http(address, "POST", &path, "40").await, "ok");
+    let socket = poll_packet(address, &path, "40").await;
+    (path, socket["sid"].as_str().unwrap().to_string())
+}
+async fn poll_packet(address: SocketAddr, path: &str, expected: &str) -> Value {
+    // Engine.IO may enqueue a no-op before or alongside a Socket.IO payload.
+    // Await the actual packet instead of using the HTTP response as a barrier.
     for _ in 0..8 {
-        let connected = http(address, "GET", &path, "").await;
-        for packet in connected.split('\u{1e}') {
-            if let Some(json) = packet.strip_prefix("40") {
-                let socket: Value = serde_json::from_str(json).unwrap();
-                return (path, socket["sid"].as_str().unwrap().to_string());
+        let payload = http(address, "GET", path, "").await;
+        for packet in payload.split('\u{1e}') {
+            if let Some(json) = packet.strip_prefix(expected) {
+                return serde_json::from_str(json).unwrap();
             }
             if packet == "2" {
-                http(address, "POST", &path, "3").await;
+                http(address, "POST", path, "3").await;
+            } else {
+                assert_eq!(
+                    packet, "6",
+                    "Unexpected packet while waiting for {expected}: {packet}"
+                );
             }
         }
     }
-    panic!("No Socket.IO namespace confirmation")
+    panic!("No Socket.IO {expected} packet")
 }
+
 async fn event(events: &mut mpsc::Receiver<Event>) -> Event {
     timeout(Duration::from_secs(8), events.recv())
         .await
@@ -213,11 +224,8 @@ async fn real_clients_and_targeted_replies_continue_outside_blocked_library_io()
         .dispatch(request("REMOTE", "", reply.clone(), &context), "main")
         .await
         .unwrap();
-    let received = http(address, "GET", &path, "").await;
-    assert_eq!(
-        serde_json::from_str::<Value>(received.strip_prefix("42").unwrap()).unwrap(),
-        json!(["REMOTE", reply])
-    );
+    let received = poll_packet(address, &path, "42").await;
+    assert_eq!(received, json!(["REMOTE", reply]));
     let stop = tokio::spawn({
         let native = native.clone();
         let context = context.clone();
