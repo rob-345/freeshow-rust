@@ -1,0 +1,112 @@
+{
+    "revision": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "sourceSha256": "51fa05f893c126856ce60f23cda79c1784bfdfceb818ca184ed82da6426d9198",
+    "node": "v22.21.1",
+    "platform": "linux",
+    "arch": "x64",
+    "addonVersion": "0.10.0",
+    "sourceHashes": {
+        "package.json": "2bb12d8815705d8284db6c0a3621f9fe5a7ba57de17832e1eb46e1d43d363d1d",
+        "src/node-opus.cc": "d6978e6cefe81b4b42b9a645ac6f35ae81eeb292bf9c63f56a04763060def892",
+        "src/node-opus.h": "c4cca370c9c670f4013bafdaf280fc714f36fb380d4e99ee28e7df0cfdf4edf7",
+        "deps/binding.gyp": "946aed08a763b159a5f90810e77be9eb6880e51462c4044ee261d4826292a9a6",
+        "deps/config/opus/linux/x64/config.h": "9e91e6a78f203c1a9d46974d7bd1148f6febee028571abe8b05c62f3820ec382",
+        "deps/opus/include/opus.h": "8cfcc0feff3921bcc38971beb4b3f37058a49c1ca5da6b59fb4af638e21f8ee6",
+        "deps/opus/include/opus_defines.h": "f43bebc41ef7f7bd3a6b5d38a4410301b4ccdb854ad842fe985e93523802440b"
+    },
+    "allBuildSourceHashesSha256": "539270bccc1ba677826367772cf5b677a34bd08f8871eb6353259fec2c395db6",
+    "buildOutputs": {
+        "libopus.so.0": "3687b5a465c0c4a23f49c8193015d6e82a7b31fd70c0ee99f630d2acaf403972",
+        "bundled/opus.node": "d6026e03da293cad3028386e699b569fdd51598830f9ecb678f11a63725b6f4d",
+        "system/opus.node": "451d5f27a4516283956a6633b466220f1165df07a51a9a0bb729d2fa43f135dc"
+    },
+    "systemLibrarySha256": "63ddaf057d71c53090607e0467eb308640c3b39b0f189e5b937e9c397be2f676",
+    "backends": [
+        {
+            "version": "libopus 1.3.1",
+            "info": {
+                "channels": 2,
+                "default_bitrate": 120000,
+                "frame_samples": 960,
+                "library": "/home/rob-admin/GitHub/freeshow-worktrees/media-probe/crates/freeshow-media-copy/target/opus-oracles/libopus.so.0",
+                "lookahead": 312,
+                "max_packet_bytes": 3828,
+                "rate": 48000,
+                "state_bytes": 48484,
+                "version": "libopus 1.3.1"
+            },
+            "quality": {
+                "count": 63360,
+                "snrDb": 42.07347526604628,
+                "correlation": 0.999969171567935
+            },
+            "pcmSha256": "358125e9f953763cf06880c7e515cf36097e665a71ece1e29d1480ec4191b4f2",
+            "packetsSha256": "d72b957fcab6294f72ae6b93ed87eff2e1a6b032581c97fc868d113845c06500",
+            "decodedSha256": "441edfed260e08b1d64dcf5eb9def4c1ccdab98dae0f2afcd25808bc261c0385",
+            "firstPackets": [
+                "fcfffe",
+                "fcfffe",
+                "fcfffe",
+                "fcfffe",
+                "fc7cae770825688d056b70f36255dd325c0366994a0565f1f8dd3ef38a0f023e20b38f0643d8f9cf50d8df5c380e1b9b653b43e2bfec12d48acb9fc61ed5c4b463042f4f61d16daebcd2e14d941b8e1bc30c65bd15954d16fca670b7018dd5ea5ed23d9b0445a4bba6394da487769e545622877e9dff63071c176c1dd078b6fb4294538c58e7a60a40d8fc8020e64f1f0e0c2ddaf518f15dcd0ea395c396bb49b014b478daf47872d44cc36b109ade8b123aa50a714ce3a36da7a3e039ae8a6c49c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000303cfccc00f0fc3a80be7fe123fd399b71f3c014edadb7dbb4ac659f9632cfc7e37b19b060c83e745d11967d87f4005dca4511c711506351bd133d6718730d6c281a068123098aeb9b73ffbfaab5b25b492012b64917f5f055a",
+                "fcca94590e09e09fc37b05f512dba925b0ac81d07fa400bc234c0f3d4fb3bb8ce053405791351686b639d0a699733d5cd0594d50bd6cead06d2b053d9ca514a153f1f126619273f0bcb4ef15949f0e3b6222accb7f1c9d16b302459dad1885622a94763604bb440985cf367622863481c18e916194c0954d05d99d12504a59eb60b5ca4ba26bb40e6ab5d43a5dac100d4b0c575c8cb516cbca683b8cb8c673005dcdbefb26661848000000000000033d9b6df2bc3e024ced6ad860cccec8873e9e2a7888873e8cf1415baa7cabd5225b327e17c57fb55ddb723a950d521f6b8fe25da06944cd288eb6007aa3ef275c9e9ba41ed6ebcf7faac541846a814bbe8077e1180deffcf831f3c28f2bcd7eacbf53c0257661deff1a52aefd7c8bcdd1876fa2d52430d43482fca0e779104c13c19f936ef05b88c6704a5a58bfda8326899a6a4e517cece166f8a11d08bbef0af4d42a64c893faf0349c7a5b"
+            ]
+        },
+        {
+            "version": "libopus 1.4",
+            "info": {
+                "channels": 2,
+                "default_bitrate": 120000,
+                "frame_samples": 960,
+                "library": "/lib/x86_64-linux-gnu/libopus.so.0",
+                "lookahead": 312,
+                "max_packet_bytes": 3828,
+                "rate": 48000,
+                "state_bytes": 48492,
+                "version": "libopus 1.4"
+            },
+            "quality": {
+                "count": 63360,
+                "snrDb": 41.50445828804636,
+                "correlation": 0.9999647928420511
+            },
+            "pcmSha256": "358125e9f953763cf06880c7e515cf36097e665a71ece1e29d1480ec4191b4f2",
+            "packetsSha256": "0ef3b61e5c9f58d62a519b64c6477b8d35eab1ebed53be77549ac4ba01bcc0d6",
+            "decodedSha256": "0a8d32f484b8b10892e7c0a412bf409dafe293bcaa3399417d5473a25ce25315",
+            "firstPackets": [
+                "fcfffe",
+                "fcfffe",
+                "fcfffe",
+                "fcfffe",
+                "fc7cae770825688d056b70f36255dd325c0366994a0565f1f8dd3ef38a0f023e20b38f0643d8f9cf50d8df5c380e1b9b653b43e2bfec12d48acb9fc61ed5c4b463042f4f61d16daebcd2e14d941b8e1bc30c65bd15954d16fca670b7018dd5ea5ed23d9b0445a4bba6394da487769e545622877e9dff63071c176c1dd078b6fb429452be5ce1a60a40d7702acce64f1f0e0c2ddaf518f15dcd0ea395c3c03789b014b478daf47872d44cc36b109ade8b123aa50a714ce3a36da7a3e039ae8a6c49c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000303cfccc00f0fc3a80be7fe123fd399b71f3c014edadb7dbb4ac659f9632cfc7e37b19b0ddc43e742311967d845f405dca4511c7101463d1bdbb1fef98730dac281a068123098aeb9b73ffbfaab5b25b492012b64917f5f055a",
+                "fcca94590e09e09fc37b05f512dba925b0ac81d07fa400bc234c0f3d4fb3bb8ce053405791351686b639d0a699733d5cd0594d50bd6cead06d2b053d9ca514a153f1f126619273f0bcb4ef15949f0e3b6222accb7f1c9d16b302459dad0e1f422a94763604bb440985cf367622863481c18e916194c0954d05d99d12504a59eb60b5ca4ba26bb40e6ab5d43a5dac100d4b0c575287af16cbca683b8cb8c673005dcdbefb26661848000000000000033d9b6df2bc3e024ced6ad860cccec8873e9e2a7888873e8cf1415baa7cabd5225b327e2ec5ea355ddb723a950d5346b0e3525da06944cd2a06b6007b478eb75c9e9ba41ed6ebcf7faac541846a814bbe8077e1180deffcf831f3c28f2bca05acc753c0257661deff1a52aefd7c8bcdd1876fa2d52430d43482fca0e779104c13c19f936ef05b88c6704a5a58bfda8326899a6a4e517cece166f8a11d08bbef0af4d42a64c893faf0349c7a5b"
+            ]
+        }
+    ],
+    "crossVersion": {
+        "differentPackets": 50,
+        "totalPackets": 54,
+        "crossDecode": [
+            {
+                "from": "libopus 1.3.1",
+                "to": "libopus 1.4",
+                "quality": {
+                    "count": 63360,
+                    "snrDb": 42.07347869126871,
+                    "correlation": 0.9999691715902786
+                },
+                "decodedSha256": "37d844afc6fd14090c9f31cfc14126bdb3258e5f830ce17f9f7b152153f27236"
+            },
+            {
+                "from": "libopus 1.4",
+                "to": "libopus 1.3.1",
+                "quality": {
+                    "count": 63360,
+                    "snrDb": 41.50444388916292,
+                    "correlation": 0.9999647927252098
+                },
+                "decodedSha256": "05e81e2e8d59d948e1ecf78c2b3c85334b52010c80c451f31b4b4de0a170abc6"
+            }
+        ]
+    }
+}
