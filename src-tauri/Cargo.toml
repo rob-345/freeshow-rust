@@ -19,9 +19,13 @@ freeshow-core = { path = "../crates/freeshow-core" }
 freeshow-media = { path = "../crates/freeshow-media" }
 freeshow-network = { path = "../crates/freeshow-network" }
 freeshow-audio = { path = "../crates/freeshow-audio" }
+freeshow-files = { path = "../crates/freeshow-files" }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tokio = { version = "1", features = ["sync", "macros"] }
+
+[dev-dependencies]
+tempfile = "3"
 
 [profile.dev]
 debug = 0

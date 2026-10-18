@@ -16,14 +16,15 @@ import { clean, root, upstreamFunctions } from "./oracle.mjs"
 // tables differ from packaged Electron's ICU 74.2/Unicode 15.1, so filename
 // folding is separately compared to the actual packaged-app corpus below.
 if (process.version !== "v22.21.1" || process.versions.unicode !== "16.0") {
+    assert.notEqual(process.env.FREESHOW_FILES_ORACLE_REEXEC, "1", "FREESHOW_ORACLE_NODE must use Node 22.21.1 / Unicode 16.0")
     const node = process.env.FREESHOW_ORACLE_NODE || path.join(os.homedir(), ".local/share/freeshow-oracle-node/node-v22.21.1-linux-x64/bin/node")
     assert.ok(fs.existsSync(node), "Set FREESHOW_ORACLE_NODE to Node 22.21.1")
-    const result = spawnSync(node, [fileURLToPath(import.meta.url)], { stdio: "inherit", env: process.env })
+    const result = spawnSync(node, [fileURLToPath(import.meta.url)], { stdio: "inherit", env: { ...process.env, FREESHOW_FILES_ORACLE_REEXEC: "1" } })
     process.exit(result.status ?? 1)
 }
 
-const binary = process.env.FREESHOW_FILES_PARITY || path.join(root, "target/files/debug/freeshow-files-parity")
-assert.ok(fs.existsSync(binary), "Build freeshow-files-parity in target/files first")
+const binary = process.env.FREESHOW_FILES_PARITY || path.join(root, "target/debug", `freeshow-files-parity${process.platform === "win32" ? ".exe" : ""}`)
+assert.ok(fs.existsSync(binary), "Build freeshow-files-parity with cargo build --workspace first")
 function probe(input) {
     const result = spawnSync(binary, [], { input: JSON.stringify(input) + "\n", encoding: "utf8", maxBuffer: 64 * 1024 * 1024, timeout: 120000 })
     assert.equal(result.status, 0, result.stderr || result.error?.message)
@@ -227,7 +228,7 @@ test("NFC and lowercase match actual packaged Electron for every scalar and cont
     const source = fs.readFileSync(path.join(root, filesSource), "utf8")
     const ast = ts.createSourceFile(filesSource, source, ts.ScriptTarget.Latest, true)
     const declaration = ast.statements.find((node) => ts.isFunctionDeclaration(node) && node.name?.text === "normalizeFileNameForMatch").getText(ast)
-    assert.equal(corpus.sourceFunctionSha256, createHash("sha256").update(declaration).digest("hex"))
+    assert.equal(corpus.sourceFunctionSha256, createHash("sha256").update(declaration.replace(/\r\n/g, "\n")).digest("hex"))
     assert.equal(corpus.runtime.version, "1.6.7-beta.2")
     assert.equal(corpus.runtime.versions.electron, "37.10.3")
     assert.equal(corpus.runtime.versions.icu, "74.2")

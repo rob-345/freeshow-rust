@@ -21,6 +21,84 @@ const javascript = ts
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
 
+test("interleaved media setting writes and queries retain their send order", async () => {
+    let releaseFirst,
+        configured = "original"
+    const replies = []
+    const { api } = createRustApi(
+        async (request) => {
+            if (request.data.channel === "SET_MEDIA_FOLDER_PATH") {
+                configured = request.data.data
+                if (configured === "first")
+                    await new Promise((resolve) => {
+                        releaseFirst = resolve
+                    })
+                return []
+            }
+            return [{ channel: "MAIN", message: { channel: "GET_MEDIA_FOLDER_PATH", data: configured }, listenerId: request.listenerId }]
+        },
+        (error) => {
+            throw error
+        }
+    )
+    api.receive("MAIN", (message, id) => replies.push([id, message.data]))
+    api.send("MAIN", { channel: "SET_MEDIA_FOLDER_PATH", data: "first" })
+    api.send("MAIN", { channel: "GET_MEDIA_FOLDER_PATH" }, "first-query")
+    api.send("MAIN", { channel: "SET_MEDIA_FOLDER_PATH", data: "second" })
+    api.send("MAIN", { channel: "GET_MEDIA_FOLDER_PATH" }, "second-query")
+    await tick()
+    releaseFirst()
+    await tick()
+    assert.deepEqual(replies, [
+        ["first-query", "first"],
+        ["second-query", "second"]
+    ])
+})
+
+test("media setting resets order following queries without queuing independent reads behind backups", async () => {
+    const calls = [],
+        errors = []
+    const { api } = createRustApi(
+        (request) => new Promise((resolve) => calls.push({ request, resolve })),
+        (...error) => errors.push(error)
+    )
+    api.send("MAIN", { channel: "SAVE", data: { customTriggers: { backup: true } } })
+    api.send("MAIN", { channel: "GET_MEDIA_FOLDER_PATH" }, "before-reset")
+    api.send("MAIN", { channel: "LOCATE_MEDIA_FILE", data: { filePath: "/existing", folders: [] } }, "during-backup")
+    await tick()
+    assert.deepEqual(
+        calls.map(({ request }) => request.data.channel),
+        ["SAVE", "GET_MEDIA_FOLDER_PATH"]
+    )
+    calls[1].resolve([])
+    await tick()
+    assert.deepEqual(
+        calls.map(({ request }) => request.data.channel),
+        ["SAVE", "GET_MEDIA_FOLDER_PATH", "LOCATE_MEDIA_FILE"]
+    )
+    api.send("MAIN", { channel: "SET_MEDIA_FOLDER_PATH", data: "" })
+    api.send("MAIN", { channel: "GET_MEDIA_FOLDER_PATH" }, "after-reset")
+    api.send("MAIN", { channel: "LOCATE_MEDIA_FILE", data: { filePath: "/missing", folders: [] } })
+    await tick()
+    assert.equal(calls.length, 3)
+    calls[0].resolve([])
+    await tick()
+    assert.equal(calls.length, 4)
+    assert.equal(calls[3].request.data.channel, "SET_MEDIA_FOLDER_PATH")
+    calls[3].resolve([])
+    await tick()
+    assert.equal(calls[4].request.data.channel, "GET_MEDIA_FOLDER_PATH")
+    calls[4].resolve([])
+    await tick()
+    assert.deepEqual(
+        calls.slice(4).map(({ request }) => request.data.channel),
+        ["GET_MEDIA_FOLDER_PATH", "LOCATE_MEDIA_FILE"]
+    )
+    for (const call of calls.slice(1)) call.resolve([])
+    await tick()
+    assert.deepEqual(errors, [])
+})
+
 test("native event subscriptions isolate main and output windows", async () => {
     const listeners = []
     const makeWindow = (label) => ({

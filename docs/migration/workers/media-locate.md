@@ -4,7 +4,7 @@ Owned slice: `crates/freeshow-files/**` and `tests/parity/media-locate.test.mjs`
 
 ## Host API
 
-The crate is intentionally standalone with its own `[workspace]`, manifest and lockfile for isolated checks. Coordinator integration may remove its `[workspace]`/local profile and add it to the shared workspace. No shared manifests, native entrypoint, bridge, store implementation or IPC contracts are edited by this slice.
+The owned worker slice was checked as a standalone crate. Coordinator integration adds it to the root workspace and native manifest, using the shared lockfiles and normal `target/debug` binary location. The desktop host integration is in `src-tauri/src/files.rs`; its tests are in `src-tauri/tests/files.rs`.
 
 ```rust
 use freeshow_files::{FilesService, JobControl, Limits, LocateRequest, MediaRoot};
@@ -58,16 +58,26 @@ Invalid typed payloads/NUL paths fail explicitly. Non-Unicode filesystem names r
 
 ## Focused verification
 
-From this worktree, without changing shared manifests or node_modules:
+From the integrated root workspace:
 
 ```sh
-CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$PWD/target/files" cargo test --manifest-path crates/freeshow-files/Cargo.toml --locked
-CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$PWD/target/files" cargo clippy --manifest-path crates/freeshow-files/Cargo.toml --all-targets --locked -- -D warnings
-CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$PWD/target/files" cargo build --manifest-path crates/freeshow-files/Cargo.toml --locked
+CARGO_BUILD_JOBS=2 cargo test -p freeshow-files --locked
+CARGO_BUILD_JOBS=2 cargo clippy -p freeshow-files --all-targets --locked -- -D warnings
+CARGO_BUILD_JOBS=2 cargo build -p freeshow-files --all-targets --locked
 node --test tests/parity/media-locate.test.mjs
 xvfb-run -a node crates/freeshow-files/tools/generate-case-table.mjs --check
 ```
 
 `FREESHOW_FILES_PARITY` overrides the binary location. `FREESHOW_ORACLE_NODE` selects standalone Node 22.21.1 if the runner differs. `FREESHOW_ELECTRON_BIN` selects the verified packaged executable. The generator's default location is the locally extracted pinned official release; its profile is temporary and removed after exit.
 
-Native tests cover overload, event-loop responsiveness, queue deadlines/cancellation, dropped-future cancellation, terminal/repeated shutdown, concurrent worker completion, admission payload bounds, real entry budgets and symlink loops, and lazy/default-folder behavior. Source-driven tests cover normalization/invalid escapes, Unicode/UTF-16 hashes, POSIX/Windows lexical path corpora, ordered real searches/depth limits, missing/unreadable paths, disabled cached lookup, symlinks/directories, failed mkdir, source cache deletions versus native instructions, and explicit malformed/resource/deadline/cancellation errors. Host context/effect application and renderer media dispatch are coordinator integration work; this standalone check does not claim those paths are wired.
+Native tests cover overload, event-loop responsiveness, queue deadlines/cancellation, dropped-future cancellation, terminal/repeated shutdown, concurrent worker completion, admission payload bounds, real entry budgets and symlink loops, and lazy/default-folder behavior. Source-driven tests cover normalization/invalid escapes, Unicode/UTF-16 hashes, POSIX/Windows lexical path corpora, ordered real searches/depth limits, missing/unreadable paths, disabled cached lookup, symlinks/directories, failed mkdir, source cache deletions versus native instructions, and explicit malformed/resource/deadline/cancellation errors. Those worker checks cover standalone preparation. The separately verified coordinator integration below covers host context/effect application and renderer dispatch.
+
+## Coordinator integration
+
+Native `LOCATE_MEDIA_FILE`, `GET_MEDIA_FOLDER_PATH` and string `SET_MEDIA_FOLDER_PATH` now route to this service or the ordered config owner. Media configuration and context are captured atomically. The host holds one of ten request leases through any cache commit, with immediate overload rejection and old-library token cancellation. The final library-owner commit validates context again before effects, preserving unrelated `CACHE_SYNC` fields and concurrently found replacements. Missing-file invalidations also apply before a later resource error is reported. Replies retain listener IDs and context; no-match remains null.
+
+The fork uses its existing private `GET_CACHE_PATH` directory, `appData/Thumbnails`, for invalidation. It never deletes the original Electron profile's cache or shared temp fallback. A symlink cache directory fails explicitly; individual unlink failures are reported while the search result continues, as in the source. Unavailable-primary-cache fallback parity remains pending. Host setting input is a bounded string; truthy non-string stored configuration fails explicitly before a lookup, including existing-file lookups. The source's earlier existing-file shortcut can avoid that invalid configuration, so malformed-config precedence is not claimed equivalent.
+
+The bridge retains setting/query send order, including interleaved folder changes and resets; LOCATE remains concurrent once earlier settings/queries settle. Unrelated library saves do not join this short settings queue. Existing-file replies with no effects and media-folder queries stay outside ordered library IO; misses with invalidation/replacement effects wait behind earlier owner work, including ZIP compression, before publishing. The ten-second filesystem deadline does not bound that final ordered commit wait. Context cancellation cannot preempt OS filesystem calls or retract fallback-directory creation already performed for the captured library.
+
+Six host tests cover complete-pipeline admission/cancellation/close, existing-file replies, lazy/configured/reset folders, concurrent cache merges/selective invalidation, stale queued commits and completed invalidations on resource failure. The real editor probe exercises retained window.api setting/reset/query order and existing-file/folder replies during a real ZIP, alongside existing persistence/output/shutdown checks. This establishes routing and bounded preparation for the tested paths; it does not establish playback or application-level speedups. Required CI includes the native host tests.

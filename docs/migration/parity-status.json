@@ -156,7 +156,11 @@
         "tests/parity/audio-metadata.test.mjs",
         "crates/freeshow-audio/src/tests.rs",
         "crates/freeshow-audio/src/preflight.rs",
-        "tests/desktop/audio_oracle.mjs"
+        "tests/desktop/audio_oracle.mjs",
+        "tests/parity/media-locate.test.mjs",
+        "crates/freeshow-files/src/tests.rs",
+        "crates/freeshow-files/tests/unicode-oracle.json",
+        "src-tauri/tests/files.rs"
       ],
       "remaining": [
         "video codecs and seeking",
@@ -167,9 +171,11 @@
         "binary packaging/downloads, whole-request discovery deadlines, descendant cleanup and blocked-filesystem cancellation",
         "Windows/macOS subprocess and native media workflows",
         "audio metadata: other formats, ID3v1/APEv2/mixed-container priority, flagged/complex tags, alternate encodings and uncommon common-field postprocessing",
-        "audio parsing: hard OS/CPU cancellation, final thread/TLS join bounds, broad parser fuzzing and whole-process memory budgets"
+        "audio parsing: hard OS/CPU cancellation, final thread/TLS join bounds, broad parser fuzzing and whole-process memory budgets",
+        "media lookup: public DOES_MEDIA_EXIST change-time contract, nested duplicate-winner equivalence, non-Unicode names/unpaired surrogates and actual Windows/macOS filesystem/GUI validation",
+        "media lookup: cache fallback and malformed-config precedence, OS-call cancellation, stale fallback-directory creation and commit-wait latency"
       ],
-      "scope": "FFMPEG_CHECK plus MP4Box-compatible MEDIA_CODEC/MEDIA_TRACKS corpus through bounded supervised ffprobe; diagnostics preserve unsupported capabilities; native replies retain payload/context/correlation independently of library compression; READ_AUDIO_METADATA common tags/ReplayGain compared with original music-metadata on 220 handler cases and 19 real files through two fixed parser workers, capped reads/operations/tag sizes/counts/depth/output and explicit unsupported/resource diagnostics"
+      "scope": "FFMPEG_CHECK plus MP4Box-compatible MEDIA_CODEC/MEDIA_TRACKS corpus through bounded supervised ffprobe; diagnostics preserve unsupported capabilities; native replies retain payload/context/correlation independently of library compression; READ_AUDIO_METADATA common tags/ReplayGain compared with original music-metadata on 220 handler cases and 19 real files through two fixed parser workers, capped reads/operations/tag sizes/counts/depth/output and explicit unsupported/resource diagnostics; native LOCATE_MEDIA_FILE, GET_MEDIA_FOLDER_PATH and string SET_MEDIA_FOLDER_PATH use two filesystem workers, ten host leases through context-validated cache commits, actual packaged-Electron Unicode folding and ordered media settings"
     },
     {
       "id": "network-and-control",
@@ -233,7 +239,8 @@
         "scripts/migration/benchmark.mjs",
         "tests/desktop/smoke.py",
         "tests/desktop/output_probe.js",
-        "tests/desktop/backup_probe.js"
+        "tests/desktop/backup_probe.js",
+        "scripts/migration/probe-electron-release.mjs"
       ],
       "remaining": [
         "comparable Electron baseline",
@@ -245,7 +252,7 @@
         "uncached projected content and responsiveness under other background IO/CPU workloads",
         "bounded parallel CPU pools; comparable measurements for supervised media and async networking under sustained load"
       ],
-      "scope": "Helper microbenchmark plus Linux debug controls, paired disk SHOW reads, a real uncached presenting UI load and two warm cached projections during 64 MiB ZIP compression; DOM/CSS/RAF progress measured without physical scanout or application-level speedup certification"
+      "scope": "Helper microbenchmark plus Linux debug controls, paired disk SHOW reads, a real uncached presenting UI load and two warm cached projections during 64 MiB ZIP compression; DOM/CSS/RAF progress measured without physical scanout or application-level speedup certification; official Electron package digest/tag and isolated GUI readiness verified, without comparable application performance measurements"
     },
     {
       "id": "distribution",

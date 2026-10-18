@@ -5,9 +5,6 @@ edition = "2021"
 license = "GPL-3.0-only"
 description = "Bounded filesystem services for the retained FreeShow media path contracts"
 
-# Standalone until the coordinator adds this package to the shared workspace.
-[workspace]
-
 [dependencies]
 idna = "=1.1.0"
 serde = { version = "1", features = ["derive"] }
@@ -23,7 +20,3 @@ tokio = { version = "1", features = ["macros", "rt", "time"] }
 [[bin]]
 name = "freeshow-files-parity"
 path = "src/bin/parity.rs"
-
-[profile.dev]
-debug = 0
-incremental = false

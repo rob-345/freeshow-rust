@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod drop;
+mod files;
 mod menu;
 mod output;
 
@@ -11,6 +12,7 @@ use freeshow_core::{
     service::{LibraryService, LibraryStatus},
     WireError,
 };
+use freeshow_files::{FilesService, Limits as FilesLimits};
 use freeshow_media::{MediaConfig, MediaService};
 use freeshow_network::{OscSender, OscSenderConfig};
 use serde_json::json;
@@ -25,6 +27,7 @@ struct AppState {
     outputs: output::OutputService,
     media: MediaService,
     audio: AudioService,
+    files: files::NativeFiles,
     osc: OscSender,
     app_data: PathBuf,
     error_log: PathBuf,
@@ -97,6 +100,10 @@ async fn ipc_dispatch(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if files::COMMANDS.contains(&command) {
+            let state = app.state::<AppState>();
+            return files::dispatch(&state.library, &state.files, request, window.label()).await;
+        }
         if command == "EMIT_OSC" {
             let state = app.state::<AppState>();
             state
@@ -229,11 +236,13 @@ async fn ipc_dispatch(
                 if !discard {
                     drained.map_err(WireError::from)?;
                 }
-                tokio::join!(
+                let (_, _, _, files_result) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
-                    state.osc.shutdown()
+                    state.osc.shutdown(),
+                    state.files.shutdown()
                 );
+                files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -325,6 +334,7 @@ async fn ipc_dispatch(
     };
     if command == "UPDATE_DATA_PATH" {
         let context = library.context().map_err(WireError::from)?;
+        app.state::<AppState>().files.context_changed(&context);
         match app
             .state::<AppState>()
             .outputs
@@ -558,11 +568,13 @@ fn main() {
                 OscSender::start(OscSenderConfig::default())
             })?;
             let audio = AudioService::new(AudioConfig::default())?;
+            let files = files::NativeFiles::new(FilesService::start(FilesLimits::default())?);
             app.manage(AppState {
                 library: LibraryService::start(runtime)?,
                 outputs,
                 media,
                 audio,
+                files,
                 osc,
                 app_data,
                 error_log,

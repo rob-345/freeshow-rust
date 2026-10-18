@@ -7,7 +7,7 @@ import ts from "typescript"
 import { withElectron } from "./electron.mjs"
 
 const sourceFile = new URL("../../../src/electron/utils/files.ts", import.meta.url)
-const source = fs.readFileSync(sourceFile, "utf8")
+const source = fs.readFileSync(sourceFile, "utf8").replace(/\r\n/g, "\n")
 const ast = ts.createSourceFile("files.ts", source, ts.ScriptTarget.Latest, true)
 const declaration = ast.statements.find((node) => ts.isFunctionDeclaration(node) && node.name?.text === "normalizeFileNameForMatch").getText(ast)
 const javascript = ts.transpileModule(declaration, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText

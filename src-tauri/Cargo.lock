@@ -1075,6 +1075,7 @@ version = "0.1.0"
 dependencies = [
  "freeshow-audio",
  "freeshow-core",
+ "freeshow-files",
  "freeshow-media",
  "freeshow-network",
  "serde_json",
@@ -1082,7 +1083,20 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
+ "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "freeshow-files"
+version = "0.1.0"
+dependencies = [
+ "idna",
+ "serde",
+ "serde_json",
+ "tokio",
+ "unicode-normalization",
+ "url",
 ]
 
 [[package]]
@@ -4193,6 +4207,15 @@ name = "unicode-ident"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
+
+[[package]]
+name = "unicode-normalization"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a56d1686db2308d901306f92a263857ef59ea39678a5458e7cb17f01415101f5"
+dependencies = [
+ "tinyvec",
+]
 
 [[package]]
 name = "unicode-segmentation"

@@ -54,6 +54,41 @@ jobs:
       - if: inputs.require_full_parity == true
         run: npm run rust:parity:gate
 
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      CARGO_BUILD_JOBS: "2"
+    steps:
+      - uses: actions/checkout@v5
+      - run: git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.21.1
+          cache: npm
+      - run: rustup show
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ runner.arch }}-rust-native-${{ hashFiles('Cargo.lock', 'src-tauri/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-rust-native-
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run rust:frontend:build
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --locked
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets --locked -- -D warnings
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --locked
+
   desktop-linux:
     runs-on: ubuntu-24.04
     steps:
@@ -80,10 +115,10 @@ jobs:
       - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
-      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol -- -D warnings
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets -- -D warnings
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
       - run: cargo build --workspace --all-targets

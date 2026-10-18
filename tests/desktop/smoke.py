@@ -42,7 +42,7 @@ def free_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -386,6 +386,34 @@ def run():
             script("window.__selectedRoot=null;window.api.receive('MAIN',m=>{if(m.channel==='DATA_PATH')window.__selectedRoot=m.data},'root-check');window.api.send('MAIN',{channel:'DATA_PATH'})")
             wait(lambda: script("return window.__selectedRoot === arguments[0]", str(data_dir)), "Selected data library reopened after restart")
             attach_errors()
+            configured_media_folder = data_dir.parent / "Native media folder 敬拜"
+            media_folder_reset = script("""
+                return (async()=>{
+                    let sequence=0;
+                    const read=()=>new Promise((resolve,reject)=>{
+                        const id='native-media-folder-'+(++sequence);
+                        const timer=setTimeout(()=>{window.api.removeListener('MAIN',id);reject(new Error('GET_MEDIA_FOLDER_PATH timed out'));},3000);
+                        window.api.receive('MAIN',(message,listenerId)=>{
+                            if(listenerId!==id)return;
+                            clearTimeout(timer);window.api.removeListener('MAIN',id);
+                            resolve({message,listenerId});
+                        },id);
+                        window.api.send('MAIN',{channel:'GET_MEDIA_FOLDER_PATH'},id);
+                    });
+                    window.api.send('MAIN',{channel:'SET_MEDIA_FOLDER_PATH',data:arguments[0]});
+                    const configured=await read();
+                    window.api.send('MAIN',{channel:'SET_MEDIA_FOLDER_PATH',data:''});
+                    const reset=await read();
+                    return {context:window.api.getRuntimeContext(),configured,reset};
+                })();
+            """, str(configured_media_folder))
+            assert media_folder_reset["configured"]["message"] == {"channel":"GET_MEDIA_FOLDER_PATH","data":str(configured_media_folder)}, media_folder_reset
+            assert media_folder_reset["reset"]["message"] == {"channel":"GET_MEDIA_FOLDER_PATH","data":str(data_dir / "Media")}, media_folder_reset
+            assert not configured_media_folder.exists()
+            assert (data_dir / "Media").is_dir()
+            assert json.loads(config_path.read_text())["mediaFolderPath"] == ""
+            (ARTIFACTS / "media-folder-reset.json").write_text(json.dumps(media_folder_reset, indent=2))
+            steps.append("Retained window.api media-folder set/query/reset observes ordered committed settings and lazy directories")
             click_text("Rust parity test")
             wait(lambda: script("return document.body.innerText.includes('Amazing grace') && document.body.innerText.includes('日本語')"), "Saved show loaded and rendered")
 
@@ -680,8 +708,10 @@ def run():
                             const keys=Object.keys(value);
                             return [[path,keys],...keys.flatMap(key=>keyOrder(value[key],[...path,key]))];
                         }
-                        for(const command of ['FFMPEG_CHECK','MEDIA_CODEC','MEDIA_TRACKS','READ_AUDIO_METADATA']) {
-                            const data=command==='READ_AUDIO_METADATA'?{filePath:arguments[1]}:{path:arguments[0],future:{kept:true}};
+                        for(const command of ['FFMPEG_CHECK','MEDIA_CODEC','MEDIA_TRACKS','READ_AUDIO_METADATA','LOCATE_MEDIA_FILE','GET_MEDIA_FOLDER_PATH']) {
+                            const data=command==='READ_AUDIO_METADATA'?{filePath:arguments[1]}:
+                                command==='LOCATE_MEDIA_FILE'?{filePath:arguments[0],folders:[]}:
+                                command==='GET_MEDIA_FOLDER_PATH'?null:{path:arguments[0],future:{kept:true}};
                             const events=await window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context,listenerId:'native-'+command,data:{channel:command,data}}});
                             replies.push({command,events,...(command==='READ_AUDIO_METADATA'?{keyOrder:keyOrder(events[0].message.data)}:{})});
                         }
@@ -701,6 +731,11 @@ def run():
                         assert_audio_metadata(result, expected_audio)
                         assert reply["keyOrder"] == audio_key_order(expected_audio), reply
                         (ARTIFACTS / "audio-metadata.json").write_text(json.dumps({"reply":event,"keyOrder":reply["keyOrder"],"original":expected_audio}, indent=2))
+                    elif reply["command"] == "LOCATE_MEDIA_FILE":
+                        assert result == {"path": str(media_fixture), "hasChanged": False}, result
+                    elif reply["command"] == "GET_MEDIA_FOLDER_PATH":
+                        assert result == str(Path(media_result["context"]["dataPath"]) / "Media"), result
+                        assert Path(result).is_dir()
                     else:
                         assert result["path"] == str(media_fixture) and result["future"] == {"kept": True}
                         if reply["command"] == "MEDIA_CODEC":
@@ -715,6 +750,9 @@ def run():
                 (ARTIFACTS / "media-probe.json").write_text(json.dumps(media_result, indent=2))
                 steps.append("Native FFmpeg/AAC metadata replies preserve payload, context and correlation during ZIP compression")
                 steps.append("Native FLAC tags and clamped ReplayGain match actual original music-metadata during ZIP compression")
+                steps.append("Native existing-file lookup preserves path, context and correlation during ZIP compression")
+                steps.append("Native media-folder query reads its committed snapshot and resolves the default during ZIP compression")
+                (ARTIFACTS / "media-locate.json").write_text(json.dumps({"context":media_result["context"],"replies":[reply for reply in media_result["replies"] if reply["command"] in ["LOCATE_MEDIA_FILE","GET_MEDIA_FOLDER_PATH"]]}, indent=2))
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as receiver:
                     receiver.bind(("127.0.0.1", 0))
                     receiver.settimeout(2)

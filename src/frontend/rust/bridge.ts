@@ -15,7 +15,7 @@ export type RuntimeEvent = {
     context?: RuntimeContext
 }
 export type Transport = (request: { channel: string; data?: any; listenerId?: string; context?: RuntimeContext }) => Promise<RuntimeEvent[]>
-const mutations = new Set(["SAVE", "UPDATE_DATA_PATH", "SET_STORE_VALUE", "RESTORE", "DELETE_BACKUP"])
+const mutations = new Set(["SAVE", "UPDATE_DATA_PATH", "SET_STORE_VALUE", "SET_MEDIA_FOLDER_PATH", "RESTORE", "DELETE_BACKUP"])
 const outputLifecycle = new Set(["CREATE", "REMOVE", "TOGGLE_OUTPUTS", "UPDATE_BOUNDS", "SET_VALUE", "FOCUS", "TO_FRONT", "MOVE"])
 
 export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext) {
@@ -23,6 +23,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
     const named = new Map<string, { channel: string; receiver: Receiver }>()
     let context = initialContext ? { ...initialContext } : undefined
     let mutationQueue = Promise.resolve()
+    let mediaSettingsQueue = Promise.resolve()
     let outputQueue = Promise.resolve()
     let outputLifecycleQueue = Promise.resolve()
 
@@ -72,9 +73,17 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 // Native replies are asynchronous, like Electron's IPC. This
                 // also lets requestMain register its receiver after send().
                 const serialized = channel === "MAIN" && mutations.has(data?.channel)
+                const mediaSettingsWrite = channel === "MAIN" && (data?.channel === "SET_MEDIA_FOLDER_PATH" || (data?.channel === "SET_STORE_VALUE" && data?.data?.file === "config"))
+                const mediaSettingsQuery = channel === "MAIN" && data?.channel === "GET_MEDIA_FOLDER_PATH"
+                const mediaSettingsRead = mediaSettingsQuery || (channel === "MAIN" && data?.channel === "LOCATE_MEDIA_FILE")
                 const outputMutation = channel === "OUTPUT" && outputLifecycle.has(data?.channel)
                 const outputMessage = channel === "OUTPUT" && !outputMutation
-                const complete = (serialized ? mutationQueue : outputMutation ? outputLifecycleQueue : outputMessage ? outputQueue : Promise.resolve())
+                const queue = serialized ? mutationQueue : outputMutation ? outputLifecycleQueue : outputMessage ? outputQueue : Promise.resolve()
+                // A reset immediately asks for the default media path. Wait for
+                // its earlier setting write, while unrelated saves/backups do
+                // not delay reads of already committed media configuration.
+                const ready = mediaSettingsRead || mediaSettingsWrite ? Promise.all([queue, mediaSettingsQueue]) : queue
+                const complete = ready
                     .then(() => {
                         // A library switch cancels obsolete output work. It
                         // must never replay the old snapshot into new windows.
@@ -87,6 +96,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                         reportError(error, request)
                     })
                 if (serialized) mutationQueue = complete.catch(() => {})
+                if (mediaSettingsWrite || mediaSettingsQuery) mediaSettingsQueue = complete.catch(() => {})
                 if (outputMutation) outputLifecycleQueue = complete.catch(() => {})
                 if (outputMessage) outputQueue = complete.catch(() => {})
             },
