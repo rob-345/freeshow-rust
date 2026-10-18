@@ -60,7 +60,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -657,6 +657,23 @@ def run():
             click_text("Rust parity test")
             wait(lambda: script("return document.body.innerText.includes('Amazing grace')"), "Original show reselected after import checks")
 
+            # Applying the retained default output template can add align/auto
+            # defaults to loaded slide items before the imports Ctrl+S. Validate
+            # only those source-defined additions, then use the current saved
+            # bytes as the exact dialog/backup/restore baseline.
+            current_saved = json.loads(show_path.read_text())
+            expected_saved = json.loads(json.dumps(saved))
+            for slide_id, slide in expected_saved[1]["slides"].items():
+                current_items = current_saved[1]["slides"][slide_id]["items"]
+                for index, item in enumerate(slide["items"]):
+                    for field, default in [("align", ""), ("auto", False)]:
+                        if field not in item and field in current_items[index]:
+                            assert current_items[index][field] == default
+                            item[field] = default
+            assert current_saved == expected_saved, {"expected":expected_saved,"actual":current_saved}
+            saved = current_saved
+            (ARTIFACTS / "saved-before-dialog.show").write_text(json.dumps(saved, ensure_ascii=False, indent=2))
+
             # Exercise real native dialogs and the renderer's IPC bridge.
             script("window.__nativeEvents=[];window.api.receive('MAIN',m=>window.__nativeEvents.push(m),'native-desktop-test');window.api.send('MAIN',{channel:'OPEN_FILE',data:{id:'native-file',channel:'NATIVE_TEST',title:'Read FreeShow Test File',filter:{name:'FreeShow',extensions:['show']},multiple:false,read:true}})")
             choose_native_file("Read FreeShow Test File", show_path)
@@ -1252,7 +1269,7 @@ def run():
                         command("POST", "/window", {"handle": main_window})
                     (ARTIFACTS / "failed.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
                     (ARTIFACTS / "failed-dom.txt").write_text(script("return document.body.innerText"))
-                    (ARTIFACTS / "failed-errors.json").write_text(json.dumps(script("return {runtime:window.__testRuntimeErrors,errors:window.__testErrors,clicks:window.__testClicks,outputData:window.__latestOutputData,outputStates:window.__outputStates,navigation:[...document.querySelectorAll('.top button')].map(e=>{const r=e.getBoundingClientRect();return {title:e.dataset.title,rect:r.toJSON(),cover:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,400)}})}"), indent=2))
+                    (ARTIFACTS / "failed-errors.json").write_text(json.dumps(script("return {runtime:window.__testRuntimeErrors,errors:window.__testErrors,clicks:window.__testClicks,nativeEvents:window.__nativeEvents,outputData:window.__latestOutputData,outputStates:window.__outputStates,navigation:[...document.querySelectorAll('.top button')].map(e=>{const r=e.getBoundingClientRect();return {title:e.dataset.title,rect:r.toJSON(),cover:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,400)}})}"), indent=2))
                 except Exception:
                     pass
             raise
