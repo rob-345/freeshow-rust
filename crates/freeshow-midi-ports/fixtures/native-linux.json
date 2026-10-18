@@ -1,0 +1,46 @@
+{
+    "recordedAt": "2026-10-18T21:26:02.998Z",
+    "platform": "linux",
+    "arch": "x64",
+    "node": "v22.21.1",
+    "baseline": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "sourceSha256": "63f7e8d9742450e5f48147a5886b111d5597234fd4e917da2e4f5ce1b9af6895",
+    "jzz": "1.9.5",
+    "jzzSha256": "2cd148af6319c3106dd5a56ebb4eaa9a6ea161ca5740884d57cb1a5037ca01a0",
+    "jazzMidi": "1.7.9",
+    "midir": "0.11.1",
+    "nativeBinarySha256": "e8ca245e514619ad297cc4be6bcadc9f851341ac14bdadcef6723fc3dd21548c",
+    "native": {
+        "inputs": {
+            "ok": false,
+            "error": {
+                "code": "midi_backend_unavailable",
+                "message": "Native MIDI backend initialization failed (missing/denied ALSA, CoreMIDI or WinMM)"
+            }
+        },
+        "outputs": {
+            "ok": false,
+            "error": {
+                "code": "midi_backend_unavailable",
+                "message": "Native MIDI backend initialization failed (missing/denied ALSA, CoreMIDI or WinMM)"
+            }
+        },
+        "shutdown": null,
+        "status": {
+            "closing": true,
+            "admitted": 0,
+            "inputs": 0,
+            "outputs": 0,
+            "workerFinished": true,
+            "failure": null
+        }
+    },
+    "nativeStderr": "ALSA lib seq_hw.c:528:(snd_seq_hw_open) open /dev/snd/seq failed: Permission denied\nALSA lib seq_hw.c:528:(snd_seq_hw_open) open /dev/snd/seq failed: Permission denied",
+    "original": {
+        "engine": "node",
+        "inputs": [],
+        "outputs": []
+    },
+    "originalStderr": "ALSA lib seq_hw.c:528:(snd_seq_hw_open) open /dev/snd/seq failed: Permission denied",
+    "scope": "Real enumeration only; no successful hardware open, MIDI delivery, loopback, full-frame SysEx or Electron GUI parity established."
+}
