@@ -31,7 +31,7 @@ upstreamFunctions("src/electron/utils/oscPatch.ts", ["pad", "packString", "packI
 
 // Execute the complete original module, replacing only OS binding addresses,
 // host IPC, logging and timer speed. Express, Socket.IO and OSC are real.
-export function apiOracle({ replyMs = 120, dynamicMs = 150 } = {}) {
+export function apiOracle({ replyMs = 120, dynamicMs = 150, wildcard = false } = {}) {
     const events = []
     const servers = []
     const dynamic = new Map()
@@ -46,7 +46,7 @@ export function apiOracle({ replyMs = 120, dynamicMs = 150 } = {}) {
         createServer(app) {
             const server = http.createServer(app)
             const listen = server.listen
-            server.listen = (port, callback) => listen.call(server, port, "127.0.0.1", callback)
+            server.listen = (port, callback) => (wildcard ? listen.call(server, port, callback) : listen.call(server, port, "127.0.0.1", callback))
             servers.push(server)
             return server
         }
@@ -149,7 +149,7 @@ export function apiOracle({ replyMs = 120, dynamicMs = 150 } = {}) {
         async start(data) {
             exports.startWebSocketAndRest(data)
             await new Promise((resolve) => setTimeout(resolve, 20))
-            return { websocket: { port: data?.port || 5505 }, rest: { port: data?.port ? data.port + 1 : 5506 }, osc: { port: data?.port || 5505 } }
+            return { websocket: { port: data?.port || 5505 }, rest: { port: data?.port ? data.port + 1 : 5506 }, osc: { port: data?.port || 5505 }, tcpAddresses: servers.filter((server) => server.listening).map((server) => server.address()) }
         },
         complete(data) {
             exports.apiReturnData(structuredClone(data))

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { randomUUID } from "node:crypto"
 import { spawn } from "node:child_process"
 import dgram from "node:dgram"
 import fs from "node:fs"
@@ -123,9 +124,9 @@ function autoReply(service) {
         if (event.kind === "dynamic_values") void service.dynamic(event.listener_id, { timer_status: "Playing", 日本語: "a\nb" }, event.generation)
     })
 }
-async function httpRequest(port, { path = "/", method = "GET", headers = {}, body } = {}) {
+async function httpRequest(port, { hostname = "127.0.0.1", path = "/", method = "GET", headers = {}, body } = {}) {
     return new Promise((resolve, reject) => {
-        const request = http.request({ hostname: "127.0.0.1", port, path, method, headers, agent: false }, (response) => {
+        const request = http.request({ hostname, port, path, method, headers, agent: false }, (response) => {
             const chunks = []
             response.on("data", (chunk) => chunks.push(chunk))
             response.on("end", () => {
@@ -915,5 +916,61 @@ test("astral string spread reports the native unpaired-surrogate transport gap e
         await service.close()
     } finally {
         service.kill()
+    }
+})
+
+test("authorized production wildcard binding accepts local IPv4 and IPv6 like original Node", { timeout: 10000 }, async (t) => {
+    // This single bounded exception is explicitly authorized by the coordinator:
+    // high dynamic ports, random password, local clients only, finally teardown.
+    let ipv6 = false
+    const probe = net.createServer()
+    try {
+        await new Promise((resolve, reject) => {
+            probe.once("error", reject)
+            probe.listen(0, "::1", resolve)
+        })
+        ipv6 = true
+    } catch (error) {
+        if (!["EAFNOSUPPORT", "EADDRNOTAVAIL"].includes(error.code)) throw error
+        t.diagnostic("IPv6 loopback unavailable; wildcard IPv4 fallback remains tested")
+    } finally {
+        if (probe.listening) await new Promise((resolve) => probe.close(resolve))
+    }
+    const original = apiOracle({ wildcard: true }),
+        service = rust({ wildcard: true }),
+        outputs = []
+    const password = `wildcard-${randomUUID()}`
+    try {
+        for (const server of [original, service]) {
+            let port
+            do {
+                port = await freePort()
+            } while (port < 32768)
+            const bound = await server.start({ port, password })
+            if (server === service && ipv6) assert.match(bound.websocket, /^\[::\]:/)
+            t.diagnostic(`${server === service ? "Rust" : "Node22/libuv"} wildcard ports ${port}/${port + 1}, bound ${server === service ? bound.websocket : JSON.stringify(bound.tcpAddresses)}, client families ${ipv6 ? "IPv4 127.0.0.1 and IPv6 ::1" : "IPv4 127.0.0.1"}`)
+            const statuses = []
+            for (const hostname of ipv6 ? ["127.0.0.1", "::1"] : ["127.0.0.1"]) {
+                for (const target of [port, port + 1]) {
+                    statuses.push((await httpRequest(target, { hostname, path: "/?action=next", headers: { authorization: `Bearer ${password}` } })).status)
+                    statuses.push((await httpRequest(target, { hostname, path: "/?action=denied" })).status)
+                }
+            }
+            outputs.push({ statuses, events: normalizedEvents(server.events) })
+            await server.stop()
+        }
+        assert.deepEqual(outputs[1], outputs[0])
+        assert.ok(outputs[1].statuses.every((value, index) => value === (index % 2 ? 401 : 204)))
+    } finally {
+        try {
+            await original.stop()
+        } finally {
+            try {
+                await service.stop()
+                await service.close()
+            } finally {
+                service.kill()
+            }
+        }
     }
 })

@@ -300,6 +300,7 @@ dependencies = [
  "ryu-js",
  "serde",
  "serde_json",
+ "socket2",
  "socketioxide",
  "tokio",
  "tokio-util",

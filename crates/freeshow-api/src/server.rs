@@ -461,23 +461,44 @@ impl Drop for Transport {
 fn io_error(error: io::Error) -> ApiError {
     ApiError::new("io_error", error.to_string())
 }
+fn tcp_socket(ip: IpAddr) -> io::Result<socket2::Socket> {
+    let socket = socket2::Socket::new(
+        socket2::Domain::for_address((ip, 0).into()),
+        socket2::Type::STREAM,
+        Some(socket2::Protocol::TCP),
+    )?;
+    // Pinned Node/libuv explicitly clears IPV6_V6ONLY on both Unix and Windows.
+    // Depending on the OS default would silently change IPv4 reachability.
+    if ip.is_ipv6() {
+        socket.set_only_v6(false)?;
+    }
+    // libuv enables reuse on Unix and deliberately avoids it on Windows.
+    #[cfg(unix)]
+    socket.set_reuse_address(true)?;
+    Ok(socket)
+}
+fn bound_tcp_socket(ip: IpAddr, port: u16) -> io::Result<socket2::Socket> {
+    let socket = tcp_socket(ip)?;
+    socket.bind(&std::net::SocketAddr::from((ip, port)).into())?;
+    Ok(socket)
+}
 fn bind_tcp(ip: IpAddr, port: u16) -> Result<std::net::TcpListener, ApiError> {
-    match std::net::TcpListener::bind((ip, port)) {
-        Ok(listener) => Ok(listener),
+    let socket = match bound_tcp_socket(ip, port) {
+        Ok(socket) => Ok(socket),
         Err(error)
             if matches!(ip,IpAddr::V6(ip) if ip.is_unspecified())
-                && matches!(
-                    error.kind(),
-                    io::ErrorKind::AddrNotAvailable | io::ErrorKind::Unsupported
-                ) =>
+                && error.kind() != io::ErrorKind::AddrInUse =>
         {
-            std::net::TcpListener::bind((Ipv4Addr::UNSPECIFIED, port)).map_err(io_error)
+            bound_tcp_socket(Ipv4Addr::UNSPECIFIED.into(), port)
         }
-        Err(error) => Err(ApiError::new(
-            "bind_failed",
-            format!("TCP {port} bind failed: {error}"),
-        )),
+        Err(error) => Err(error),
     }
+    .map_err(|error| ApiError::new("bind_failed", format!("TCP {port} bind failed: {error}")))?;
+    // Node requests 511 so common kernels round the effective backlog to 512.
+    socket.listen(511).map_err(|error| {
+        ApiError::new("bind_failed", format!("TCP {port} listen failed: {error}"))
+    })?;
+    Ok(socket.into())
 }
 
 struct CancelIo {
@@ -1429,5 +1450,45 @@ mod tests {
         assert_eq!(service.inner.lifecycle.available_permits(), 32);
         drop(held);
         service.stop().await.unwrap();
+    }
+    #[test]
+    fn tcp_options_explicitly_match_libuv_on_loopback() {
+        let listener = bind_tcp(Ipv4Addr::LOCALHOST.into(), 0).unwrap();
+        assert_eq!(
+            socket2::SockRef::from(&listener).reuse_address().unwrap(),
+            cfg!(unix)
+        );
+        let socket = match tcp_socket(std::net::Ipv6Addr::LOCALHOST.into()) {
+            Ok(socket) => socket,
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::Unsupported | io::ErrorKind::AddrNotAvailable
+                ) || matches!(error.raw_os_error(), Some(97 | 47 | 10047 | 10043)) =>
+            {
+                eprintln!("IPv6 socket unavailable: {error}");
+                return;
+            }
+            Err(error) => panic!("{error}"),
+        };
+        assert!(
+            !socket.only_v6().unwrap(),
+            "IPV6_V6ONLY must be false before bind; some kernels force it true when binding ::1"
+        );
+        if let Err(error) =
+            socket.bind(&std::net::SocketAddr::from((std::net::Ipv6Addr::LOCALHOST, 0)).into())
+        {
+            if error.kind() == io::ErrorKind::AddrNotAvailable {
+                eprintln!("IPv6 loopback unavailable: {error}");
+                return;
+            }
+            panic!("{error}");
+        }
+        socket.listen(511).unwrap();
+        let listener: std::net::TcpListener = socket.into();
+        let address = listener.local_addr().unwrap();
+        let peer = std::net::TcpStream::connect_timeout(&address, Duration::from_secs(1)).unwrap();
+        assert!(listener.accept().unwrap().1.ip().is_loopback());
+        drop(peer);
     }
 }

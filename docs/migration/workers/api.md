@@ -13,7 +13,8 @@ The existing outbound `EMIT_OSC` crate is separate and unchanged by this slice.
 previous run, binds TCP `port`, TCP `port + 1` and UDP `port`, then returns
 `BoundEndpoints`. Default base port is 5505; numeric zero takes the original
 truthiness default. Defaults use Node's dual-stack wildcard TCP binding and
-IPv4 wildcard UDP binding. Tests explicitly use IPv4 loopback.
+IPv4 wildcard UDP binding. Ordinary tests explicitly use loopback; the single
+authorized production-binding exception is described below.
 
 `stop().await` / `shutdown().await` close admission, cancel pending replies and
 clients, await tracked tasks and destroy the isolated network runtime before
@@ -124,6 +125,29 @@ late spawns after tracker wait. Reply bounds use a counting writer before
 cloning/encoding a host envelope; an oversized reply fails both completion and
 the awaiting network request, releases its slot and permits recovery.
 
+### Explicit dual-stack configuration
+
+TCP socket construction now uses socket2 to clear **IPV6_V6ONLY = 0** before
+binding, rather than inheriting the host OS default. It enables SO_REUSEADDR on
+Unix and leaves it disabled on Windows, matching pinned libuv. Default wildcard
+binding tries IPv6 first, falls back to IPv4 for unavailable IPv6/setup failures,
+and uses Node's backlog request of 511. Bind/listen failure still rolls back the
+entire candidate group. This follows pinned Node's
+[listen setup](https://raw.githubusercontent.com/nodejs/node/v22.21.1/lib/net.js),
+[Unix/macOS bind](https://raw.githubusercontent.com/nodejs/node/v22.21.1/deps/uv/src/unix/tcp.c)
+and [Windows bind](https://raw.githubusercontent.com/nodejs/node/v22.21.1/deps/uv/src/win/tcp.c).
+
+The unit regression reads the configured IPV6_V6ONLY option before bind and
+checks IPv6 loopback connectivity and per-OS reuse configuration. Linux can force
+V6ONLY true when binding specifically to ::1, so that loopback-bound value does
+not represent wildcard behavior. The separately authorized real wildcard
+comparison ran on Linux: original Node 22.21.1 and Rust bound [::] and accepted
+both 127.0.0.1 and ::1 requests on both TCP ports, with matching authenticated
+204 and unauthorized 401 results. Its output records actual dynamic ports and
+client families without logging the password. Physical Windows/macOS results
+remain CI/platform integration evidence; their source configuration is verified,
+not described as physically tested by this worker.
+
 ## Vendored dependency
 
 `vendor/socketioxide` is the required source/package subset of registry
@@ -161,7 +185,7 @@ they are not an allocator/RSS benchmark or a claim about all network behavior.
 
 ## Checks and limits of evidence
 
-Focused checks passed: **8 Rust unit tests, 22 Node source/live tests**,
+Focused checks passed: **9 Rust unit tests, 23 Node source/live tests**,
 clippy with warnings denied, Rust formatting and Prettier. Use
 `CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR=target`:
 
@@ -176,8 +200,11 @@ node --test tests/parity/api.test.mjs
 The test harness executes the **complete original api.ts**, injecting only
 loopback OS binding, renderer IPC, logs and shorter timers. Original Express
 4.22.3, Socket.IO 4.8.1 and osc-js 2.4.1 are actual installed dependencies. Source
-hashes are fixed to the pinned commit and work in shallow checkouts. All network
-tests bind/send exclusively on controlled IPv4 loopback.
+hashes are fixed to the pinned commit and work in shallow checkouts. Ordinary fixtures bind/send exclusively on controlled loopback. One explicitly
+authorized production-binding test temporarily opens wildcard listeners on high
+dynamic ports with an unpredictable password, uses only local IPv4/IPv6 clients,
+and guarantees teardown. Network namespace isolation was attempted but unavailable
+(`unshare -Urn` was denied), so this exception is explicit and narrowly bounded.
 
 Source tests ran on standalone Node **22.21.1**. This is Electron 37.10.3's Node
 version, but standalone V8/ICU/Unicode tables differ from packaged Electron.

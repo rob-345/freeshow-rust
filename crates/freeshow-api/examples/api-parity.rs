@@ -2,7 +2,7 @@
 use freeshow_api::{ApiConfig, ApiGeneration, ApiService};
 use serde_json::{json, Value};
 use std::{
-    net::{Ipv4Addr, SocketAddrV4},
+    net::{Ipv4Addr, Ipv6Addr, SocketAddrV4},
     time::Duration,
 };
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
@@ -14,7 +14,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .and_then(|v| serde_json::from_str(&v).ok())
         .unwrap_or(json!({}));
     let mut config = ApiConfig {
-        bind_ip: Ipv4Addr::LOCALHOST.into(),
+        // Only one explicitly authorized parity case opts into production
+        // wildcard binding; ordinary network fixtures remain loopback.
+        bind_ip: if limits["wildcard"].as_bool() == Some(true) {
+            Ipv6Addr::UNSPECIFIED.into()
+        } else {
+            Ipv4Addr::LOCALHOST.into()
+        },
         ..Default::default()
     };
     for (key, target) in [
