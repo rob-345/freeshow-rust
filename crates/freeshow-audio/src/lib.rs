@@ -187,8 +187,10 @@ impl AudioService {
                             }
                             Err(error) => AudioReply::failure(error),
                         };
+                        // Native parsing and output validation are complete. Release admission
+                        // before waking the caller so a sequential request cannot see Busy.
+                        drop(work._permit);
                         let _ = work.response.send(reply);
-                        // work owns its permit until the native parser has completely returned.
                     }
                 });
             match worker {

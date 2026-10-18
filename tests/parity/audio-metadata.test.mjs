@@ -245,7 +245,7 @@ test("empty, missing, malformed and non-file inputs match original null replies"
     const paths = ["", path.join(directory, "missing.flac"), directory, corrupt]
     const responses = rust(paths.map(request))
     for (const [index, file] of paths.entries()) {
-        assert.equal(responses[index].ok, true)
+        assert.equal(responses[index].ok, true, `${path.basename(file)}: ${JSON.stringify(responses[index])}`)
         compare(responses[index].value, clean(await getAudioMetadata(file)))
         assert.deepEqual(responses[index].diagnostics, [])
     }

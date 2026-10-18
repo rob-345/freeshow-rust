@@ -27,6 +27,72 @@ fn block_on<F: Future>(future: F) -> F::Output {
         }
     }
 }
+
+#[test]
+fn publishing_a_completed_audio_reply_already_releases_its_admission_slot() {
+    struct ObserveCapacity {
+        permits: Arc<Semaphore>,
+        observed: std::sync::mpsc::Sender<usize>,
+    }
+    impl Wake for ObserveCapacity {
+        fn wake(self: Arc<Self>) {
+            self.wake_by_ref();
+        }
+        fn wake_by_ref(self: &Arc<Self>) {
+            self.observed
+                .send(self.permits.available_permits())
+                .unwrap();
+        }
+    }
+    let service = AudioService::new(AudioConfig {
+        max_jobs: 1,
+        ..AudioConfig::default()
+    })
+    .unwrap();
+    let missing_path = std::env::temp_dir().join(format!(
+        "freeshow-audio-missing-{}-{}.flac",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let (response, receive) = oneshot::channel();
+    let mut receive = pin!(receive);
+    let (observed, observation) = std::sync::mpsc::channel();
+    let waker = Waker::from(Arc::new(ObserveCapacity {
+        permits: service.inner.permits.clone(),
+        observed,
+    }));
+    assert!(receive
+        .as_mut()
+        .poll(&mut Context::from_waker(&waker))
+        .is_pending());
+    let permit = service.inner.acquire_job().unwrap();
+    service
+        .inner
+        .sender
+        .lock()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .try_send(Work {
+            path: missing_path.to_str().unwrap().into(),
+            cancel: service.inner.cancel.child_token(),
+            response,
+            _permit: permit,
+        })
+        .unwrap();
+    let capacity_at_publication = observation.recv_timeout(Duration::from_secs(3)).unwrap();
+    let reply = block_on(receive).unwrap().unwrap();
+    assert_eq!(reply.data, Value::Null);
+    block_on(service.shutdown());
+    assert_eq!(
+        capacity_at_publication, 1,
+        "Sequential callers must see the completed parser's slot before its reply wakes them"
+    );
+}
+
 #[test]
 fn service_defaults_and_shutdown_work_without_a_tokio_runtime() {
     let service = AudioService::new(AudioConfig::default()).unwrap();
