@@ -39,7 +39,7 @@ def free_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -97,6 +97,25 @@ def run():
 
         def script(source, *args):
             return command("POST", "/execute/sync", {"script": source, "args": list(args)})
+
+        def invoke(name, arguments=None):
+            result = command("POST", "/execute/async", {"script": "const done=arguments[arguments.length-1];window.__TAURI__.core.invoke(arguments[0],arguments[1]).then(value=>done({ok:true,value})).catch(error=>done({ok:false,error}))", "args": [name, arguments or {}]})
+            assert result["ok"], result
+            return result.get("value")
+
+        def output_handle(output_id):
+            registry = invoke("output_status")
+            label = next(item["label"] for item in registry["outputs"] if item["id"] == output_id)
+            try:
+                for handle in command("GET", "/window/handles"):
+                    if handle == main_window:
+                        continue
+                    command("POST", "/window", {"handle": handle})
+                    if script("return window.__TAURI_INTERNALS__.metadata.currentWindow.label") == label:
+                        return handle
+            finally:
+                command("POST", "/window", {"handle": main_window})
+            raise AssertionError(f"Output {output_id} ({label}) has no live WebView")
 
         def visible_lyric(text):
             return script("""
@@ -323,9 +342,12 @@ def run():
             main_window = command("GET", "/window")
             script("""
                 const send=window.api.send.bind(window.api);
-                window.__latestOutputData=null;window.__outputStates=[];
+                window.__latestOutputData=null;window.__outputSnapshotVersion=0;window.__outputStates=[];
                 window.api.send=(channel,message,listener)=>{
-                    if(channel==='OUTPUT' && message.channel==='OUTPUTS') window.__latestOutputData=structuredClone(message.data);
+                    if(channel==='OUTPUT' && message.channel==='OUTPUTS' && !message.data?.id) {
+                        window.__latestOutputData=structuredClone(message.data);
+                        window.__outputSnapshotVersion++;
+                    }
                     return send(channel,message,listener);
                 };
                 window.api.receive('OUTPUT',m=>{if(m.channel==='OUTPUT_STATE')window.__outputStates.push(m.data)},'native-output-test');
@@ -362,8 +384,56 @@ def run():
             wait(lambda: visible_lyric("Unicode 日本語 🙌") and script("return !document.body.innerText.includes('Amazing grace')"), "Chorus and Unicode visible after live cue")
             (ARTIFACTS / "output-chorus.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
             command("POST", "/window", {"handle": main_window})
-            script("window.api.send('OUTPUT',{channel:'TOGGLE_OUTPUTS',data:{outputs:[arguments[0]],state:false,autoPosition:false}})", output_config)
-            wait(lambda: script("return window.__outputStates.at(-1)?.some(s=>s.id===arguments[0] && s.active===false)", output_id), "Native output hidden")
+
+            # Create a second projection through the real settings wizard.
+            click('.top button[data-title^="Settings"]')
+            click_text("Outputs")
+            click('button[data-title="New output"]')
+            wizard = wait(lambda: script("return document.querySelector('.popup button[data-title=Normal]') ? 'input' : document.querySelector('.popup .popup-options') ? 'style' : document.querySelector('.popup .types') ? 'type' : null"), "New-output wizard opened")
+            if wizard == "input":
+                click('.popup button[data-title="Normal"]')
+            next_step = wait(lambda: script("return document.querySelector('.popup .types') ? 'type' : document.querySelector('.popup .popup-options') ? 'style' : null"), "Output setup choice ready")
+            if next_step == "style":
+                click_text("Skip")
+            wait(lambda: script("return !!document.querySelector('.popup .types')"), "Local/network output picker")
+            click('.popup button[data-title="Window"]')
+            click_text("Confirm")
+            second_outputs = wait(lambda: script("const data=window.__latestOutputData;return data && Object.keys(data).length===2 ? data : null"), "Second output created in settings")
+            secondary_id = next(key for key in second_outputs if key != output_id)
+            secondary_config = {**second_outputs[secondary_id], "id": secondary_id, "alwaysOnTop": False, "bounds": {"x": 40, "y": 440, "width": 640, "height": 360}}
+            # Placement uses the same native protocol as output settings. Await
+            # CREATE/TOGGLE ordering through the actual frontend lifecycle queue.
+            script("window.__outputStates=[];window.api.send('OUTPUT',{channel:'CREATE',data:arguments[0]});window.api.send('OUTPUT',{channel:'TOGGLE_OUTPUTS',data:{outputs:[arguments[0]],state:true,autoPosition:false}})", secondary_config)
+            wait(lambda: script("return window.__outputStates.some(states=>states.some(s=>s.id===arguments[0] && s.active===true))", secondary_id), "Second native projection shown")
+            wait(lambda: len(command("GET", "/window/handles")) >= 3, "Two projection WebViews registered")
+            secondary_window = output_handle(secondary_id)
+            # Renaming starts automatically after creation. Returning to the
+            # presenting page exercises normal blur/navigation handling too.
+            click('button[data-title^="Presenting"]')
+            wait(lambda: script("return document.querySelectorAll('#showArea .grid .slide.context').length>=2"), "Presenting controls restored after output setup")
+            click_element(command("POST", "/elements", {"using":"css selector","value":"#showArea .grid .slide.context"})[0][ELEMENT], "Broadcast verse slide")
+            for handle, label in [(output_window, "Primary receives broadcast cue"), (secondary_window, "Secondary receives broadcast cue")]:
+                command("POST", "/window", {"handle": handle})
+                wait(lambda: visible_lyric("Amazing grace"), label)
+            command("POST", "/window", {"handle": main_window})
+            snapshot = script("return window.__latestOutputData")
+            targeted = {**snapshot[secondary_id], "out": {**snapshot[secondary_id].get("out", {}), "slide": {**snapshot[secondary_id]["out"]["slide"], "index": 1}}}
+            script("window.api.send('OUTPUT',{channel:'OUTPUTS',data:{id:arguments[0],[arguments[0]]:arguments[1]}})", secondary_id, targeted)
+            command("POST", "/window", {"handle": secondary_window})
+            wait(lambda: visible_lyric("Unicode 日本語 🙌") and script("return !document.body.innerText.includes('Amazing grace')"), "Targeted cue changes only secondary projection")
+            (ARTIFACTS / "output-targeted-secondary.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
+            command("POST", "/window", {"handle": output_window})
+            assert visible_lyric("Amazing grace")
+            assert script("return !document.body.innerText.includes('Unicode 日本語')")
+            (ARTIFACTS / "output-targeted-primary.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
+            command("POST", "/window", {"handle": main_window})
+            snapshot_version = script("return window.__outputSnapshotVersion")
+            script("window.api.send('OUTPUT',{channel:'REQUEST_DATA_MAIN'})")
+            refreshed = wait(lambda: script("return window.__outputSnapshotVersion>arguments[0] ? window.__latestOutputData : null", snapshot_version), "Fresh main-renderer snapshot after targeted cue")
+            assert refreshed == snapshot
+            steps.append("Primary projection and main state unchanged by targeted secondary cue")
+            script("window.__outputStates=[];window.api.send('OUTPUT',{channel:'TOGGLE_OUTPUTS',data:{outputs:arguments[0],state:false,autoPosition:false}})", [output_config, secondary_config])
+            wait(lambda: script("return arguments[0].every(id=>window.__outputStates.at(-1)?.some(s=>s.id===id && s.active===false))", [output_id, secondary_id]), "Both native projections hidden")
             settings_path = temp / "app" / "settings.json"
             previous_settings = settings_path.read_bytes()
             mode = settings_path.stat().st_mode & 0o777
@@ -386,11 +456,13 @@ def run():
             (other / "Config").mkdir()
             other_show = json.loads(json.dumps(saved))
             other_show[1]["name"] = "Second library"
-            for slide in other_show[1].get("slides", {}).values():
+            layout_id = other_show[1].get("settings", {}).get("activeLayout") or next(iter(other_show[1]["layouts"]))
+            for index, reference in enumerate(other_show[1]["layouts"][layout_id]["slides"]):
+                slide = other_show[1]["slides"][reference["id"]]
                 for item in slide.get("items", []):
                     for line in item.get("lines", []):
                         for text in line.get("text", []):
-                            text["value"] = "Second library lyric"
+                            text["value"] = f"Second library lyric {index}"
             (other / "Shows" / "Second library.show").write_text(json.dumps(other_show))
             target_projects = '{"projects":{},"folders":{},"projectTemplates":{}}'
             (other / "Config" / "projects.json").write_text(target_projects)
@@ -410,7 +482,7 @@ def run():
             click('[data-testid="folder-picker-DATA_LOCATION_SETTINGS"] .button-trigger')
             choose_native_file("Data location", other)
             wait(lambda: json.loads(config_path.read_text()).get("dataPath") == str(other), "Existing library selected after confirmed save")
-            wait(lambda: output_window not in command("GET", "/window/handles"), "Previous-library output window closed")
+            wait(lambda: {output_window, secondary_window}.isdisjoint(command("GET", "/window/handles")), "Both previous-library projection windows closed")
             pending_show = json.loads((data_dir / "Shows" / "Pending before switch.show").read_text())
             pending_lyrics = json.dumps(pending_show)
             assert "Keep this unsaved song" in pending_lyrics
@@ -442,6 +514,28 @@ def run():
             wait(lambda: script("return document.body.innerText.includes('previous library or session') && document.body.innerText.includes('Recovery file:')"), "Old save retained with visible recovery location")
             (ARTIFACTS / "stale-save-recovery.json").write_text(json.dumps(recovery, indent=2))
 
+            # Settings recreate projections after the library reply. Observe
+            # that lifecycle before configuring the two current-library windows.
+            wait(lambda: {output_id, secondary_id}.issubset({item["id"] for item in invoke("output_status")["outputs"]}), "Selected library recreated both projections")
+            script("window.__outputStates=[];for(const config of arguments[0])window.api.send('OUTPUT',{channel:'SET_VALUE',data:{id:config.id,key:'alwaysOnTop',value:false}});window.api.send('OUTPUT',{channel:'TOGGLE_OUTPUTS',data:{outputs:arguments[0],state:true,autoPosition:false}})", [output_config, secondary_config])
+            wait(lambda: script("return arguments[0].every(id=>window.__outputStates.at(-1)?.some(s=>s.id===id && s.active===true))", [output_id, secondary_id]), "Both selected-library projections shown")
+            wait(lambda: len(command("GET", "/window/handles")) >= 3, "Selected-library projection WebViews ready")
+            current_windows = {output_id: output_handle(output_id), secondary_id: output_handle(secondary_id)}
+            # A real main-renderer cue primes both windows. Its snapshot also
+            # survives either window's normal delayed initial-state request.
+            click(".popup button.outlined")
+            wait(lambda: script("return !document.querySelector('.popup')"), "Recovery notice dismissed for live cues")
+            wait(lambda: script("return document.querySelectorAll('#showArea .grid .slide.context').length>=2"), "Current-library live cue controls ready")
+            click_element(command("POST", "/elements", {"using":"css selector","value":"#showArea .grid .slide.context"})[1][ELEMENT], "Prime selected-library chorus")
+            for index, (projected_id, handle) in enumerate(current_windows.items()):
+                command("POST", "/window", {"handle": handle})
+                wait(lambda: visible_lyric("Second library lyric 1"), "Current-library projection rendered " + str(index + 1))
+                script((ROOT / "tests/desktop/output_probe.js").read_text(), projected_id)
+            command("POST", "/window", {"handle": main_window})
+            current_data = script("return window.__latestOutputData")
+            templates = {projected_id: json.loads(json.dumps(current_data[projected_id])) for projected_id in current_windows}
+            assert all(template["out"]["slide"]["id"] == saved[0] for template in templates.values())
+
             # Real compression, not a test-only sleep: four 16 MiB JSON files
             # make a reproducible workload without sending large data over IPC.
             # They are backup fixtures, not a large-library performance claim.
@@ -456,37 +550,7 @@ def run():
                             output.write(piece)
                             crc = zlib.crc32(piece, crc)
                     workload[path] = {"size": path.stat().st_size, "crc": crc}
-                script("""
-                    const invoke=window.__TAURI__.core.invoke;
-                    const context=window.api.getRuntimeContext();
-                    const observed=window.__responsiveness={samples:[],done:false,probesComplete:false,context};
-                    const started=performance.now();
-                    invoke('ipc_dispatch',{request:{channel:'MAIN',listenerId:'backup-responsiveness',context,data:{channel:'SAVE',data:{customTriggers:{backup:true,isAutoBackup:true},closeWhenFinished:false}}}})
-                        .then(events=>{observed.backup=events.find(e=>e.message.channel==='BACKUP' && e.message.data.finished)?.message.data;observed.backupMs=performance.now()-started;observed.done=true})
-                        .catch(error=>{observed.error=error;observed.done=true});
-                    (async()=>{
-                        try {
-                            while(!observed.done && performance.now()-started<90000 && observed.samples.length<1024) {
-                                const before=await invoke('library_status');
-                                if(before.activeJob?.listenerId==='backup-responsiveness') {
-                                    const probeStart=performance.now();
-                                    const [current,maximized,os]=await Promise.all([
-                                        invoke('runtime_context'),
-                                        invoke('ipc_dispatch',{request:{channel:'MAIN',data:{channel:'MAXIMIZED'}}}),
-                                        invoke('ipc_dispatch',{request:{channel:'MAIN',data:{channel:'GET_OS'}}})
-                                    ]);
-                                    const elapsedMs=performance.now()-probeStart;
-                                    const after=await invoke('library_status');
-                                    if(after.activeJob?.listenerId==='backup-responsiveness' && !observed.done) {
-                                        observed.samples.push({elapsedMs,sinceBackupStartMs:performance.now()-started,current,maximized,os,queueCapacity:after.queueCapacity});
-                                    }
-                                }
-                                await new Promise(resolve=>setTimeout(resolve,100));
-                            }
-                        } catch(error) { observed.probeError=String(error) }
-                        observed.probesComplete=true;
-                    })();
-                """)
+                script((ROOT / "tests/desktop/backup_probe.js").read_text(), templates, ["Second library lyric 0", "Second library lyric 1"])
                 observed = wait(lambda: script("return window.__responsiveness.done && window.__responsiveness.probesComplete ? window.__responsiveness : null"), "Backup and independent control probes completed", seconds=90)
                 (ARTIFACTS / "responsiveness.json").write_text(json.dumps(observed, indent=2))
                 assert "error" not in observed and "probeError" not in observed, observed
@@ -498,16 +562,33 @@ def run():
                     assert isinstance(sample["maximized"][0]["message"]["data"], bool)
                     assert sample["os"][0]["message"]["data"]["platform"] == "linux"
                     assert sample["queueCapacity"] == 8
+                    assert set(sample["acks"]) == {output_id, secondary_id}
+                    for index, projected_id in enumerate(current_windows):
+                        ack = sample["acks"][projected_id]
+                        assert "error" not in ack, ack
+                        assert isinstance(ack["transportRoundTripMs"], (int, float)), ack
+                        assert ack["transportRoundTripMs"] < 500, ack
+                        assert ack["roundTripMs"] < 1500, ack
+                        assert ack["role"] == "output"
+                        assert ack["context"] == observed["context"]
+                        assert ack["visibility"] == "visible"
+                        assert f"Second library lyric {(sample['sequence'] + index) % 2}" in ack["text"], ack
                 with zipfile.ZipFile(observed["backup"]["path"]) as archive:
                     for path, expected in workload.items():
                         info = archive.getinfo("SHOWS/" + path.name)
                         assert info.file_size == expected["size"]
                         assert info.CRC == expected["crc"]
                     assert archive.testzip() is None
-                steps.append("Context and window controls respond during real 64 MiB backup; ZIP verified")
+                steps.append("Both projections render cues and native handshakes during real 64 MiB backup; ZIP verified")
             finally:
                 for path in workload:
                     path.unlink(missing_ok=True)
+            for handle in current_windows.values():
+                command("POST", "/window", {"handle": handle})
+                probe_state = script("return window.__projectionProbe")
+                assert probe_state["errors"] == [], probe_state
+                assert probe_state["completed"] >= 8, probe_state
+            command("POST", "/window", {"handle": main_window})
             assert script("return window.__testErrors") == []
             errors = script("return window.__testRuntimeErrors")
             # Unsupported features remain visible in the receipt; they are never
@@ -519,8 +600,9 @@ def run():
                 subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "x11grab", "-i", os.environ["DISPLAY"], "-frames:v", "1", str(ARTIFACTS / "failed-desktop.png")], timeout=10)
             if session:
                 try:
-                    if "output_window" in locals() and output_window:
-                        command("POST", "/window", {"handle":output_window})
+                    diagnostic_window = next(iter(current_windows.values())) if "current_windows" in locals() else output_window if "output_window" in locals() else None
+                    if diagnostic_window:
+                        command("POST", "/window", {"handle":diagnostic_window})
                         (ARTIFACTS / "failed-output-dom.txt").write_text(script("return document.body.innerText"))
                         (ARTIFACTS / "failed-output-state.json").write_text(json.dumps(script("return {context:window.api?.getRuntimeContext(),messages:window.__outputMessages,role:window.__TAURI_INTERNALS__?.metadata.currentWindow.label}"), indent=2))
                 except Exception:

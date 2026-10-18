@@ -545,6 +545,9 @@ fn lifecycle(
                         window
                             .set_always_on_top(data["value"] == true)
                             .map_err(failed)?;
+                        window
+                            .set_skip_taskbar(data["value"] == true)
+                            .map_err(failed)?;
                     }
                     window
                         .set_resizable(

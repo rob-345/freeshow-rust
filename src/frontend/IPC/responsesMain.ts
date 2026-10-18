@@ -49,9 +49,11 @@ import {
     activeProject,
     activeShow,
     activeTimers,
+    allOutputs,
     aiSttStatus,
     alertMessage,
     audioData,
+    cachedShowsData,
     contentProviderData,
     currentOutputSettings,
     dataPath,
@@ -64,6 +66,7 @@ import {
     media,
     mediaDownloads,
     outputs,
+    outputSlideCache,
     overlays,
     pdfImports,
     popupData,
@@ -164,6 +167,9 @@ export const mainResponses: MainResponses = {
     [Main.DATA_PATH]: (a) => {
         if ((window as any).__TAURI__ && get(dataPath) && get(dataPath) !== a) {
             showsCache.set({})
+            cachedShowsData.set({})
+            outputSlideCache.set({})
+            allOutputs.set({})
             scripturesCache.set({})
             shows.set({})
             activeShow.set(null)

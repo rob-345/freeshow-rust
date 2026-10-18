@@ -8,6 +8,74 @@ use serde_json::json;
 use std::fs;
 
 #[test]
+fn library_selection_resets_live_presentation_state_and_persists_it_across_restart() {
+    let temp = tempfile::tempdir().unwrap();
+    let app = temp.path().join("app");
+    let old = temp.path().join("old");
+    let new = temp.path().join("new");
+    let mut stores = Stores::new(app.clone(), old.clone()).unwrap();
+    fs::create_dir(&new).unwrap();
+    let settings = json!({"initialized":true,"activeProject":"old-project","activeScenes":{"same-id":["A"]},"lockedOverlays":{"same-id":["B"]},"future":{"preserved":true},"outputs":{
+        "A":{"enabled":true,"active":true,"name":"Primary","style":"default","bounds":{"x":-100,"y":20,"width":640,"height":360},"out":{"slide":{"id":"same-id","index":0},"background":{"path":"old-library.mp4"},"overlays":["same-id"]},"future":"keep"},
+        "B":{"name":"Secondary","show":{"id":"legacy-id"},"out":{"scene":{"id":"old-scene"}}}
+    }});
+    stores.set("SETTINGS", settings.clone()).unwrap();
+    let mut expected = settings;
+    expected["activeProject"] = serde_json::Value::Null;
+    expected["activeScenes"] = json!({});
+    expected["lockedOverlays"] = json!({});
+    expected["outputs"]["A"]
+        .as_object_mut()
+        .unwrap()
+        .remove("out");
+    expected["outputs"]["B"]
+        .as_object_mut()
+        .unwrap()
+        .remove("out");
+    expected["outputs"]["B"]
+        .as_object_mut()
+        .unwrap()
+        .remove("show");
+    let values = location::select(&mut stores, &new, &old).unwrap();
+    assert_eq!(stores.get("SETTINGS").unwrap(), expected);
+    assert_eq!(
+        values.iter().find(|(id, _)| id == "SETTINGS").unwrap().1,
+        expected
+    );
+    drop(stores);
+    let mut reopened = Runtime::open(app, None).unwrap();
+    assert_eq!(reopened.stores.data, fs::canonicalize(new).unwrap());
+    assert!(reopened.stores.get("SETTINGS").unwrap()["outputs"]["A"]
+        .get("out")
+        .is_none());
+    assert!(reopened.stores.get("SETTINGS").unwrap()["outputs"]["B"]
+        .get("show")
+        .is_none());
+    assert_eq!(
+        reopened.stores.get("SETTINGS").unwrap()["activeProject"],
+        serde_json::Value::Null
+    );
+}
+
+#[test]
+fn selecting_the_current_library_keeps_live_presentation_state() {
+    let temp = tempfile::tempdir().unwrap();
+    let old = temp.path().join("old");
+    let mut stores = Stores::new(temp.path().join("app"), old.clone()).unwrap();
+    stores
+        .set(
+            "SETTINGS",
+            json!({"outputs":{"A":{"out":{"slide":{"id":"keep"}}}},"activeProject":"keep"}),
+        )
+        .unwrap();
+    let before = fs::read(stores.path("SETTINGS").unwrap()).unwrap();
+    assert!(location::select(&mut stores, &old, &old)
+        .unwrap()
+        .is_empty());
+    assert_eq!(fs::read(stores.path("SETTINGS").unwrap()).unwrap(), before);
+}
+
+#[test]
 fn selecting_a_library_preserves_both_show_folders_and_destination_settings() {
     let temp = tempfile::tempdir().unwrap();
     let app = temp.path().join("app");
@@ -176,11 +244,50 @@ fn a_read_only_profile_prevents_any_destination_file_writes() {
     fs::create_dir(&new).unwrap();
     let mut stores = Stores::new(temp.path().join("app"), old.clone()).unwrap();
     let config = stores.path("config").unwrap();
+    stores
+        .set(
+            "SETTINGS",
+            json!({"outputs":{"A":{"out":{"slide":{"id":"keep"}}}},"activeProject":"keep"}),
+        )
+        .unwrap();
+    let settings = fs::read(stores.path("SETTINGS").unwrap()).unwrap();
     fs::set_permissions(&config, fs::Permissions::from_mode(0o400)).unwrap();
     let result = location::select(&mut stores, &new, &old);
     fs::set_permissions(config, fs::Permissions::from_mode(0o600)).unwrap();
     assert!(result.is_err());
     assert_eq!(stores.data, old);
+    assert_eq!(
+        fs::read(stores.path("SETTINGS").unwrap()).unwrap(),
+        settings
+    );
+    assert_eq!(fs::read_dir(new.join("Config")).unwrap().count(), 0);
+}
+
+#[cfg(unix)]
+#[test]
+fn read_only_presentation_settings_prevent_switching_without_losing_live_state() {
+    use std::os::unix::fs::PermissionsExt;
+    let temp = tempfile::tempdir().unwrap();
+    let old = temp.path().join("old");
+    let new = temp.path().join("new");
+    fs::create_dir(&new).unwrap();
+    let mut stores = Stores::new(temp.path().join("app"), old.clone()).unwrap();
+    stores
+        .set(
+            "SETTINGS",
+            json!({"outputs":{"A":{"out":{"slide":{"id":"keep"}}}},"activeProject":"keep"}),
+        )
+        .unwrap();
+    let settings_path = stores.path("SETTINGS").unwrap();
+    let settings = fs::read(&settings_path).unwrap();
+    let config = fs::read(stores.path("config").unwrap()).unwrap();
+    fs::set_permissions(&settings_path, fs::Permissions::from_mode(0o400)).unwrap();
+    let result = location::select(&mut stores, &new, &old);
+    fs::set_permissions(&settings_path, fs::Permissions::from_mode(0o600)).unwrap();
+    assert!(result.is_err());
+    assert_eq!(stores.data, old);
+    assert_eq!(fs::read(settings_path).unwrap(), settings);
+    assert_eq!(fs::read(stores.path("config").unwrap()).unwrap(), config);
     assert_eq!(fs::read_dir(new.join("Config")).unwrap().count(), 0);
 }
 

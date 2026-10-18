@@ -18,7 +18,8 @@
         "crates/freeshow-core/tests/storage.rs",
         "crates/freeshow-core/tests/location.rs",
         "crates/freeshow-core/tests/context.rs",
-        "crates/freeshow-core/src/service.rs"
+        "crates/freeshow-core/src/service.rs",
+        "tests/parity/library-frontend.test.mjs"
       ],
       "remaining": [
         "external edits during saves and multiple-instance locking",
@@ -31,7 +32,7 @@
         "edits made while a save or library change is in flight",
         "recovery UI and explicit reapplication of retained save snapshots"
       ],
-      "scope": "Compatible store/save operations, library provenance and ordered persistence on a bounded IO worker; remaining cases below are uncertified"
+      "scope": "Compatible store/save operations, library provenance and ordered persistence on a bounded IO worker; transactional clearing of old live presentation references on selection; remaining cases below are uncertified"
     },
     {
       "id": "ipc",
@@ -70,7 +71,7 @@
         "updates and crash reporting",
         "folder dialogs and library switching on Windows/macOS"
       ],
-      "scope": "Linux editor/native dialogs and initial main/output lifecycle; live projection text checked with an emoji font after transitions"
+      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation"
     },
     {
       "id": "editor",
@@ -80,7 +81,8 @@
         "src/frontend/rust/saveFailure.test.ts",
         "tests/parity/frontend-save.test.mjs",
         "src/frontend/rust/saveCompletion.test.ts",
-        "src/frontend/rust/dataLocation.test.ts"
+        "src/frontend/rust/dataLocation.test.ts",
+        "tests/parity/library-frontend.test.mjs"
       ],
       "remaining": [
         "editing, undo/redo, layouts and settings workflows",
@@ -95,18 +97,20 @@
       "tests": [
         "tests/parity/output.test.mjs",
         "tests/parity/bridge.test.mjs",
-        "tests/desktop/smoke.py"
+        "tests/desktop/smoke.py",
+        "tests/desktop/output_probe.js",
+        "tests/desktop/backup_probe.js"
       ],
       "remaining": [
-        "multiple live projection windows and shared-render follower creation",
+        "shared-render follower creation and physical multi-display validation",
         "monitor ID migration, native alignment/hotplug, mixed DPI and transparency",
         "native move/resize feedback and drag regions",
         "capture/offscreen and all SET_VALUE variants",
         "frame-accurate transitions and visual baselines across operating systems",
         "preview capture",
-        "cue/frame latency during background IO/CPU work"
+        "uncached cue latency, physical frame timing and workloads beyond the cached-lyric ZIP regression"
       ],
-      "scope": "Source-compared routing and placement corpus, isolated main/output events, bounded lifecycle, and one live Linux projection with lyric cues and library cleanup"
+      "scope": "Source-compared routing/placement corpus, scoped events and bounded lifecycle; two live Linux projections with broadcast/targeted cues, same-ID library cleanup/recreation, and warm-cached delivery/visible-state acknowledgments during real ZIP compression"
     },
     {
       "id": "files-and-import-export",
@@ -191,7 +195,9 @@
       "status": "pending",
       "tests": [
         "scripts/migration/benchmark.mjs",
-        "tests/desktop/smoke.py"
+        "tests/desktop/smoke.py",
+        "tests/desktop/output_probe.js",
+        "tests/desktop/backup_probe.js"
       ],
       "remaining": [
         "comparable Electron baseline",
@@ -200,10 +206,10 @@
         "large library latency",
         "output p50/p95/p99 frame timing",
         "sustained playback and streaming",
-        "output responsiveness under background IO/CPU load",
+        "uncached output loads and responsiveness under other background IO/CPU workloads",
         "bounded parallel CPU work and supervised media subprocesses"
       ],
-      "scope": "Initial helper microbenchmark and debug-build control latency during real ZIP compression; no application-level speedup certified"
+      "scope": "Helper microbenchmark plus debug-build controls and two warm cached projections during a real 64 MiB ZIP backup; receipt and DOM/CSS/RAF visible-state round trips measured, without physical scanout or application-level speedup certification"
     },
     {
       "id": "distribution",

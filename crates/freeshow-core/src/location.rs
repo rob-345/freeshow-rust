@@ -126,6 +126,48 @@ pub fn select(
         }
         values.push((id.to_string(), value));
     }
+    // Physical output configuration is local, but its current cues and the
+    // selected project/scene/overlay references belong to the old library.
+    // Persist their reset in the same transaction, then reapply local settings
+    // so mounted previews and native windows cannot retain same-ID old content.
+    let mut settings = stores.get("SETTINGS")?;
+    let original_settings = settings.clone();
+    for (key, empty) in [
+        ("activeProject", Value::Null),
+        ("activeScenes", json!({})),
+        ("lockedOverlays", json!({})),
+    ] {
+        if let Some(value) = settings.get_mut(key) {
+            *value = empty;
+        }
+    }
+    if let Some(outputs) = settings.get_mut("outputs").and_then(Value::as_object_mut) {
+        for output in outputs.values_mut().filter_map(Value::as_object_mut) {
+            for key in ["out", "show"] {
+                let populated = output.get(key).is_some_and(|value| match value {
+                    Value::Null => false,
+                    Value::Object(values) => !values.is_empty(),
+                    Value::Array(values) => !values.is_empty(),
+                    _ => true,
+                });
+                if populated {
+                    output.remove(key);
+                }
+            }
+        }
+    }
+    if settings != original_settings {
+        let content = if storage::definitions()["SETTINGS"]["minify"]
+            .as_bool()
+            .unwrap_or(false)
+        {
+            serde_json::to_vec(&settings)?
+        } else {
+            serde_json::to_vec_pretty(&settings)?
+        };
+        changes.push((stores.path("SETTINGS")?, content));
+    }
+    values.push(("SETTINGS".into(), settings));
     let mut config = stores.get("config")?;
     config["dataPath"] = json!(new_path);
     changes.push((stores.path("config")?, serde_json::to_vec_pretty(&config)?));
