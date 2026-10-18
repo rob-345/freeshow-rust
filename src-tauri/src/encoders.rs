@@ -12,7 +12,7 @@ use std::{
     io::{self, Write},
     path::PathBuf,
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc, Mutex,
     },
 };
@@ -37,7 +37,16 @@ struct CacheEffect {
     prepared: PreparedEncoderInput,
     intent: freeshow_encoders::CacheWriteIntent,
     probe: u64,
-    permit: Arc<OwnedSemaphorePermit>,
+    permit: Arc<RequestLease>,
+}
+struct RequestLease {
+    _permit: OwnedSemaphorePermit,
+    admitted: Arc<AtomicUsize>,
+}
+impl Drop for RequestLease {
+    fn drop(&mut self) {
+        self.admitted.fetch_sub(1, Ordering::AcqRel);
+    }
 }
 struct Inner {
     library: LibraryService,
@@ -47,6 +56,7 @@ struct Inner {
     binding: Mutex<Option<Binding>>,
     cache: Arc<Mutex<Option<CacheAttempt>>>,
     slots: Arc<Semaphore>,
+    admitted: Arc<AtomicUsize>,
     closing: AtomicBool,
     lifecycle: AsyncMutex<()>,
     failure: Mutex<Option<(&'static str, String)>>,
@@ -85,6 +95,7 @@ impl NativeEncoders {
                 binding: Mutex::new(Some(current)),
                 cache: Arc::new(Mutex::new(None)),
                 slots: Arc::new(Semaphore::new(CAPACITY)),
+                admitted: Arc::new(AtomicUsize::new(0)),
                 closing: AtomicBool::new(false),
                 lifecycle: AsyncMutex::new(()),
                 failure: Mutex::new(None),
@@ -94,7 +105,7 @@ impl NativeEncoders {
     pub fn status(&self) -> Value {
         let binding = self.inner.binding.lock().unwrap_or_else(|e| e.into_inner());
         let cache = self.inner.cache.lock().unwrap_or_else(|e| e.into_inner());
-        json!({"closing":self.inner.closing.load(Ordering::Acquire),"admittedRequests":CAPACITY-self.inner.slots.available_permits(),
+        json!({"closing":self.inner.closing.load(Ordering::Acquire),"admittedRequests":self.inner.admitted.load(Ordering::Acquire),
             "binding":binding.as_ref().map(|b|json!({"context":b.context,"run":b.run,"service":b.service.stats()})),
             "cache":cache.as_ref().map(|c|json!({"run":c.run,"probe":c.probe,"persisted":c.persisted,"complete":c.complete})),
             "failure":self.failure().map(|error|json!({"code":error.code,"message":error.message}))})
@@ -113,6 +124,16 @@ impl NativeEncoders {
         if first.is_none() {
             *first = Some((error.code, error.message));
         }
+    }
+    fn admit(&self) -> Result<Arc<RequestLease>, WireError> {
+        let permit = self.inner.slots.clone().try_acquire_owned().map_err(|_| {
+            WireError::new("encoders_busy", "Encoder host requests are at capacity")
+        })?;
+        self.inner.admitted.fetch_add(1, Ordering::AcqRel);
+        Ok(Arc::new(RequestLease {
+            _permit: permit,
+            admitted: self.inner.admitted.clone(),
+        }))
     }
     pub async fn dispatch(&self, request: Request, window: &str) -> Result<Vec<Event>, WireError> {
         if request.channel != "MAIN" || request.data["channel"] != "ENCODER_DETECT" {
@@ -153,9 +174,7 @@ impl NativeEncoders {
                     "Encoder owner belongs to an obsolete library",
                 )
             })?;
-        let permit = Arc::new(self.inner.slots.clone().try_acquire_owned().map_err(|_| {
-            WireError::new("encoders_busy", "Encoder host requests are at capacity")
-        })?);
+        let permit = self.admit()?;
         if self.inner.closing.load(Ordering::Acquire) {
             return Err(closed());
         }
@@ -202,7 +221,7 @@ impl NativeEncoders {
         request: Request,
         window: String,
         current: Binding,
-        permit: Arc<OwnedSemaphorePermit>,
+        permit: Arc<RequestLease>,
     ) -> Result<Vec<Event>, WireError> {
         self.validate(&request, &current)?;
         let check = self
@@ -433,6 +452,59 @@ mod failure_tests {
     use super::*;
     use freeshow_core::runtime::Runtime;
     use freeshow_media::MediaConfig;
+
+    #[tokio::test]
+    async fn shutdown_drain_reservations_are_not_reported_as_admitted_requests() {
+        use std::{
+            future::Future,
+            task::{Context, Poll, Waker},
+        };
+        let dir = tempfile::tempdir().unwrap();
+        let library = LibraryService::start(
+            Runtime::new(dir.path().join("app"), dir.path().join("data")).unwrap(),
+        )
+        .unwrap();
+        let media = MediaService::new(MediaConfig {
+            discover_system: false,
+            ..MediaConfig::default()
+        })
+        .unwrap();
+        let native =
+            NativeEncoders::new(library.clone(), media.clone(), dir.path().join("app")).unwrap();
+        let lease = native.admit().unwrap();
+        let mut drain = Box::pin(
+            native
+                .inner
+                .slots
+                .clone()
+                .acquire_many_owned(CAPACITY as u32),
+        );
+        let waker = Waker::noop();
+        assert!(drain
+            .as_mut()
+            .poll(&mut Context::from_waker(waker))
+            .is_pending());
+        assert_eq!(
+            native.inner.slots.available_permits(),
+            0,
+            "the real semaphore drain reserves the other three permits while waiting"
+        );
+        assert_eq!(native.status()["admittedRequests"], 1);
+        drop(lease);
+        let Poll::Ready(Ok(reserved)) = drain.as_mut().poll(&mut Context::from_waker(waker)) else {
+            panic!("Released request did not unblock drain")
+        };
+        assert_eq!(native.inner.slots.available_permits(), 0);
+        assert_eq!(
+            native.status()["admittedRequests"],
+            0,
+            "owned drain permits are not live requests"
+        );
+        drop(reserved);
+        native.shutdown().await.unwrap();
+        media.shutdown().await;
+        library.finish_writes().await.unwrap();
+    }
 
     #[tokio::test]
     async fn real_input_worker_panic_remains_a_failed_teardown_on_retries_and_context_refresh() {

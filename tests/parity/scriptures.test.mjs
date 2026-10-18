@@ -179,25 +179,37 @@ test("native POSIX read permission denial matches source log/no-log decision", {
     compare([request(roots, "denied")])
 })
 
-test("Windows actual private-file ACL read denial preserves source error/fallback decisions", { skip: !windows }, (t) => {
+test("Windows actual private-file ACL changes preserve source lookup/read decisions", { skip: !windows }, (t) => {
     const roots = fixture(t),
         denied = write(roots, "denied", ["id", { private: true }])
     const encodedPath = Buffer.from(denied).toString("base64")
     const acl = (remove) => {
-        const script = `$ErrorActionPreference = 'Stop'; $p = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedPath}')); $acl = Get-Acl -LiteralPath $p; $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User; $rule = [Security.AccessControl.FileSystemAccessRule]::new($sid, [Security.AccessControl.FileSystemRights]::ReadData, [Security.AccessControl.AccessControlType]::Deny); $acl.${remove ? "RemoveAccessRuleSpecific" : "AddAccessRule"}($rule); Set-Acl -LiteralPath $p -AclObject $acl`
+        const script = `$ErrorActionPreference = 'Stop'; $p = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedPath}')); $acl = Get-Acl -LiteralPath $p; $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User; $rule = [Security.AccessControl.FileSystemAccessRule]::new($sid, [Security.AccessControl.FileSystemRights]::ReadData, [Security.AccessControl.AccessControlType]::Deny); $acl.${remove ? "RemoveAccessRuleSpecific" : "AddAccessRule"}($rule); Set-Acl -LiteralPath $p -AclObject $acl; @{sid=$sid.Value;denies=@((Get-Acl -LiteralPath $p).Access | Where-Object {$_.AccessControlType -eq 'Deny'} | ForEach-Object {@{sid=$_.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value;mask=[int]$_.FileSystemRights;inherited=$_.IsInherited}})} | ConvertTo-Json -Compress -Depth 4`
         return spawnSync("powershell.exe", ["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")], { encoding: "utf8", timeout: 15000, maxBuffer: 1024 * 1024, windowsHide: true })
     }
     const applied = acl(false)
     if (applied.error?.code === "ENOENT") return capabilitySkip(t, "Windows ACL denial", "powershell.exe is unavailable")
     assert.equal(applied.status, 0, applied.stderr || applied.error?.message)
     try {
-        assert.throws(
-            () => fs.readFileSync(denied),
-            (error) => ["EPERM", "EACCES"].includes(error.code)
+        const actual = JSON.parse(applied.stdout.trim())
+        assert.ok(
+            actual.denies.some((rule) => rule.sid === actual.sid && (rule.mask & 1) !== 0 && !rule.inherited),
+            "The private fixture must contain the actual current-user ReadData deny ACE"
         )
+        let readDenied = false
+        try {
+            fs.readFileSync(denied)
+        } catch (error) {
+            assert.ok(["EPERM", "EACCES"].includes(error.code))
+            readDenied = true
+        }
+        // Pinned Node/libuv uses FILE_FLAG_BACKUP_SEMANTICS; an already
+        // privileged runner may read despite this ACE. Compare the observed
+        // original outcome rather than asserting an invented permission error.
         const source = oracle(roots.dataRoot, roots.documentsRoot)
         source.load({ name: "denied", id: "requested" })
-        assert.equal(source.errors.length, 1)
+        assert.equal(source.errors.length, readDenied ? 1 : 0)
+        console.log("Windows scripture ACL observation:", JSON.stringify({ explicitReadDataDeny: true, sourceReadDenied: readDenied }))
         compare([request(roots, "denied")])
     } finally {
         const restored = acl(true)

@@ -293,6 +293,14 @@ mod native {
             use std::os::unix::fs::OpenOptionsExt;
             options.custom_flags(libc::O_NONBLOCK | libc::O_CLOEXEC);
         }
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::OpenOptionsExt;
+            // Pinned Node22.21.1 libuv fs__open sets this flag for every read.
+            // Retain its behavior with existing process backup privileges; do
+            // not enable privileges or adopt device/pipe inputs.
+            options.custom_flags(0x02000000); // FILE_FLAG_BACKUP_SEMANTICS
+        }
         let mut file = match options.open(path) {
             Ok(file) => file,
             Err(error) => {
