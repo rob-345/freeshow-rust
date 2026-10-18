@@ -1332,6 +1332,7 @@ dependencies = [
  "freeshow-browse",
  "freeshow-core",
  "freeshow-documents",
+ "freeshow-encoders",
  "freeshow-exif",
  "freeshow-files",
  "freeshow-import-effects",
@@ -1342,6 +1343,7 @@ dependencies = [
  "freeshow-system",
  "freeshow-thumbnail-effects",
  "freeshow-thumbnails",
+ "libc",
  "png 0.18.1",
  "serde_json",
  "tauri",
@@ -1363,6 +1365,17 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.21",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "freeshow-encoders"
+version = "0.1.0"
+dependencies = [
+ "ryu-js",
+ "serde",
+ "serde_json",
  "tokio",
  "tokio-util",
 ]

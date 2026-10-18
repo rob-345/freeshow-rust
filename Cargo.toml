@@ -17,6 +17,7 @@ members = [
     "crates/freeshow-exif",
     "crates/freeshow-documents",
     "crates/freeshow-remotes",
+    "crates/freeshow-encoders",
 ]
 exclude = ["src-tauri", "vendor/socketioxide"]
 resolver = "2"

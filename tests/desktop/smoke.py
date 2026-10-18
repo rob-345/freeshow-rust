@@ -60,7 +60,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -625,6 +625,40 @@ def run():
                 return observed
             probe_file_reads()
             steps.append("Native document, Bible-folder and EXIF callbacks match pinned source values, byte types, IEEE specials and own undefined properties")
+            encoder_cache = temp / "app" / "encoder-detection.json"
+            encoder_check = invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":invoke("runtime_context"),"data":{"channel":"FFMPEG_CHECK"}}})[0]["message"]["data"]
+            assert encoder_check["installed"] is True
+            encoder_receipts = {}
+            def probe_encoders(phase, force=False):
+                cache_before = encoder_cache.read_text() if encoder_cache.exists() else None
+                observed = script((ROOT / "tests/desktop/encoders_probe.js").read_text(), {"force":force})
+                cache_after = encoder_cache.read_text()
+                fixture = {"executable":shutil.which("ffmpeg"),"sourcePath":encoder_check["path"],"force":force,"actual":observed["reply"]["message"]["data"],"cacheAfter":cache_after}
+                if cache_before is not None: fixture["cache"] = cache_before
+                comparison = subprocess.run([os.environ.get("FREESHOW_TEST_NODE", "node"),str(ROOT / "tests/desktop/encoder_oracle.mjs")],input=json.dumps(fixture),text=True,capture_output=True,cwd=ROOT,timeout=40)
+                assert comparison.returncode == 0, (phase,comparison.stdout,comparison.stderr,observed)
+                source = json.loads(comparison.stdout)
+                assert observed["status"]["admittedRequests"] == 0
+                assert observed["status"]["binding"]["service"]["active_children"] == 0
+                encoder_receipts[phase] = {"native":observed,"source":source,"cacheBytes":cache_after}
+                (ARTIFACTS / "encoders.json").write_text(json.dumps(encoder_receipts,ensure_ascii=False,indent=2))
+                return observed,source
+            encoder_forced,source_forced = probe_encoders("forced", True)
+            assert source_forced["cacheValuesMatchSource"] is True and source_forced["calls"]
+            assert any(entry["id"] == "x264" and entry["available"] is True for entry in encoder_forced["reply"]["message"]["data"]["encoders"])
+            encoder_hit,source_hit = probe_encoders("cache")
+            assert not source_hit["calls"]
+            assert encoder_hit["status"]["binding"]["service"]["children_started"] == encoder_forced["status"]["binding"]["service"]["children_started"]
+            raw_cache = json.loads(encoder_cache.read_text())
+            raw_cache["detection"] = {"encoders":[],"recommended":"native-future-cache","nativeFuture":{"unicode":"敬拜 🙌","raw":[42,None]}}
+            encoder_cache.write_text(json.dumps(raw_cache,ensure_ascii=False,separators=(",",":")))
+            encoder_raw,source_raw = probe_encoders("raw-cache")
+            assert encoder_raw["reply"]["message"]["data"] == raw_cache["detection"] and not source_raw["calls"]
+            encoder_reforced,source_reforced = probe_encoders("reforced", True)
+            assert source_reforced["cacheValuesMatchSource"] is True and source_reforced["calls"]
+            assert encoder_reforced["reply"]["message"]["data"] != raw_cache["detection"]
+            steps.append("Retained native encoder detection matches actual original FFmpeg probes and source-compatible cache values")
+            steps.append("Encoder cache hits preserve raw unknown fields without children, and force performs new supervised probes")
             thumbnail_folder = import_dir / "Native thumbnail folder"
             (thumbnail_folder / "pictures").mkdir(parents=True)
             thumbnail_image = thumbnail_folder / "pictures" / "日本語.png"
@@ -980,7 +1014,7 @@ def run():
                             const keys=Object.keys(value);
                             return [[path,keys],...keys.flatMap(key=>keyOrder(value[key],[...path,key]))];
                         }
-                        for(const command of ['FFMPEG_CHECK','MEDIA_CODEC','MEDIA_TRACKS','READ_AUDIO_METADATA','LOCATE_MEDIA_FILE','GET_MEDIA_FOLDER_PATH','GET_OS','GET_DEVICE_NAME','CHECK_RAM_USAGE']) {
+                        for(const command of ['FFMPEG_CHECK','ENCODER_DETECT','MEDIA_CODEC','MEDIA_TRACKS','READ_AUDIO_METADATA','LOCATE_MEDIA_FILE','GET_MEDIA_FOLDER_PATH','GET_OS','GET_DEVICE_NAME','CHECK_RAM_USAGE']) {
                             const data=command==='READ_AUDIO_METADATA'?{filePath:arguments[1]}:
                                 command==='LOCATE_MEDIA_FILE'?{filePath:arguments[0],folders:[]}:
                                 ['GET_MEDIA_FOLDER_PATH','GET_OS','GET_DEVICE_NAME','CHECK_RAM_USAGE'].includes(command)?null:{path:arguments[0],future:{kept:true}};
@@ -999,6 +1033,8 @@ def run():
                     result = event["message"]["data"]
                     if reply["command"] == "FFMPEG_CHECK":
                         assert result["installed"] is True and result["path"]
+                    elif reply["command"] == "ENCODER_DETECT":
+                        assert result == encoder_reforced["reply"]["message"]["data"]
                     elif reply["command"] == "READ_AUDIO_METADATA":
                         assert_audio_metadata(result, expected_audio)
                         assert reply["keyOrder"] == audio_key_order(expected_audio), reply
@@ -1030,6 +1066,7 @@ def run():
                 media_status = invoke("library_status")
                 assert media_status["activeJob"]["listenerId"] == "backup-responsiveness" and media_status["activeJob"]["phase"] == "backupCompression", media_status
                 (ARTIFACTS / "media-probe.json").write_text(json.dumps(media_result, indent=2))
+                steps.append("Cached native encoder detection preserves context and correlation independently of ZIP compression")
                 steps.append("Native FFmpeg/AAC metadata replies preserve payload, context and correlation during ZIP compression")
                 steps.append("Native FLAC tags and clamped ReplayGain match actual original music-metadata during ZIP compression")
                 steps.append("Native existing-file lookup preserves path, context and correlation during ZIP compression")

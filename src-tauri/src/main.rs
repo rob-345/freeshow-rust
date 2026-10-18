@@ -5,6 +5,8 @@ mod assets;
 mod browse;
 mod context_changes;
 mod drop;
+mod encoder_inputs;
+mod encoders;
 mod file_reads;
 mod files;
 mod imports;
@@ -37,6 +39,7 @@ struct AppState {
     context_changes: context_changes::ContextChanges,
     outputs: output::OutputService,
     media: MediaService,
+    encoders: encoders::NativeEncoders,
     audio: AudioService,
     files: files::NativeFiles,
     file_reads: file_reads::NativeFileReads,
@@ -92,6 +95,11 @@ fn thumbnails_status(app: tauri::AppHandle) -> serde_json::Value {
 #[tauri::command]
 fn file_reads_status(app: tauri::AppHandle) -> serde_json::Value {
     app.state::<AppState>().file_reads.status()
+}
+
+#[tauri::command]
+fn encoders_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().encoders.status()
 }
 
 #[tauri::command]
@@ -242,6 +250,13 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if encoders::COMMANDS.contains(&command) {
+            return app
+                .state::<AppState>()
+                .encoders
+                .dispatch(request, window.label())
+                .await;
+        }
         if file_reads::COMMANDS.contains(&command) {
             let state = app.state::<AppState>();
             return state.file_reads.dispatch(&state.library, request).await;
@@ -481,6 +496,7 @@ async fn dispatch_native(
                     thumbnails_result,
                     file_reads_result,
                     remotes_result,
+                    encoders_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -493,7 +509,8 @@ async fn dispatch_native(
                     state.assets.shutdown(),
                     state.thumbnails.shutdown(),
                     state.file_reads.shutdown(),
-                    state.remotes.shutdown()
+                    state.remotes.shutdown(),
+                    state.encoders.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
@@ -505,6 +522,7 @@ async fn dispatch_native(
                 thumbnails_result?;
                 file_reads_result?;
                 remotes_result?;
+                encoders_result?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -628,6 +646,19 @@ async fn dispatch_native(
                 "ALERT",
                 json!(format!(
                     "The library changed, but remote restart failed: {}",
+                    error.message
+                )),
+                None,
+            );
+            alert.context = Some(context.clone());
+            events.push(alert);
+        }
+        if let Err(error) = app.state::<AppState>().encoders.context_changed().await {
+            let mut alert = Event::reply(
+                "MAIN",
+                "ALERT",
+                json!(format!(
+                    "The library changed, but encoder detection restart failed: {}",
                     error.message
                 )),
                 None,
@@ -923,11 +954,15 @@ fn main() {
                 })
             })
             .map_err(|error| std::io::Error::other(error.message))?;
+            let encoders =
+                encoders::NativeEncoders::new(library.clone(), media.clone(), app_data.clone())
+                    .map_err(|error| std::io::Error::other(error.message))?;
             app.manage(AppState {
                 library,
                 context_changes: context_changes::ContextChanges::new(),
                 outputs,
                 media,
+                encoders,
                 audio,
                 files,
                 imports,
@@ -985,6 +1020,7 @@ fn main() {
             assets_status,
             thumbnails_status,
             file_reads_status,
+            encoders_status,
             thumbnail_complete
         ])
         .build(tauri::generate_context!())

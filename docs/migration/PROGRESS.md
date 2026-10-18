@@ -309,7 +309,7 @@ The unchanged three Svelte clients now compile into actual native resource files
 
 The host owns a bounded 32-request lifecycle and one event pump. A separate private completion path permits one synchronous renderer delivery in flight; it does not acknowledge Socket.IO messages or await asynchronous renderer actions. Genuine lifecycle origin and real socket identity travel outside raw client JSON. The frozen native/bridge ledgers drain exact owned DISCONNECT cleanup before a binding retires, including possibly delivered connections whose completion was lost. A short publication mutex linearizes acceptance and retirement without enclosing waits. Delivery failures close admission and trigger terminal cleanup; retirement has an aggregate renderer deadline. A library switch stops and drains the old run; the retained SETTINGS handler starts its replacement after DATA_PATH. Four bounded, owned root-change continuations retain cleanup after IPC cancellation, and Quit drains them first.
 
-The source/live transport oracle passes 20 Node tests and seven Rust tests. Expanded local core verification passes **225 Rust, 225 pinned-Node and 20 frontend tests** (470). The **127-step Linux editor workflow**, four GTK menu checks and native drops at both scales pass. Six genuine polling/WebSocket clients exercise wrong/correct remote and stage passwords, protected layout sanitization, Unicode show queries and controller replies. All three actual client pages authenticate in separate ephemeral WebKit views with their real JS/CSS resources and no observed page errors. After library selection, new run IDs and the new same-ID show are verified. All **58 Linux native host tests**, strict core/native Clippy, Windows GNU checks, formatting, pinned snapshots, focused bridge type checking and fresh frontend/native builds pass. The clients-only development build also passes without changing the main frontend. This milestone's six-job CI is pending.
+The source/live transport oracle passes 20 Node tests and seven Rust tests. Expanded local core verification passes **225 Rust, 225 pinned-Node and 20 frontend tests** (470). The **127-step Linux editor workflow**, four GTK menu checks and native drops at both scales pass. Six genuine polling/WebSocket clients exercise wrong/correct remote and stage passwords, protected layout sanitization, Unicode show queries and controller replies. All three actual client pages authenticate in separate ephemeral WebKit views with their real JS/CSS resources and no observed page errors. After library selection, new run IDs and the new same-ID show are verified. All **58 Linux native host tests**, strict core/native Clippy, Windows GNU checks, formatting, pinned snapshots, focused bridge type checking and fresh frontend/native builds pass. The clients-only development build also passes without changing the main frontend. The first remote run [39159689488](https://github.com/rob-345/freeshow-rust/actions/runs/39159689488) passed all three core jobs, Windows native and the full Linux desktop workflow. macOS native build/Clippy and five of six remote host tests passed; its remaining raw fixture assumed the next Engine.IO polling response was the Socket.IO reply. The fixture now consumes legal no-op/ping packets and awaits the actual packet, retaining exact target/Unicode payload assertions. Six focused host tests and strict Clippy pass locally. Run [39160242196](https://github.com/rob-345/freeshow-rust/actions/runs/39160242196) passed both native jobs and all three core jobs, then its Linux desktop assertion compared a creation snapshot with later saved source template defaults. The harness now permits only the source-defined `align: ""` / `auto: false` additions, checks the complete current file and retains exact read/backup/restore assertions. The complete 127-step desktop workflow passes locally; correction [39160906600](https://github.com/rob-345/freeshow-rust/actions/runs/39160906600) on `baca1050` then passed all six jobs. Downloaded editor, twelve external client, three authenticated page/resource, saved-snapshot and menu/drop receipts were verified. Downloaded 127-step editor, twelve external client and three authenticated page/resource receipts from the first run were verified.
 
 The broader run exposed two independent test-harness races: sequential import fixtures could outrun released staging cleanup, and the asset helper could reject its final JSON reply on process exit before stdout drained. The import harness now awaits a trusted, serialized released-staging barrier; a new Rust test proves it neither waits for live plans nor bypasses retained-plan limits. The asset helper waits for stdio closure before rejecting pending replies. Production queue limits are unchanged, and the full 470-test run passes with both fixes.
 
@@ -325,7 +325,7 @@ The official Electron `v1.6.7-beta.2` Linux package has been downloaded without 
 
 ## Next work
 
-1. Complete remote/stage/controller six-job CI. Continue bounded media-copy preparation/final effects, encoder host integration, MIDI/MTC, local scripture loading and Bonjour discovery. New integrations need their own complete runs.
+1. Verify native encoder detection in its own six-job CI run. The remotes run is green. Integrate the prepared media-copy final effects, MIDI/MTC, local scripture loading and Bonjour discovery; continue bounded FFmpeg-download and audio-pipeline work. New integrations need their own complete runs.
 2. Extend output display/hotplug, transition, follower and preview behavior. Continue bounded read/CPU separation for other expensive operations with explicit snapshot/ordering semantics; keep output control independent of long filesystem/CPU jobs.
 3. Finish excluded/minor-field and asynchronous load/cloud/close saved-state races, overlapping library commits, profile locking, context propagation across windows and pending-request cancellation. Add assisted recovery of retained snapshots. Continue native role/shortcut verification, capture lifecycle, unavailable-volume recovery and profile import. Bulk moving shows/media is a separate operation from selecting an existing library.
 4. Suppress unchanged disk writes, preserve cloud edit timestamps and finish array-property semantics. Implement transaction-journal recovery after a crash and verify backup metadata/time zones. Automatic-backup saved-state/queue regressions and queued stale-library rejection are now covered; other overlapping operations remain uncertified.
@@ -358,3 +358,44 @@ Run [39147987362](https://github.com/rob-345/freeshow-rust/actions/runs/39147987
 ## Expanded native verification completed
 
 Run [39148628386](https://github.com/rob-345/freeshow-rust/actions/runs/39148628386) on `6e44a93e` passed **all six jobs**: core on Linux/Windows/macOS, native build/Clippy/host tests on Windows/macOS and the real Linux desktop workflow. The fixture correction retained exact value/cache assertions. This run includes native OS/hostname/RAM execution on all three platforms, 18 host tests and 97 Linux editor steps, four menu checks and file drops at scales 1 and 2. Downloaded Linux receipts were checked separately. It does not certify Windows/macOS GUI/hardware or whole-application parity.
+
+## Native encoder detection and guarded cache effects (2026-10-18)
+
+`MAIN.ENCODER_DETECT` now reaches the original settings UI through a bounded Rust
+host: four whole requests, two fixed filesystem workers, and a private current
+library encoder runtime with two supervised probes. Exact source profile/test
+commands require actual encode success before reporting availability. Raw truthy
+cache values and unknown fields retain the original reply contract. Native
+executable authority is frozen separately from the literal source cache key and
+fractional Node `fs.Stats` time. Ordered cache commits revalidate context, private
+run, cache directory, current executable resolution/identity and sealed intent.
+Equal-mtime symlink retargets and same-path cache directory replacements have
+regressions. Cache failures retain valid detection replies; accepted work remains
+owned after caller cancellation. Library changes and Quit cancel/reap probes and
+drain accepted host/cache ownership. First teardown failures remain sticky through
+repeated shutdown/context refresh; a real worker-panic regression prevents a
+retry from incorrectly claiming success. [Contracts and limits](native-encoders.md).
+
+The standalone source suite passes six Rust and twelve pinned-Node tests. The
+expanded local suite passes **231 Rust, 237 pinned-Node and 20 frontend tests**
+(488), with mandatory real FFmpeg for local/Linux-desktop media acceptance.
+Ordinary core CI may explicitly skip only the real-tool encoder case if FFmpeg
+is unavailable; controlled fixtures remain mandatory on all operating systems.
+All **70 Linux native host tests** pass, including twelve encoder input/host
+cases. Strict core/native Clippy, Windows GNU checks, Rust formatting, source
+snapshots, reports and fresh frontend/native builds pass. The complete parity
+gate still deliberately fails. The expanded **130-step Linux editor workflow**, four GTK menu checks and native
+drops at scales 1 and 2 pass. The encoder phases verify actual x264 encoding,
+cache hits/raw unknown fields with no new children, forced re-probing and cached
+replies during the same real 64 MiB ZIP workload. Both forced phases launch and
+reap five actual FFmpeg children each in this local environment. The new encoder
+milestone is awaiting its own remote CI run.
+
+The real desktop oracle shares the pinned original detector with the controlled
+suite. Independent process comparisons normalize only ASLR addresses in
+bracketed FFmpeg log prefixes, retaining raw replies/cache bytes/source calls.
+The encoder service is integrated for detection only; capture, RTMP lifecycle,
+SET_RTMP_ENCODER reconfiguration, binary downloads, actual GPU coverage,
+Windows/macOS media/GUI behavior, anchored external filesystem races and hard
+whole-host/OS cancellation deadlines remain incomplete. No application speedup
+or complete parity is claimed.

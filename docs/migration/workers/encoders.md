@@ -220,3 +220,24 @@ Coordinator integration removes this crate's standalone `[workspace]`/lockfile,
 adds shared/native dependencies, supplies trusted executable/platform/cache inputs
 and handles typed intents. No shared runtime, manifest, media/FFmpeg manager,
 vendor or frontend changes are included in this slice.
+
+## Workspace integration
+
+The shared workspace now includes the crate and its parity example, with the
+temporary standalone workspace/lock removed. The real-FFmpeg Node case resolves
+a native absolute executable from PATH or `FREESHOW_FFMPEG_PATH`. A missing tool
+is an explicit optional skip in ordinary core environments;
+`FREESHOW_REQUIRE_MEDIA_TOOLS=1` (the Linux desktop acceptance job) or an explicit
+executable override makes absence a failure. All controlled executable/source
+cases remain mandatory on every platform. Native host cache/input preparation
+and IPC integration are described below.
+
+## Desktop integration
+
+`MAIN.ENCODER_DETECT` is now integrated through `src-tauri/src/encoders.rs` and
+`encoder_inputs.rs`; see [native encoder contracts](../native-encoders.md).
+`SET_RTMP_ENCODER` and capture/RTMP intents remain preparation-only. The real
+desktop oracle shares the pinned original detector with the controlled suite;
+live comparisons mask only process addresses in bracketed FFmpeg log prefixes
+and retain raw native/cache/source evidence. Source JSON cache values, rather
+than cross-runtime property byte ordering, are compared.

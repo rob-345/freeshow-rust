@@ -1,19 +1,29 @@
 import assert from "node:assert/strict"
-import { execFile, spawn } from "node:child_process"
-import { createHash } from "node:crypto"
+import { spawn } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { createInterface } from "node:readline"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
-import { promisify } from "node:util"
-import vm from "node:vm"
-import ts from "typescript"
+import { original } from "./lib/encoders-oracle.mjs"
 
 const root = fileURLToPath(new URL("../../", import.meta.url))
 const binary = process.env.FREESHOW_ENCODERS_BIN || path.join(root, "target/debug/examples", process.platform === "win32" ? "encoders-parity.exe" : "encoders-parity")
-const ffmpeg = process.env.FREESHOW_FFMPEG_PATH || "/usr/bin/ffmpeg"
+const ffmpeg =
+    process.env.FREESHOW_FFMPEG_PATH ||
+    (() => {
+        const name = process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg"
+        for (const directory of (process.env.PATH || "").split(path.delimiter)) {
+            const candidate = path.resolve(directory || ".", name)
+            try {
+                fs.accessSync(candidate, fs.constants.X_OK)
+                if (fs.statSync(candidate).isFile()) return fs.realpathSync(candidate)
+            } catch {}
+        }
+        return undefined
+    })()
+const requireFfmpeg = process.env.FREESHOW_REQUIRE_MEDIA_TOOLS === "1" || !!process.env.FREESHOW_FFMPEG_PATH
 const pause = (ms = 5) => new Promise((resolve) => setTimeout(resolve, ms))
 async function until(read, ms = 4000) {
     const end = Date.now() + ms
@@ -23,57 +33,6 @@ async function until(read, ms = 4000) {
         await pause()
     }
     throw new Error("Encoder condition timed out")
-}
-function original({ executable = null, sourcePath = executable, mtimeMs = 0, platform = process.platform, arch = process.arch, device = "", cache, disableHardware = false, processMs } = {}) {
-    const calls = [],
-        writes = []
-    let cacheBytes = cache
-    const load = (filename, hash, require, injected = {}) => {
-        const source = fs.readFileSync(path.join(root, filename), "utf8")
-        assert.equal(createHash("sha256").update(source.replace(/\r\n/g, "\n")).digest("hex"), hash, "pinned encoder source changed")
-        const context = vm.createContext({ exports: {}, require, process: { platform, arch, env: { FREESHOW_VAAPI_DEVICE: device } }, console: { warn() {}, info() {} }, ...injected })
-        new vm.Script(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, { filename }).runInContext(context, { timeout: 1000 })
-        return context.exports
-    }
-    const profiles = load("src/electron/streaming/encoderProfiles.ts", "26e2923819f19b5f3c40992fbe0dd70a81fe2180e5d23bbf00f5a49ce1ac0787", () => {
-        throw new Error("unexpected profile import")
-    })
-    function tracedExec() {
-        throw new Error("promisify custom path expected")
-    }
-    tracedExec[promisify.custom] = async (bin, args, options) => {
-        calls.push({ bin, args: Array.from(args), options: { ...options } })
-        return promisify(execFile)(executable || bin, args, { ...options, ...(processMs ? { timeout: processMs } : {}) })
-    }
-    const detection = load("src/electron/streaming/encoderDetection.ts", "edde3d614ea3774b65ab31555a7be69d26c863f505afa02d8f2ceb20e373cb5b", (name) => {
-        if (name === "child_process") return { execFile: tracedExec }
-        if (name === "electron") return { app: { getPath: () => "/injected-unused-profile" } }
-        if (name === "fs")
-            return {
-                statSync: () => ({ mtimeMs }),
-                readFileSync: () => {
-                    if (cacheBytes === undefined) throw new Error("missing cache")
-                    return cacheBytes
-                },
-                writeFileSync: (_path, bytes) => {
-                    writes.push(bytes)
-                    cacheBytes = bytes
-                }
-            }
-        if (name === "path") return path
-        if (name === "util") return { promisify }
-        if (name.includes("data/store")) return { config: { get: () => disableHardware } }
-        if (name === "./encoderProfiles") return profiles
-        if (name === "./ffmpegManager") return { resolveFfmpegPath: async () => sourcePath }
-        throw new Error(`unexpected detection import ${name}`)
-    })
-    // These declarations are evaluated from the source itself for private helpers.
-    const source = fs.readFileSync(path.join(root, "src/electron/streaming/encoderDetection.ts"), "utf8")
-    const ast = ts.createSourceFile("encoderDetection.ts", source, ts.ScriptTarget.Latest, true)
-    const node = ast.statements.find((node) => ts.isFunctionDeclaration(node) && node.name?.text === "firstErrorLine")
-    const context = vm.createContext({})
-    new vm.Script(ts.transpileModule(node.getText(ast) + ";globalThis.error=firstErrorLine", { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText).runInContext(context, { timeout: 1000 })
-    return { profiles, detection, calls, writes, error: context.error }
 }
 function rust(limits = {}, env = {}) {
     const child = spawn(binary, [], { stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, FREESHOW_ENCODER_LIMITS: JSON.stringify(limits), ...env } })
@@ -90,7 +49,7 @@ function rust(limits = {}, env = {}) {
             entry.resolve(value)
         }
     })
-    child.on("exit", (code) => {
+    child.on("close", (code) => {
         for (const entry of pending.values()) {
             clearTimeout(entry.timer)
             entry.reject(new Error(`Encoder child exited ${code}: ${stderr}`))
@@ -245,7 +204,7 @@ test("listed encoders require a genuine tiny encode; deterministic failures neve
         files.close()
     }
 })
-test("real installed FFmpeg source/native detection executes exact encode commands", async () => {
+test("real installed FFmpeg source/native detection executes exact encode commands", { skip: !ffmpeg && !requireFfmpeg && "No real FFmpeg available; desktop acceptance requires it" }, async () => {
     assert.ok(fs.existsSync(ffmpeg), `Set FREESHOW_FFMPEG_PATH to a real local FFmpeg; missing ${ffmpeg}`)
     const native = rust(),
         source = original({ executable: ffmpeg, sourcePath: "ffmpeg", platform: process.platform })

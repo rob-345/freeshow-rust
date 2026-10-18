@@ -531,6 +531,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-encoders"
+version = "0.1.0"
+dependencies = [
+ "ryu-js",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-exif"
 version = "0.1.0"
 dependencies = [
