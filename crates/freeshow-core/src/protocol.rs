@@ -48,6 +48,9 @@ pub struct Event {
     /// available to the original handler, binary completion uses native IPC.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub native_capture: Option<Value>,
+    /// Trusted READ_EXIF restoration of own undefined, IEEE special numbers and bytes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_exif: Option<Value>,
 }
 
 impl Event {
@@ -63,6 +66,7 @@ impl Event {
             context: None,
             native_assets: None,
             native_capture: None,
+            native_exif: None,
         }
     }
 }

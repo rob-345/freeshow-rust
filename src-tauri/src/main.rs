@@ -4,6 +4,7 @@ mod api;
 mod assets;
 mod browse;
 mod drop;
+mod file_reads;
 mod files;
 mod imports;
 mod menu;
@@ -35,6 +36,7 @@ struct AppState {
     media: MediaService,
     audio: AudioService,
     files: files::NativeFiles,
+    file_reads: file_reads::NativeFileReads,
     imports: imports::NativeImports,
     browse: browse::NativeBrowse,
     system: SystemService,
@@ -81,6 +83,11 @@ fn assets_status(app: tauri::AppHandle) -> serde_json::Value {
 #[tauri::command]
 fn thumbnails_status(app: tauri::AppHandle) -> serde_json::Value {
     app.state::<AppState>().thumbnails.status()
+}
+
+#[tauri::command]
+fn file_reads_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().file_reads.status()
 }
 
 #[tauri::command]
@@ -194,6 +201,10 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if file_reads::COMMANDS.contains(&command) {
+            let state = app.state::<AppState>();
+            return state.file_reads.dispatch(&state.library, request).await;
+        }
         if thumbnails::COMMANDS.contains(&command) {
             let state = app.state::<AppState>();
             let publish = |event| {
@@ -426,6 +437,7 @@ async fn dispatch_native(
                     browse_result,
                     assets_result,
                     thumbnails_result,
+                    file_reads_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -436,7 +448,8 @@ async fn dispatch_native(
                     state.imports.shutdown(),
                     state.browse.shutdown(),
                     state.assets.shutdown(),
-                    state.thumbnails.shutdown()
+                    state.thumbnails.shutdown(),
+                    state.file_reads.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
@@ -446,6 +459,7 @@ async fn dispatch_native(
                 browse_result?;
                 assets_result?;
                 thumbnails_result?;
+                file_reads_result?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -536,6 +550,7 @@ async fn dispatch_native(
         app.state::<AppState>().imports.context_changed(&context);
         app.state::<AppState>().browse.context_changed(&context);
         app.state::<AppState>().thumbnails.context_changed(&context);
+        app.state::<AppState>().file_reads.context_changed(&context);
         if let Err(error) = app.state::<AppState>().assets.context_changed(&context) {
             let mut alert = Event::reply(
                 "MAIN",
@@ -811,6 +826,13 @@ fn main() {
             .map_err(|error| std::io::Error::other(error.message))?;
             let thumbnails = thumbnails::NativeThumbnails::new(app_data.join("media-cache"))
                 .map_err(|error| std::io::Error::other(error.message))?;
+            let file_read_app = app.handle().clone();
+            let file_reads = file_reads::NativeFileReads::new(std::sync::Arc::new(move |event| {
+                file_read_app
+                    .emit_to("main", "freeshow://ipc", event)
+                    .map_err(|error| error.to_string())
+            }))
+            .map_err(|error| std::io::Error::other(error.message))?;
             let mut api_config = freeshow_api::ApiConfig::default();
             if let Ok(ip) = std::env::var("FREESHOW_RUST_API_BIND_IP") {
                 api_config.bind_ip = ip.parse()?;
@@ -836,6 +858,7 @@ fn main() {
                 api,
                 assets,
                 thumbnails,
+                file_reads,
                 osc,
                 app_data,
                 error_log,
@@ -880,6 +903,7 @@ fn main() {
             imports_status,
             assets_status,
             thumbnails_status,
+            file_reads_status,
             thumbnail_complete
         ])
         .build(tauri::generate_context!())

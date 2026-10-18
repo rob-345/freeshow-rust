@@ -4,7 +4,6 @@ import fs from "node:fs"
 import path from "node:path"
 import http from "node:http"
 import { spawn } from "node:child_process"
-import { once } from "node:events"
 import readline from "node:readline"
 import { fileURLToPath } from "node:url"
 const root = fileURLToPath(new URL("../../../", import.meta.url))
@@ -15,6 +14,8 @@ export const context = { runtimeId: "assets-parity", libraryGeneration: 1, dataP
 export class Host {
     constructor() {
         this.child = spawn(binary, [], { stdio: ["pipe", "pipe", "pipe"] })
+        // Register before any command: quit can exit before its reply is observed.
+        this.closed = new Promise((resolve) => this.child.once("close", resolve))
         this.waiting = []
         this.stderr = ""
         this.child.stderr.on("data", (data) => {
@@ -48,12 +49,12 @@ export class Host {
         return this.call({ op: "grant", path: file, ...extra })
     }
     async close() {
-        if (this.child.exitCode !== null) return
+        if (this.child.exitCode !== null) return this.closed
         try {
             await this.call({ op: "quit" })
         } finally {
             this.child.stdin.end()
-            await once(this.child, "exit").catch(() => {})
+            await this.closed
         }
     }
 }

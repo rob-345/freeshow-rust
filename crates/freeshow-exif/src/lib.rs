@@ -143,12 +143,19 @@ pub struct NumberHydration {
     pub path: String,
     pub kind: NumberKind,
 }
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ObjectKeysHydration {
+    pub path: String,
+    pub keys: Vec<String>,
+}
 #[derive(Debug, Default, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Hydration {
     pub undefined_paths: Vec<String>,
     pub special_numbers: Vec<NumberHydration>,
     pub byte_buffers: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub object_keys: Vec<ObjectKeysHydration>,
 }
 #[derive(Debug, Default, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -184,6 +191,10 @@ pub(crate) fn missing(
         reply: serde_json::json!({"id":id}),
         hydration: Hydration {
             undefined_paths: vec!["/exif".into()],
+            object_keys: vec![ObjectKeysHydration {
+                path: String::new(),
+                keys: vec!["id".into(), "exif".into()],
+            }],
             ..Hydration::default()
         },
         diagnostics: vec![Diagnostic { code, message }],

@@ -2,8 +2,12 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import fs from "node:fs"
 import path from "node:path"
+import os from "node:os"
+import { createRequire } from "node:module"
+import { spawnSync } from "node:child_process"
 import ts from "typescript"
-import { root } from "./oracle.mjs"
+import { root, upstreamFunctions } from "./oracle.mjs"
+import { corpus, generatedCorpus } from "../../crates/freeshow-exif/tools/fixtures.mjs"
 
 const source = fs.readFileSync(path.join(root, "src/frontend/rust/bridge.ts"), "utf8")
 const nativeDrop = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/nativeDrop.ts"), "utf8"), {
@@ -16,6 +20,8 @@ const mediaUrl = ts.transpileModule(fs.readFileSync(path.join(root, "src/fronten
 const mediaUrlModule = `data:text/javascript;base64,${Buffer.from(mediaUrl).toString("base64")}`
 const captureBridge = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/captureBridge.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
 const captureBridgeModule = `data:text/javascript;base64,${Buffer.from(captureBridge).toString("base64")}`
+const exif = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/exif.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+const exifModule = `data:text/javascript;base64,${Buffer.from(exif).toString("base64")}`
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -27,8 +33,73 @@ const javascript = ts
     .replace('from "./fileStats"', `from "${fileStatsUrl}"`)
     .replace('from "./mediaUrl"', `from "${mediaUrlModule}"`)
     .replace('from "./captureBridge"', `from "${captureBridgeModule}"`)
+    .replace('from "./exif"', `from "${exifModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("native EXIF callbacks preserve actual source clone values, own undefined and property order", async (t) => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-exif-bridge-"))
+    t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+    const ids = [...corpus(), ...generatedCorpus()].map(([name, bytes]) => {
+        const file = path.join(directory, name)
+        fs.writeFileSync(file, bytes)
+        return file
+    })
+    ids.push(path.join(directory, "missing.jpg"))
+    for (const name of ["test1.jpg", "test2.jpg", "test3.jpg", "short-ascii-MM.jpg", "short-ascii-II.jpg", "lens_info.jpg", "right.jpg", "down-mirrored.jpg", "sony-alpha-6000.jpg"]) ids.push(path.join(root, "node_modules/exif/test", name))
+    const binary = process.env.FREESHOW_EXIF_PARITY || path.join(root, "target/debug/freeshow-exif-parity" + (process.platform === "win32" ? ".exe" : ""))
+    const native = spawnSync(binary, [], { input: ids.map((id) => JSON.stringify({ id })).join("\n") + "\n", encoding: "utf8", timeout: 20000, maxBuffer: 16 * 1024 * 1024 })
+    assert.equal(native.status, 0, native.stderr || native.error?.message)
+    const outcomes = native.stdout.trim().split("\n").map(JSON.parse)
+    const { ExifImage } = createRequire(import.meta.url)("exif")
+    const original = upstreamFunctions("src/electron/utils/files.ts", ["readExifData"], { ExifImage, actionComplete: () => {} })
+    const context = { runtimeId: "exif-values", libraryGeneration: 1, dataPath: directory }
+    const errors = []
+    const { api, dispatch } = createRustApi(async () => [], (error) => errors.push(error), context)
+    const propertyOrder = (actual, expected) => {
+        if (!expected || typeof expected !== "object" || ArrayBuffer.isView(expected)) return
+        assert.deepEqual(Object.keys(actual), Object.keys(expected))
+        for (const key of Object.keys(expected)) propertyOrder(actual[key], expected[key])
+    }
+    assert.equal(outcomes.length, ids.length)
+    for (const [index, id] of ids.entries()) {
+        const expected = structuredClone(await original.readExifData({ id }))
+        let received
+        api.receive("MAIN", (message, listenerId) => { assert.equal(listenerId, id); received = message.data }, "exif-source")
+        const value = outcomes[index]
+        assert.equal(value.sourceCompatible, true, id)
+        dispatch({ channel: "MAIN", message: { channel: "READ_EXIF", data: value.reply }, listenerId: id, context, nativeExif: value.hydration })
+        assert.deepEqual(received, expected, id)
+        propertyOrder(received, expected)
+    }
+    assert.deepEqual(errors, [])
+})
+
+test("EXIF restoration rejects malformed envelopes atomically and never hydrates stale replies", () => {
+    const context = { runtimeId: "exif-validation", libraryGeneration: 2, dataPath: "/new" }
+    const errors = [], replies = []
+    const { api, dispatch } = createRustApi(async () => [], (error) => errors.push(error), context)
+    api.receive("MAIN", (message) => replies.push(message))
+    const data = { id: "file.jpg", exif: { image: { Keep: null }, exif: { Bytes: [0, 256] } } }
+    const snapshot = structuredClone(data)
+    const metadata = { undefinedPaths: ["/exif/image/Keep"], specialNumbers: [], byteBuffers: ["/exif/exif/Bytes"] }
+    dispatch({ channel: "MAIN", message: { channel: "READ_EXIF", data }, context, nativeExif: metadata })
+    assert.deepEqual(data, snapshot, "a late validation failure cannot apply earlier undefined writes")
+    for (const patch of [
+        { undefinedPaths: ["/id"] }, { undefinedPaths: ["/exif/__proto__/polluted"] },
+        { undefinedPaths: ["/exif/missing/child"] }, { undefinedPaths: ["/exif/image/Keep", "/exif/image/Keep"] },
+        { specialNumbers: [{ path: "/exif/image/Keep", kind: "unknown" }] },
+        { objectKeys: [{ path: "/exif/image", keys: ["Invented"] }] }
+    ]) dispatch({ channel: "MAIN", message: { channel: "READ_EXIF", data }, context, nativeExif: { undefinedPaths: [], specialNumbers: [], byteBuffers: [], ...patch } })
+    assert.deepEqual(replies, [])
+    assert.equal(errors.length, 7)
+    assert.ok(errors.every((error) => error.code === "exif_publication"))
+    const stale = { id: "missing.jpg" }
+    dispatch({ channel: "MAIN", message: { channel: "READ_EXIF", data: stale }, context: { ...context, libraryGeneration: 1 }, nativeExif: { undefinedPaths: ["/exif"], specialNumbers: [], byteBuffers: [] } })
+    assert.equal(Object.hasOwn(stale, "exif"), false)
+    assert.equal(errors.length, 7)
+    assert.equal(replies.length, 0)
+})
 
 test("retained canvas completion sends a one-use raw byte snapshot without a JSON write request", async () => {
     const context = { runtimeId: "capture", libraryGeneration: 1, dataPath: "/library" }

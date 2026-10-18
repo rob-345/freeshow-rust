@@ -1,6 +1,6 @@
 # Native document reads
 
-This slice prepares `MAIN.READ_FILE` and `MAIN.READ_BIBLES_FOLDER` replies from the pinned Electron source `2d94defcf98175e4f5c9504e7f4fd1d33c35c975`. It does not write files, create directories, start external processes, parse scripture/JSON/subtitles, publish IPC, or change runtime/library state. The standalone manifest/lock are temporary integration aids.
+This slice prepares `MAIN.READ_FILE` and `MAIN.READ_BIBLES_FOLDER` replies from the pinned Electron source `2d94defcf98175e4f5c9504e7f4fd1d33c35c975`. It does not write files, create directories, start external processes, parse scripture/JSON/subtitles, publish IPC, or change runtime/library state. The crate is now in the root/native workspaces; the [native file-read host](../native-file-reads.md) owns context, directory intents and callbacks.
 
 ## Source contract
 

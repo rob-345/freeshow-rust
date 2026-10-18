@@ -518,6 +518,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-documents"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "freeshow-exif"
+version = "0.1.0"
+dependencies = [
+ "indexmap",
+ "libc",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-files"
 version = "0.1.0"
 dependencies = [

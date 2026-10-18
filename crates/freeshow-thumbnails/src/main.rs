@@ -80,6 +80,10 @@ fn main() {
             Ok(plan) => plan.manifest(),
             Err(e) => json!({"error":{"code":e.code,"message":e.message}}),
         };
+        // These are independent sequential oracle fixtures, not a load test.
+        // Dropping a plan queues cleanup; await its lease release before the
+        // next fixture so fixed reaper scheduling cannot manufacture Busy.
+        runtime.block_on(service.finish_cleanup()).unwrap();
         serde_json::to_writer(&mut output, &reply).unwrap();
         writeln!(&mut output).unwrap();
         output.flush().unwrap();

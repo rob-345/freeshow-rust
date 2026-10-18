@@ -527,6 +527,20 @@ pub(crate) fn parse(
             .zip([image, thumbnail, exif, gps, interoperability, makernote])
     {
         let mut object = Map::new();
+        if group.values().any(|atom| matches!(atom, Atom::Undefined)) {
+            p.alloc(
+                group
+                    .keys()
+                    .map(|key| key.len().saturating_mul(4) + 64)
+                    .sum::<usize>()
+                    + 256,
+            )?;
+            let keys: Vec<String> = group.keys().map(|key| (*key).to_owned()).collect();
+            hydration.object_keys.push(crate::ObjectKeysHydration {
+                path: format!("/exif/{name}"),
+                keys,
+            });
+        }
         for (tag, atom) in group {
             let undefined = matches!(atom, Atom::Undefined);
             let value = p.wire(atom, &format!("/exif/{name}/{tag}"), &mut hydration)?;

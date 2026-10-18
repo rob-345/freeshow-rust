@@ -60,7 +60,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -549,6 +549,29 @@ def run():
             (ARTIFACTS / "assets.json").write_text(json.dumps(assets, ensure_ascii=False, indent=2))
             steps.append("Native HTTP GET, HEAD and Range preserve imported PNG bytes and CORS canvas pixels")
             steps.append("Native media capabilities support real WebKit WAV/VP8 seeking and playback")
+            read_text = import_dir / "日本語 literal%20.txt"
+            read_text.write_bytes(b"\xef\xbb\xbfNative\x00\n\xf0\x9f\x80 invalid\xff")
+            read_image = import_dir / "日本語 literal%20.jpg"
+            shutil.copyfile(ROOT / "crates/freeshow-exif/fixtures/full-II.jpg", read_image)
+            def probe_file_reads():
+                context = invoke("runtime_context")
+                bible_root = Path(context["dataPath"]) / "Bibles"
+                bible_root.mkdir(exist_ok=True)
+                for name in ["Native duplicate.FSB", "Native duplicate.fsb"]:
+                    (bible_root / name).write_text("Not parsed during folder discovery")
+                (bible_root / "Native directory.fsb").mkdir(exist_ok=True)
+                fixture = {"text":str(read_text),"image":str(read_image),"missing":str(import_dir / "missing-exif.jpg"),"dataRoot":context["dataPath"]}
+                expected = json.loads(subprocess.run([os.environ.get("FREESHOW_TEST_NODE", "node"),str(ROOT / "tests/desktop/file_reads_oracle.mjs")],input=json.dumps(fixture),text=True,capture_output=True,check=True,timeout=10).stdout)
+                observed = script((ROOT / "tests/desktop/file_reads_probe.js").read_text(),fixture)["result"]
+                (ARTIFACTS / "file-reads.json").write_text(json.dumps({"source":expected,"native":observed},ensure_ascii=False,indent=2))
+                assert "error" not in observed, observed
+                assert observed["context"] == context and observed["current"] == context, observed
+                for key in ["file","image","missing","bibles"]:
+                    assert observed[key] == expected[key], (key,observed,expected)
+                assert observed["status"]["requests"] == 0 and observed["elapsedMs"] < 2500, observed
+                return observed
+            probe_file_reads()
+            steps.append("Native document, Bible-folder and EXIF callbacks match pinned source values, byte types, IEEE specials and own undefined properties")
             thumbnail_folder = import_dir / "Native thumbnail folder"
             (thumbnail_folder / "pictures").mkdir(parents=True)
             thumbnail_image = thumbnail_folder / "pictures" / "日本語.png"
@@ -945,6 +968,10 @@ def run():
                 api_backup_status = invoke("library_status")
                 assert api_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and api_backup_status["activeJob"]["phase"] == "backupCompression", api_backup_status
                 steps.append("Real REST and Socket.IO actions/dynamic values remain responsive during the same ZIP compression")
+                file_reads_during_backup = probe_file_reads()
+                file_reads_status = invoke("library_status")
+                assert file_reads_status["activeJob"]["listenerId"] == "backup-responsiveness" and file_reads_status["activeJob"]["phase"] == "backupCompression", file_reads_status
+                steps.append("Four concurrent native document/EXIF/Bible reads preserve callback types and current context during the same ZIP compression")
                 browse_result = script("""
                     return (async()=>{
                         const started=performance.now(),context=window.api.getRuntimeContext(),replies=[];

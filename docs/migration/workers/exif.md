@@ -22,13 +22,15 @@ service.shutdown().await?;
 
 `ExifOutcome` contains `context`, `reply: serde_json::Value`, `hydration`, `diagnostics`, `sourceCompatible`, and resource `stats`. The original success callback receives `{ id, exif }`, where `exif` always has `image`, `thumbnail`, `exif`, `gps`, `interoperability`, and `makernote`. Ordinary read, missing-file, permission, unsupported-format, and parser failures retain `{ id, exif: undefined }`. JSON omits that own undefined property, so the native reply is `{ id }` with `hydration.undefinedPaths: ["/exif"]`. Diagnostics are host data, not extra fields in the retained callback.
 
-Hydration is data only; no executable renderer code is supplied by this crate. The future bridge must apply these trusted, generated JSON pointers to the reply after context acceptance and before the original callback:
+Hydration is data only; no executable renderer code is supplied by this crate. The integrated bridge applies these trusted, generated JSON pointers to the reply after context acceptance and before the original callback:
 
 | Metadata                         | Renderer restoration                                                                                                                                                           |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `undefinedPaths`                 | Assign `undefined` at the object property or array index; do not delete it.                                                                                                    |
 | `specialNumbers: [{path, kind}]` | Restore `NaN`, `Infinity`, `-Infinity`, or `-0` for `NaN`, `PositiveInfinity`, `NegativeInfinity`, `NegativeZero`. JSON placeholders are null, except negative zero uses zero. |
 | `byteBuffers`                    | Convert the number array to `Uint8Array`.                                                                                                                                      |
+
+Objects with omitted own undefined fields additionally carry optional `objectKeys: [{path,keys}]` metadata so the bridge can restore their original key order. The empty path denotes the callback root; group paths remain below exif.
 
 Only `READ_EXIF` needs this hydration. These pointers are relative to the callback reply, not the outer native event envelope. They come from final tag values after duplicate-key replacement. The host should not accept this metadata from renderer input or hydrate rejected/stale replies.
 
@@ -90,4 +92,4 @@ The parity binary defaults to `target/debug/freeshow-exif-parity` (`.exe` on Win
 
 The actual packaged oracle compares 212 source fixture outcomes and separately tests the renderer clone path. Its receipt is `test-output-rust/exif/electron-exif.json` and records executable/source/dependency hashes and runtime versions. Electron 37.10.3 embeds Node 22.21.1 / ICU 74.2 / Unicode 15.1; standalone Node 22.21.1 has different ICU tables. This parser's byte-wise text decoding has no ICU dependence; the packaged probe independently verifies its source fixture output and transported types. The Linux oracle helper uses private app/profile/data/user directories and removes them on exit.
 
-Linux runtime behavior is tested. Windows/macOS compile checks cover this portable parser and service, but filesystem/permission/native shutdown behavior and Electron clone behavior remain unverified on those OSes. Root desktop integration and retained `READ_EXIF` callback hydration are separate coordinator checks; this owned slice does not wire them.
+Linux runtime behavior is tested. Windows/macOS compile checks cover this portable parser and service, but filesystem/permission/native shutdown behavior and Electron clone behavior remain unverified on those OSes. The [native file-read integration](../native-file-reads.md) now owns root/native wiring and retained callback restoration; its desktop checks and remaining gaps are documented separately.

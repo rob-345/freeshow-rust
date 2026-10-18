@@ -1,6 +1,7 @@
 // Data-only observer of original JS values; not an EXIF parser.
 export function wire(value) {
     const hydration = { undefinedPaths: [], specialNumbers: [], byteBuffers: [] }
+    const objectKeys = []
     function visit(item, at, array = false) {
         if (item === undefined) {
             hydration.undefinedPaths.push(at)
@@ -18,6 +19,8 @@ export function wire(value) {
         if (Array.isArray(item)) return item.map((value, index) => visit(value, at + "/" + index, true))
         if (item && typeof item === "object") {
             const result = {}
+            const keys = Object.keys(item)
+            if (keys.some((key) => item[key] === undefined)) objectKeys.push({ path: at, keys })
             for (const key of Object.keys(item)) {
                 const resultValue = visit(item[key], at + "/" + key.replaceAll("~", "~0").replaceAll("/", "~1"))
                 if (resultValue !== undefined) result[key] = resultValue
@@ -26,5 +29,7 @@ export function wire(value) {
         }
         return item
     }
-    return { reply: visit(value, ""), hydration }
+    const reply = visit(value, "")
+    if (objectKeys.length) hydration.objectKeys = objectKeys
+    return { reply, hydration }
 }

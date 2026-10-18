@@ -1331,6 +1331,8 @@ dependencies = [
  "freeshow-audio",
  "freeshow-browse",
  "freeshow-core",
+ "freeshow-documents",
+ "freeshow-exif",
  "freeshow-files",
  "freeshow-import-effects",
  "freeshow-imports",
@@ -1350,6 +1352,30 @@ dependencies = [
  "tokio-util",
  "uuid",
  "zip",
+]
+
+[[package]]
+name = "freeshow-documents"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "freeshow-exif"
+version = "0.1.0"
+dependencies = [
+ "indexmap 2.14.2",
+ "libc",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]

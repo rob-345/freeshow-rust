@@ -4,6 +4,7 @@ import { hydrateFileBrowse } from "./fileStats"
 import { installNativeDrop } from "./nativeDrop"
 import { createMediaUrlRegistry, type LocalAssetGrant } from "./mediaUrl"
 import { createCaptureBridge, type CaptureTransport } from "./captureBridge"
+import { hydrateExif, type ExifHydration } from "./exif"
 
 type Receiver = (data: any, listenerId?: string) => void
 export type RuntimeContext = {
@@ -18,6 +19,7 @@ export type RuntimeEvent = {
     context?: RuntimeContext
     nativeAssets?: LocalAssetGrant[]
     nativeCapture?: { id: string }
+    nativeExif?: ExifHydration
 }
 export type Transport = (request: { channel: string; data?: any; listenerId?: string; context?: RuntimeContext }) => Promise<RuntimeEvent[]>
 const mutations = new Set(["SAVE", "UPDATE_DATA_PATH", "SET_STORE_VALUE", "SET_MEDIA_FOLDER_PATH", "RESTORE", "DELETE_BACKUP"])
@@ -47,6 +49,15 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
             reportError({ code: "assets_publication", message: "Native media grants could not be published" }, event)
         }
         if (event.nativeCapture && (event.channel !== "MAIN" || event.message.channel !== "CAPTURE_CANVAS" || event.nativeCapture.id !== event.message.data?.id || !event.context || !captures.register(event.context, event.nativeCapture.id, event.message.data?.output))) return
+        if (event.nativeExif) {
+            try {
+                if (event.channel !== "MAIN" || event.message.channel !== "READ_EXIF" || !event.context) throw new Error("Unexpected native EXIF envelope")
+                hydrateExif(event.message.data, event.nativeExif)
+            } catch (error) {
+                reportError({ code: "exif_publication", message: String(error) }, event)
+                return
+            }
+        }
         if (event.channel === "MAIN" && event.message.channel === "READ_FOLDER") hydrateFileBrowse("READ_FOLDER", event.message.data)
         // Snapshot listeners: handlers may unregister themselves during dispatch.
         for (const receiver of [...(receivers.get(event.channel) || [])]) {
