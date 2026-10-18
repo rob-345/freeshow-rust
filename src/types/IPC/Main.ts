@@ -346,6 +346,7 @@ export interface MainReturnPayloads {
     [Main.GET_DISPLAYS]: Display[]
     [Main.GET_PATHS]: MainFilePaths
     [Main.DATA_PATH]: string
+    [Main.UPDATE_DATA_PATH]: { success: boolean; path: string }
     [Main.GET_STORE_VALUE]: any
     [Main.DELETE_SHOWS]: { deleted: string[] }
     [Main.DELETE_SHOWS_NI]: { deleted: string[] } | undefined

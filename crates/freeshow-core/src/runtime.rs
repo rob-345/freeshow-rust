@@ -1,5 +1,5 @@
 use crate::{
-    backup,
+    backup, location,
     protocol::{Event, Request},
     restore, show,
     storage::{self, Stores, STORE_IDS},
@@ -29,6 +29,7 @@ pub const IMPLEMENTED_MAIN: &[&str] = &[
     "GET_STORE_VALUE",
     "SET_STORE_VALUE",
     "DATA_PATH",
+    "UPDATE_DATA_PATH",
     "SHOW",
     "SHOWS",
     "FULL_SHOWS_LIST",
@@ -49,6 +50,11 @@ pub struct Runtime {
 }
 
 impl Runtime {
+    pub fn open(app_data: PathBuf, data_override: Option<PathBuf>) -> Result<Self> {
+        let data = location::startup_path(&app_data, data_override)?;
+        Self::new(app_data, data)
+    }
+
     pub fn new(app_data: PathBuf, data: PathBuf) -> Result<Self> {
         Ok(Self {
             stores: Stores::new(app_data, data)?,
@@ -95,6 +101,35 @@ impl Runtime {
                 Some(json!(path))
             }
             "DATA_PATH" => Some(json!(self.stores.data)),
+            "UPDATE_DATA_PATH" => {
+                match location::select(
+                    &mut self.stores,
+                    &PathBuf::from(required_string(data, "newPath")?),
+                    &PathBuf::from(required_string(data, "oldPath")?),
+                ) {
+                    Ok(values) => {
+                        events.push(Event::reply(
+                            "MAIN",
+                            "DATA_PATH",
+                            json!(self.stores.data),
+                            None,
+                        ));
+                        for (id, value) in values {
+                            events.push(Event::reply("MAIN", &id, value, None));
+                        }
+                        Some(json!({"success":true,"path":self.stores.data}))
+                    }
+                    Err(error) => {
+                        events.push(Event::reply(
+                            "MAIN",
+                            "ALERT",
+                            error_alert("Could not change the data folder", &error),
+                            None,
+                        ));
+                        Some(json!({"success":false,"path":self.stores.data}))
+                    }
+                }
+            }
             id if id != "SHOWS" && STORE_IDS.contains(&id) && IMPLEMENTED_MAIN.contains(&id) => {
                 Some(self.stores.get(id)?)
             }
@@ -227,7 +262,12 @@ impl Runtime {
                             info.insert(key.into(), value.clone());
                         }
                     }
-                    events.push(Event::reply("MAIN", "SAVE2", Value::Object(info), None));
+                    events.push(Event::reply(
+                        "MAIN",
+                        "SAVE2",
+                        Value::Object(info),
+                        request.listener_id.clone(),
+                    ));
                 } else {
                     for id in ["SETTINGS", "SYNCED_SETTINGS"] {
                         events.push(Event::reply("MAIN", id, self.stores.get(id)?, None));

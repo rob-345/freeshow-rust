@@ -15,7 +15,7 @@ Preserve the existing Svelte interface first. `src/frontend/rust/bridge.ts` supp
 
 Keep the upstream Electron implementation runnable as an oracle until parity is demonstrated. No Node sidecar substitutes for unported Rust functionality. Unsupported operations return explicit errors. A handler's existence is never counted as proof of parity.
 
-The Rust fork uses the separate application identifier `app.freeshow.rust`; its data defaults to an isolated `Data` directory inside its own application profile. `FREESHOW_RUST_APP_DATA` and `FREESHOW_RUST_DATA_DIR` override those locations for tests. Existing Electron user data is not imported or modified implicitly. Data import, relocation, and recovery need their own verified migration path.
+The Rust fork uses the separate application identifier `app.freeshow.rust`; its data defaults to an isolated `Data` directory inside its own application profile. A selected data library is persisted across restart. `FREESHOW_RUST_APP_DATA` and `FREESHOW_RUST_DATA_DIR` override those locations for tests. Existing Electron user data is not imported or modified implicitly. Library selection preserves shows/media in their existing folders and copies missing portable stores. Bulk relocation, legacy profile import, concurrent-save isolation and crash recovery need further verification and implementation.
 
 ## Development
 
@@ -39,10 +39,10 @@ For Linux desktop automation, install `tauri-driver` (`cargo install tauri-drive
 ```sh
 npm run rust:frontend:build
 cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol
-xvfb-run -a dbus-run-session -- python3 tests/desktop/smoke.py
+xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py
 ```
 
-The desktop workflow also reopens the same profile, loads/renders the saved show, reads it through a native file picker, creates an automatic backup, restores it through the native restore picker, cancels a folder picker, and verifies a failed save can be retried after restoring file permissions.
+The desktop workflow also selects a library during onboarding, reopens the same profile/library, loads/renders the saved show, reads it through a native file picker, creates an automatic backup, restores it through the native restore picker, cancels a folder picker, and verifies a failed save can be retried after restoring file permissions. A second selection with unsaved work checks that those edits reach the old library, destination settings survive, and a same-ID destination song loads new content. Python GI, the AT-SPI 2 typelib/service and xdotool are required for native controls; the CI workflow lists the Ubuntu packages. Local extracted-package overrides are documented in [PROGRESS.md](PROGRESS.md).
 
 Set `FREESHOW_DESKTOP_BIN` when the binary is outside `target/debug`, such as `src-tauri/target/debug/freeshow-desktop`. Driver paths can be supplied with `TAURI_DRIVER` and `WEBKIT_WEBDRIVER`. `XDOTOOL` and `XDOTOOL_LIBRARY_PATH` support a user-local xdotool installation. Test profiles are temporary; screenshots and receipts go to `test-output-rust`.
 

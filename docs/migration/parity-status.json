@@ -15,15 +15,18 @@
       "status": "partial",
       "tests": [
         "tests/parity/core.test.mjs",
-        "crates/freeshow-core/tests/storage.rs"
+        "crates/freeshow-core/tests/storage.rs",
+        "crates/freeshow-core/tests/location.rs"
       ],
       "remaining": [
         "external edits during saves and multiple-instance locking",
-        "portable data relocation",
         "legacy profile import",
         "Windows/macOS permission and locking behavior",
         "unchanged-write suppression and cloud edit timestamps",
-        "array length and unusual property edge cases"
+        "array length and unusual property edge cases",
+        "queued saves and edits during a library switch",
+        "automatic recovery after a crash during library selection",
+        "unavailable selected volumes and recovery UI"
       ]
     },
     {
@@ -47,14 +50,14 @@
         "tests/desktop/smoke.py"
       ],
       "remaining": [
-        "positive folder selection and data relocation",
         "native drag/drop",
         "menus and accelerators",
         "clipboard",
         "display hotplug and DPI",
         "cross-platform lifecycle",
         "spellcheck",
-        "updates and crash reporting"
+        "updates and crash reporting",
+        "folder dialogs and library switching on Windows/macOS"
       ]
     },
     {
@@ -62,13 +65,16 @@
       "status": "partial",
       "tests": [
         "tests/desktop/smoke.py",
-        "src/frontend/rust/saveFailure.test.ts"
+        "src/frontend/rust/saveFailure.test.ts",
+        "tests/parity/frontend-save.test.mjs",
+        "src/frontend/rust/saveCompletion.test.ts",
+        "src/frontend/rust/dataLocation.test.ts"
       ],
       "remaining": [
         "editing, undo/redo, layouts and settings workflows",
         "visual snapshots across WebView2, WKWebView and WebKitGTK",
         "native clipboard, keyboard and accessibility parity",
-        "automatic-backup saved-state semantics"
+        "overlapping saves and edits made while saving"
       ]
     },
     {

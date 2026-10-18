@@ -2,10 +2,11 @@
 
 Run under `xvfb-run -a dbus-run-session -- python3 tests/desktop/smoke.py`.
 Requires tauri-driver and WebKitWebDriver on PATH (or environment overrides).
+Requires Python GI with the AT-SPI 2 typelib for native dialog controls.
 Every test run has fresh application, WebKit, data, and cache directories.
 """
 import base64
-import http.client
+from http.client import RemoteDisconnected
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,10 @@ import time
 import urllib.error
 import urllib.request
 import zipfile
+import gi
+
+gi.require_version("Atspi", "2.0")
+from gi.repository import Atspi
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "test-output-rust" / "desktop"
@@ -32,6 +37,8 @@ def free_port():
 
 
 def run():
+    for name in ["receipt.json", "editor.png", "saved.show", "library-switch.png", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-errors.json"]:
+        (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
     native = os.environ.get("WEBKIT_WEBDRIVER") or shutil.which("WebKitWebDriver")
@@ -43,11 +50,14 @@ def run():
     steps = []
     with tempfile.TemporaryDirectory(prefix="freeshow-desktop-test-") as temporary:
         temp = Path(temporary)
-        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"), FREESHOW_RUST_DATA_DIR=str(temp / "data"),
+        data_dir = temp / "selected-data"
+        data_dir.mkdir()
+        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"),
                    XDG_DATA_HOME=str(temp / "xdg-data"), XDG_CACHE_HOME=str(temp / "xdg-cache"),
                    XDG_CONFIG_HOME=str(temp / "xdg-config"), GSETTINGS_BACKEND="memory",
                    TAURI_WEBVIEW_AUTOMATION="true", WEBKIT_DISABLE_COMPOSITING_MODE="1",
                    LANG=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"), LC_ALL=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"))
+        env.pop("FREESHOW_RUST_DATA_DIR", None)
         log = (ARTIFACTS / "driver.log").open("w")
         process = subprocess.Popen([driver, "--port", str(port), "--native-port", str(native_port), "--native-driver", native],
                                    env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
@@ -65,7 +75,7 @@ def run():
                     with urllib.request.urlopen(request, timeout=40) as response:
                         result = json.load(response)["value"]
                     break
-                except (http.client.RemoteDisconnected, ConnectionResetError):
+                except (RemoteDisconnected, ConnectionResetError):
                     if not read_only or attempt == 2 or process.poll() is not None:
                         raise
                     print("Re-observing WebDriver after a reset during", route, flush=True)
@@ -129,6 +139,24 @@ def run():
             found = native_keys("search", "--onlyvisible", "--name", "^" + title + "$", check=False)
             return found.stdout.strip().splitlines()[-1] if found.returncode == 0 and found.stdout.strip() else None
 
+        def native_open_button(title):
+            desktop = Atspi.get_desktop(0)
+            for app_index in range(desktop.get_child_count()):
+                application = desktop.get_child_at_index(app_index)
+                for index in range(application.get_child_count()):
+                    frame = application.get_child_at_index(index)
+                    if frame.get_name() != title:
+                        continue
+                    queue = [frame]
+                    while queue:
+                        node = queue.pop()
+                        if node.get_role() == Atspi.Role.PUSH_BUTTON and node.get_name().lstrip("_") == "Open":
+                            state = node.get_state_set()
+                            if state.contains(Atspi.StateType.ENABLED) and state.contains(Atspi.StateType.SHOWING):
+                                return node
+                        queue.extend(node.get_child_at_index(child) for child in range(node.get_child_count()))
+            return None
+
         def choose_native_file(title, file):
             window_id = wait(lambda: native_dialog(title), title)
             # A mapped GTK toplevel can precede realization of its entry widgets
@@ -140,12 +168,12 @@ def run():
             time.sleep(0.2)
             native_keys("type", "--clearmodifiers", "--delay", "3", str(file))
             native_keys("key", "--clearmodifiers", "Return")
-            # GTK can use Enter to resolve the location entry first. Activate
-            # its Open button only if that same dialog remains visible.
+            # GTK can use Enter to resolve a path completion first. Activate the
+            # actual enabled Open button; completion popups can eat mnemonics.
             time.sleep(0.3)
             if native_dialog(title):
-                native_keys("windowfocus", "--sync", window_id)
-                native_keys("key", "--clearmodifiers", "alt+o")
+                button = wait(lambda: native_open_button(title), "Native Open button ready")
+                assert button.get_action_iface().do_action(0), "Could not activate native Open button"
 
         def attach_errors():
             script("window.__testRuntimeErrors=[];window.__testErrors=[];window.__testClicks=[];window.addEventListener('freeshow:runtime-error',e=>window.__testRuntimeErrors.push(e.detail));window.addEventListener('error',e=>window.__testErrors.push(String(e.message)));window.addEventListener('unhandledrejection',e=>window.__testErrors.push(String(e.reason)));document.addEventListener('click',e=>window.__testClicks.push({target:e.target.outerHTML?.slice(0,300),edit:!!e.target.closest('.edit')}),true)")
@@ -155,6 +183,11 @@ def run():
             session = http("POST", "/session", {"capabilities": {"alwaysMatch": {"tauri:options": {"application": str(binary)}}}})["sessionId"]
             wait(lambda: script("return !!window.api && document.body.innerText.includes('Language')"), "Rust IPC bootstrap and onboarding")
             attach_errors()
+            click('[data-testid="folder-picker-DATA_SHOWS"] .button-trigger')
+            choose_native_file("Data location", data_dir)
+            config_path = temp / "app" / "config.json"
+            wait(lambda: json.loads(config_path.read_text()).get("dataPath") == str(data_dir), "Selected data library committed")
+            wait(lambda: script("return document.querySelector('[data-testid=folder-picker-DATA_SHOWS]').dataset.title === arguments[0]", str(data_dir)), "Selected library shown in onboarding")
             click(".popup button.start")
             wait(lambda: script("return !!document.querySelector('#guideButtons')"), "Onboarding guide")
             click_text("Skip")
@@ -180,7 +213,7 @@ def run():
             wait(lambda: script("return document.body.innerText.includes('Rust parity test') && !document.querySelector('#name')"), "Show created")
             # Ctrl+S travels through the same shortcut handler used by the desktop.
             save_shortcut()
-            show_path = temp / "data" / "Shows" / "Rust parity test.show"
+            show_path = data_dir / "Shows" / "Rust parity test.show"
             wait(show_path.exists, "Show saved through Rust")
             saved = json.loads(show_path.read_text())
             (ARTIFACTS / "saved.show").write_text(json.dumps(saved, ensure_ascii=False, indent=2))
@@ -199,6 +232,9 @@ def run():
             session = None
             session = http("POST", "/session", {"capabilities": {"alwaysMatch": {"tauri:options": {"application": str(binary)}}}})["sessionId"]
             wait(lambda: script("return !!window.api && document.body.innerText.includes('Rust parity test')"), "Project and song restored after restart")
+            assert json.loads(config_path.read_text())["dataPath"] == str(data_dir)
+            script("window.__selectedRoot=null;window.api.receive('MAIN',m=>{if(m.channel==='DATA_PATH')window.__selectedRoot=m.data},'root-check');window.api.send('MAIN',{channel:'DATA_PATH'})")
+            wait(lambda: script("return window.__selectedRoot === arguments[0]", str(data_dir)), "Selected data library reopened after restart")
             attach_errors()
             click_text("Rust parity test")
             wait(lambda: script("return document.body.innerText.includes('Amazing grace') && document.body.innerText.includes('日本語')"), "Saved show loaded and rendered")
@@ -246,6 +282,50 @@ def run():
             click(".popup button.outlined")
             save_shortcut()
             wait(lambda: script("return !!document.querySelector('.status .saved')"), "Save retry succeeds after permissions are restored")
+
+            # Switch an already-loaded library with unsaved work. The target has
+            # a different song using the SAME ID, exercising cache invalidation.
+            other = temp / "other-library"
+            (other / "Shows").mkdir(parents=True)
+            (other / "Config").mkdir()
+            other_show = json.loads(json.dumps(saved))
+            other_show[1]["name"] = "Second library"
+            for slide in other_show[1].get("slides", {}).values():
+                for item in slide.get("items", []):
+                    for line in item.get("lines", []):
+                        for text in line.get("text", []):
+                            text["value"] = "Second library lyric"
+            (other / "Shows" / "Second library.show").write_text(json.dumps(other_show))
+            target_projects = '{"projects":{},"folders":{},"projectTemplates":{}}'
+            (other / "Config" / "projects.json").write_text(target_projects)
+            click_text("New show")
+            wait(lambda: script("return !!document.querySelector('#name')"), "Unsaved show before library switch")
+            fill("#name", "Pending before switch")
+            click_text("Quick lyrics")
+            wait(lambda: script("return !!document.querySelector('.popup textarea')"), "Unsaved lyrics input")
+            fill('.popup textarea', "Keep this unsaved song")
+            click('[data-testid="create.show.popup.new.show"]')
+            wait(lambda: script("return !document.querySelector('#name')"), "Unsaved show created")
+            assert not (data_dir / "Shows" / "Pending before switch.show").exists()
+            settings_button = '.top button[data-title^="Settings"]'
+            wait(lambda: script("const e=document.querySelector(arguments[0]);if(!e)return false;const r=e.getBoundingClientRect();return r.width>0 && e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))", settings_button), "Settings navigation ready after closing the editor")
+            click(settings_button)
+            click_text("Files")
+            click('[data-testid="folder-picker-DATA_LOCATION_SETTINGS"] .button-trigger')
+            choose_native_file("Data location", other)
+            wait(lambda: json.loads(config_path.read_text()).get("dataPath") == str(other), "Existing library selected after confirmed save")
+            pending_show = json.loads((data_dir / "Shows" / "Pending before switch.show").read_text())
+            pending_lyrics = json.dumps(pending_show)
+            assert "Keep this unsaved song" in pending_lyrics
+            assert show_path.exists()
+            assert not (other / "Shows" / "Pending before switch.show").exists()
+            assert (other / "Config" / "projects.json").read_text() == target_projects
+            steps.append("Pending edits saved to old library and destination settings preserved")
+            click('button[data-title^="Presenting"]')
+            wait(lambda: script("return document.body.innerText.includes('Second library')"), "Selected library show list refreshed")
+            click_text("Second library")
+            wait(lambda: script("return document.body.innerText.includes('Second library lyric') && !document.body.innerText.includes('Amazing grace')"), "Same-ID show cache cleared across libraries")
+            (ARTIFACTS / "library-switch.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
             assert script("return window.__testErrors") == []
             errors = script("return window.__testRuntimeErrors")
             # Unsupported features remain visible in the receipt; they are never
@@ -259,7 +339,7 @@ def run():
                 try:
                     (ARTIFACTS / "failed.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
                     (ARTIFACTS / "failed-dom.txt").write_text(script("return document.body.innerText"))
-                    (ARTIFACTS / "failed-errors.json").write_text(json.dumps(script("return {runtime:window.__testRuntimeErrors,errors:window.__testErrors,clicks:window.__testClicks}"), indent=2))
+                    (ARTIFACTS / "failed-errors.json").write_text(json.dumps(script("return {runtime:window.__testRuntimeErrors,errors:window.__testErrors,clicks:window.__testClicks,navigation:[...document.querySelectorAll('.top button')].map(e=>{const r=e.getBoundingClientRect();return {title:e.dataset.title,rect:r.toJSON(),cover:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,400)}})}"), indent=2))
                 except Exception:
                     pass
             raise

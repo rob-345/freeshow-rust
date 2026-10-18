@@ -56,6 +56,7 @@ import {
     currentOutputSettings,
     dataPath,
     driveKeys,
+    editHistory,
     events,
     folders,
     icecastStatus,
@@ -76,6 +77,7 @@ import {
     rtmpStatus,
     shows,
     showsCache,
+    scripturesCache,
     spellcheck,
     stageShows,
     templates,
@@ -159,7 +161,18 @@ export const mainResponses: MainResponses = {
     // MAIN
     [ToMain.MENU]: (a) => menuClick(a),
     [ToMain.API]: async (a) => await API_ACTIONS[a.action]?.(a.data),
-    [Main.DATA_PATH]: (a) => dataPath.set(a),
+    [Main.DATA_PATH]: (a) => {
+        if ((window as any).__TAURI__ && get(dataPath) && get(dataPath) !== a) {
+            showsCache.set({})
+            scripturesCache.set({})
+            shows.set({})
+            activeShow.set(null)
+            activeEdit.set({ items: [] })
+            editHistory.set([])
+            activeProject.set(null)
+        }
+        dataPath.set(a)
+    },
     [ToMain.ALERT]: (a) => {
         alertMessage.set(a || "")
 

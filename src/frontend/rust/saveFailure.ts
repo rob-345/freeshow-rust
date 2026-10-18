@@ -1,4 +1,5 @@
 import { get } from "svelte/store"
+import { isBackupOnly } from "../utils/savePolicy"
 
 type SaveStores = Pick<typeof import("../stores"), "saved" | "statusIndicator" | "deletedShows" | "renamedShows" | "shows" | "alertMessage" | "activePopup">
 
@@ -7,6 +8,13 @@ type SaveStores = Pick<typeof import("../stores"), "saved" | "statusIndicator" |
 export function recoverFailedSave(request: any, stores: SaveStores): boolean {
     if (request?.channel !== "MAIN" || request?.data?.channel !== "SAVE") return false
     const payload = request.data.data || {}
+    // Backup-only operations never removed these queues before dispatch.
+    if (isBackupOnly(payload.customTriggers, payload.closeWhenFinished)) {
+        stores.statusIndicator.set("error")
+        stores.alertMessage.set("Could not save backup settings. Check the data folder permissions and try again.")
+        stores.activePopup.set("alert")
+        return true
+    }
     const failedDeletes = Array.isArray(payload.deletedShows) ? payload.deletedShows : []
     const failedRenames = Array.isArray(payload.renamedShows) ? payload.renamedShows : []
     const currentShows = get(stores.shows)

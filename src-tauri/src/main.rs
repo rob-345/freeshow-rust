@@ -289,11 +289,9 @@ fn main() {
             let app_data = std::env::var_os("FREESHOW_RUST_APP_DATA")
                 .map(PathBuf::from)
                 .unwrap_or(app.path().app_data_dir()?);
-            let data = std::env::var_os("FREESHOW_RUST_DATA_DIR")
-                .map(PathBuf::from)
-                .unwrap_or_else(|| app_data.join("Data"));
+            let data = std::env::var_os("FREESHOW_RUST_DATA_DIR").map(PathBuf::from);
             app.manage(AppState {
-                runtime: Mutex::new(Runtime::new(app_data, data)?),
+                runtime: Mutex::new(Runtime::open(app_data, data)?),
             });
             Ok(())
         })

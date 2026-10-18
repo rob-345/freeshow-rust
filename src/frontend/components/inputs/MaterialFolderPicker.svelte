@@ -21,7 +21,7 @@
         if (disabled) return
 
         // linux dialog behind window message
-        if ($os.platform === "linux" && $activePopup !== "initialize") {
+        if ($os.platform === "linux" && $activePopup !== "initialize" && !(window as any).__TAURI__) {
             alertMessage.set("The folder select dialog might appear behind the window on Linux!<br>Please check that if you don't see it.")
             activePopup.set("alert")
         }
@@ -49,7 +49,7 @@
     }
 </script>
 
-<div class="textfield {disabled ? 'disabled' : ''}" data-title={value || translateText("inputs.change_folder")}>
+<div class="textfield {disabled ? 'disabled' : ''}" data-title={value || translateText("inputs.change_folder")} data-testid={`folder-picker-${PICK_ID}`}>
     <div class="background" />
 
     <div

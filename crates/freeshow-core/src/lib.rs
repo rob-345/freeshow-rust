@@ -1,11 +1,13 @@
 pub mod archive;
 pub mod backup;
 pub mod dialog;
+pub mod location;
 pub mod protocol;
 pub mod restore;
 pub mod runtime;
 pub mod show;
 pub mod storage;
+mod transaction;
 
 use serde::Serialize;
 

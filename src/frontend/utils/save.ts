@@ -3,6 +3,7 @@ import { Main } from "../../types/IPC/Main"
 import type { Projects } from "../../types/Projects"
 import type { Shows } from "../../types/Show"
 import { stopAllChannelRecordings } from "../audio/audioChannelRecorder"
+import { isBackupOnly } from "./savePolicy"
 import { customActionActivation } from "../components/actions/actions"
 import { stopMediaRecorder } from "../components/drawer/live/recorder"
 import { stopAllInteractions } from "../components/drawer/pages/interactions"
@@ -120,12 +121,12 @@ import { newToast, setStatus, startAutosave } from "./common"
 import { syncDrive } from "./drive"
 import { autoDisableRemoteController, stopRemoteController } from "./remoteController"
 
-export function save(closeWhenFinished = false, customTriggers: SaveActions = {}) {
+export function save(closeWhenFinished = false, customTriggers: SaveActions = {}, listenerId?: string) {
     updateSyncedOutputs()
     startAutosave() // reset auto save timer
 
     // don't save again while saving
-    if (get(statusIndicator) === "saving") return
+    if (get(statusIndicator) === "saving") return false
 
     console.info("SAVING...")
     if ((!customTriggers.autosave || !get(saved)) && !customTriggers.backup) {
@@ -243,12 +244,15 @@ export function save(closeWhenFinished = false, customTriggers: SaveActions = {}
 
     const saveData = clone(allSavedData)
 
-    deletedShows.set([])
-    renamedShows.set([])
+    if (!isBackupOnly(customTriggers, closeWhenFinished)) {
+        deletedShows.set([])
+        renamedShows.set([])
+    }
 
     if (customTriggers.backup) newToast("settings.backup_started")
     // trigger toast before saving
-    setTimeout(() => sendMain(Main.SAVE, saveData))
+    setTimeout(() => sendMain(Main.SAVE, saveData, listenerId))
+    return true
 }
 
 export function getSyncedSettings(): { [key in SaveListSyncedSettings]: any } {
@@ -289,6 +293,7 @@ export function getSyncedSettings(): { [key in SaveListSyncedSettings]: any } {
 }
 
 export async function saveComplete({ closeWhenFinished, customTriggers }: { closeWhenFinished: boolean; customTriggers?: SaveActions }) {
+    if (isBackupOnly(customTriggers, closeWhenFinished)) return
     const alreadySaved = get(saved)
     if (!closeWhenFinished) {
         if ((!customTriggers?.autosave || !alreadySaved) && !customTriggers?.backup) setStatus("saved", 1)

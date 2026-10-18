@@ -50,6 +50,22 @@ Remote CI on the previous commit passed the Linux/macOS core checks; one Linux d
 
 The next remote run passed Linux/macOS core checks and the Windows snapshot check. Windows then caught a Unix-only test import under warnings-as-errors; the import now has the same platform guard as its test. Linux desktop automation reached the native picker but sent input before GTK realized its entry widgets. The harness now allows the native event loop to initialize before typing and CI installs full-desktop screenshot capture for diagnosis. The complete local desktop workflow passed with these changes. The harness also isolates GTK preferences from the user's profile. Remote verification is pending.
 
+Remote run [39126074008](https://github.com/rob-345/freeshow-rust/actions/runs/39126074008) on `fbff3eae` subsequently passed **all four jobs**: core on Linux, Windows and macOS, plus the real Linux desktop workflow. The library-selection work below is newer and needs its own remote checks.
+
+## Data-library selection and confirmed saves (2026-10-18)
+
+`UPDATE_DATA_PATH` now selects an existing data folder, persists it in the fork's own configuration and reopens it after restart. Explicit environment/CLI overrides still take precedence. An unavailable saved folder stops startup with an error instead of creating an empty replacement library. A recovery UI for disconnected volumes is pending.
+
+The selector follows the upstream distinction between selecting a library and moving its contents: **shows and media stay in their existing folders**. Existing destination portable-store values win; missing portable stores are copied from the current library, with the original top-level defaults applied. The previous library is retained. Source/destination JSON and managed paths are validated before file changes. Portable-store changes, cache/undo invalidation and the configuration update use the same staged commit/rollback mechanism as restore; the configuration update is last. A failed rollback retains its journal and original files. Automatic crash recovery and multiple-instance/concurrent-save isolation remain pending. Failed preparation can leave newly created empty managed subfolders.
+
+The Rust frontend waits for a correlated ordinary-save acknowledgment before switching when edits are unsaved. A failed save prevents the switch. The displayed path and portable-store state change after a successful backend commit. Show/scripture caches, active editing state and undo history are invalidated across libraries, including when both libraries reuse a show ID. The tested normal workflow does not certify saves or edits racing a library change; queued stale payloads still need root/generation guards.
+
+Automatic-backup-only operations no longer clear queued renames/deletions or mark unsaved edits as saved. Their failure handler also leaves those queues intact. Tests execute the actual shared frontend save functions, plus acknowledgment/failure/timeout handling and the folder-change orchestration. These saved-state fixes also apply to the shared Electron frontend; the pinned Electron backend oracle remains unchanged.
+
+The real Linux workflow now selects a folder during onboarding, saves there and reopens it after restart. It then creates an unsaved song, selects another library through Settings and the real native picker, verifies that pending edits reached the previous library, checks that destination settings were preserved, and opens a same-ID song with different lyrics. GTK path completion can consume the Open mnemonic, so the harness locates the actual enabled Open button through AT-SPI before activating it. It waits for the Settings button to be reachable after the editor's closing animation. Each run removes its previous known evidence files to prevent stale receipts/screenshots from being mistaken for the latest result.
+
+Latest local suite: **15 Rust tests, 33 Node tests and 15 frontend regression tests passed** (63 total), including the existing generated show/retention corpora. The core now exposes **32 MAIN handlers**; this remains a count of handlers, not a parity percentage. The expanded native Linux workflow passed. The frontend/native binary build, core/native Clippy, formatting and snapshot checks passed locally. The complete parity gate still fails because major features remain unported.
+
 The untouched upstream unit baseline was run before changes: **179 passed, 2 failed** across 12 files. Both failures were in `src/electron/cloud/syncManager.test.ts`:
 
 1. `multiple machines sync scenarios > Scenario 1: if not found locally, and marked as 'deleted' in cloud: skip` (line 845).
@@ -67,9 +83,9 @@ The first release-mode lyric-extraction microbenchmark measured a median **95.93
 
 ## Next work
 
-1. Inspect the new remote CI run and fix any remaining platform-specific failures.
-2. Implement `UPDATE_DATA_PATH`/portable data relocation and persistence of the selected root across restart; test positive native folder selection. Continue native menus, shortcuts, close/save/capture lifecycle and profile import.
-3. Suppress unchanged disk writes, preserve cloud edit timestamps and finish array-property/locking semantics. Verify automatic-backup saved-state behavior, restore-journal recovery after a crash and backup metadata/time zones. The backup/restore core and tested native workflows above are implemented; the remaining cases are not certified.
+1. Inspect remote CI for the data-library slice and fix any platform-specific failures.
+2. Guard queued saves with their originating library/generation, and finish save/edit concurrency and profile locking. Continue native menus, shortcuts, close/save/capture lifecycle, unavailable-volume recovery and profile import. Data-root selection, portable-store copying and positive Linux folder selection are implemented above; bulk moving shows/media is a separate operation.
+3. Suppress unchanged disk writes, preserve cloud edit timestamps and finish array-property semantics. Implement transaction-journal recovery after a crash and verify backup metadata/time zones. Automatic-backup saved-state/queue regressions are now covered; overlapping operations remain uncertified.
 4. Port output window lifecycle and MAIN/output state routing, then add display/transition/preview tests.
 5. Continue through media/audio/capture, protocols/remote servers, hardware/broadcast, cloud/providers, AI and distribution as described in [PLAN.md](PLAN.md).
 6. Establish comparable release-build Electron startup/memory/rendering baselines and measure the Rust application before setting numerical acceptance thresholds.
@@ -86,7 +102,7 @@ export PKG_CONFIG_PATH="/home/rob-admin/.local/share/freeshow-native/usr/lib/x86
 export PKG_CONFIG_SYSROOT_DIR="/home/rob-admin/.local/share/freeshow-native"
 export CARGO_TARGET_DIR="/home/rob-admin/GitHub/freeshow-rust/target"
 cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol -j 3
-WEBKIT_WEBDRIVER=/home/rob-admin/.local/share/freeshow-native/usr/bin/WebKitWebDriver XDOTOOL=/home/rob-admin/.local/share/freeshow-native/usr/bin/xdotool XDOTOOL_LIBRARY_PATH=/home/rob-admin/.local/share/freeshow-xdotool-libs xvfb-run -a dbus-run-session -- python3 tests/desktop/smoke.py
+GI_TYPELIB_PATH=/home/rob-admin/.local/share/freeshow-native/usr/lib/x86_64-linux-gnu/girepository-1.0 WEBKIT_WEBDRIVER=/home/rob-admin/.local/share/freeshow-native/usr/bin/WebKitWebDriver XDOTOOL=/home/rob-admin/.local/share/freeshow-native/usr/bin/xdotool XDOTOOL_LIBRARY_PATH=/home/rob-admin/.local/share/freeshow-xdotool-libs xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py
 ```
 
 These machine-specific variables are not required on a normal machine with Tauri's system development packages installed.

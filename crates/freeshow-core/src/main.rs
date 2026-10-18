@@ -105,9 +105,9 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // The headless test/benchmark runner always uses temporary isolated roots by
     // default. It is also useful for querying the Rust runtime without a GUI.
     let temp = tempfile::tempdir()?;
-    let mut runtime = Runtime::new(
+    let mut runtime = Runtime::open(
         option("--app-data").unwrap_or_else(|| temp.path().join("app")),
-        option("--data-dir").unwrap_or_else(|| temp.path().join("data")),
+        option("--data-dir"),
     )?;
     let stdout = io::stdout();
     let mut output = stdout.lock();

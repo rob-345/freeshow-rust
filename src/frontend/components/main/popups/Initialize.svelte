@@ -6,6 +6,7 @@
     import { createData } from "../../../utils/createData"
     import { getLanguageList, setLanguage, translateText } from "../../../utils/language"
     import { uses12HourClock } from "../../../utils/localeTime"
+    import { changeDataLocation } from "../../../utils/dataLocation"
     import Icon from "../../helpers/Icon.svelte"
     import T from "../../helpers/T.svelte"
     import HRule from "../../input/HRule.svelte"
@@ -43,11 +44,7 @@
 
     // same as Files.svelte
     function updateDataPath(e: any) {
-        const oldPath = $dataPath
-        const newPath = e.detail
-
-        sendMain(Main.UPDATE_DATA_PATH, { newPath, oldPath })
-        dataPath.set(newPath)
+        void changeDataLocation(e.detail)
     }
 </script>
 

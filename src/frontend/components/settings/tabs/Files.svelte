@@ -5,10 +5,10 @@
     import { requestMain, sendMain } from "../../../IPC/main"
     import { activePopup, alertMessage, autosave, cloudSyncData, dataPath, driveData, driveKeys, providerConnections, saved, special, statusIndicator } from "../../../stores"
     import { changeTeam, setupCloudSync, socketDisconnect, updateCloudDeviceName } from "../../../utils/cloudSync"
-    import { previousAutosave, startAutosave, wait } from "../../../utils/common"
+    import { previousAutosave, startAutosave } from "../../../utils/common"
     import { validateKeys } from "../../../utils/drive"
     import { translateText } from "../../../utils/language"
-    import { save } from "../../../utils/save"
+    import { changeDataLocation } from "../../../utils/dataLocation"
     import { convertAutosave } from "../../../values/autosave"
     import T from "../../helpers/T.svelte"
     import { getTimeFromInterval, joinTimeBig } from "../../helpers/time"
@@ -162,19 +162,7 @@
     $: autoBackup = $special.autoBackup || "weekly"
 
     async function updateDataPath(e: any) {
-        if (!$saved) {
-            // save files first and backup just in case
-            save(false, { backup: true, isAutoBackup: true })
-            await wait(1500)
-        }
-
-        const oldPath = $dataPath
-        const newPath = e.detail
-
-        sendMain(Main.UPDATE_DATA_PATH, { newPath, oldPath })
-        dataPath.set(newPath)
-
-        sendMain(Main.REFRESH_SHOWS)
+        await changeDataLocation(e.detail)
     }
 
     // CLOUD
@@ -269,7 +257,7 @@
 <MaterialDropdown label="settings.autosave{autosaveInfo}" value={$autosave} defaultValue="15min" options={autosaveList} on:change={updateAutosave} />
 <MaterialDropdown label="settings.auto_backup{autoBackupInfo}" value={autoBackup} defaultValue="weekly" options={autobackupList} on:change={(e) => updateSpecial(e.detail, "autoBackup")} />
 
-<MaterialFolderPicker label="settings.data_location" value={$dataPath} on:change={updateDataPath} />
+<MaterialFolderPicker PICK_ID="DATA_LOCATION_SETTINGS" label="settings.data_location" value={$dataPath} on:change={updateDataPath} />
 
 <!-- {#key refreshInput}
     <MaterialToggleSwitch label="settings.user_data_location" disabled={!$dataPath} checked={$special.customUserDataLocation || false} defaultValue={false} on:change={(e) => toggle(e.detail, "customUserDataLocation")} />

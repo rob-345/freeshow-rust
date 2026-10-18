@@ -53,6 +53,17 @@ describe("Rust save failure recovery", () => {
         expect(get(stores.activePopup)).toBe(null)
     })
 
+    it("does not duplicate pending operations or mark edits saved after a backup-only failure", () => {
+        const stores = state()
+        stores.saved.set(false)
+        stores.deletedShows.set([{ id: "song", name: "Deleted" }])
+        stores.renamedShows.set([{ id: "other", oldName: "Before", name: "After" }])
+        recoverFailedSave({ channel: "MAIN", data: { channel: "SAVE", data: { deletedShows: get(stores.deletedShows), renamedShows: get(stores.renamedShows), customTriggers: { backup: true, isAutoBackup: true } } } }, stores)
+        expect(get(stores.deletedShows)).toHaveLength(1)
+        expect(get(stores.renamedShows)).toHaveLength(1)
+        expect(get(stores.saved)).toBe(false)
+    })
+
     it("shows a fixed message without inserting request contents into HTML", () => {
         const stores = state()
         recoverFailedSave({ channel: "MAIN", data: { channel: "SAVE", data: { secret: "private-value", error: '<img src=x onerror="bad()">' } } }, stores)

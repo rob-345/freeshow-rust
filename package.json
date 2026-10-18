@@ -21,7 +21,7 @@
         "rust:frontend:dev": "vite --config vite.rust.config.mjs",
         "rust:frontend:build": "node scripts/migration/build-frontend.mjs",
         "rust:snapshot": "node scripts/migration/snapshot.mjs --check",
-        "rust:test": "cargo test --workspace && cargo build --workspace && node --test tests/parity/*.test.mjs && vitest run --config config/testing/vitest.config.ts src/frontend/utils/localeTime.test.ts src/frontend/rust/saveFailure.test.ts",
+        "rust:test": "cargo test --workspace && cargo build --workspace && node --test tests/parity/*.test.mjs && vitest run --config config/testing/vitest.config.ts src/frontend/utils/localeTime.test.ts src/frontend/rust/*.test.ts",
         "rust:parity:report": "node scripts/migration/parity-report.mjs",
         "rust:parity:gate": "node scripts/migration/parity-report.mjs --require-complete",
         "rust:bench": "cargo build --release --workspace && node scripts/migration/benchmark.mjs",
