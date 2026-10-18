@@ -1,8 +1,6 @@
-use freeshow_core::{
-    protocol::Request,
-    runtime::Runtime,
-    storage::{atomic_write, Stores},
-};
+#[cfg(unix)]
+use freeshow_core::storage::atomic_write;
+use freeshow_core::{protocol::Request, runtime::Runtime, storage::Stores};
 use serde_json::json;
 use std::fs;
 

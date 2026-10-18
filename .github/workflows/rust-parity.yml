@@ -60,7 +60,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev webkit2gtk-driver xvfb dbus-x11 xdotool
+      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev webkit2gtk-driver xvfb dbus-x11 xdotool ffmpeg
       - run: rustup show
       - uses: actions/cache@v4
         with:

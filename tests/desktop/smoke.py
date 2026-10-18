@@ -45,6 +45,7 @@ def run():
         temp = Path(temporary)
         env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"), FREESHOW_RUST_DATA_DIR=str(temp / "data"),
                    XDG_DATA_HOME=str(temp / "xdg-data"), XDG_CACHE_HOME=str(temp / "xdg-cache"),
+                   XDG_CONFIG_HOME=str(temp / "xdg-config"), GSETTINGS_BACKEND="memory",
                    TAURI_WEBVIEW_AUTOMATION="true", WEBKIT_DISABLE_COMPOSITING_MODE="1",
                    LANG=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"), LC_ALL=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"))
         log = (ARTIFACTS / "driver.log").open("w")
@@ -130,8 +131,13 @@ def run():
 
         def choose_native_file(title, file):
             window_id = wait(lambda: native_dialog(title), title)
+            # A mapped GTK toplevel can precede realization of its entry widgets
+            # (observed on CI). Give it a rendering interval before sending input;
+            # XSync/windowfocus alone does not wait for the GTK event loop.
+            time.sleep(1)
             native_keys("windowfocus", "--sync", window_id)
             native_keys("key", "--clearmodifiers", "ctrl+l")
+            time.sleep(0.2)
             native_keys("type", "--clearmodifiers", "--delay", "3", str(file))
             native_keys("key", "--clearmodifiers", "Return")
             # GTK can use Enter to resolve the location entry first. Activate

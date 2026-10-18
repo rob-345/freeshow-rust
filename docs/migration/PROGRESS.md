@@ -48,6 +48,8 @@ Latest local validation: **8 Rust tests, 30 Node differential/integration tests 
 
 Remote CI on the previous commit passed the Linux/macOS core checks; one Linux desktop run passed and another encountered a transient WebDriver proxy reset. Windows failed on CRLF differences in generated snapshots. The snapshot reader now normalizes line endings, and the desktop harness re-observes read-only queries after a reset while preserving the same live session. Clicks, key input and mutating scripts are never automatically retried. CI also now has cancellation for superseded runs and Rust build caches. These changes still need remote verification on the new commit.
 
+The next remote run passed Linux/macOS core checks and the Windows snapshot check. Windows then caught a Unix-only test import under warnings-as-errors; the import now has the same platform guard as its test. Linux desktop automation reached the native picker but sent input before GTK realized its entry widgets. The harness now allows the native event loop to initialize before typing and CI installs full-desktop screenshot capture for diagnosis. The complete local desktop workflow passed with these changes. The harness also isolates GTK preferences from the user's profile. Remote verification is pending.
+
 The untouched upstream unit baseline was run before changes: **179 passed, 2 failed** across 12 files. Both failures were in `src/electron/cloud/syncManager.test.ts`:
 
 1. `multiple machines sync scenarios > Scenario 1: if not found locally, and marked as 'deleted' in cloud: skip` (line 845).
