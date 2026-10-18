@@ -70,7 +70,7 @@ async fn concurrent_lookup_effects_merge_cache_keys_and_invalidate_only_fork_thu
     let library = LibraryService::start(runtime).unwrap();
     let native = files::NativeFiles::new(FilesService::start(Limits::default()).unwrap());
     let context = library.context().unwrap();
-    let root = temp.path().join("search/subfolder");
+    let root = temp.path().join("search").join("subfolder");
     fs::create_dir_all(&root).unwrap();
     let thumbnail_root = temp.path().join("app/Thumbnails");
     fs::create_dir(&thumbnail_root).unwrap();
