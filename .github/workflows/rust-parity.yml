@@ -30,6 +30,7 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v5
+      - run: git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -56,6 +57,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - run: git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975
       - uses: actions/setup-node@v5
         with:
           node-version: 24

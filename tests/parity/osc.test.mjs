@@ -139,7 +139,7 @@ function checkMessages(messages) {
 test("OSC oracle is the pinned original handler/patch and installed osc-js 2.4.1", () => {
     assert.equal(require("osc-js/package.json").version, "2.4.1")
     for (const filename of ["src/electron/utils/api.ts", "src/electron/utils/oscPatch.ts"]) {
-        assert.equal(fs.readFileSync(path.join(root, filename), "utf8"), execFileSync("git", ["show", `${original}:${filename}`], { cwd: root, encoding: "utf8" }))
+        assert.equal(fs.readFileSync(path.join(root, filename), "utf8").replaceAll("\r\n", "\n"), execFileSync("git", ["show", `${original}:${filename}`], { cwd: root, encoding: "utf8" }).replaceAll("\r\n", "\n"))
     }
 })
 
@@ -306,7 +306,22 @@ test("Rust UDP sends interoperate with actual osc-js decoder on controlled loopb
         }
         assert.equal((await runtime.request({ data: 1 })).value.status, "ignored")
         assert.equal((await runtime.request({ signal: { host: "127.0.0.1", port }, data: "" })).error.kind, "invalid_address")
-        assert.equal((await runtime.request({ signal: { host: "127.0.0.1", port: "0" }, data: "/failure" })).error.kind, "send_failed")
+        // Node checks numeric zero before coercing strings. On an already bound
+        // socket (as in the original OSC handler), "0" reaches the host's UDP
+        // stack: Linux rejects it, while Windows can accept it. Compare the
+        // actual local Node boundary instead of requiring Linux's send error.
+        const probe = dgram.createSocket("udp4")
+        try {
+            await new Promise((resolve) => probe.bind(0, "127.0.0.1", resolve))
+            assert.throws(() => probe.send(Buffer.from([0]), 0, "127.0.0.1"), { code: "ERR_SOCKET_BAD_PORT" })
+            const nodeError = await new Promise((resolve) => probe.send(Buffer.from([0]), 0, 1, "0", "127.0.0.1", resolve))
+            const actual = await runtime.request({ signal: { host: "127.0.0.1", port: "0" }, data: "/failure" })
+            assert.equal(actual.ok, !nodeError)
+            if (nodeError) assert.equal(actual.error.kind, "send_failed")
+            else assert.equal(actual.value.status, "sent")
+        } finally {
+            probe.close()
+        }
         // The harness itself rejects accidental non-loopback destinations.
         assert.equal((await runtime.request({ signal: { host: "192.0.2.1", port }, data: "/blocked" })).error.kind, "test_destination_not_loopback")
         await runtime.close()

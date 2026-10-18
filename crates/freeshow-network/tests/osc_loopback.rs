@@ -89,10 +89,10 @@ async fn send_error_recovers_and_shutdown_closes_admission_for_all_clones() {
     let sender = OscSender::start(OscSenderConfig::default()).unwrap();
     let clone = sender.clone();
     let error = sender
-        .emit(&json!({"signal":{"host":"127.0.0.1","port":"0"},"data":"/zero"}))
+        .emit(&json!({"signal":{"host":"127.0.0.1","port":-1},"data":"/invalid"}))
         .await
         .unwrap_err();
-    assert_eq!(error.kind, OscErrorKind::SendFailed);
+    assert_eq!(error.kind, OscErrorKind::InvalidPort);
     let error = sender
         .emit(&json!({"signal":{"host":"::1","port":port},"data":"/ipv6"}))
         .await
@@ -147,23 +147,57 @@ async fn cancelled_queued_ticket_never_opens_a_socket_or_sends() {
 }
 
 #[tokio::test]
-async fn maximum_datagrams_complete_and_sender_recreation_releases_socket_ports() {
+async fn largest_supported_datagrams_complete_and_sender_recreation_releases_socket_ports() {
     let receiver = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
     let port = receiver.local_addr().unwrap().port();
-    let data = format!("/x {}", "a".repeat(65_492));
-    let expected = encode_message(&data).unwrap();
-    assert_eq!(expected.packet().len(), 65_504);
+    let protocol_data = format!("/x {}", "a".repeat(65_492));
     assert_eq!(
-        encode_message(&format!("{data}aaaa")).unwrap_err().kind,
+        encode_message(&protocol_data).unwrap().packet().len(),
+        65_504
+    );
+    assert_eq!(
+        encode_message(&format!("{protocol_data}aaaa"))
+            .unwrap_err()
+            .kind,
         OscErrorKind::PacketTooLarge
     );
+    // Darwin's UDP socket send space limits outgoing datagrams below IPv4's
+    // protocol maximum. Query the actual setting rather than assuming Linux's
+    // limit or changing the machine. Apple XNU udp_usrreq.c exposes maxdgram.
+    #[cfg(target_os = "macos")]
+    let native_limit = {
+        let output = std::process::Command::new("/usr/sbin/sysctl")
+            .args(["-n", "net.inet.udp.maxdgram"])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .trim()
+            .parse::<usize>()
+            .unwrap()
+    };
+    #[cfg(not(target_os = "macos"))]
+    let native_limit = 65_507;
+    let packet_bytes = native_limit.min(65_507) / 4 * 4;
+    assert!(packet_bytes >= 16);
+    let data = format!("/x {}", "a".repeat(packet_bytes - 12));
+    let expected = encode_message(&data).unwrap();
+    assert_eq!(expected.packet().len(), packet_bytes);
     for _ in 0..4 {
         let sender = OscSender::start(OscSenderConfig::default()).unwrap();
+        if native_limit < 65_504 {
+            let error = sender
+                .emit(&json!({"signal":{"host":"127.0.0.1","port":port},"data":protocol_data}))
+                .await
+                .unwrap_err();
+            assert_eq!(error.kind, OscErrorKind::SendFailed);
+        }
         let outcome = sender
             .emit(&json!({"signal":{"host":"127.0.0.1","port":port},"data":data}))
             .await
             .unwrap();
-        assert!(matches!(outcome, EmitOutcome::Sent { bytes: 65_504, .. }));
+        assert!(matches!(outcome, EmitOutcome::Sent { bytes, .. } if bytes == packet_bytes));
         let mut buffer = [0u8; 65_535];
         let (length, source) = timeout(Duration::from_secs(2), receiver.recv_from(&mut buffer))
             .await
