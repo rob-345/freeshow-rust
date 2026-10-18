@@ -12,7 +12,7 @@ const require = createRequire(import.meta.url),
     upath = require("upath")
 assert.equal(require("upath/package.json").version, "2.0.1")
 const revision = "2d94defcf98175e4f5c9504e7f4fd1d33c35c975"
-const binary = process.env.FREESHOW_MEDIA_COPY_EFFECTS_BIN || path.join(root, "target/debug", process.platform === "win32" ? "freeshow-media-copy-effects.exe" : "freeshow-media-copy-effects")
+const binary = process.env.FREESHOW_MEDIA_COPY_EFFECTS_BIN || path.join(root, "target/debug/examples", process.platform === "win32" ? "freeshow-media-copy-effects.exe" : "freeshow-media-copy-effects")
 const linux = process.platform === "linux",
     sources = new Map()
 function ast(file) {

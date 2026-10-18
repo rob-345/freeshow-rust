@@ -181,6 +181,14 @@ impl CopyContext {
     pub fn uses_default_sync_root(&self) -> bool {
         self.sync_default
     }
+    /// Source-normalized default root, derived only from the trusted data root.
+    pub fn default_media_root(&self) -> &Path {
+        Path::new(&self.default_media)
+    }
+    /// Original configured spelling, or the derived default root.
+    pub fn sync_root(&self) -> &Path {
+        Path::new(&self.sync_root)
+    }
     pub fn stores(&self) -> &StoreSnapshot {
         &self.stores
     }

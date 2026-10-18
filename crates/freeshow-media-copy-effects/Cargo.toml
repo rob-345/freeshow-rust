@@ -1,11 +1,11 @@
 [package]
 name = "freeshow-media-copy-effects"
+autobins = false
 version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-only"
 repository = "https://github.com/rob-345/freeshow-rust"
 
-[workspace]
 
 [dependencies]
 freeshow-media-copy = { path = "../freeshow-media-copy" }
@@ -22,15 +22,6 @@ libc = "0.2"
 tempfile = "3"
 tokio = { version = "1", features = ["rt", "macros", "time"] }
 
-[[bin]]
+[[example]]
 name = "freeshow-media-copy-effects"
 path = "src/main.rs"
-required-features = ["test-harness"]
-
-[features]
-test-harness = ["dep:tokio"]
-
-[dependencies.tokio]
-version = "1"
-features = ["rt", "time"]
-optional = true

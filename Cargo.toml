@@ -19,6 +19,8 @@ members = [
     "crates/freeshow-remotes",
     "crates/freeshow-encoders",
     "crates/freeshow-scriptures",
+    "crates/freeshow-media-copy",
+    "crates/freeshow-media-copy-effects",
 ]
 exclude = ["src-tauri", "vendor/socketioxide"]
 resolver = "2"

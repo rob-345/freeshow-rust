@@ -52,8 +52,8 @@ export CARGO_TARGET_DIR=crates/freeshow-media-copy/target
 export CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0
 export CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
 cargo test --manifest-path crates/freeshow-media-copy-effects/Cargo.toml --all-features
-cargo build --manifest-path crates/freeshow-media-copy-effects/Cargo.toml --features test-harness
-FREESHOW_MEDIA_COPY_EFFECTS_BIN="$PWD/$CARGO_TARGET_DIR/debug/freeshow-media-copy-effects" \
+cargo build --manifest-path crates/freeshow-media-copy-effects/Cargo.toml --example freeshow-media-copy-effects
+FREESHOW_MEDIA_COPY_EFFECTS_BIN="$PWD/$CARGO_TARGET_DIR/debug/examples/freeshow-media-copy-effects" \
   /home/rob-admin/.local/share/freeshow-oracle-node/node-v22.21.1-linux-x64/bin/node \
   --test tests/parity/media-copy-effects.test.mjs
 cargo clippy --manifest-path crates/freeshow-media-copy-effects/Cargo.toml --all-targets --all-features -- -D warnings
@@ -63,6 +63,6 @@ cargo fmt --manifest-path crates/freeshow-media-copy-effects/Cargo.toml --check
 npx prettier --config config/formatting/.prettierrc.yaml --check tests/parity/media-copy-effects.test.mjs docs/migration/workers/media-copy-effects.md
 ```
 
-The new executable's default test path is root `target/debug/freeshow-media-copy-effects` (Windows `.exe`); `FREESHOW_MEDIA_COPY_EFFECTS_BIN` overrides it for isolated builds. Enable `test-harness` when building that executable. Missing binaries fail the tests rather than being counted as a passing skipped parity run. The standalone `[workspace]` and lock are temporary; coordinator workspace integration must remove those and add the crate/path dependency, while keeping the host wiring outside this slice.
+The differential example defaults to root `target/debug/examples/freeshow-media-copy-effects` (Windows `.exe`); `FREESHOW_MEDIA_COPY_EFFECTS_BIN` overrides it for isolated builds. Workspace `cargo build --workspace --all-targets` builds it using dev dependencies. It is not an installed runtime sidecar, and Tokio runtime features are not an ordinary dependency of the effect library. Missing binaries fail the tests rather than counting as a passing skipped parity run. Workspace integration removes temporary `[workspace]` and child locks; final native host wiring remains coordinator-owned.
 
 Current focused evidence: 14 Rust tests and 14 actual-source Node tests, no Linux skips. Rust tests cover actual prepare → pin → apply bytes; foreign pins/roots; pre-effect and mid-copy limits/deadlines/cancellation; second-copy rollback preserving an existing root; parent rename and source/stage tampering; late no-clobber collision; changed existing/followed-symlink targets; post-promotion modification and inode replacement; prior source alerts/failures surviving a hard failure; real pin retention across TTL/request cancellation/service shutdown and plan drop; and cleanup continuing after the bounded diagnostics are full. The Node tests verify original replies/no-reply, exact alerts, actual output bytes/permission modes, Show/project/overlay/template extraction, dedupe, empty/default/custom root creation, raw-root early-open behavior, prefix/name quirks, directory and readonly failures, failed-ensure alias booleans and live symlink behavior on controlled real trees. Cross checks are build evidence, not runtime OS parity.

@@ -610,6 +610,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-media-copy"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "freeshow-media-copy-effects"
+version = "0.1.0"
+dependencies = [
+ "freeshow-media-copy",
+ "getrandom",
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-network"
 version = "0.1.0"
 dependencies = [
