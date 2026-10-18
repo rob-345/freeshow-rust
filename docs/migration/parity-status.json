@@ -47,7 +47,7 @@
         "MessagePort audio/video transport",
         "backend-initiated request correlation outside the run-scoped inbound API",
         "all command payload variants",
-        "mutable IPC payload snapshot semantics outside output, remotes and save",
+        "mutable IPC payload snapshot semantics outside output, remotes, media copy/bundling and save",
         "multi-window context propagation for remaining window types; output recreation is covered",
         "cancellation of pending requests after library changes",
         "IPC payload-byte and waiting-caller limits",
@@ -214,7 +214,15 @@
         "crates/freeshow-encoders/src/tests.rs",
         "src-tauri/tests/encoders.rs",
         "tests/desktop/encoders_probe.js",
-        "tests/desktop/encoder_oracle.mjs"
+        "tests/desktop/encoder_oracle.mjs",
+        "tests/parity/media-copy.test.mjs",
+        "tests/parity/media-copy-effects.test.mjs",
+        "tests/parity/lib/media-copy-oracle.mjs",
+        "crates/freeshow-media-copy/src/service/tests.rs",
+        "crates/freeshow-media-copy-effects/src/tests.rs",
+        "src-tauri/tests/media_copy.rs",
+        "tests/desktop/media_copy_probe.js",
+        "tests/desktop/media_copy_oracle.mjs"
       ],
       "remaining": [
         "video codecs and seeking",
@@ -232,9 +240,10 @@
         "local assets: other typed authorization sources, protected providers, failed-renewal registry reconciliation, universal external replacement/symlink behavior, transport differences, long playback/recovery and Windows/macOS browser verification",
         "thumbnail lifecycle: Windows/macOS stat/effects/browser behavior, source decode preflight, temporary cache fallback, raw-size duplicate/failure and 10s/15s timer interleavings, protected/remote formats, arbitrary SAVE_IMAGE/nativeImage exports, eviction and crash recovery",
         "EXIF: unsupported malformed pointer coercions and path source hangs/crashes, non-Unicode paths, Windows/macOS native filesystem/permission/shutdown and GUI behavior beyond verified fixtures",
-        "encoders: capture/RTMP lifecycle and SET_RTMP_ENCODER reconfiguration; actual hardware and Windows/macOS media/GUI workflows, anchored external replacement checks, Windows stable directory identity, broader PATH suffix resolution and hard whole-host/OS cancellation deadlines"
+        "encoders: capture/RTMP lifecycle and SET_RTMP_ENCODER reconfiguration; actual hardware and Windows/macOS media/GUI workflows, anchored external replacement checks, Windows stable directory identity, broader PATH suffix resolution and hard whole-host/OS cancellation deadlines",
+        "media copy/bundle: Windows/macOS effects, unrestricted sizes, custom destinations beyond committed native media setting, parallel batches with shared-directory coordination, source asynchronous overwrite/open timing, hard OS cancellation and durable crash recovery"
       ],
-      "scope": "FFMPEG_CHECK plus MP4Box-compatible MEDIA_CODEC/MEDIA_TRACKS corpus through bounded supervised ffprobe; diagnostics preserve unsupported capabilities; native replies retain payload/context/correlation independently of library compression; READ_AUDIO_METADATA common tags/ReplayGain compared with original music-metadata on 220 handler cases and 19 real files through two fixed parser workers, capped reads/operations/tag sizes/counts/depth/output and explicit unsupported/resource diagnostics; native LOCATE_MEDIA_FILE, GET_MEDIA_FOLDER_PATH and string SET_MEDIA_FOLDER_PATH use two filesystem workers, ten host leases through context-validated cache commits, actual packaged-Electron Unicode folding and ordered media settings; Linux FILE_INFO/READ_FOLDER/GET_SIMILAR use two independent fixed filesystem workers with actual numeric Stats/UTF-16 similarity and narrow own-undefined folder hydration; three retained-bridge replies match original handlers during the same ZIP; bounded loopback local bytes authorized only from explicit trusted committed/native boundaries and delivered before retained callbacks, exact synchronous source-key lookup, protected-root exclusion, output replay/revision tracking, Linux WebKit PNG bytes/pixels/CORS and PCM WAV/VP8 seek/play fixtures; Linux retained canvas capture with one-use raw byte completions, bounded source-hash coordination, IO-owner guarded cache effects and post-install grants, exact prepared folder slots, source existence/change-time invalidations, publication-time capture age and end-to-end cancellation/shutdown; native READ_EXIF on two fixed filesystem/parser workers preserves pinned JPEG tag/group/byte/numeric behavior with context-accepted bounded clone restoration and source own-undefined property order; native ENCODER_DETECT preserves raw cache values, exact source cache keys and listener/context through four owned host requests, two fixed filesystem workers, bounded actual FFmpeg test encodes, guarded ordered cache intents, library retirement and terminal drain; Linux retained bridge and real source comparisons normalize only process addresses in FFmpeg log prefixes"
+      "scope": "FFMPEG_CHECK plus MP4Box-compatible MEDIA_CODEC/MEDIA_TRACKS corpus through bounded supervised ffprobe; diagnostics preserve unsupported capabilities; native replies retain payload/context/correlation independently of library compression; READ_AUDIO_METADATA common tags/ReplayGain compared with original music-metadata on 220 handler cases and 19 real files through two fixed parser workers, capped reads/operations/tag sizes/counts/depth/output and explicit unsupported/resource diagnostics; native LOCATE_MEDIA_FILE, GET_MEDIA_FOLDER_PATH and string SET_MEDIA_FOLDER_PATH use two filesystem workers, ten host leases through context-validated cache commits, actual packaged-Electron Unicode folding and ordered media settings; Linux FILE_INFO/READ_FOLDER/GET_SIMILAR use two independent fixed filesystem workers with actual numeric Stats/UTF-16 similarity and narrow own-undefined folder hydration; three retained-bridge replies match original handlers during the same ZIP; bounded loopback local bytes authorized only from explicit trusted committed/native boundaries and delivered before retained callbacks, exact synchronous source-key lookup, protected-root exclusion, output replay/revision tracking, Linux WebKit PNG bytes/pixels/CORS and PCM WAV/VP8 seek/play fixtures; Linux retained canvas capture with one-use raw byte completions, bounded source-hash coordination, IO-owner guarded cache effects and post-install grants, exact prepared folder slots, source existence/change-time invalidations, publication-time capture age and end-to-end cancellation/shutdown; native READ_EXIF on two fixed filesystem/parser workers preserves pinned JPEG tag/group/byte/numeric behavior with context-accepted bounded clone restoration and source own-undefined property order; native ENCODER_DETECT preserves raw cache values, exact source cache keys and listener/context through four owned host requests, two fixed filesystem workers, bounded actual FFmpeg test encodes, guarded ordered cache intents, library retirement and terminal drain; Linux retained bridge and real source comparisons normalize only process addresses in FFmpeg log prefixes; Linux MEDIA_FOLDER_COPY/BUNDLE_MEDIA_FILES use bounded staged preparation, opaque pins before ordered installation, source-compatible opaque bytes/modes/hash paths/existing-file booleans, source ALERTs and no invented BUNDLE callback; two whole leases survive caller Drop and retain ready replies, batches coordinate shared-directory guards, ordinary preparation reads committed media settings outside library IO and validates frozen context/configuration/source/store bytes before final effects; bridge send-time snapshots wait only for prior media-setting writes"
     },
     {
       "id": "network-and-control",
@@ -342,7 +351,7 @@
         "GPL notices and fork branding",
         "replacement of inherited upstream publishing destinations"
       ],
-      "scope": "Remotes milestone at baca1050 passes all six CI jobs: Linux/Windows/macOS core, Windows/macOS native builds/Clippy/host tests and the real 127-step Linux editor/menu/drop workflow. Encoder detection has expanded local verification and awaits its own remote run. Installers, signatures, platform distribution and actual Windows/macOS browser/hardware behavior remain pending."
+      "scope": "Remotes, encoder and local scripture milestones each passed all six CI jobs. Scripture corrections at 26d5f306 pass Linux/Windows/macOS core, Windows/macOS native builds/Clippy/host tests and the real 139-step Linux editor/menu/drop workflow (run 39164835113). Media copy/bundling has separate local integration checks and needs its own complete CI run. Installers, signatures, platform distribution and actual Windows/macOS browser/hardware behavior remain pending."
     }
   ]
 }

@@ -29,6 +29,8 @@ freeshow-assets = { path = "../crates/freeshow-assets" }
 freeshow-remotes = { path = "../crates/freeshow-remotes" }
 freeshow-encoders = { path = "../crates/freeshow-encoders" }
 freeshow-scriptures = { path = "../crates/freeshow-scriptures" }
+freeshow-media-copy = { path = "../crates/freeshow-media-copy" }
+freeshow-media-copy-effects = { path = "../crates/freeshow-media-copy-effects" }
 freeshow-exif = { path = "../crates/freeshow-exif" }
 freeshow-documents = { path = "../crates/freeshow-documents" }
 freeshow-thumbnails = { path = "../crates/freeshow-thumbnails" }

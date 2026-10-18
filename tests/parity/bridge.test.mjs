@@ -462,6 +462,43 @@ test("media setting resets order following queries without queuing independent r
     assert.deepEqual(errors, [])
 })
 
+test("media copy snapshots wait for committed folder settings while independent queries and output continue", async () => {
+    const context = { runtimeId: "media-copy", libraryGeneration: 1, dataPath: "/library" },
+        calls = [],
+        errors = []
+    const bridge = createRustApi(
+        (request) => new Promise((resolve) => calls.push({ request, resolve })),
+        (error) => errors.push(error),
+        context
+    )
+    bridge.api.send("MAIN", { channel: "SET_MEDIA_FOLDER_PATH", data: "/chosen" })
+    const paths = { channel: "MEDIA_FOLDER_COPY", data: { paths: ["/original"] } },
+        bundle = { channel: "BUNDLE_MEDIA_FILES", data: { outputPath: "/chosen", openFolder: true } }
+    bridge.api.send("MAIN", paths, "copy")
+    bridge.api.send("MAIN", bundle, "bundle")
+    paths.data.paths[0] = "/mutated"
+    bundle.data.outputPath = "/mutated"
+    bridge.api.send("MAIN", { channel: "VERSION" }, "independent")
+    bridge.api.send("OUTPUT", { channel: "SET_VALUE", data: { id: "slide", value: "live" } })
+    await tick()
+    assert.deepEqual(calls.map(({ request }) => request.data.channel).sort(), ["SET_MEDIA_FOLDER_PATH", "SET_VALUE", "VERSION"])
+    calls.find(({ request }) => request.data.channel === "SET_MEDIA_FOLDER_PATH").resolve([])
+    await tick()
+    assert.deepEqual(
+        calls.slice(3).map(({ request }) => [request.data.channel, request.listenerId, request.data.data]),
+        [
+            ["MEDIA_FOLDER_COPY", "copy", { paths: ["/original"] }],
+            ["BUNDLE_MEDIA_FILES", "bundle", { outputPath: "/chosen", openFolder: true }]
+        ]
+    )
+    for (const call of calls) {
+        assert.deepEqual(call.request.context, context)
+        call.resolve([])
+    }
+    await tick()
+    assert.deepEqual(errors, [])
+})
+
 test("native event subscriptions isolate main and output windows", async () => {
     const listeners = []
     const makeWindow = (label) => ({

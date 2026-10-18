@@ -148,9 +148,10 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
         api: {
             send(channel: string, data?: any, listenerId?: string) {
                 if (channel === "MAIN" && data?.channel === "SAVE_IMAGE" && captures.complete(data.data)) return
+                const mediaCopy = channel === "MAIN" && ["BUNDLE_MEDIA_FILES", "MEDIA_FOLDER_COPY"].includes(data?.channel)
                 // Electron serializes at send time. Output updates often reuse
                 // mutable Svelte objects; queued cues must keep their snapshot.
-                if (channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && remoteCommands.has(data?.channel))) data = structuredClone(data)
+                if (mediaCopy || channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && remoteCommands.has(data?.channel))) data = structuredClone(data)
                 // SAVE snapshots its context before its deferred send. Other
                 // requests belong to the library visible when send is called.
                 const captured = channel === "MAIN" && data?.channel === "SAVE" ? data.data?.runtimeContext || context : context
@@ -165,7 +166,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 const serialized = channel === "MAIN" && mutations.has(data?.channel)
                 const mediaSettingsWrite = channel === "MAIN" && (data?.channel === "SET_MEDIA_FOLDER_PATH" || (data?.channel === "SET_STORE_VALUE" && data?.data?.file === "config"))
                 const mediaSettingsQuery = channel === "MAIN" && data?.channel === "GET_MEDIA_FOLDER_PATH"
-                const mediaSettingsRead = mediaSettingsQuery || (channel === "MAIN" && data?.channel === "LOCATE_MEDIA_FILE")
+                const mediaSettingsRead = mediaCopy || mediaSettingsQuery || (channel === "MAIN" && data?.channel === "LOCATE_MEDIA_FILE")
                 const outputMutation = channel === "OUTPUT" && outputLifecycle.has(data?.channel)
                 const outputMessage = channel === "OUTPUT" && !outputMutation
                 const remoteRequest = remoteChannels.has(channel) || (channel === "MAIN" && remoteCommands.has(data?.channel))

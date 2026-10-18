@@ -12,6 +12,7 @@ mod encoders;
 mod file_reads;
 mod files;
 mod imports;
+mod media_copy;
 mod menu;
 mod output;
 mod remotes;
@@ -44,6 +45,7 @@ struct AppState {
     media: MediaService,
     encoders: encoders::NativeEncoders,
     scriptures: scriptures::NativeScriptures,
+    media_copy: media_copy::NativeMediaCopy,
     audio: AudioService,
     files: files::NativeFiles,
     file_reads: file_reads::NativeFileReads,
@@ -104,6 +106,11 @@ fn file_reads_status(app: tauri::AppHandle) -> serde_json::Value {
 #[tauri::command]
 fn scriptures_status(app: tauri::AppHandle) -> serde_json::Value {
     app.state::<AppState>().scriptures.status()
+}
+
+#[tauri::command]
+fn media_copy_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().media_copy.status()
 }
 
 #[tauri::command]
@@ -259,6 +266,15 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if media_copy::COMMANDS.contains(&command) {
+            if window.label() != "main" {
+                return Err(WireError::new(
+                    "window_error",
+                    "Media copying requires the main window",
+                ));
+            }
+            return app.state::<AppState>().media_copy.dispatch(request).await;
+        }
         if scriptures::COMMANDS.contains(&command) {
             return app.state::<AppState>().scriptures.dispatch(request).await;
         }
@@ -510,6 +526,7 @@ async fn dispatch_native(
                     remotes_result,
                     encoders_result,
                     scriptures_result,
+                    media_copy_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -524,7 +541,8 @@ async fn dispatch_native(
                     state.file_reads.shutdown(),
                     state.remotes.shutdown(),
                     state.encoders.shutdown(),
-                    state.scriptures.shutdown()
+                    state.scriptures.shutdown(),
+                    state.media_copy.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
@@ -538,6 +556,7 @@ async fn dispatch_native(
                 remotes_result?;
                 encoders_result?;
                 scriptures_result?;
+                media_copy_result?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -630,6 +649,7 @@ async fn dispatch_native(
         app.state::<AppState>().thumbnails.context_changed(&context);
         app.state::<AppState>().file_reads.context_changed(&context);
         app.state::<AppState>().scriptures.context_changed(&context);
+        app.state::<AppState>().media_copy.context_changed(&context);
         if let Err(error) = app.state::<AppState>().assets.context_changed(&context) {
             let mut alert = Event::reply(
                 "MAIN",
@@ -988,6 +1008,30 @@ fn main() {
             let encoders =
                 encoders::NativeEncoders::new(library.clone(), media.clone(), app_data.clone())
                     .map_err(|error| std::io::Error::other(error.message))?;
+            let copy_events = app.handle().clone();
+            let copy_opener = app.handle().clone();
+            let media_copy = media_copy::NativeMediaCopy::new(
+                library.clone(),
+                std::sync::Arc::new(move |event| {
+                    copy_events
+                        .emit_to("main", "freeshow://ipc", event)
+                        .map_err(|error| error.to_string())
+                }),
+                std::sync::Arc::new(move |path| {
+                    if copy_opener
+                        .opener()
+                        .open_path(path.to_string_lossy(), None::<&str>)
+                        .is_err()
+                    {
+                        copy_opener
+                            .opener()
+                            .reveal_item_in_dir(path)
+                            .map_err(|error| error.to_string())?;
+                    }
+                    Ok(())
+                }),
+            )
+            .map_err(|error| std::io::Error::other(error.message))?;
             app.manage(AppState {
                 library,
                 context_changes: context_changes::ContextChanges::new(),
@@ -995,6 +1039,7 @@ fn main() {
                 media,
                 encoders,
                 scriptures,
+                media_copy,
                 audio,
                 files,
                 imports,
@@ -1054,6 +1099,7 @@ fn main() {
             file_reads_status,
             encoders_status,
             scriptures_status,
+            media_copy_status,
             thumbnail_complete
         ])
         .build(tauri::generate_context!())

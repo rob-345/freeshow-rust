@@ -60,7 +60,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -664,6 +664,61 @@ def run():
                 return scripture_observed
             probe_scriptures("initial")
             steps.append("Native BIBLE callbacks preserve complete pinned-source primary, legacy, migration, unknown fields and missing values through retained window.api")
+            copy_context = invoke("runtime_context")
+            copy_originals = temp / "Media copy originals 敬拜"
+            copy_originals.mkdir()
+            copy_paths = [copy_originals / "opaque 日本語.bin", copy_originals / "other Ελληνικά.bin"]
+            copy_paths[0].write_bytes(bytes([0,255,128,3,0]))
+            copy_paths[1].write_bytes(b"source copy content\r\n")
+            os.chmod(copy_paths[0], 0o640)
+            os.chmod(copy_paths[1], 0o751)
+            copy_native_root = temp / "Native media copied 敬拜"
+            copy_source_root = temp / "Original media copied 敬拜"
+            copy_oracle_data = temp / "media-copy-oracle-data"
+            copy_oracle_data.mkdir()
+            copy_receipts = {}
+            def media_tree(root):
+                return {str(file.relative_to(root)): {"sha256":hashlib.sha256(file.read_bytes()).hexdigest(), "mode":file.stat().st_mode & 0o7777} for file in root.rglob("*") if file.is_file()}
+            def copy_source(command, payload, target, stores=None):
+                fixture = {"command":command, "dataRoot":str(copy_oracle_data), "syncRoot":str(target), "stores":stores or {"projects":{"projects":{}},"overlays":{},"templates":{}}, "data":payload}
+                return json.loads(subprocess.run([os.environ.get("FREESHOW_TEST_NODE", "node"), str(ROOT / "tests/desktop/media_copy_oracle.mjs")], input=json.dumps(fixture), text=True,capture_output=True,check=True,timeout=20).stdout)
+            copy_payload = {"paths":[str(copy_paths[0]),str(copy_paths[0]),str(copy_paths[1]),str(copy_originals / "missing.bin"),"https://invalid.local/literal"]}
+            for phase in ["first","existing"]:
+                expected = copy_source("MEDIA_FOLDER_COPY", copy_payload, copy_source_root)
+                observed = script((ROOT / "tests/desktop/media_copy_probe.js").read_text(), {"command":"MEDIA_FOLDER_COPY","data":copy_payload,"setting":str(copy_native_root)})
+                assert observed["context"] == observed["current"] == copy_context, observed
+                assert observed["reply"] == expected["reply"] == (phase == "first"), (observed,expected)
+                assert observed["listenerId"] == observed["expectedListenerId"] and observed["status"]["requests"] == 0, observed
+                assert observed["alerts"] == expected["alerts"] == [] and expected["errors"] == 0, (observed,expected)
+                assert media_tree(copy_native_root) == media_tree(copy_source_root) and len(media_tree(copy_native_root)) == 2
+                copy_receipts[phase] = {"source":expected,"native":observed,"files":media_tree(copy_native_root)}
+                # Existing destinations preserve their original bytes even when
+                # the original file changes before the repeated source call.
+                copy_paths[0].write_bytes(b"changed original, retained destination")
+            steps.append("Retained media-copy callbacks match actual source true/false, correlation, opaque bytes, Unicode, permissions and existing-file preservation")
+            bundle_show = Path(copy_context["dataPath"]) / "Shows/Native media copy.show"
+            bundle_show.write_text(json.dumps(["native-copy",{"media":{"opaque":{"path":str(copy_paths[0])},"second":{"path":str(copy_paths[1])}},"slides":{},"unknown":{"retained":True}}],ensure_ascii=False))
+            shutil.copytree(Path(copy_context["dataPath"]) / "Shows", copy_oracle_data / "Shows")
+            bundle_stores = {}
+            for file, key in [("PROJECTS","projects"),("OVERLAYS","overlays"),("TEMPLATES","templates")]:
+                values = invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":copy_context,"data":{"channel":file}}})
+                bundle_stores[key] = next(event["message"]["data"] for event in values if event["message"]["channel"] == file)
+            bundle_native = temp / "Native bundle 敬拜"
+            bundle_source = temp / "Original bundle 敬拜"
+            expected_bundle = copy_source("BUNDLE_MEDIA_FILES", {"outputPath":str(bundle_source)}, bundle_source, bundle_stores)
+            assert expected_bundle["reply"] is None and expected_bundle["alerts"] == [] and expected_bundle["errors"] == 0, expected_bundle
+            expected_bundle_files = media_tree(bundle_source)
+            assert len(expected_bundle_files) >= 2, expected_bundle
+            bundle_pending = script((ROOT / "tests/desktop/media_copy_probe.js").read_text(), {"command":"BUNDLE_MEDIA_FILES","data":{"outputPath":str(bundle_native)},"setting":str(bundle_native)})
+            wait(lambda: media_tree(bundle_native) == expected_bundle_files and invoke("media_copy_status")["requests"] == 0, "Native bundle installs the complete pinned-source file tree", seconds=20)
+            observed_bundle = script((ROOT / "tests/desktop/media_copy_probe.js").read_text(), {"action":"collect","id":bundle_pending["id"]})
+            assert observed_bundle["context"] == observed_bundle["current"] == copy_context, observed_bundle
+            assert observed_bundle["replies"] == [] and observed_bundle["alerts"] == [] and observed_bundle["status"]["requests"] == 0, observed_bundle
+            copy_receipts["bundle"] = {"source":expected_bundle,"native":observed_bundle,"files":media_tree(bundle_native)}
+            (ARTIFACTS / "media-copy.json").write_text(json.dumps(copy_receipts,ensure_ascii=False,indent=2))
+            bundle_show.unlink()
+            invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":copy_context,"data":{"channel":"SET_MEDIA_FOLDER_PATH","data":""}}})
+            steps.append("Retained BUNDLE installs exact original show/project/overlay/template media bytes without inventing a success callback")
             encoder_cache = temp / "app" / "encoder-detection.json"
             encoder_check = invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":invoke("runtime_context"),"data":{"channel":"FFMPEG_CHECK"}}})[0]["message"]["data"]
             assert encoder_check["installed"] is True
