@@ -1,5 +1,7 @@
 # Native live network address queries
 
+The coordinator has added production main-window routing, shared-owner setup/status, context retirement and terminal drain. Linux's expanded desktop verifies seven original retained `MAIN.IP` callbacks both normally and during the same real 64 MiB ZIP workload; every request performs fresh native enumeration, preserves correlation/current context and ignores spoofed payload authority. Root review added a real ordered-library barrier test and corrected panic failure publication before reply/consumer-lease destruction, with an actual destructor witness. The combined Linux native target executions now include six shared-worker tests in each importing target. Actual Windows/macOS live-query execution remains pending the new CI run.
+
 This preparation implements the immutable Electron `MAIN.IP` handler from
 `2d94defcf98175e4f5c9504e7f4fd1d33c35c975` (1.6.7-beta.2), using the actual
 `getLocalIPs` helper in `src/electron/data/bonjour.ts`. It adds no application

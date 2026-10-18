@@ -18,6 +18,7 @@ serde = "1"
 serde_json = { version = "1", features = ["preserve_order"] }
 freeshow-core = { path = "../crates/freeshow-core" }
 freeshow-media = { path = "../crates/freeshow-media" }
+freeshow-ffmpeg-download = { path = "../crates/freeshow-ffmpeg-download" }
 freeshow-network = { path = "../crates/freeshow-network" }
 freeshow-audio = { path = "../crates/freeshow-audio" }
 freeshow-files = { path = "../crates/freeshow-files" }
@@ -54,6 +55,7 @@ libc = "0.2"
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock"] }
 
 [dev-dependencies]
+flate2 = "1"
 socket2 = "0.6"
 png = "=0.18.1"
 tempfile = "3"

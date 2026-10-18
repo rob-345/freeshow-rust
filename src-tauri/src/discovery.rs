@@ -94,8 +94,10 @@ enum Operation {
     Started(DiscoveryRun, DiscoveryName, SocketAddr),
     Stop(DiscoveryRun),
     #[cfg(test)]
+    #[allow(dead_code, reason = "Integration-only controlled owner pause")]
     Pause(oneshot::Sender<()>, oneshot::Receiver<()>),
     #[cfg(test)]
+    #[allow(dead_code, reason = "Integration-only controlled owner failure")]
     Panic,
 }
 enum Reply {
@@ -225,7 +227,7 @@ impl NativeDiscovery {
                 "Native discovery requires an entered Tokio runtime",
             ));
         }
-        freeshow_discovery::get_local_ips(&inputs.snapshot).map_err(service_error)?;
+        freeshow_discovery::get_local_ips(inputs.snapshot()).map_err(service_error)?;
         config.instance_id = inputs.suffix;
         let (service, service_events) = DiscoveryService::new(config).map_err(service_error)?;
         let shared = Arc::new(Shared {
@@ -505,10 +507,18 @@ impl NativeDiscovery {
         result.map_err(|(code, message)| error(code, message))
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Exercised by the dedicated discovery/remotes integration targets; the binary unit harness does not invoke every fixture hook"
+    )]
     pub(crate) fn test_inputs(snapshot: NetworkSnapshot, suffix: [u8; 3]) -> FrozenDiscoveryInputs {
         FrozenDiscoveryInputs { snapshot, suffix }
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Exercised by the dedicated discovery/remotes integration targets; the binary unit harness does not invoke every fixture hook"
+    )]
     pub(crate) fn abort_supervisor(&self) {
         self.inner
             .supervisor
@@ -519,6 +529,10 @@ impl NativeDiscovery {
             .abort();
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Exercised by the dedicated discovery/remotes integration targets; the binary unit harness does not invoke every fixture hook"
+    )]
     pub(crate) fn pause_refresh_completion(
         &self,
         entered: oneshot::Sender<()>,
@@ -527,10 +541,18 @@ impl NativeDiscovery {
         *self.inner.shared.refresh_hook.lock().unwrap() = Some((entered, release));
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Exercised by the dedicated discovery/remotes integration targets; the binary unit harness does not invoke every fixture hook"
+    )]
     pub(crate) async fn panic_owner(&self) -> Result<()> {
         self.request(Operation::Panic).await.map(|_| ())
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Exercised by the dedicated discovery/remotes integration targets; the binary unit harness does not invoke every fixture hook"
+    )]
     pub(crate) async fn pause(
         &self,
         entered: oneshot::Sender<()>,
@@ -592,7 +614,7 @@ async fn execute(shared: &Shared, operation: Operation) -> Result<Reply> {
             };
             let receipt = shared
                 .service
-                .begin(run.generation.clone(), shared.inputs.snapshot.clone())
+                .begin(run.generation.clone(), shared.inputs.snapshot().clone())
                 .await
                 .map_err(service_error)?;
             *shared.binding.lock().unwrap_or_else(|e| e.into_inner()) = Some(Binding {

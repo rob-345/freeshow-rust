@@ -382,6 +382,10 @@ impl NativeRemotes {
         discovery
     }
     #[cfg(all(test, unix))]
+    #[allow(
+        dead_code,
+        reason = "Exercised by the dedicated remotes integration target; the binary unit harness does not invoke every fixture hook"
+    )]
     pub(crate) fn test_discovery_drain(
         &self,
         timeout: Duration,
@@ -393,6 +397,10 @@ impl NativeRemotes {
         *discovery.drain_hook.lock().unwrap() = Some((entered, release));
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Exercised by the dedicated remotes integration target; the binary unit harness does not invoke every fixture hook"
+    )]
     pub(crate) fn test_discovery_timeout(&self, timeout: Duration) {
         *self
             .shared

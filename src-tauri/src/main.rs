@@ -4,11 +4,13 @@ mod api;
 mod assets;
 mod browse;
 mod context_changes;
+mod discovery;
 #[cfg(target_os = "linux")]
 mod documents_path;
 mod drop;
 mod encoder_inputs;
 mod encoders;
+mod ffmpeg_download;
 mod file_reads;
 mod files;
 mod imports;
@@ -45,6 +47,7 @@ struct AppState {
     context_changes: context_changes::ContextChanges,
     outputs: output::OutputService,
     media: MediaService,
+    ffmpeg_downloads: ffmpeg_download::NativeFfmpegDownloads,
     encoders: encoders::NativeEncoders,
     scriptures: scriptures::NativeScriptures,
     media_copy: media_copy::NativeMediaCopy,
@@ -174,6 +177,11 @@ fn network_queries_status(app: tauri::AppHandle) -> serde_json::Value {
 }
 
 #[tauri::command]
+fn ffmpeg_download_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().ffmpeg_downloads.status()
+}
+
+#[tauri::command]
 fn remote_delivery_complete(
     window: tauri::WebviewWindow,
     id: String,
@@ -275,6 +283,18 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if ffmpeg_download::COMMANDS.contains(&command) {
+            let result = app
+                .state::<AppState>()
+                .ffmpeg_downloads
+                .begin(request, window.label())?
+                .finish()
+                .await?;
+            for diagnostic in &result.diagnostics {
+                eprintln!("{}: {}", diagnostic.code, diagnostic.message);
+            }
+            return result.into_events();
+        }
         if network_queries::COMMANDS.contains(&command) {
             return app
                 .state::<AppState>()
@@ -540,6 +560,7 @@ async fn dispatch_native(
                     scriptures_result,
                     media_copy_result,
                     network_queries_result,
+                    ffmpeg_downloads_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -556,7 +577,8 @@ async fn dispatch_native(
                     state.encoders.shutdown(),
                     state.scriptures.shutdown(),
                     state.media_copy.shutdown(),
-                    state.network_queries.shutdown()
+                    state.network_queries.shutdown(),
+                    state.ffmpeg_downloads.shutdown()
                 );
                 // Shared OS ownership outlives every consumer, including discovery
                 // when its remote owner is installed. Always attempt its real drain.
@@ -576,6 +598,7 @@ async fn dispatch_native(
                 media_copy_result?;
                 network_queries_result?;
                 network_snapshots_result?;
+                ffmpeg_downloads_result?;
                 // Accepted native effects may still need the ordered library owner.
                 // A timed-out owner retains write admission for its real drain retry.
                 let drained = state.library.finish_writes().await;
@@ -677,6 +700,9 @@ async fn dispatch_native(
         app.state::<AppState>().media_copy.context_changed(&context);
         app.state::<AppState>()
             .network_queries
+            .context_changed(&context);
+        app.state::<AppState>()
+            .ffmpeg_downloads
             .context_changed(&context);
         if let Err(error) = app.state::<AppState>().assets.context_changed(&context) {
             let mut alert = Event::reply(
@@ -995,6 +1021,29 @@ fn main() {
             }))
             .map_err(|error| std::io::Error::other(error.message))?;
             let mut api_config = freeshow_api::ApiConfig::default();
+            let download_app = app.handle().clone();
+            let ffmpeg_downloads = tauri::async_runtime::block_on(async {
+                let mut config = ffmpeg_download::Config::default();
+                if let Some(url) = std::env::var_os("FREESHOW_RUST_FFMPEG_DOWNLOAD_LOOPBACK_URL") {
+                    config.controlled_test = Some(ffmpeg_download::ControlledTest::loopback(
+                        "linux",
+                        "x64",
+                        &url.to_string_lossy(),
+                    )?);
+                }
+                ffmpeg_download::NativeFfmpegDownloads::new(
+                    library.clone(),
+                    media.clone(),
+                    app_data.clone(),
+                    config,
+                    std::sync::Arc::new(move |event| {
+                        download_app
+                            .emit_to("main", "freeshow://ipc", event)
+                            .map_err(|error| error.to_string())
+                    }),
+                )
+            })
+            .map_err(|error| std::io::Error::other(error.message))?;
             if let Ok(ip) = std::env::var("FREESHOW_RUST_API_BIND_IP") {
                 api_config.bind_ip = ip.parse()?;
             }
@@ -1019,11 +1068,48 @@ fn main() {
             }
             let remote_app = app.handle().clone();
             let remotes = tauri::async_runtime::block_on(async {
-                remotes::NativeRemotes::new(library.clone(), remote_config, move |event| {
+                let mut discovery_config = discovery::NativeDiscovery::production_config();
+                // This process-only fixture authority is never derived from IPC.
+                if let Some(target) = std::env::var_os("FREESHOW_RUST_DISCOVERY_LOOPBACK_TARGET") {
+                    discovery_config.transport = freeshow_discovery::DiscoveryTransport::Loopback {
+                        bind: std::net::SocketAddrV4::new(std::net::Ipv4Addr::LOCALHOST, 0),
+                        target: target.to_string_lossy().parse().map_err(|error| {
+                            WireError::new(
+                                "discovery_config",
+                                format!("Invalid native discovery fixture target: {error}"),
+                            )
+                        })?,
+                    };
+                }
+                let discovered = match discovery::FrozenDiscoveryInputs::capture(&network_snapshots)
+                    .await
+                {
+                    Ok(frozen) => {
+                        discovery::NativeDiscovery::new(library.clone(), discovery_config, frozen)
+                    }
+                    Err(error) => Err(error),
+                };
+                let publish = move |event| {
                     remote_app
                         .emit_to("main", "freeshow://ipc", event)
                         .map_err(|error| error.to_string())
-                })
+                };
+                match discovered {
+                    Ok((discovery, events)) => remotes::NativeRemotes::new_with_discovery(
+                        library.clone(),
+                        remote_config,
+                        discovery,
+                        events,
+                        publish,
+                    ),
+                    Err(error) => {
+                        eprintln!(
+                            "Native discovery setup failed: {}: {}",
+                            error.code, error.message
+                        );
+                        remotes::NativeRemotes::new(library.clone(), remote_config, publish)
+                    }
+                }
             })
             .map_err(|error| std::io::Error::other(error.message))?;
             #[cfg(target_os = "linux")]
@@ -1073,6 +1159,7 @@ fn main() {
                 context_changes: context_changes::ContextChanges::new(),
                 outputs,
                 media,
+                ffmpeg_downloads,
                 encoders,
                 scriptures,
                 media_copy,
@@ -1131,6 +1218,7 @@ fn main() {
             api_status,
             remotes_status,
             network_queries_status,
+            ffmpeg_download_status,
             remote_delivery_complete,
             imports_status,
             assets_status,

@@ -1,5 +1,7 @@
 # Native FFmpeg download host
 
+Coordinator integration now routes main-window `FFMPEG_DOWNLOAD` through this host, uses the actual media resolver cache API, hooks library-context changes, and drains downloads/media before terminal library write admission closes. All 15 Linux host tests and strict native Clippy pass. The **148-step Linux editor** verifies two retained requests, before/after library selection, using an inert gzip served by one owned loopback fixture. Both install identical bytes with mode `0755` into the same private userData/bin, emit the original completion/progress, ignore renderer URL/path overrides, and leave no staging entries or live request leases. The fixture executable is never run. Real upstream TLS/redirects, downloaded binary usability, macOS signing and foreign platform execution remain unverified; the new native test target is enabled for the next complete CI run.
+
 This module completes the host-side installation boundary of `freeshow-ffmpeg-download`, against immutable Electron `2d94defcf98175e4f5c9504e7f4fd1d33c35c975` (`src/electron/streaming/ffmpegManager.ts::downloadFfmpeg` and `responsesMain.ts::FFMPEG_DOWNLOAD`). It is not wired into production in this commit. It preserves the retained Svelte request/reply/progress contracts. No upstream executable was downloaded or executed during development.
 
 ## Host API and authority

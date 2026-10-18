@@ -89,6 +89,11 @@ impl ControlledTest {
             tools: None,
         })
     }
+    #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Exercised by the dedicated FFmpeg download integration target; the binary unit harness does not invoke every fixture hook"
+    )]
     pub fn mac_tools(mut self, xattr: PathBuf, codesign: PathBuf) -> Result<Self, WireError> {
         if [&xattr, &codesign]
             .iter()
@@ -236,7 +241,7 @@ impl DownloadTicket {
 impl Drop for DownloadTicket {
     fn drop(&mut self) {
         if self.armed {
-            self.cell.cancel_waiter();
+            self.cancel();
         }
     }
 }

@@ -1,5 +1,7 @@
 # Native discovery ownership for remote listeners
 
+Coordinator integration now captures one frozen network snapshot through the shared fixed OS owner at desktop setup and installs this owner beside the actual remote listeners. Native setup failures are logged and leave ordinary TCP listeners available without fabricated discovery inputs. The default uses production discovery transport; a trusted process-only loopback target is used by the Linux GUI harness. The expanded native tests pass with strict native Clippy. The **148-step Linux editor** verifies actual packets before and after a library change: each phase has 15 exact original record payloads for three actual bound TCP ports, including frozen TXT/address data. The harness retains raw packets, compares the original dependency's real wire encoding/defaults and normalizes only random instance suffixes. It waits for all three current SRV ports on the already-bound private UDP descriptor, rather than treating cumulative status counters as current packet receipts. This is loopback evidence; LAN/native registration and actual Windows/macOS execution still require their own checks.
+
 This integration connects the reviewed native remote owner to the reviewed
 discovery owner. It changes only `src-tauri/src/remotes.rs`, its direct tests and
 this note. Application setup, IPC, dependencies, CI and shared snapshot ownership

@@ -251,6 +251,10 @@ impl NativeNetworkQueries {
         self.inner.snapshots.terminal_error().map_or(Ok(()), Err)
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Exercised by the dedicated network_queries integration target; the binary unit harness does not invoke every fixture hook"
+    )]
     pub(crate) fn test_limits(
         library: LibraryService,
         snapshots: NetworkSnapshots,

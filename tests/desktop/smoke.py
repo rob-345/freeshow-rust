@@ -9,6 +9,8 @@ import base64
 from http.client import RemoteDisconnected
 import itertools
 import hashlib
+import gzip
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
 from pathlib import Path
@@ -18,6 +20,7 @@ import signal
 import socket
 import subprocess
 import tempfile
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -63,6 +66,7 @@ def run():
     for name in ["network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
+    (ARTIFACTS / "ffmpeg-download.json").unlink(missing_ok=True)
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
     native = os.environ.get("WEBKIT_WEBDRIVER") or shutil.which("WebKitWebDriver")
     xdotool = os.environ.get("XDOTOOL") or shutil.which("xdotool")
@@ -119,12 +123,34 @@ def run():
             if isinstance(value, list):
                 return [entry for index, child in enumerate(value) for entry in audio_key_order(child, [*path, index])]
             return []
-        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"), HOSTNAME="freeshow-spoofed-environment.local", FREESHOW_RUST_API_BIND_IP="127.0.0.1", FREESHOW_RUST_REMOTES_BIND_IP="127.0.0.1",
+        discovery_peer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        discovery_peer.bind(("127.0.0.1", 0))
+        inert_download = b"FreeShow inert download fixture, never executed\n\x00\xff"
+        inert_archive = gzip.compress(inert_download, mtime=0)
+        download_requests = []
+        class InertDownload(BaseHTTPRequestHandler):
+            def do_GET(self):
+                download_requests.append(self.path)
+                if self.path != "/inert-ffmpeg.gz":
+                    self.send_error(404)
+                    return
+                self.send_response(200)
+                self.send_header("Content-Type", "application/gzip")
+                self.send_header("Content-Length", str(len(inert_archive)))
+                self.end_headers()
+                self.wfile.write(inert_archive)
+            def log_message(self, *_args):
+                pass
+        download_server = HTTPServer(("127.0.0.1", 0), InertDownload)
+        download_thread = threading.Thread(target=download_server.serve_forever, name="inert-download-fixture", daemon=True)
+        download_thread.start()
+        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"), HOSTNAME="freeshow-spoofed-environment.local", FREESHOW_RUST_API_BIND_IP="127.0.0.1", FREESHOW_RUST_REMOTES_BIND_IP="127.0.0.1", FREESHOW_RUST_DISCOVERY_LOOPBACK_TARGET="127.0.0.1:" + str(discovery_peer.getsockname()[1]),
                    XDG_DATA_HOME=str(temp / "xdg-data"), XDG_CACHE_HOME=str(temp / "xdg-cache"),
                    XDG_CONFIG_HOME=str(temp / "xdg-config"), GSETTINGS_BACKEND="memory",
                    TAURI_WEBVIEW_AUTOMATION="true", WEBKIT_DISABLE_COMPOSITING_MODE="1",
                    LANG=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"), LC_ALL=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"))
         env.pop("FREESHOW_RUST_DATA_DIR", None)
+        env["FREESHOW_RUST_FFMPEG_DOWNLOAD_LOOPBACK_URL"] = "http://127.0.0.1:" + str(download_server.server_port) + "/inert-ffmpeg.gz"
         # Exercise the real native OS Documents authority in this private profile.
         documents_root = temp / "Legacy Documents 敬拜"
         (documents_root / "Bibles").mkdir(parents=True)
@@ -524,6 +550,26 @@ def run():
                         receipt['pages'].append(page_receipt)
                 assert context == script('return window.api.getRuntimeContext()')
                 wait(lambda: invoke('remotes_status')['pendingDeliveries'] == 0 and invoke('remotes_status')['binding']['connections'] == 0, 'Real remote clients disconnect through retained cleanup')
+                def current_discovery():
+                    status = invoke("remotes_status")
+                    discovery = status.get("discovery")
+                    if not discovery or not status.get("binding") or discovery["acceptedEvents"] < 3:
+                        return None
+                    bound = status["binding"]
+                    advertised = discovery["owner"]["binding"]
+                    if not advertised or advertised["actualPorts"] != endpoints:
+                        return None
+                    assert advertised["context"] == bound["context"] == context
+                    assert advertised["listenerRun"] == bound["bound"]["generation"]["run"]
+                    assert advertised["generation"] == bound["discoveryRun"]["generation"]
+                    assert discovery["warnings"] == 0, discovery
+                    return discovery
+                advertised = wait(current_discovery, "Native discovery publishes only the three actual current remote listener ports")
+                proof = {"snapshot":expected_network["snapshot"],"endpoints":endpoints,"packets":[]}
+                original_result = subprocess.run(["node","tests/desktop/discovery_receipts.mjs",str(discovery_peer.fileno())],input=json.dumps(proof),text=True,capture_output=True,cwd=ROOT,timeout=15,pass_fds=(discovery_peer.fileno(),))
+                assert original_result.returncode == 0, (original_result.stdout,original_result.stderr,advertised)
+                original_records = json.loads(original_result.stdout)
+                receipt["discovery"] = {"status":advertised,"source":original_records}
                 remote_receipts[phase]=receipt
                 (ARTIFACTS/'remotes.json').write_text(json.dumps(remote_receipts,indent=2))
                 return receipt
@@ -721,6 +767,24 @@ def run():
             invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":copy_context,"data":{"channel":"SET_MEDIA_FOLDER_PATH","data":""}}})
             steps.append("Retained BUNDLE installs exact original show/project/overlay/template media bytes without inventing a success callback")
             encoder_cache = temp / "app" / "encoder-detection.json"
+            download_receipts = {}
+            def probe_download(phase):
+                observed = script((ROOT / "tests/desktop/ffmpeg_download_probe.js").read_text())
+                assert observed["context"] == observed["current"] == invoke("runtime_context"), observed
+                assert observed["reply"]["listenerId"] == observed["reply"]["expectedListenerId"], observed
+                assert observed["reply"]["message"]["data"] == {"success":True}, observed
+                assert observed["progress"][-1] == {"url":"ffmpeg","name":"FFmpeg","progress":100,"total":100,"status":"complete"}, observed
+                assert len(observed["progress"]) <= 257 and all(item["status"] in ["downloading","complete"] for item in observed["progress"]), observed
+                assert observed["status"]["admittedRequests"] == observed["status"]["readyUncollected"] == 0, observed
+                installed = temp / "app/bin/ffmpeg"
+                assert installed.read_bytes() == inert_download and installed.stat().st_mode & 0o777 == 0o755
+                assert all(path.name == "ffmpeg" for path in installed.parent.iterdir()), list(installed.parent.iterdir())
+                assert not (Path(observed["context"]["dataPath"]) / "bin/ffmpeg").exists()
+                assert download_requests == ["/inert-ffmpeg.gz"] * (len(download_receipts) + 1), download_requests
+                download_receipts[phase] = {"native":observed,"sha256":hashlib.sha256(installed.read_bytes()).hexdigest(),"mode":installed.stat().st_mode & 0o777,"requests":list(download_requests),"inert":True}
+                (ARTIFACTS / "ffmpeg-download.json").write_text(json.dumps(download_receipts,ensure_ascii=False,indent=2))
+            probe_download("initial")
+            steps.append("Retained FFMPEG_DOWNLOAD installs exact inert loopback bytes/mode in private userData, reports original completion and drains staging")
             network_receipts = {}
             def probe_network_queries(phase):
                 observed = script((ROOT / "tests/desktop/network_queries_probe.js").read_text())
@@ -1067,6 +1131,8 @@ def run():
             probe_api("switched", "Second library lyric")
             steps.append("Native API automatically restarts for the selected library and returns its same-ID show")
             probe_remotes('switched','Second library lyric')
+            probe_download("switched")
+            steps.append("FFmpeg download after library selection keeps native userData authority and ignores renderer URL/path overrides")
             assert remote_receipts['switched']['bound']['generation']['run'] != initial_remote['bound']['generation']['run']
             steps.append('Retained settings restart remotes only after library selection and return the new same-ID show')
             (ARTIFACTS / "library-switch.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
@@ -1464,6 +1530,11 @@ def run():
             except subprocess.TimeoutExpired:
                 os.killpg(process.pid, signal.SIGKILL)
             log.close()
+            discovery_peer.close()
+            download_server.shutdown()
+            download_server.server_close()
+            download_thread.join(timeout=5)
+            assert not download_thread.is_alive()
 
 
 if __name__ == "__main__":
