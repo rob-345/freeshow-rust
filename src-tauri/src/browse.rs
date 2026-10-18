@@ -1,5 +1,9 @@
 //! Readonly filesystem queries have their own bounded workers and cancellation
 //! registry; they never wait behind library compression or mutation admission.
+use crate::{
+    assets::NativeAssets,
+    thumbnails::{NativeThumbnails, Publish},
+};
 use freeshow_browse::BrowseService;
 use freeshow_core::{
     protocol::{Event, Request, RuntimeContext},
@@ -109,6 +113,34 @@ impl NativeBrowse {
         request: Request,
         window: &str,
     ) -> Result<Vec<Event>, WireError> {
+        self.dispatch_internal(library, request, window, None).await
+    }
+
+    pub async fn dispatch_with_thumbnails(
+        &self,
+        library: &LibraryService,
+        request: Request,
+        window: &str,
+        thumbnails: &NativeThumbnails,
+        assets: &NativeAssets,
+        publish: Publish<'_>,
+    ) -> Result<Vec<Event>, WireError> {
+        self.dispatch_internal(
+            library,
+            request,
+            window,
+            Some((thumbnails, assets, publish)),
+        )
+        .await
+    }
+
+    async fn dispatch_internal(
+        &self,
+        library: &LibraryService,
+        request: Request,
+        window: &str,
+        capture: Option<(&NativeThumbnails, &NativeAssets, Publish<'_>)>,
+    ) -> Result<Vec<Event>, WireError> {
         if window != "main" {
             return Err(WireError::new(
                 "browse_role",
@@ -120,10 +152,39 @@ impl NativeBrowse {
             .contextualize(&request, &mut [])
             .map_err(WireError::from)?;
         let command = request.data["channel"].as_str().unwrap_or("");
-        let result = self
-            .service
-            .dispatch_with_cancel(command, &request.data["data"], lease.cancel.clone())
-            .await;
+        let result = async {
+            let error = |error: freeshow_browse::BrowseError| WireError::new(error.code, error.message);
+            if command == "READ_FOLDER" {
+                if let Some((thumbnails, assets, publish)) = capture {
+                    let mut listing = self.service.prepare_listing_with_cancel(&request.data["data"], lease.cancel.clone()).await.map_err(error)?;
+                    if listing.thumbnail_intents.len() > 32 {
+                        return Err(WireError::new("browse_resource_limit", "Folder listing exceeds 32 thumbnail captures"));
+                    }
+                    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+                        for intent in listing.thumbnail_intents {
+                            library.contextualize(&request, &mut []).map_err(WireError::from)?;
+                            if lease.cancel.is_cancelled() {
+                                return Err(WireError::new("cancelled", "Folder capture cancelled"));
+                            }
+                            let generated = thumbnails.dispatch(library, assets, Request {
+                                channel: "MAIN".into(),
+                                data: serde_json::json!({"channel":"GET_THUMBNAIL","data":{"input":intent.input,"size":intent.size}}),
+                                context: request.context.clone(),
+                                listener_id: None,
+                            }, window, publish).await?;
+                            let output = generated.first().and_then(|event| event.message.data.as_ref()).and_then(|data| data["output"].as_str()).ok_or_else(|| WireError::new("thumbnail_worker", "Thumbnail has no source-compatible output"))?;
+                            let entry = listing.data.get_mut(&intent.input).and_then(serde_json::Value::as_object_mut).ok_or_else(|| WireError::new("thumbnail_worker", "Prepared listing lost its thumbnail slot"))?;
+                            entry.insert("thumbnailPath".into(), serde_json::json!(output));
+                        }
+                        Ok::<_, WireError>(freeshow_browse::BrowseReply { data:listing.data, thumbnail_intents:vec![], diagnostics:listing.diagnostics })
+                    }).await.map_err(|_| WireError::new("browse_resource_limit", "Folder capture exceeded its 30-second deadline"))?
+                } else {
+                    self.service.dispatch_with_cancel(command, &request.data["data"], lease.cancel.clone()).await.map_err(error)
+                }
+            } else {
+                self.service.dispatch_with_cancel(command, &request.data["data"], lease.cancel.clone()).await.map_err(error)
+            }
+        }.await;
         // Suppress errors and results belonging to a library that has changed.
         library
             .contextualize(&request, &mut [])
@@ -131,7 +192,7 @@ impl NativeBrowse {
         if lease.cancel.is_cancelled() {
             return Err(WireError::new("cancelled", "Browse request cancelled"));
         }
-        let reply = result.map_err(|error| WireError::new(error.code, error.message))?;
+        let reply = result?;
         for diagnostic in reply.diagnostics {
             eprintln!(
                 "filesystem browse: {}: {}",

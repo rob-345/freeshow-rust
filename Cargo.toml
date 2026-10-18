@@ -13,6 +13,7 @@ members = [
     "crates/freeshow-assets",
     "crates/freeshow-thumbnails",
     "crates/freeshow-asset-plans",
+    "crates/freeshow-thumbnail-effects",
 ]
 exclude = ["src-tauri", "vendor/socketioxide"]
 resolver = "2"

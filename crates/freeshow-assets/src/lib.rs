@@ -68,6 +68,7 @@ pub enum Provenance {
     NativeDrop,
     LocatedMedia,
     GeneratedThumbnail,
+    CaptureSource,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Protection {

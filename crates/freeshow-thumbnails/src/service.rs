@@ -226,6 +226,7 @@ impl ThumbnailService {
             cancel: cancel.clone(),
             request_cancel: request_cancel.clone(),
             created: Instant::now(),
+            capture_started: false,
             source: None,
             destination: None,
             guard: CacheGuard::Absent,

@@ -593,9 +593,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-thumbnail-effects"
+version = "0.1.0"
+dependencies = [
+ "freeshow-thumbnails",
+ "getrandom",
+ "libc",
+ "png",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-thumbnails"
 version = "0.1.0"
 dependencies = [
+ "crc32fast",
  "flate2",
  "libc",
  "png",

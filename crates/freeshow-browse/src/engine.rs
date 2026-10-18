@@ -226,6 +226,7 @@ pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<BrowseRep
         ));
     }
     budget.check()?;
+    let mut thumbnail_intents = Vec::new();
     let data = match request {
         Request::FileInfo(path) => match stats::stat(&path, budget)? {
             Some(stat) => {
@@ -254,9 +255,7 @@ pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<BrowseRep
                     listing.folder(&path, 0)?;
                 }
             }
-            if !listing.intents.is_empty() {
-                return Err(BrowseError{code:"thumbnail_unavailable",message:"Folder listing requires native thumbnail generation; no thumbnails were generated".into(),thumbnail_intents:listing.intents});
-            }
+            thumbnail_intents = listing.intents;
             Value::Object(listing.output)
         }
     };
@@ -288,7 +287,7 @@ pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<BrowseRep
     budget.check()?;
     Ok(BrowseReply {
         data,
-        thumbnail_intents: vec![],
+        thumbnail_intents,
         diagnostics: vec![],
     })
 }

@@ -80,6 +80,64 @@ fn png_preflight_and_row_limits() {
         "thumbnail_resource_limit"
     );
 }
+#[test]
+fn actual_webkit_canvas_full_precision_metadata_preserves_pixels_and_crc_checks() {
+    use sha2::{Digest, Sha256};
+    let fixture: Value =
+        serde_json::from_str(include_str!("../evidence/webkit-canvas-png.json")).unwrap();
+    let bytes: Vec<u8> = serde_json::from_value(fixture["bytes"].clone()).unwrap();
+    assert_eq!(format!("{:x}", Sha256::digest(&bytes)), fixture["sha256"]);
+    let decoded = png_data::validate(&bytes, &budget(ThumbnailConfig::default())).unwrap();
+    assert_eq!((decoded.width, decoded.height), (16, 16));
+    assert_eq!(
+        decoded.pixel_sha256,
+        format!("{:x}", Sha256::digest([0, 0, 0, 255].repeat(256)))
+    );
+    let index = bytes.windows(4).position(|part| part == b"sBIT").unwrap();
+    let mut lower = bytes.clone();
+    lower[index + 4] = 7;
+    let crc = crc32fast::hash(&lower[index..index + 8]);
+    lower[index + 8..index + 12].copy_from_slice(&crc.to_be_bytes());
+    assert_eq!(
+        png_data::validate(&lower, &budget(ThumbnailConfig::default()))
+            .err()
+            .unwrap()
+            .code,
+        "unsupported_canvas_png"
+    );
+    let mut invalid_crc = bytes.clone();
+    invalid_crc[index + 8] ^= 1;
+    assert_eq!(
+        png_data::validate(&invalid_crc, &budget(ThumbnailConfig::default()))
+            .err()
+            .unwrap()
+            .code,
+        "invalid_canvas_png"
+    );
+    let mut duplicate = bytes.clone();
+    duplicate.splice(
+        index - 4..index - 4,
+        bytes[index - 4..index + 12].iter().copied(),
+    );
+    assert_eq!(
+        png_data::validate(&duplicate, &budget(ThumbnailConfig::default()))
+            .err()
+            .unwrap()
+            .code,
+        "unsupported_canvas_png"
+    );
+    let mut late = bytes[..index - 4].to_vec();
+    late.extend_from_slice(&bytes[index + 12..bytes.len() - 12]);
+    late.extend_from_slice(&bytes[index - 4..index + 12]);
+    late.extend_from_slice(&bytes[bytes.len() - 12..]);
+    assert_eq!(
+        png_data::validate(&late, &budget(ThumbnailConfig::default()))
+            .err()
+            .unwrap()
+            .code,
+        "unsupported_canvas_png"
+    );
+}
 #[tokio::test]
 async fn validation_capacity_shutdown() {
     let temp = tempfile::tempdir().unwrap();
@@ -457,5 +515,149 @@ async fn capture_input_and_completion_dimension_caps() {
             .code,
         "invalid_capture_completion"
     );
+    service.shutdown().await.unwrap();
+}
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn capture_start_uses_publication_age_and_preserves_unmarked_expiry() {
+    let dir = tempfile::tempdir().unwrap();
+    let input = dir.path().join("input.png");
+    std::fs::write(&input, b"fixture").unwrap();
+    let roots = ThumbnailRoots {
+        cache_root: dir.path().join("cache"),
+    };
+    let service = ThumbnailService::new(ThumbnailConfig {
+        staging_root: Some(dir.path().into()),
+        ..ThumbnailConfig::default()
+    })
+    .unwrap();
+    // Model owner-side preparation/authorization taking longer than the capture
+    // timeout, with no wall-clock sleep or modification of production clocks.
+    let mut unmarked = service
+        .prepare_capture(input.to_str().unwrap(), 3, &roots, CancellationToken::new())
+        .await
+        .unwrap();
+    let id = unmarked.capture.as_ref().unwrap().id.clone();
+    unmarked.created = Instant::now() - Duration::from_secs(16);
+    assert_eq!(
+        service
+            .complete(unmarked, &id, CaptureCompletion::Png(&png(3, 2)))
+            .await
+            .err()
+            .unwrap()
+            .code,
+        "capture_expired"
+    );
+
+    let mut started = service
+        .prepare_capture(input.to_str().unwrap(), 3, &roots, CancellationToken::new())
+        .await
+        .unwrap();
+    let id = started.capture.as_ref().unwrap().id.clone();
+    started.created = Instant::now() - Duration::from_secs(16);
+    let publication = Instant::now();
+    started.mark_capture_started().unwrap();
+    assert!(started.created >= publication);
+    let mut completed = service
+        .complete(started, &id, CaptureCompletion::Png(&png(3, 2)))
+        .await
+        .unwrap();
+    assert_eq!(completed.outcome, ThumbnailOutcome::GeneratedPng);
+    assert!(matches!(
+        completed.effects.as_slice(),
+        [CacheEffect::Install { .. }]
+    ));
+    let completion_age = completed.created;
+    assert_eq!(
+        completed.mark_capture_started().unwrap_err().code,
+        "invalid_capture_start"
+    );
+    assert_eq!(completed.created, completion_age);
+    drop(completed);
+    service.shutdown().await.unwrap();
+}
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn capture_start_is_one_shot_and_rejects_cancelled_or_nonpending_plans() {
+    let dir = tempfile::tempdir().unwrap();
+    let input = dir.path().join("input.png");
+    std::fs::write(&input, b"fixture").unwrap();
+    let roots = ThumbnailRoots {
+        cache_root: dir.path().join("cache"),
+    };
+    let service = ThumbnailService::new(ThumbnailConfig::default()).unwrap();
+    let mut duplicate = service
+        .prepare_capture(input.to_str().unwrap(), 3, &roots, CancellationToken::new())
+        .await
+        .unwrap();
+    let id = duplicate.capture.as_ref().unwrap().id.clone();
+    duplicate.mark_capture_started().unwrap();
+    // A duplicate call must not renew the first start's deadline.
+    duplicate.created = Instant::now() - Duration::from_secs(16);
+    let first_start = duplicate.created;
+    assert_eq!(
+        duplicate.mark_capture_started().unwrap_err().code,
+        "invalid_capture_start"
+    );
+    assert_eq!(duplicate.created, first_start);
+    assert_eq!(
+        service
+            .complete(duplicate, &id, CaptureCompletion::Png(&png(3, 2)))
+            .await
+            .err()
+            .unwrap()
+            .code,
+        "capture_expired"
+    );
+
+    let mut missing = service
+        .prepare_capture(
+            dir.path().join("absent.png").to_str().unwrap(),
+            3,
+            &roots,
+            CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    let prepared = missing.created;
+    assert_eq!(missing.outcome, ThumbnailOutcome::Missing);
+    assert_eq!(
+        missing.mark_capture_started().unwrap_err().code,
+        "invalid_capture_start"
+    );
+    assert_eq!(missing.created, prepared);
+    drop(missing);
+
+    let cancel = CancellationToken::new();
+    let mut cancelled = service
+        .prepare_capture(input.to_str().unwrap(), 3, &roots, cancel.clone())
+        .await
+        .unwrap();
+    let prepared = cancelled.created;
+    cancel.cancel();
+    assert_eq!(
+        cancelled.mark_capture_started().unwrap_err().code,
+        "cancelled"
+    );
+    assert_eq!(cancelled.created, prepared);
+    assert!(!cancelled.capture_started);
+    drop(cancelled);
+
+    let mut invalid = service
+        .prepare_capture(input.to_str().unwrap(), 3, &roots, CancellationToken::new())
+        .await
+        .unwrap();
+    let capture = invalid.capture.take();
+    let prepared = invalid.created;
+    assert_eq!(
+        invalid.mark_capture_started().unwrap_err().code,
+        "invalid_capture_start"
+    );
+    assert_eq!(invalid.created, prepared);
+    invalid.capture = capture;
+    invalid.mark_capture_started().unwrap();
+    drop(invalid);
     service.shutdown().await.unwrap();
 }

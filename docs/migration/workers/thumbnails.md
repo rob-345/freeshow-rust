@@ -5,6 +5,8 @@ Owned slice: `crates/freeshow-thumbnails`, `tests/parity/thumbnails.test.mjs`,
 retained frontend are unchanged. Oracle: FreeShow 1.6.7-beta.2, commit
 `2d94defcf98175e4f5c9504e7f4fd1d33c35c975`.
 
+The host lifecycle is now integrated as documented in [native thumbnails](../native-thumbnails.md). This document describes the independent preparation contract and its source evidence.
+
 ## Source architecture and effects
 
 The pinned `src/electron/data/thumbnails.ts` uses the frontend's
@@ -72,26 +74,24 @@ service.shutdown().await?;
 
 `COMMANDS` contains GET_THUMBNAIL and DOES_MEDIA_EXIST. `prepare_capture(input,
 size,roots,token)` accepts browse capture intents without a dependency on browse.
-Root browse integration needs a typed `PreparedListing {data,intents}` preserving
-original capture/depth/noMedia data before it resolves these intents. Existing
-browse `thumbnail_unavailable` errors carry intents but discard listing data;
-re-running capture=false would change source semantics and is not an adapter.
-Coordinator owns that browse change. `prepare_capture` uses GET_THUMBNAIL
+The integrated browse host uses typed `PreparedListing` data and intents, preserving
+original capture/depth/noMedia data before resolving them. Legacy dispatch still
+returns `thumbnail_unavailable` when no capture host was supplied; re-running
+capture=false would change source semantics and is not an adapter. `prepare_capture` uses GET_THUMBNAIL
 preparation semantics; it does not emulate createThumbnail's immediate queue-only
 return for files that disappear after the browse stat.
 
 `ThumbnailRoots.cache_root` is chosen by the trusted host, never by IPC payload.
 The request cannot choose a final destination. `CacheRelativePath` has no public
-constructor and is always one hash-size.png filename. The temporary standalone
-workspace/lock is for integration; coordinator owns root/native manifests,
+constructor and is always one hash-size.png filename. The root workspace and native manifests now include this crate; coordinator owns
 command routing, context checks, shutdown and UI capability status.
 
 `PreparedThumbnail` owns reply/outcome/diagnostics, an optional typed CaptureCanvas,
 cache-relative invalidate/install effects and private staging. Public manifest
 fields are trusted native integration data, not authority returned by a renderer.
 `CapturePending.reply` is a template/prediction; it must not be published as a
-verified generated PNG. The native capture host is currently unported and must
-surface unavailable capability until it can route this request safely.
+verified generated PNG. The native host routes this through the bounded retained-canvas registry, raw
+binary completion and ordered effects described in the integration document.
 
 Completion consumes the actual live owned private plan and checks service identity,
 capture id, cancellation, source identity, width and the15s capture age. Bare ids
@@ -130,7 +130,9 @@ PNG/raw-pixel hashes, dimensions and chunk types; it is generation evidence,
 not local movie playback/delivery evidence.
 
 Supported completion is deliberately narrow: PNG signature,8-bit RGB/RGBA,
-noninterlaced, sRGB perceptual-intent0, only IHDR/sRGB/IDAT/IEND in verified order.
+noninterlaced, sRGB perceptual-intent0, IHDR/sRGB/IDAT/IEND and an optional single pre-IDAT sBIT declaring full eight-bit
+RGB/RGBA precision. Actual WebKit fixture bytes/pixels and rejection of lower
+precision, duplicate/late sBIT and invalid CRC are checked.
 Dimensions, aggregate encoded bytes and every declared chunk length/count are
 validated before png0.18.1 decoder allocation. Strict critical/ancillary CRCs,
 decoder allocation limits, actual row lengths/count and aggregate pixels are
@@ -149,9 +151,9 @@ paths,64KiB request JSON with depth64/node4096 limits,128MiB source file size,
 2048 maximum requested/completed dimension,4,194,304 output pixels,8MiB encoded
 PNG/decoder allocation budget,256 chunks and10s cooperative per-work deadline.
 Configuration has finite hard maxima. Source files are only statted; this crate
-does not decode source image/video headers. The host must preflight/bound source
-decoding, source dimensions, source-to-local-URL access and WebView resources
-before granting a pending capture. Until then this is preparation capability.
+does not decode source image/video headers. The host must additionally preflight/bound source decoding, source dimensions
+and WebView resources. Current native capture grants exact source paths and
+bounds completed PNGs, but source browser decoder resource preflight remains a gap.
 
 Completion bytes are length-checked before cloning. No unbounded tasks,
 spawn_blocking, thread per request or subprocess is used. Admission rechecks

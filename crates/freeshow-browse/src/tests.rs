@@ -202,6 +202,80 @@ async fn filesystem_limits_defaults_and_thumbnail_intents() {
 }
 #[cfg(target_os = "linux")]
 #[tokio::test]
+async fn prepared_listing_keeps_capture_traversal_and_pending_slots_without_retrying_options() {
+    let root = tempfile::tempdir().unwrap();
+    let child = root.path().join("folder");
+    std::fs::create_dir_all(child.join("nested/deeper")).unwrap();
+    for index in 0..5 {
+        std::fs::write(child.join(format!("{index}.png")), b"image").unwrap();
+    }
+    std::fs::write(child.join("song.mp3"), b"audio").unwrap();
+    let service = BrowseService::new(BrowseConfig::default()).unwrap();
+    let payload = json!({"path":root.path(),"depth":0,"captureFolderContent":true});
+    let prepared = service
+        .prepare_listing_with_cancel(&payload, CancellationToken::new())
+        .await
+        .unwrap();
+    assert_eq!(prepared.thumbnail_intents.len(), 4);
+    for (index, intent) in prepared.thumbnail_intents.iter().enumerate() {
+        let path = child.join(format!("{index}.png"));
+        assert_eq!(intent.input, path.to_str().unwrap());
+        assert_eq!(intent.reason, ThumbnailReason::FolderCapture);
+        assert_eq!(prepared.data[path.to_str().unwrap()]["thumbnailPath"], "");
+    }
+    assert!(prepared
+        .data
+        .get(child.join("4.png").to_str().unwrap())
+        .is_none());
+    assert!(prepared
+        .data
+        .get(child.join("song.mp3").to_str().unwrap())
+        .is_none());
+    assert_eq!(
+        prepared.data[child.to_str().unwrap()]["noMedia"],
+        Value::Null
+    );
+    assert!(prepared.data[child.to_str().unwrap()]
+        .as_object()
+        .unwrap()
+        .contains_key("noMedia"));
+    assert_eq!(
+        prepared.data[child.to_str().unwrap()]["files"]
+            .as_array()
+            .unwrap()
+            .len(),
+        7
+    );
+    let unresolved = service.dispatch("READ_FOLDER", &payload).await.unwrap_err();
+    assert_eq!(unresolved.code, "thumbnail_unavailable");
+    assert_eq!(unresolved.thumbnail_intents, prepared.thumbnail_intents);
+    let without_capture = service
+        .dispatch("READ_FOLDER", &json!({"path":root.path(),"depth":0}))
+        .await
+        .unwrap();
+    assert!(without_capture
+        .data
+        .get(child.join("0.png").to_str().unwrap())
+        .is_none());
+    let deeper = service
+        .prepare_listing_with_cancel(
+            &json!({"path":root.path(),"depth":1,"captureFolderContent":true}),
+            CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    let stub = &deeper.data[child.join("nested").to_str().unwrap()];
+    assert_eq!(stub["files"], json!([]));
+    assert!(!stub.as_object().unwrap().contains_key("noMedia"));
+    assert!(deeper
+        .data
+        .get(child.join("song.mp3").to_str().unwrap())
+        .is_some());
+    service.shutdown().await.unwrap();
+}
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
 async fn source_depth_sentinels_links_and_capture_audio_only() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(dir.path().join("one/two/three")).unwrap();

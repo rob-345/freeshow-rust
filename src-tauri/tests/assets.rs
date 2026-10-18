@@ -1,4 +1,6 @@
 #[path = "../src/assets.rs"]
+// Thumbnail grants are exercised by the separate native thumbnail host tests.
+#[allow(dead_code)]
 mod assets;
 
 use freeshow_core::{

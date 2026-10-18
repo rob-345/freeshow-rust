@@ -44,6 +44,10 @@ pub struct Event {
     /// application payload and accepted only after the event's context check.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub native_assets: Option<Value>,
+    /// Private correlation for retained canvas capture; source payload stays
+    /// available to the original handler, binary completion uses native IPC.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_capture: Option<Value>,
 }
 
 impl Event {
@@ -58,6 +62,7 @@ impl Event {
             listener_id,
             context: None,
             native_assets: None,
+            native_capture: None,
         }
     }
 }

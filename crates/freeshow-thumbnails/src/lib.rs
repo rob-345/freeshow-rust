@@ -177,6 +177,7 @@ pub struct PreparedThumbnail {
     cancel: CancellationToken,
     request_cancel: CancellationToken,
     created: Instant,
+    capture_started: bool,
     source: Option<SourceGuard>,
     destination: Option<CacheRelativePath>,
     guard: CacheGuard,
@@ -220,6 +221,28 @@ impl PreparedThumbnail {
         self.effects.clear();
         self.guard = CacheGuard::Absent;
         self.preparation_acknowledged = true;
+        Ok(())
+    }
+    /// Trusted native host only: call once immediately before publishing the
+    /// capture, after preparation effects and input authorization have completed.
+    /// Unmarked plans retain their original preparation-time completion expiry.
+    pub fn mark_capture_started(&mut self) -> Result<()> {
+        self.ensure_current()?;
+        if self.capture_started
+            || self.outcome != ThumbnailOutcome::CapturePending
+            || self.capture.is_none()
+            || self.stage.is_none()
+            || self.lease.is_none()
+            || self.source.is_none()
+            || self.destination.is_none()
+        {
+            return Err(ThumbnailError::new(
+                "invalid_capture_start",
+                "Capture must be live, pending and not already started",
+            ));
+        }
+        self.created = Instant::now();
+        self.capture_started = true;
         Ok(())
     }
     pub fn ensure_current(&self) -> Result<()> {

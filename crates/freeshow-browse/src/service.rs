@@ -126,6 +126,36 @@ impl BrowseService {
         payload: &Value,
         request_cancel: CancellationToken,
     ) -> Result<BrowseReply> {
+        let reply = self.run(command, payload, request_cancel).await?;
+        if !reply.thumbnail_intents.is_empty() {
+            return Err(BrowseError {
+                code: "thumbnail_unavailable",
+                message: "Folder listing requires native thumbnail generation; no thumbnails were generated".into(),
+                thumbnail_intents: reply.thumbnail_intents,
+            });
+        }
+        Ok(reply)
+    }
+    /// Retain the original traversal and unresolved thumbnail slots for a host
+    /// which owns bounded capture/effects and validates the frozen context.
+    pub async fn prepare_listing_with_cancel(
+        &self,
+        payload: &Value,
+        request_cancel: CancellationToken,
+    ) -> Result<PreparedListing> {
+        let reply = self.run("READ_FOLDER", payload, request_cancel).await?;
+        Ok(PreparedListing {
+            data: reply.data,
+            thumbnail_intents: reply.thumbnail_intents,
+            diagnostics: reply.diagnostics,
+        })
+    }
+    async fn run(
+        &self,
+        command: &str,
+        payload: &Value,
+        request_cancel: CancellationToken,
+    ) -> Result<BrowseReply> {
         if !COMMANDS.contains(&command) {
             return Err(BrowseError::new(
                 "unsupported_command",

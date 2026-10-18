@@ -14,6 +14,8 @@ const fileStats = ts.transpileModule(fs.readFileSync(path.join(root, "src/fronte
 const fileStatsUrl = `data:text/javascript;base64,${Buffer.from(fileStats).toString("base64")}`
 const mediaUrl = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/mediaUrl.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
 const mediaUrlModule = `data:text/javascript;base64,${Buffer.from(mediaUrl).toString("base64")}`
+const captureBridge = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/captureBridge.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+const captureBridgeModule = `data:text/javascript;base64,${Buffer.from(captureBridge).toString("base64")}`
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -24,8 +26,73 @@ const javascript = ts
     .outputText.replace('from "./nativeDrop"', `from "${nativeDropUrl}"`)
     .replace('from "./fileStats"', `from "${fileStatsUrl}"`)
     .replace('from "./mediaUrl"', `from "${mediaUrlModule}"`)
+    .replace('from "./captureBridge"', `from "${captureBridgeModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("retained canvas completion sends a one-use raw byte snapshot without a JSON write request", async () => {
+    const context = { runtimeId: "capture", libraryGeneration: 1, dataPath: "/library" }
+    const raw = [], json = [], errors = []
+    const { api, dispatch } = createRustApi(async (request) => { json.push(request); return [] }, (error) => errors.push(error), context, async (upload) => { raw.push(upload) })
+    const id = "native-thumbnail-" + "a".repeat(32), output = "/private/canvas.png"
+    const bytes = new Uint8Array([0, 255, 128])
+    api.receive("MAIN", (message) => {
+        assert.equal(message.data.id, id)
+        api.send("MAIN", { channel: "SAVE_IMAGE", data: { id, path: output, buffer: bytes.buffer } })
+        bytes.fill(1)
+    })
+    dispatch({ channel: "MAIN", message: { channel: "CAPTURE_CANVAS", data: { id, output } }, context, nativeCapture: { id } })
+    await tick()
+    assert.equal(json.length, 0)
+    assert.equal(raw.length, 1)
+    assert.equal(raw[0].id, id)
+    assert.equal(raw[0].failed, false)
+    assert.deepEqual([...new Uint8Array(raw[0].buffer)], [0, 255, 128])
+    assert.deepEqual(errors, [])
+    api.send("MAIN", { channel: "SAVE_IMAGE", data: { id, path: output, buffer: bytes.buffer } })
+    await tick()
+    assert.equal(raw.length, 1)
+    assert.equal(json.length, 0)
+    assert.equal(errors.at(-1).code, "thumbnail_capture")
+})
+
+test("private canvas uploads reject mismatched paths, oversized data and obsolete contexts", async () => {
+    const context = { runtimeId: "capture", libraryGeneration: 1, dataPath: "/library" }
+    const errors = [], raw = [], json = []
+    const { api, dispatch } = createRustApi(async (request) => { json.push(request); return [] }, (error) => errors.push(error), context, async (upload) => { raw.push(upload) })
+    const output = "/private/canvas.png"
+    const register = (digit) => {
+        const id = "native-thumbnail-" + digit.repeat(32)
+        dispatch({ channel: "MAIN", message: { channel: "CAPTURE_CANVAS", data: { id, output } }, context, nativeCapture: { id } })
+        return id
+    }
+    api.send("MAIN", { channel: "SAVE_IMAGE", data: { id: register("1"), path: "/arbitrary/write.png", buffer: new ArrayBuffer(1) } })
+    api.send("MAIN", { channel: "SAVE_IMAGE", data: { id: register("2"), path: output, buffer: new ArrayBuffer(8 * 1024 * 1024 + 1) } })
+    const obsolete = register("3"), next = { ...context, libraryGeneration: 2, dataPath: "/other" }
+    dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: next.dataPath }, context: next }, { channel: "MAIN", data: { channel: "UPDATE_DATA_PATH" } })
+    api.send("MAIN", { channel: "SAVE_IMAGE", data: { id: obsolete } })
+    await tick()
+    assert.equal(errors.length, 3)
+    assert.equal(raw.length, 0)
+    assert.equal(json.length, 0)
+})
+
+test("retained canvas failure completes only its private request and ordinary image exports stay explicit", async () => {
+    const context = { runtimeId: "capture", libraryGeneration: 1, dataPath: "/library" }
+    const raw = [], json = [], errors = []
+    const { api, dispatch } = createRustApi(async (request) => { json.push(request); return [] }, (error) => errors.push(error), context, async (upload) => { raw.push(upload) })
+    const id = "native-thumbnail-" + "b".repeat(32)
+    dispatch({ channel: "MAIN", message: { channel: "CAPTURE_CANVAS", data: { id, output: "/private/canvas.png" } }, context, nativeCapture: { id } })
+    api.send("MAIN", { channel: "SAVE_IMAGE", data: { id } })
+    api.send("MAIN", { channel: "SAVE_IMAGE", data: { path: "/export/image.png", base64: "source-export" } })
+    await tick()
+    assert.equal(raw.length, 1)
+    assert.equal(raw[0].failed, true)
+    assert.equal(raw[0].buffer.byteLength, 0)
+    assert.equal(json.length, 1)
+    assert.equal(json[0].data.data.base64, "source-export")
+    assert.deepEqual(errors, [])
+})
 
 test("native media capabilities publish before retained callbacks and stale library grants never enter the registry", () => {
     const context = { runtimeId: "media", libraryGeneration: 1, dataPath: "/library" }

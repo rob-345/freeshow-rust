@@ -9,6 +9,7 @@ mod imports;
 mod menu;
 mod output;
 mod system;
+mod thumbnails;
 
 use freeshow_audio::{AudioConfig, AudioService};
 use freeshow_core::{
@@ -39,6 +40,7 @@ struct AppState {
     system: SystemService,
     api: api::NativeApi,
     assets: assets::NativeAssets,
+    thumbnails: thumbnails::NativeThumbnails,
     osc: OscSender,
     app_data: PathBuf,
     error_log: PathBuf,
@@ -74,6 +76,47 @@ fn imports_status(app: tauri::AppHandle) -> serde_json::Value {
 #[tauri::command]
 fn assets_status(app: tauri::AppHandle) -> serde_json::Value {
     app.state::<AppState>().assets.status()
+}
+
+#[tauri::command]
+fn thumbnails_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().thumbnails.status()
+}
+
+#[tauri::command]
+async fn thumbnail_complete(
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+) -> Result<(), WireError> {
+    let id = request
+        .headers()
+        .get("x-freeshow-capture")
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| WireError::new("invalid_capture_completion", "Missing native capture ID"))?;
+    let failed = match request
+        .headers()
+        .get("x-freeshow-capture-failed")
+        .and_then(|value| value.to_str().ok())
+    {
+        Some("0") => false,
+        Some("1") => true,
+        _ => {
+            return Err(WireError::new(
+                "invalid_capture_completion",
+                "Invalid native capture state",
+            ))
+        }
+    };
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(WireError::new(
+            "invalid_capture_completion",
+            "Native capture requires raw bytes",
+        ));
+    };
+    let state = window.app_handle().state::<AppState>();
+    state
+        .thumbnails
+        .complete(&state.library, window.label(), id, bytes, failed)
 }
 
 #[tauri::command]
@@ -151,6 +194,23 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if thumbnails::COMMANDS.contains(&command) {
+            let state = app.state::<AppState>();
+            let publish = |event| {
+                app.emit_to("main", "freeshow://ipc", event)
+                    .map_err(|error| error.to_string())
+            };
+            return state
+                .thumbnails
+                .dispatch(
+                    &state.library,
+                    &state.assets,
+                    request,
+                    window.label(),
+                    &publish,
+                )
+                .await;
+        }
         if api::COMMANDS.contains(&command) {
             return app
                 .state::<AppState>()
@@ -160,6 +220,23 @@ async fn dispatch_native(
         }
         if browse::COMMANDS.contains(&command) {
             let state = app.state::<AppState>();
+            if command == "READ_FOLDER" {
+                let publish = |event| {
+                    app.emit_to("main", "freeshow://ipc", event)
+                        .map_err(|error| error.to_string())
+                };
+                return state
+                    .browse
+                    .dispatch_with_thumbnails(
+                        &state.library,
+                        request,
+                        window.label(),
+                        &state.thumbnails,
+                        &state.assets,
+                        &publish,
+                    )
+                    .await;
+            }
             return state
                 .browse
                 .dispatch(&state.library, request, window.label())
@@ -348,6 +425,7 @@ async fn dispatch_native(
                     imports_result,
                     browse_result,
                     assets_result,
+                    thumbnails_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -357,7 +435,8 @@ async fn dispatch_native(
                     state.api.shutdown(),
                     state.imports.shutdown(),
                     state.browse.shutdown(),
-                    state.assets.shutdown()
+                    state.assets.shutdown(),
+                    state.thumbnails.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
@@ -366,6 +445,7 @@ async fn dispatch_native(
                 imports_result?;
                 browse_result?;
                 assets_result?;
+                thumbnails_result?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -455,6 +535,7 @@ async fn dispatch_native(
         app.state::<AppState>().files.context_changed(&context);
         app.state::<AppState>().imports.context_changed(&context);
         app.state::<AppState>().browse.context_changed(&context);
+        app.state::<AppState>().thumbnails.context_changed(&context);
         if let Err(error) = app.state::<AppState>().assets.context_changed(&context) {
             let mut alert = Event::reply(
                 "MAIN",
@@ -573,7 +654,7 @@ fn prepare_native(app: tauri::AppHandle, mut request: Request) -> Result<Prepare
                 } else {
                     let state = app.state::<AppState>();
                     match command.as_str() {
-                        "OPEN_CACHE" => state.app_data.join("Thumbnails"),
+                        "OPEN_CACHE" => state.thumbnails.cache_root().to_path_buf(),
                         "OPEN_LOG" => state.error_log.clone(),
                         _ => state.app_data.clone(),
                     }
@@ -728,6 +809,8 @@ fn main() {
                 &app_data,
             ))
             .map_err(|error| std::io::Error::other(error.message))?;
+            let thumbnails = thumbnails::NativeThumbnails::new(app_data.join("media-cache"))
+                .map_err(|error| std::io::Error::other(error.message))?;
             let mut api_config = freeshow_api::ApiConfig::default();
             if let Ok(ip) = std::env::var("FREESHOW_RUST_API_BIND_IP") {
                 api_config.bind_ip = ip.parse()?;
@@ -752,6 +835,7 @@ fn main() {
                 system,
                 api,
                 assets,
+                thumbnails,
                 osc,
                 app_data,
                 error_log,
@@ -794,7 +878,9 @@ fn main() {
             output_status,
             api_status,
             imports_status,
-            assets_status
+            assets_status,
+            thumbnails_status,
+            thumbnail_complete
         ])
         .build(tauri::generate_context!())
         .expect("FreeShow Rust could not start")

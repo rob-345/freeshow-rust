@@ -237,7 +237,7 @@ impl Runtime {
             "IS_DEV" => Some(json!(self.development)),
             "VERSION" => Some(json!(self.version)),
             "GET_CACHE_PATH" => {
-                let path = self.stores.app_data.join("Thumbnails");
+                let path = self.stores.app_data.join("media-cache");
                 fs::create_dir_all(&path)?;
                 Some(json!(path))
             }

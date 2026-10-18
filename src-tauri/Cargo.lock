@@ -1337,7 +1337,9 @@ dependencies = [
  "freeshow-media",
  "freeshow-network",
  "freeshow-system",
+ "freeshow-thumbnail-effects",
  "freeshow-thumbnails",
+ "png 0.18.1",
  "serde_json",
  "tauri",
  "tauri-build",
@@ -1346,6 +1348,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-util",
+ "uuid",
  "zip",
 ]
 
@@ -1417,6 +1420,17 @@ dependencies = [
  "serde_json",
  "tokio",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "freeshow-thumbnail-effects"
+version = "0.1.0"
+dependencies = [
+ "freeshow-thumbnails",
+ "getrandom 0.4.3",
+ "libc",
+ "serde",
+ "sha2",
 ]
 
 [[package]]

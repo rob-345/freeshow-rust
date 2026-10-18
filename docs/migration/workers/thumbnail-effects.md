@@ -178,9 +178,9 @@ CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR=crates/freeshow-thumbnail-effects/target car
 CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR=crates/freeshow-thumbnails/target cargo test --manifest-path crates/freeshow-thumbnails/Cargo.toml --all-targets
 ```
 
-The standalone workspace/lock are temporary. Coordinator removes them, adds the
-new crate to root/native manifests and calls the synchronous API from the existing
-ordered owner. No native manifest, root lock, bridge, renderer, canonical doc or
-IPC/CLOSE integration is changed by this worker. New dependencies are the local
+The standalone workspace/lock have been removed and the crate is integrated
+in root/native manifests. The [native thumbnail host](../native-thumbnails.md)
+calls the synchronous API from the existing ordered owner and owns bridge,
+renderer, context and CLOSE integration. New dependencies are the local
 thumbnail crate, serde derive, sha2 and getrandom, plus Linux libc. Tests use
 existing tempfile/Tokio/png tooling; no GUI or FFmpeg probe is required here.

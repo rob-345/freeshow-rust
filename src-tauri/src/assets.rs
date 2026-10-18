@@ -3,7 +3,7 @@
 use freeshow_asset_plans::{
     AcceptedNative, AcceptedPath, BrowsedFile, Committed, DroppedFile, Plan, Planner,
 };
-use freeshow_assets::{AssetServer, Config, Context, Control, Protection};
+use freeshow_assets::{AssetServer, Config, Context, Control, NativeGrant, Protection, Provenance};
 use freeshow_core::{
     protocol::{Event, Request, RuntimeContext},
     service::LibraryService,
@@ -426,5 +426,78 @@ impl NativeAssets {
     pub async fn shutdown(&self) -> Result<(), WireError> {
         self.slots.close();
         self.server.shutdown().await.map_err(failed)
+    }
+
+    /// Only live native preparation or an actual cache result is accepted;
+    /// arbitrary renderer SAVE_IMAGE paths never pass through this boundary.
+    pub async fn thumbnail_grants(
+        &self,
+        library: &LibraryService,
+        captured: &RuntimeContext,
+        prepared: &freeshow_thumbnails::PreparedThumbnail,
+        capture_input: bool,
+    ) -> Result<Value, WireError> {
+        if library.context().map_err(WireError::from)? != *captured {
+            return Err(failed("Thumbnail media belongs to an obsolete library"));
+        }
+        prepared
+            .ensure_current()
+            .map_err(|error| failed(error.message))?;
+        if !capture_input
+            && !matches!(
+                prepared.outcome,
+                freeshow_thumbnails::ThumbnailOutcome::GeneratedPng
+                    | freeshow_thumbnails::ThumbnailOutcome::CacheHitUnverified
+            )
+        {
+            return Ok(json!([]));
+        }
+        let lease = self.admit(captured)?;
+        let (source, path, provenance) = if capture_input {
+            let capture = prepared
+                .capture
+                .as_ref()
+                .ok_or_else(|| failed("Thumbnail has no live capture"))?;
+            let source = prepared
+                .source_guard()
+                .ok_or_else(|| failed("Thumbnail has no native source identity"))?;
+            if capture.input != source.path {
+                return Err(failed("Thumbnail input differs from its native source"));
+            }
+            (
+                capture.input.as_str(),
+                Path::new(&source.path),
+                Provenance::CaptureSource,
+            )
+        } else {
+            let output = prepared.reply["output"]
+                .as_str()
+                .ok_or_else(|| failed("Thumbnail result has no output"))?;
+            let path = Path::new(output);
+            if path.parent() != Some(prepared.captured_cache_root()) {
+                return Err(failed(
+                    "Thumbnail output is outside its captured cache root",
+                ));
+            }
+            (output, path, Provenance::GeneratedThumbnail)
+        };
+        let grant = self
+            .server
+            .authorize(
+                &context(captured)?,
+                NativeGrant {
+                    source_path: source.into(),
+                    path: path.into(),
+                    provenance,
+                    protection: self.classify(source).unwrap_or(Protection::Protected),
+                },
+                lease.control.clone(),
+            )
+            .await
+            .map_err(failed)?;
+        if library.context().map_err(WireError::from)? != *captured {
+            return Err(failed("Thumbnail media belongs to an obsolete library"));
+        }
+        Ok(json!([grant]))
     }
 }

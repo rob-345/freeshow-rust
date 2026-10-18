@@ -60,7 +60,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -549,6 +549,35 @@ def run():
             (ARTIFACTS / "assets.json").write_text(json.dumps(assets, ensure_ascii=False, indent=2))
             steps.append("Native HTTP GET, HEAD and Range preserve imported PNG bytes and CORS canvas pixels")
             steps.append("Native media capabilities support real WebKit WAV/VP8 seeking and playback")
+            thumbnail_folder = import_dir / "Native thumbnail folder"
+            (thumbnail_folder / "pictures").mkdir(parents=True)
+            thumbnail_image = thumbnail_folder / "pictures" / "日本語.png"
+            thumbnail_image.write_bytes(media_bytes)
+            script((ROOT / "tests/desktop/thumbnails_probe.js").read_text(), {"image":str(installed_media),"video":str(asset_video),"folder":str(thumbnail_folder),"missing":str(import_dir / "missing-thumbnail.png")})
+            thumbnails = wait(lambda: script("return window.__thumbnailsProbe.done ? {result:window.__thumbnailsProbe} : null"), "Retained WebKit canvas completes native thumbnails and captured folder listings", seconds=70)["result"]
+            (ARTIFACTS / "thumbnails.json").write_text(json.dumps(thumbnails, ensure_ascii=False, indent=2))
+            assert "error" not in thumbnails, thumbnails
+            assert thumbnails["image"]["data"]["nativeFutureField"] == "preserved"
+            assert [thumbnails["image"]["width"],thumbnails["image"]["height"]] == [16,16]
+            assert thumbnails["image"]["rgba"] == [0,0,0,255]
+            assert [thumbnails["video"]["width"],thumbnails["video"]["height"]] == [8,8]
+            assert thumbnails["video"]["rgba"][2] > 240 and thumbnails["video"]["rgba"][3] == 255
+            assert thumbnails["hit"] == {"data":thumbnails["image"]["data"],"callbackUrls":thumbnails["image"]["callbackUrls"]}
+            folder_entry = thumbnails["folder"]["data"][str(thumbnail_image)]
+            outputs = [(thumbnails["image"]["data"]["output"],16,16),(thumbnails["video"]["data"]["output"],8,8),(folder_entry["thumbnailPath"],250,250)]
+            for output,width,height in outputs:
+                assert Path(output).parent == temp / "app" / "media-cache"
+                observed = next(blob for blob in thumbnails["blobs"] if [blob["width"],blob["height"]] == [width,height])
+                assert Path(output).read_bytes() == bytes(observed["bytes"])
+            assert thumbnails["folder"]["callbackUrls"][folder_entry["thumbnailPath"]].startswith("http://127.0.0.1:")
+            assert thumbnails["exists"]["data"]["exists"] is True
+            assert thumbnails["exists"]["data"]["creationTime"] == int(thumbnails["exists"]["data"]["creationTime"])
+            assert thumbnails["noCache"]["data"] == {"path":str(installed_media),"exists":True}
+            assert thumbnails["missing"]["data"]["output"] == ""
+            assert Path(thumbnails["cachePath"]["data"]) == temp / "app" / "media-cache"
+            assert thumbnails["status"]["captures"] == 0 and thumbnails["status"]["requests"] == 0
+            steps.append("Actual retained image/video canvas PNG bytes install unchanged before native media URL callbacks")
+            steps.append("Folder capture preserves depth semantics, cache reuse, source existence replies and terminal request cleanup")
             click_text("Rust parity test")
             wait(lambda: script("return document.body.innerText.includes('Amazing grace')"), "Original show reselected after import checks")
 

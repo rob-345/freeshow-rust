@@ -1,4 +1,7 @@
 #[path = "../src/browse.rs"]
+// The cross-adapter capture entrypoint is exercised by tests/thumbnails.rs.
+// Production is checked without this test-module-only allowance.
+#[allow(dead_code)]
 mod browse;
 
 use freeshow_browse::{BrowseConfig, BrowseService};
@@ -196,3 +199,9 @@ async fn real_file_info_folder_and_similarity_replies_do_not_wait_for_the_librar
     owner.await.unwrap().unwrap();
     native.shutdown().await.unwrap();
 }
+#[path = "../src/assets.rs"]
+#[allow(dead_code)]
+mod assets;
+#[path = "../src/thumbnails.rs"]
+#[allow(dead_code)]
+mod thumbnails;

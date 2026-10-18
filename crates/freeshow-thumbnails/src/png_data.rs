@@ -22,6 +22,7 @@ pub(crate) fn validate(bytes: &[u8], budget: &Budget) -> Result<PngInfo> {
     let mut dimensions = None;
     let mut idat = false;
     let mut srgb = false;
+    let mut significant_bits = false;
     let mut end = false;
     let mut compressed = vec![];
     while offset < bytes.len() {
@@ -69,6 +70,18 @@ pub(crate) fn validate(bytes: &[u8], budget: &Budget) -> Result<PngInfo> {
             }
             b"sRGB" if !srgb && !idat && dimensions.is_some() && length == 1 && body[0] == 0 => {
                 srgb = true;
+            }
+            b"sBIT" if !significant_bits && !idat && dimensions.is_some() => {
+                // WebKit's canvas encoder declares full eight-bit precision;
+                // accepting that declaration does not transform any pixels.
+                let channels = if dimensions.unwrap().2 == 6 { 4 } else { 3 };
+                if length != channels || body.iter().any(|value| *value != 8) {
+                    return Err(ThumbnailError::new(
+                        "unsupported_canvas_png",
+                        "Unverified canvas significant-bit precision",
+                    ));
+                }
+                significant_bits = true;
             }
             b"IDAT" if dimensions.is_some() && !end => {
                 idat = true;

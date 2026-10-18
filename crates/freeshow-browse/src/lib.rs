@@ -64,6 +64,14 @@ pub struct BrowseReply {
     pub thumbnail_intents: Vec<ThumbnailIntent>,
     pub diagnostics: Vec<BrowseDiagnostic>,
 }
+/// A captured listing whose thumbnail intents must be completed before native
+/// publication. Retrying with capture disabled changes depth/noMedia semantics.
+#[derive(Debug)]
+pub struct PreparedListing {
+    pub data: Value,
+    pub thumbnail_intents: Vec<ThumbnailIntent>,
+    pub diagnostics: Vec<BrowseDiagnostic>,
+}
 #[derive(Debug, thiserror::Error)]
 #[error("{message}")]
 pub struct BrowseError {

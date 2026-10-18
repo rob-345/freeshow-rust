@@ -27,6 +27,8 @@ freeshow-import-effects = { path = "../crates/freeshow-import-effects" }
 freeshow-browse = { path = "../crates/freeshow-browse" }
 freeshow-assets = { path = "../crates/freeshow-assets" }
 freeshow-thumbnails = { path = "../crates/freeshow-thumbnails" }
+freeshow-thumbnail-effects = { path = "../crates/freeshow-thumbnail-effects" }
+uuid = { version = "1", features = ["v4"] }
 freeshow-asset-plans = { path = "../crates/freeshow-asset-plans" }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
@@ -34,6 +36,7 @@ tokio = { version = "1", features = ["sync", "macros"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 
 [dev-dependencies]
+png = "=0.18.1"
 tempfile = "3"
 zip = { version = "9", default-features = false, features = ["deflate"] }
 

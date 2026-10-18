@@ -3,6 +3,7 @@
 import { hydrateFileBrowse } from "./fileStats"
 import { installNativeDrop } from "./nativeDrop"
 import { createMediaUrlRegistry, type LocalAssetGrant } from "./mediaUrl"
+import { createCaptureBridge, type CaptureTransport } from "./captureBridge"
 
 type Receiver = (data: any, listenerId?: string) => void
 export type RuntimeContext = {
@@ -16,16 +17,18 @@ export type RuntimeEvent = {
     listenerId?: string
     context?: RuntimeContext
     nativeAssets?: LocalAssetGrant[]
+    nativeCapture?: { id: string }
 }
 export type Transport = (request: { channel: string; data?: any; listenerId?: string; context?: RuntimeContext }) => Promise<RuntimeEvent[]>
 const mutations = new Set(["SAVE", "UPDATE_DATA_PATH", "SET_STORE_VALUE", "SET_MEDIA_FOLDER_PATH", "RESTORE", "DELETE_BACKUP"])
 const outputLifecycle = new Set(["CREATE", "REMOVE", "TOGGLE_OUTPUTS", "UPDATE_BOUNDS", "SET_VALUE", "FOCUS", "TO_FRONT", "MOVE"])
 
-export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext) {
+export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext, captureTransport?: CaptureTransport) {
     const receivers = new Map<string, Set<Receiver>>()
     const named = new Map<string, { channel: string; receiver: Receiver }>()
     let context = initialContext ? { ...initialContext } : undefined
     const mediaUrls = createMediaUrlRegistry(() => context, (error) => reportError(error, { channel: "native-assets" }))
+    const captures = createCaptureBridge(() => context, captureTransport, (error) => reportError(error, { channel: "native-thumbnail" }))
     let mutationQueue = Promise.resolve()
     let mediaSettingsQueue = Promise.resolve()
     let outputQueue = Promise.resolve()
@@ -43,6 +46,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
         if (event.nativeAssets && (!event.context || !mediaUrls.publish(event.context, event.nativeAssets))) {
             reportError({ code: "assets_publication", message: "Native media grants could not be published" }, event)
         }
+        if (event.nativeCapture && (event.channel !== "MAIN" || event.message.channel !== "CAPTURE_CANVAS" || event.nativeCapture.id !== event.message.data?.id || !event.context || !captures.register(event.context, event.nativeCapture.id, event.message.data?.output))) return
         if (event.channel === "MAIN" && event.message.channel === "READ_FOLDER") hydrateFileBrowse("READ_FOLDER", event.message.data)
         // Snapshot listeners: handlers may unregister themselves during dispatch.
         for (const receiver of [...(receivers.get(event.channel) || [])]) {
@@ -67,6 +71,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
         publishAssets: mediaUrls.publish,
         api: {
             send(channel: string, data?: any, listenerId?: string) {
+                if (channel === "MAIN" && data?.channel === "SAVE_IMAGE" && captures.complete(data.data)) return
                 // Electron serializes at send time. Output updates often reuse
                 // mutable Svelte objects; queued cues must keep their snapshot.
                 if (channel === "OUTPUT") data = structuredClone(data)
@@ -150,7 +155,8 @@ export async function installRustBridge(target: Window = window) {
                 })
             )
         },
-        context
+        context,
+        ({ id, buffer, failed }) => tauri.core.invoke("thumbnail_complete", buffer, { headers: { "x-freeshow-capture": id, "x-freeshow-capture-failed": failed ? "1" : "0" } })
     )
     await tauri.event.listen(
         "freeshow://ipc",
