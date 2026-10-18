@@ -71,6 +71,9 @@ pub struct RemoteEvent {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum RemoteEventKind {
     Renderer {
+        /// Trusted native provenance, independent of the client-controlled
+        /// message channel/id (including forged lifecycle-looking messages).
+        origin: RemoteOrigin,
         source_socket: Option<String>,
         message: Value,
     },
@@ -78,6 +81,13 @@ pub enum RemoteEventKind {
         code: &'static str,
         message: String,
     },
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RemoteOrigin {
+    Connection,
+    Client,
+    Disconnect,
 }
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 pub struct RemoteError {

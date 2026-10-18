@@ -1,6 +1,6 @@
 use crate::{
-    RemoteConfig, RemoteError, RemoteEvent, RemoteEventKind, RemoteGeneration, RemoteStats, Result,
-    ServerKind, StartSpec,
+    RemoteConfig, RemoteError, RemoteEvent, RemoteEventKind, RemoteGeneration, RemoteOrigin,
+    RemoteStats, Result, ServerKind, StartSpec,
 };
 use serde_json::{json, Value};
 use std::{
@@ -190,6 +190,7 @@ impl Run {
             client.disconnect.send(self.event(
                 server,
                 RemoteEventKind::Renderer {
+                    origin: RemoteOrigin::Disconnect,
                     source_socket: Some(id.into()),
                     message: json!({"channel":"DISCONNECT","id":id}),
                 },
@@ -202,6 +203,7 @@ impl Run {
             client.disconnect.send(self.event(
                 server,
                 RemoteEventKind::Renderer {
+                    origin: RemoteOrigin::Disconnect,
                     source_socket: Some(id.clone()),
                     message: json!({"channel":"DISCONNECT","id":id}),
                 },

@@ -37,7 +37,13 @@ its full trusted runtime/library context alongside that generation. Outgoing
 commands must use the corresponding generation; stopped/previous generations fail
 with `stale_generation`. Never derive provenance from a client message's `id`.
 `RemoteEventKind::Renderer` contains the **unchanged** message plus a separate
-`source_socket`. A client can omit, spoof, or choose a non-string payload ID, just
+`source_socket` and trusted `origin` (`connection`, `client`, `disconnect`).
+Only the native admission/removal paths can choose a lifecycle origin. A client
+message whose channel is CONNECTION/DISCONNECT, even with its real socket ID and
+an `origin` field inside the payload, still has native origin `client`. Host
+accepted-connection ledgers and old-run cleanup exceptions must use this typed
+provenance, never infer lifecycle from the payload. A client can omit, spoof, or
+choose a non-string payload ID, just
 as in Electron. Do not inject the real socket ID into that message. Renderer events
 go to the retained **main** window, using their original server channel.
 
@@ -218,7 +224,7 @@ allocation proof. Ordinary socketioxide engine/task bounds and teardown tests
 cover retained sessions separately. Tests await actual event messages; neither a
 stats response nor an HTTP acknowledgement is treated as event-flush evidence.
 
-Local result: **7 Rust tests and 19 Node source/live tests passed**, with Clippy
+Local result: **7 Rust tests and 20 Node source/live tests passed**, with Clippy
 `--all-targets -- -D warnings`, Rust formatting and Prettier checks passing. No
 production host/GUI or Windows/macOS execution was performed by this slice.
 

@@ -3,7 +3,7 @@ use crate::{
     state::{Client, Command, Lease, Run, SendMode, SessionLease},
     static_files::FilePool,
     BoundServers, RemoteConfig, RemoteError, RemoteEventKind, RemoteEvents, RemoteGeneration,
-    RemoteStats, Result, ServerKind,
+    RemoteOrigin, RemoteStats, Result, ServerKind,
 };
 use axum::{
     body::{to_bytes, Body},
@@ -631,7 +631,7 @@ fn connect(io: &SocketIo, kind: ServerKind, run: Arc<Run>) {
         let(permit,connected,disconnect)=match admission{Ok(value)=>value,Err(error)=>{run.diagnostic(kind,error);let _=socket.disconnect();return;}};
         let id=socket.id.to_string();let ua=socket.req_parts().headers.get("user-agent").map(|v|String::from_utf8_lossy(v.as_bytes()).into_owned()).unwrap_or_default();
         run.clients.lock().unwrap().insert((kind,id.clone()),Client{disconnect,_permit:permit});
-        connected.send(run.event(kind,RemoteEventKind::Renderer{source_socket:Some(id.clone()),message:json!({"channel":"CONNECTION","id":id,"data":{"name":semantics::get_os(&ua)}})}));
+        connected.send(run.event(kind,RemoteEventKind::Renderer{origin:RemoteOrigin::Connection,source_socket:Some(id.clone()),message:json!({"channel":"CONNECTION","id":id,"data":{"name":semantics::get_os(&ua)}})}));
         socket.on(kind.channel(),DataHandler{run:run.clone(),kind});socket.on_disconnect(move||{run.disconnect(kind,&id);std::future::ready(())});
     }});
 }
@@ -724,6 +724,7 @@ impl MessageHandler<LocalAdapter, ()> for DataHandler {
         let event = self.run.event(
             self.kind,
             RemoteEventKind::Renderer {
+                origin: RemoteOrigin::Client,
                 source_socket: Some(id),
                 message,
             },

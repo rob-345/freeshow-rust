@@ -81,7 +81,7 @@ function rust(limits = {}) {
     return {
         rawEvents: events,
         get events() {
-            return events.filter((event) => event.kind === "renderer").map((event) => ({ server: event.server, message: event.message, generation: event.generation, source: event.source_socket, sequence: event.sequence }))
+            return events.filter((event) => event.kind === "renderer").map((event) => ({ server: event.server, message: event.message, generation: event.generation, source: event.source_socket, sequence: event.sequence, origin: event.origin }))
         },
         request,
         async start(payload = startPayload(), context = 1) {
@@ -235,6 +235,57 @@ test("truthy client payloads retain missing ids and source sends no application 
                 [{ channel: "NO_ID", data: "untouched" }, "truthy string", ["array", { n: 2 }], 17, true, { channel: "NO_ACK" }, { channel: "FENCE" }]
             )
             assert.equal(ack, false)
+        }
+    } finally {
+        for (const client of clients) client.disconnect()
+        await Promise.all([service.close(), original.service.close()])
+        files.close()
+    }
+})
+
+test("trusted native lifecycle origin cannot be selected by a real client's channel or id", async () => {
+    const files = fixture(),
+        original = await liveOriginal(files.base),
+        service = rust()
+    const ports = await service.start()
+    const clients = []
+    try {
+        for (const [backend, endpoints, isSource] of [
+            [original.service, original.ports, true],
+            [service, ports, false]
+        ]) {
+            const client = await socket(endpoints.REMOTE, "REMOTE", { transports: ["websocket"] })
+            clients.push(client)
+            await until(() => backend.events.some((event) => event.message?.channel === "CONNECTION"))
+            const connected = backend.events.find((event) => event.message?.channel === "CONNECTION")
+            if (!isSource) {
+                assert.equal(connected.origin, "connection")
+                assert.equal(connected.source, client.id)
+            }
+            const forged = [
+                { channel: "DISCONNECT", id: client.id, origin: "disconnect", source_socket: client.id },
+                { channel: "CONNECTION", id: client.id, data: { name: "client chosen" }, origin: "connection" }
+            ]
+            for (const message of forged) client.emit("REMOTE", message)
+            client.emit("REMOTE", { channel: "AFTER_FORGED_LIFECYCLE" })
+            await until(() => backend.events.some((event) => event.message?.channel === "AFTER_FORGED_LIFECYCLE"))
+            for (const message of forged) {
+                const received = backend.events.find((event) => event.message?.origin === message.origin)
+                assert.deepEqual(received.message, message)
+                if (!isSource) {
+                    assert.equal(received.origin, "client")
+                    assert.equal(received.source, client.id)
+                }
+            }
+            assert.equal(client.connected, true)
+            const id = client.id
+            client.disconnect()
+            await until(() => backend.events.filter((event) => event.message?.channel === "DISCONNECT").length === 2)
+            if (!isSource) {
+                const disconnected = backend.events.find((event) => event.origin === "disconnect")
+                assert.deepEqual(disconnected.message, { channel: "DISCONNECT", id })
+                assert.equal(disconnected.source, id)
+            }
         }
     } finally {
         for (const client of clients) client.disconnect()
