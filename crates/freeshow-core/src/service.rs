@@ -9,8 +9,11 @@ use crate::{
     Error, Result,
 };
 use serde::Serialize;
-use std::sync::{Arc, Mutex, RwLock};
-use tokio::sync::{mpsc, oneshot, watch};
+use std::sync::{
+    atomic::{AtomicBool, AtomicU64, Ordering},
+    Arc, Mutex, RwLock,
+};
+use tokio::sync::{mpsc, oneshot, watch, Mutex as AsyncMutex};
 
 const QUEUE_CAPACITY: usize = 8;
 const READ_WORKERS: usize = 2;
@@ -38,6 +41,7 @@ pub struct LibraryStatus {
     pub read_queue_capacity: usize,
     pub read_workers: usize,
     pub active_reads: usize,
+    pub accepting_requests: bool,
 }
 
 struct Snapshot {
@@ -51,6 +55,9 @@ struct Snapshot {
 type Reply = oneshot::Receiver<Result<Vec<Event>>>;
 
 enum Job {
+    Drain {
+        reply: oneshot::Sender<Result<Vec<Event>>>,
+    },
     Dispatch {
         sequence: Option<u64>,
         request: Box<Request>,
@@ -87,7 +94,9 @@ enum ReadJob {
 pub struct LibraryService {
     jobs: mpsc::Sender<Job>,
     reads: mpsc::Sender<ReadJob>,
-    admission: Arc<Mutex<u64>>,
+    admission: Arc<AsyncMutex<()>>,
+    admitted_sequence: Arc<AtomicU64>,
+    accepting: Arc<AtomicBool>,
     progress: watch::Receiver<u64>,
     snapshot: Arc<RwLock<Snapshot>>,
 }
@@ -136,6 +145,9 @@ impl LibraryService {
                 )> = None;
                 while let Some(job) = receiver.blocking_recv() {
                     match job {
+                        Job::Drain { reply } => {
+                            let _ = reply.send(Ok(Vec::new()));
+                        }
                         Job::Dispatch {
                             sequence,
                             request,
@@ -214,7 +226,9 @@ impl LibraryService {
         Ok(Self {
             jobs,
             reads,
-            admission: Arc::new(Mutex::new(0)),
+            admission: Arc::new(AsyncMutex::new(())),
+            admitted_sequence: Arc::new(AtomicU64::new(0)),
+            accepting: Arc::new(AtomicBool::new(true)),
             progress,
             snapshot,
         })
@@ -246,6 +260,7 @@ impl LibraryService {
             read_queue_capacity: self.reads.max_capacity(),
             read_workers: READ_WORKERS,
             active_reads: state.active_reads,
+            accepting_requests: self.accepting.load(Ordering::Acquire),
         })
     }
 
@@ -267,17 +282,18 @@ impl LibraryService {
 
     async fn enqueue(&self, request: Request, window: &str) -> Result<Reply> {
         let (reply, received) = oneshot::channel();
+        // FIFO asynchronous admission makes shutdown wait behind callers that
+        // already began admission, including those waiting for queue space.
+        // Context/status snapshots and show readers never take this lock.
+        let _admission = self.admission.lock().await;
+        if !self.accepting.load(Ordering::Acquire) {
+            return Err(unavailable("library is closing"));
+        }
         let permit = self
             .jobs
             .reserve()
             .await
             .map_err(|_| unavailable("request queue closed"))?;
-        // Ticket assignment and send are synchronous under one short lock.
-        // A cancelled admission never leaves a missing sequence number.
-        let mut admitted = self
-            .admission
-            .lock()
-            .map_err(|_| unavailable("admission lock poisoned"))?;
         // A read-only or unsupported command waiting behind compression must
         // not make later show reads wait for the ZIP. Only file mutations and
         // index scans (which repair IDs/write caches) establish a dependency.
@@ -296,32 +312,35 @@ impl LibraryService {
             );
         let sequence = if mutation {
             Some(
-                admitted
+                self.admitted_sequence
+                    .load(Ordering::Acquire)
                     .checked_add(1)
                     .ok_or_else(|| unavailable("request sequence exhausted"))?,
             )
         } else {
             None
         };
+        // Publish before send so an overlapping read cannot miss this ticket.
+        // There is no suspension point between publishing and enqueueing it.
+        if let Some(sequence) = sequence {
+            self.admitted_sequence.store(sequence, Ordering::Release);
+        }
         permit.send(Job::Dispatch {
             sequence,
             request: Box::new(request),
             window: window.into(),
             reply,
         });
-        if let Some(sequence) = sequence {
-            *admitted = sequence;
-        }
         Ok(received)
     }
 
     async fn enqueue_read(&self, request: Request) -> Result<Reply> {
         // Keep read-after-write admission order, but a backup's completed copy
         // phase is enough: readers do not wait for its ZIP compression.
-        let fence = *self
-            .admission
-            .lock()
-            .map_err(|_| unavailable("admission lock poisoned"))?;
+        if !self.accepting.load(Ordering::Acquire) {
+            return Err(unavailable("library is closing"));
+        }
+        let fence = self.admitted_sequence.load(Ordering::Acquire);
         let mut progress = self.progress.clone();
         progress
             .wait_for(|completed| *completed >= fence)
@@ -333,6 +352,21 @@ impl LibraryService {
             .await
             .map_err(|_| unavailable("show reader queue closed"))?;
         Ok(received)
+    }
+
+    /// Terminal admission barrier. Earlier admission attempts finish first;
+    /// once this barrier owns admission, new requests are rejected. Accepted
+    /// file jobs are attempted in order even if this caller drops its wait.
+    pub async fn finish_writes(&self) -> Result<()> {
+        let admission = self.admission.lock().await;
+        self.accepting.store(false, Ordering::Release);
+        let (reply, received) = oneshot::channel();
+        self.jobs
+            .send(Job::Drain { reply })
+            .await
+            .map_err(|_| unavailable("request queue closed"))?;
+        drop(admission);
+        self.receive_reply(received, false).await.map(|_| ())
     }
 
     pub async fn dispatch(&self, request: Request, window: &str) -> Result<Vec<Event>> {
@@ -470,6 +504,129 @@ mod tests {
             .unwrap();
         timeout(DEADLINE, received).await.unwrap().unwrap();
         release
+    }
+
+    #[tokio::test]
+    async fn shutdown_includes_earlier_waiting_admissions_and_rejects_later_work() {
+        let (temp, service) = service();
+        let context = service.context().unwrap();
+        let release = pause(&service).await;
+        let first = service
+            .enqueue(
+                request(
+                    "SET_STORE_VALUE",
+                    json!({"file":"PROJECTS","key":"projects.first","value":true}),
+                    &context,
+                ),
+                "main",
+            )
+            .await
+            .unwrap();
+        drop(first);
+        let waiting = service.enqueue(
+            request(
+                "SET_STORE_VALUE",
+                json!({"file":"PROJECTS","key":"projects.second","value":true}),
+                &context,
+            ),
+            "main",
+        );
+        tokio::pin!(waiting);
+        assert!(timeout(Duration::from_millis(50), &mut waiting)
+            .await
+            .is_err());
+        let closing = service.finish_writes();
+        tokio::pin!(closing);
+        assert!(timeout(Duration::from_millis(50), &mut closing)
+            .await
+            .is_err());
+        let later = service.enqueue(
+            request(
+                "SET_STORE_VALUE",
+                json!({"file":"PROJECTS","key":"projects.rejected","value":true}),
+                &context,
+            ),
+            "main",
+        );
+        tokio::pin!(later);
+        assert!(timeout(Duration::from_millis(50), &mut later)
+            .await
+            .is_err());
+        // Waiting admission must not hold the context/status lock.
+        assert_eq!(service.context().unwrap(), context);
+        assert_eq!(service.status().unwrap().queue_capacity, 1);
+        release.send(()).unwrap();
+        let (second, drained, rejected) =
+            timeout(DEADLINE, async { tokio::join!(waiting, closing, later) })
+                .await
+                .unwrap();
+        drained.unwrap();
+        timeout(DEADLINE, second.unwrap())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        assert!(matches!(rejected, Err(Error::WorkerUnavailable(_))));
+        let saved: Value =
+            serde_json::from_slice(&fs::read(temp.path().join("A/Config/projects.json")).unwrap())
+                .unwrap();
+        assert_eq!(saved["projects"]["first"], true);
+        assert_eq!(saved["projects"]["second"], true);
+        assert!(saved["projects"].get("rejected").is_none());
+        assert!(!service.status().unwrap().accepting_requests);
+        assert!(matches!(
+            service
+                .dispatch(request("SHOW", json!({"id":"missing"}), &context), "main")
+                .await,
+            Err(Error::WorkerUnavailable(_))
+        ));
+        timeout(DEADLINE, service.finish_writes())
+            .await
+            .unwrap()
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn cancelling_shutdown_wait_does_not_cancel_an_accepted_write_or_reopen_admission() {
+        let (temp, service) = service();
+        let context = service.context().unwrap();
+        let release = pause(&service).await;
+        let accepted = service
+            .enqueue(
+                request(
+                    "SET_STORE_VALUE",
+                    json!({"file":"PROJECTS","key":"projects.kept","value":true}),
+                    &context,
+                ),
+                "main",
+            )
+            .await
+            .unwrap();
+        assert!(timeout(Duration::from_millis(50), service.finish_writes())
+            .await
+            .is_err());
+        assert!(!service.status().unwrap().accepting_requests);
+        release.send(()).unwrap();
+        timeout(DEADLINE, accepted).await.unwrap().unwrap().unwrap();
+        timeout(DEADLINE, service.finish_writes())
+            .await
+            .unwrap()
+            .unwrap();
+        let saved: Value =
+            serde_json::from_slice(&fs::read(temp.path().join("A/Config/projects.json")).unwrap())
+                .unwrap();
+        assert_eq!(saved["projects"]["kept"], true);
+    }
+
+    #[tokio::test]
+    async fn shutdown_reports_a_stopped_worker_instead_of_claiming_a_drain() {
+        let (_temp, service) = service();
+        service.jobs.send(Job::Stop).await.unwrap();
+        timeout(DEADLINE, service.jobs.closed()).await.unwrap();
+        assert!(matches!(
+            timeout(DEADLINE, service.finish_writes()).await.unwrap(),
+            Err(Error::WorkerUnavailable(_))
+        ));
     }
 
     #[tokio::test]

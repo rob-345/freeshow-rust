@@ -5,6 +5,21 @@ let saveSequence = 0n
 let saveEpoch: string | undefined
 let suppressed = 0
 let latest: { token: string; revision: bigint } | undefined
+let deferredClosing = false
+
+export function deferClosing() {
+    deferredClosing = true
+}
+
+export function takeDeferredClosing() {
+    const closing = deferredClosing
+    deferredClosing = false
+    return closing
+}
+
+export function cancelDeferredClosing() {
+    deferredClosing = false
+}
 
 export function recordEdit() {
     if (!suppressed) editRevision++

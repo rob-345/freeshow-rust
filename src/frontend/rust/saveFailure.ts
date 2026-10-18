@@ -1,5 +1,6 @@
 import { get } from "svelte/store"
 import { isBackupOnly } from "../utils/savePolicy"
+import { cancelDeferredClosing } from "./saveRevision"
 
 type SaveStores = Pick<typeof import("../stores"), "saved" | "statusIndicator" | "deletedShows" | "renamedShows" | "shows" | "alertMessage" | "activePopup">
 type Failure = { code?: string; recoveryPath?: string; recoveryError?: string }
@@ -21,6 +22,7 @@ export function recoverFailedSave(request: any, stores: SaveStores, error: Failu
         stores.activePopup.set("alert")
         return true
     }
+    cancelDeferredClosing()
     // Backup-only operations never removed these queues before dispatch.
     if (isBackupOnly(payload.customTriggers, payload.closeWhenFinished)) {
         stores.statusIndicator.set("error")
@@ -46,6 +48,17 @@ export function recoverFailedSave(request: any, stores: SaveStores, error: Failu
     stores.saved.set(false)
     stores.statusIndicator.set("error")
     stores.alertMessage.set("Could not save all changes. Check the data folder permissions and try again.")
+    stores.activePopup.set("alert")
+    return true
+}
+
+export function recoverFailedClose(request: any, stores: Pick<typeof import("../stores"), "saved" | "statusIndicator" | "alertMessage" | "activePopup" | "errorHasOccurred">): boolean {
+    if (request?.channel !== "MAIN" || request?.data?.channel !== "CLOSE") return false
+    cancelDeferredClosing()
+    stores.saved.set(false)
+    stores.errorHasOccurred.set(true)
+    stores.statusIndicator.set("error")
+    stores.alertMessage.set("Could not finish pending file requests. Keep this window open to preserve unsaved work. You can explicitly quit without saving from the Quit dialog.")
     stores.activePopup.set("alert")
     return true
 }

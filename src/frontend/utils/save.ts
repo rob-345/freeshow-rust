@@ -120,14 +120,22 @@ import { isSyncing, socketDisconnect, syncWithCloud } from "./cloudSync"
 import { newToast, setStatus, startAutosave } from "./common"
 import { syncDrive } from "./drive"
 import { autoDisableRemoteController, stopRemoteController } from "./remoteController"
-import { acknowledgeSave, beginSave, isSaveMutationSuppressed, recordEdit, withoutSaveEdits } from "../rust/saveRevision"
+import { acknowledgeSave, beginSave, deferClosing, isSaveMutationSuppressed, recordEdit, takeDeferredClosing, withoutSaveEdits } from "../rust/saveRevision"
 
 export function save(closeWhenFinished = false, customTriggers: SaveActions = {}, listenerId?: string) {
     updateSyncedOutputs()
     startAutosave() // reset auto save timer
 
     // don't save again while saving
-    if (get(statusIndicator) === "saving") return false
+    if (get(statusIndicator) === "saving") {
+        if (closeWhenFinished && typeof window !== "undefined" && (window as any).__TAURI__) {
+            deferClosing()
+            alertMessage.set("actions.closing")
+            activePopup.set("alert")
+            return true
+        }
+        return false
+    }
 
     console.info("SAVING...")
     if ((!customTriggers.autosave || !get(saved)) && !customTriggers.backup) {
@@ -305,9 +313,22 @@ export function getSyncedSettings(): { [key in SaveListSyncedSettings]: any } {
 
 export async function saveComplete({ closeWhenFinished, customTriggers, runtimeSaveToken }: { closeWhenFinished: boolean; customTriggers?: SaveActions; runtimeSaveToken?: string }) {
     if (isBackupOnly(customTriggers, closeWhenFinished)) return
-    if (typeof window !== "undefined" && (window as any).__TAURI__ && runtimeSaveToken !== undefined) {
+    const rust = typeof window !== "undefined" && (window as any).__TAURI__
+    // The unsaved popup also calls this directly when the legacy saved flag is
+    // true. Minor settings can still have changed, so capture a final snapshot.
+    if (rust && closeWhenFinished && runtimeSaveToken === undefined) {
+        save(true, customTriggers)
+        return
+    }
+    if (rust && runtimeSaveToken !== undefined) {
         const completion = acknowledgeSave(runtimeSaveToken)
         if (completion === "superseded") return
+        const closing = takeDeferredClosing()
+        if (closing) {
+            setStatus("", 0)
+            save(true)
+            return
+        }
         if (completion === "edited") {
             saved.set(false)
             setStatus("", 0)
@@ -342,7 +363,7 @@ export async function saveComplete({ closeWhenFinished, customTriggers, runtimeS
 
         if (closeWhenFinished) {
             await socketDisconnect()
-            closeApp()
+            closeApp(false, runtimeSaveToken)
         }
         return
     }
@@ -352,7 +373,7 @@ export async function saveComplete({ closeWhenFinished, customTriggers, runtimeS
     // DEPRECATED drive sync
     const mainFolderId = get(driveData)?.mainFolderId
     if (!mainFolderId || get(driveData)?.disabled === true || !Object.keys(get(driveKeys)).length) {
-        if (closeWhenFinished) closeApp()
+        if (closeWhenFinished) closeApp(false, runtimeSaveToken)
 
         return
     }
@@ -363,12 +384,13 @@ export async function saveComplete({ closeWhenFinished, customTriggers, runtimeS
 export function initializeClosing(skipPopup = false) {
     // don't save automatically if an error has happened in case it breaks something
     if (!skipPopup && (get(special).showClosePopup || get(errorHasOccurred))) activePopup.set("unsaved")
+    else if (typeof window !== "undefined" && (window as any).__TAURI__) save(true)
     // "saved" does not count for all minor changes, but should be fine
     else if (get(saved)) saveComplete({ closeWhenFinished: true })
     else save(true)
 }
 
-export async function closeApp() {
+export async function closeApp(discardUnsaved = false, runtimeSaveToken?: string) {
     try {
         const timeout = <T>(promise: Promise<T>, ms: number): Promise<T | void> => {
             return Promise.race([promise, new Promise<void>((resolve) => setTimeout(resolve, ms))])
@@ -384,7 +406,16 @@ export async function closeApp() {
         console.error("Could not stop interactions before closing!", e)
     }
 
-    sendMain(Main.CLOSE)
+    const rust = typeof window !== "undefined" && (window as any).__TAURI__
+    // Cloud sync and stopping interactions can await while the editor changes.
+    // Revalidate after that work, immediately before requesting native exit.
+    if (rust && !discardUnsaved && runtimeSaveToken !== undefined && acknowledgeSave(runtimeSaveToken) !== "current") {
+        saved.set(false)
+        if (get(statusIndicator) !== "saving") setStatus("", 0)
+        save(true)
+        return
+    }
+    sendMain(Main.CLOSE, rust && discardUnsaved === true ? { discardUnsaved: true } : undefined)
 }
 
 // GET SAVED STATE

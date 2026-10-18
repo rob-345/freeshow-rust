@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest"
 import { get, writable } from "svelte/store"
-import { recoverFailedSave, retainedStaleSaves } from "./saveFailure"
+import { recoverFailedClose, recoverFailedSave, retainedStaleSaves } from "./saveFailure"
+import { deferClosing, takeDeferredClosing } from "./saveRevision"
 
 function state() {
-    return { saved: writable(true), statusIndicator: writable("saving"), deletedShows: writable<any[]>([]), renamedShows: writable<any[]>([]), shows: writable<any>({}), alertMessage: writable(""), activePopup: writable<any>(null) }
+    return { saved: writable(true), statusIndicator: writable("saving"), deletedShows: writable<any[]>([]), renamedShows: writable<any[]>([]), shows: writable<any>({}), alertMessage: writable(""), activePopup: writable<any>(null), errorHasOccurred: writable(false) }
 }
 
 describe("Rust save failure recovery", () => {
@@ -92,5 +93,29 @@ describe("Rust save failure recovery", () => {
         expect(get(stores.alertMessage)).toContain("Could not save all changes")
         expect(get(stores.alertMessage)).not.toContain("private-value")
         expect(get(stores.alertMessage)).not.toContain("<img")
+    })
+
+    it("cancels a deferred Quit after a save fails so a manual retry cannot close unexpectedly", () => {
+        const stores = state()
+        deferClosing()
+        recoverFailedSave({ channel: "MAIN", data: { channel: "SAVE", data: {} } }, stores)
+        expect(takeDeferredClosing()).toBe(false)
+        expect(get(stores.saved)).toBe(false)
+    })
+
+    it("keeps the window unsaved and offers an explicit discard path after a failed drain", () => {
+        const stores = state()
+        deferClosing()
+        expect(recoverFailedClose({ channel: "MAIN", data: { channel: "SAVE" } }, stores)).toBe(false)
+        expect(takeDeferredClosing()).toBe(true)
+        deferClosing()
+        expect(recoverFailedClose({ channel: "MAIN", data: { channel: "CLOSE", data: { private: "secret" } } }, stores)).toBe(true)
+        expect(takeDeferredClosing()).toBe(false)
+        expect(get(stores.saved)).toBe(false)
+        expect(get(stores.errorHasOccurred)).toBe(true)
+        expect(get(stores.statusIndicator)).toBe("error")
+        expect(get(stores.activePopup)).toBe("alert")
+        expect(get(stores.alertMessage)).toContain("explicitly quit without saving")
+        expect(get(stores.alertMessage)).not.toContain("secret")
     })
 })

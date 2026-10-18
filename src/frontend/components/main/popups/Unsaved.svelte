@@ -6,7 +6,7 @@
 
     const actions = {
         n: () => activePopup.set(null),
-        q: () => closeApp(),
+        q: () => closeApp(true),
         y: () => ($saved ? saveComplete({ closeWhenFinished: true }) : save(true))
     }
 
@@ -33,7 +33,7 @@
             <span>Y</span>
         </MaterialButton>
     {:else}
-        <MaterialButton variant="outlined" style="width: 100%;" on:click={closeApp}>
+        <MaterialButton variant="outlined" style="width: 100%;" on:click={() => closeApp(true)}>
             <div style="opacity: 0.7;"><T id="popup.quit" /></div>
             <span>Q</span>
         </MaterialButton>

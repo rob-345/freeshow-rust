@@ -19,6 +19,7 @@ function frontend(context, rust = false) {
     const stores = Object.fromEntries(storeImport.importClause.namedBindings.elements.map((node) => [node.name.text, writable({})]))
     stores.saved.set(false)
     stores.statusIndicator.set("")
+    stores.errorHasOccurred.set(false)
     stores.deletedShows.set([{ id: "deleted", name: "Old show" }])
     stores.renamedShows.set([{ id: "renamed", oldName: "Before", name: "After" }])
     const sent = [],
@@ -30,7 +31,7 @@ function frontend(context, rust = false) {
     const declarations = ["customSavedListener", "saveList"].map((name) => ast.statements.find((node) => ts.isVariableStatement(node) && node.declarationList.declarations.some((declaration) => declaration.name.getText(ast) === name)).getText(ast)).join("\n")
     const functions = upstreamFunctions(
         "src/frontend/utils/save.ts",
-        ["save", "getSyncedSettings", "saveComplete", "unsavedUpdater"],
+        ["save", "getSyncedSettings", "saveComplete", "unsavedUpdater", "initializeClosing"],
         {
             ...stores,
             ...policy,
@@ -215,4 +216,126 @@ test("new rename/delete operations survive an older successful acknowledgment", 
     assert.equal(f.sent[1][1].renamedShows[0].id, "later-rename")
     await f.saveComplete(acknowledgment(f.sent[1]))
     assert.equal(get(f.stores.saved), true)
+})
+
+test("normal Rust Quit snapshots settings even when the legacy saved flag is true", async () => {
+    const f = frontend(undefined, true)
+    f.stores.maxConnections.set(19)
+    f.stores.saved.set(true)
+    f.initializeClosing()
+    f.flush()
+    assert.equal(f.sent.length, 1)
+    assert.equal(f.sent[0][1].SETTINGS.maxConnections, 19)
+    assert.equal(f.sent[0][1].closeWhenFinished, true)
+    assert.equal(f.closed.length, 0)
+    await f.saveComplete(acknowledgment(f.sent[0]))
+    assert.equal(f.closed.length, 1)
+})
+
+test("Quit during an ordinary save waits for it, then captures newer edits in a closing save", async () => {
+    const f = frontend(undefined, true)
+    f.save()
+    f.flush()
+    f.stores.themes.set({ newer: { name: "While saving" } })
+    f.initializeClosing()
+    f.flush()
+    assert.equal(f.sent.length, 1)
+    assert.equal(f.closed.length, 0)
+    await f.saveComplete(acknowledgment(f.sent[0]))
+    f.flush()
+    assert.equal(f.sent.length, 2)
+    assert.equal(f.sent[1][1].THEMES.newer.name, "While saving")
+    assert.equal(f.sent[1][1].closeWhenFinished, true)
+    assert.equal(f.closed.length, 0)
+    await f.saveComplete(acknowledgment(f.sent[1]))
+    assert.equal(f.closed.length, 1)
+})
+
+test("a superseded acknowledgment cannot consume a deferred Quit", async () => {
+    const f = frontend(undefined, true)
+    f.save(false, { backup: true })
+    f.flush()
+    f.save()
+    f.flush()
+    f.initializeClosing()
+    await f.saveComplete(acknowledgment(f.sent[0]))
+    f.flush()
+    assert.equal(f.sent.length, 2)
+    assert.equal(get(f.stores.statusIndicator), "saving")
+    await f.saveComplete(acknowledgment(f.sent[1]))
+    f.flush()
+    assert.equal(f.sent.length, 3)
+    assert.equal(f.sent[2][1].closeWhenFinished, true)
+    assert.equal(f.closed.length, 0)
+})
+
+test("the saved-state Quit popup captures a final Rust snapshot and retains Electron behavior", async () => {
+    for (const rust of [false, true]) {
+        const f = frontend(undefined, rust)
+        f.stores.saved.set(true)
+        await f.saveComplete({ closeWhenFinished: true })
+        f.flush()
+        assert.equal(f.sent.length, rust ? 1 : 0)
+        assert.equal(f.closed.length, rust ? 0 : 1)
+    }
+})
+
+test("only explicit Rust discard sends discard metadata after stopping interactions", async () => {
+    for (const rust of [false, true]) {
+        for (const discard of [false, true, { type: "click" }]) {
+            const stopped = [],
+                sent = []
+            const { closeApp } = upstreamFunctions("src/frontend/utils/save.ts", ["closeApp"], {
+                stopAllInteractions: async () => stopped.push("interactions"),
+                stopRemoteController: async () => stopped.push("remote"),
+                autoDisableRemoteController: () => stopped.push("disable"),
+                stopMediaRecorder: async () => stopped.push("media"),
+                stopAllChannelRecordings: async () => stopped.push("audio"),
+                setTimeout() {},
+                Main: { CLOSE: "CLOSE" },
+                sendMain: (...args) => sent.push(args),
+                window: rust ? { __TAURI__: {} } : {}
+            })
+            await closeApp(discard)
+            assert.deepEqual(stopped, ["interactions", "remote", "disable", "media", "audio"])
+            assert.deepEqual(structuredClone(sent), [["CLOSE", rust && discard === true ? { discardUnsaved: true } : undefined]])
+        }
+    }
+})
+
+test("edits during asynchronous close cleanup require another snapshot before native exit", async () => {
+    for (const completion of ["current", "edited", "superseded"]) {
+        const sent = [],
+            retries = []
+        const saved = writable(true),
+            statusIndicator = writable("")
+        let stopped = false
+        const { closeApp } = upstreamFunctions("src/frontend/utils/save.ts", ["closeApp"], {
+            stopAllInteractions: async () => {
+                stopped = true
+            },
+            stopRemoteController: async () => {},
+            autoDisableRemoteController() {},
+            stopMediaRecorder: async () => {},
+            stopAllChannelRecordings: async () => {},
+            setTimeout() {},
+            Main: { CLOSE: "CLOSE" },
+            sendMain: (...args) => sent.push(args),
+            window: { __TAURI__: {} },
+            acknowledgeSave: (token) => {
+                assert.equal(stopped, true)
+                assert.equal(token, "snapshot")
+                return completion
+            },
+            saved,
+            statusIndicator,
+            get,
+            setStatus: (value) => statusIndicator.set(value),
+            save: (...args) => retries.push(args)
+        })
+        await closeApp(false, "snapshot")
+        assert.equal(sent.length, completion === "current" ? 1 : 0)
+        assert.deepEqual(retries, completion === "current" ? [] : [[true]])
+        assert.equal(get(saved), completion === "current")
+    }
 })

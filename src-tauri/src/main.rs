@@ -10,6 +10,7 @@ use freeshow_core::{
 };
 use serde_json::json;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
@@ -19,6 +20,7 @@ struct AppState {
     outputs: output::OutputService,
     app_data: PathBuf,
     error_log: PathBuf,
+    allow_exit: AtomicBool,
 }
 
 #[tauri::command]
@@ -117,7 +119,14 @@ async fn ipc_dispatch(
                 return Ok(vec![]);
             }
             "CLOSE" => {
-                window.app_handle().exit(0);
+                let state = app.state::<AppState>();
+                let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
+                let drained = state.library.finish_writes().await;
+                if !discard {
+                    drained.map_err(WireError::from)?;
+                }
+                state.allow_exit.store(true, Ordering::Release);
+                app.exit(0);
                 return Ok(vec![]);
             }
             "GET_OS" => {
@@ -429,6 +438,7 @@ fn main() {
                 outputs,
                 app_data,
                 error_log,
+                allow_exit: AtomicBool::new(false),
             });
             Ok(())
         })
@@ -455,6 +465,20 @@ fn main() {
             library_status,
             output_status
         ])
-        .run(tauri::generate_context!())
-        .expect("FreeShow Rust could not start");
+        .build(tauri::generate_context!())
+        .expect("FreeShow Rust could not start")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                if let Some(state) = app.try_state::<AppState>() {
+                    if !state.allow_exit.load(Ordering::Acquire) {
+                        api.prevent_exit();
+                        let _ = app.emit_to(
+                            "main",
+                            "freeshow://ipc",
+                            Event::reply("MAIN", "CLOSE", json!(false), None),
+                        );
+                    }
+                }
+            }
+        });
 }

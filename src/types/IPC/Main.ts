@@ -204,6 +204,7 @@ export interface MainSendPayloads {
     [Main.BIBLE]: { id: string; name: string }
     [Main.SHOW]: { id: string; name: string }
     [Main.SAVE]: SaveData
+    [Main.CLOSE]: undefined | { discardUnsaved?: boolean }
     ////////////
     [Main.DELETE_BACKUP]: { path: string }
     [Main.SPELLCHECK]: { addToDictionary?: string; fixSpelling?: string }
