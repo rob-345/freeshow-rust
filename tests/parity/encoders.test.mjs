@@ -172,7 +172,7 @@ test("missing FFmpeg differs from failed listing and supported-platform filterin
             assert.equal(missing.detection.encoders.length, 6)
             assert.equal(missing.cacheIntent, undefined)
         }
-        const source = original({ executable: files.executable, sourcePath: "frozen-ffmpeg", platform: "linux" }),
+        const source = original({ executable: files.executable, sourcePath: "frozen-ffmpeg", platform: "linux", arch: "x64" }),
             failed = await native.value({ op: "detect", ...files.input })
         assert.deepEqual(failed.detection, clean(await source.detection.detectEncoders()))
         assert.equal(failed.source, "probe")
