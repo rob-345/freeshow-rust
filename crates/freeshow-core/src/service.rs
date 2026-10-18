@@ -53,7 +53,7 @@ type Reply = oneshot::Receiver<Result<Vec<Event>>>;
 enum Job {
     Dispatch {
         sequence: Option<u64>,
-        request: Request,
+        request: Box<Request>,
         window: String,
         reply: oneshot::Sender<Result<Vec<Event>>>,
     },
@@ -153,7 +153,7 @@ impl LibraryService {
                                 break;
                             }
                             let Ok(exclusive) = files.write() else { break };
-                            let prepared = runtime.prepare_dispatch(request, &window);
+                            let prepared = runtime.prepare_dispatch(*request, &window);
                             let context = runtime.context();
                             if let Ok(mut state) = shared.write() {
                                 state.context = context.clone();
@@ -305,7 +305,7 @@ impl LibraryService {
         };
         permit.send(Job::Dispatch {
             sequence,
-            request,
+            request: Box::new(request),
             window: window.into(),
             reply,
         });
@@ -907,7 +907,7 @@ mod tests {
         let (reply, received) = oneshot::channel();
         permit.send(Job::Dispatch {
             sequence: None,
-            request: request("PROJECTS", Value::Null, &context),
+            request: Box::new(request("PROJECTS", Value::Null, &context)),
             window: "main".into(),
             reply,
         });

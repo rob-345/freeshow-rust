@@ -107,15 +107,14 @@ pub fn prepare(stores: &Stores, automatic: bool) -> Result<Snapshot> {
         let destination = directory.path().join(index.to_string());
         // Copy bytes rather than hardlinking. In-place external edits must not
         // change an already prepared backup. No file contents accumulate in RAM.
-        fs::copy(entry.path, &destination)?;
-        #[cfg(windows)]
-        {
-            // Windows copies the read-only attribute too, which would prevent
-            // TempDir from removing this private copy after compression.
-            let mut permissions = fs::metadata(&destination)?.permissions();
-            permissions.set_readonly(false);
-            fs::set_permissions(&destination, permissions)?;
-        }
+        let mut input = fs::File::open(entry.path)?;
+        let mut output = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&destination)?;
+        // Create a fresh file rather than inheriting source attributes. In
+        // particular, Windows read-only sources must yield removable copies.
+        std::io::copy(&mut input, &mut output)?;
         copied.push(Source {
             name: entry.name,
             path: destination,
@@ -320,13 +319,12 @@ mod tests {
         let stores = Stores::new(temp.path().join("app"), temp.path().join("data")).unwrap();
         let show = stores.data.join("Shows/Read only.show");
         fs::write(&show, b"read only source").unwrap();
-        let mut permissions = fs::metadata(&show).unwrap().permissions();
+        let original_permissions = fs::metadata(&show).unwrap().permissions();
+        let mut permissions = original_permissions.clone();
         permissions.set_readonly(true);
         fs::set_permissions(&show, permissions).unwrap();
         let prepared = prepare(&stores, false);
-        let mut permissions = fs::metadata(&show).unwrap().permissions();
-        permissions.set_readonly(false);
-        fs::set_permissions(show, permissions).unwrap();
+        fs::set_permissions(show, original_permissions).unwrap();
         let snapshot = prepared.unwrap();
         let staging = snapshot._directory.path().to_path_buf();
         snapshot.finish().unwrap();
