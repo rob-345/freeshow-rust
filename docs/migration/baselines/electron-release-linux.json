@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "state": "downloaded-and-verified-not-measured",
+  "state": "downloaded-verified-and-launched-not-measured",
   "platform": "linux-x86_64",
   "release": "v1.6.7-beta.2",
   "upstreamCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
@@ -19,11 +19,30 @@
   },
   "localExtractedRoot": "/home/rob-admin/.local/share/freeshow-electron-baseline/v1.6.7-beta.2/extracted",
   "systemInstallationPerformed": false,
-  "applicationLaunched": false,
+  "applicationLaunched": true,
   "measurements": null,
   "limitations": [
     "No performance comparison yet",
     "Release-mode Rust build and identical isolated profiles/workloads are still required",
-    "Software-rendered and physical hardware results must remain separate"
-  ]
+    "Software-rendered and physical hardware results must remain separate",
+    "Matching standalone Node version does not imply identical ICU/Unicode/V8 behavior; runtime-sensitive comparisons require packaged Electron"
+  ],
+  "readiness": {
+    "ready": true,
+    "probe": "scripts/migration/probe-electron-release.mjs",
+    "artifactDirectory": "test-output-rust/electron-release",
+    "packagedApplication": true,
+    "mainWindowVisible": true,
+    "preloadAvailable": true,
+    "temporaryProfilePathsVerified": true,
+    "versions": {
+      "electron": "37.10.3",
+      "node": "22.21.1",
+      "chrome": "138.0.7204.251",
+      "v8": "13.8.258.32-electron.0",
+      "icu": "74.2",
+      "unicode": "15.1"
+    },
+    "temporaryProfileRemoved": true
+  }
 }

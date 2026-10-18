@@ -13,7 +13,7 @@ The goal is to replace Electron with Rust while preserving FreeShow functionalit
 
 Preserve the existing Svelte interface first. `src/frontend/rust/bridge.ts` supplies the existing `window.api` contract using Tauri commands/events. `src-tauri` supplies desktop integration; `crates/freeshow-core` supplies ordered persistence and show readers; `crates/freeshow-media`, `crates/freeshow-audio` and `crates/freeshow-network` supply independent media probes, native audio tags and OSC services. These Rust crates are testable without a GUI. Retaining the UI does not guarantee identical browser behavior: WebKitGTK, WKWebView, and WebView2 need separate rendering, media, and input verification.
 
-Keep the upstream Electron implementation runnable as an oracle until parity is demonstrated. CI pins Node 22.21.1, matching Electron 37.10.3, rather than allowing host-runtime validation changes to alter the oracle. The immutable source commit is fetched explicitly in shallow CI checkouts. No Node sidecar substitutes for unported Rust functionality. Unsupported operations return explicit errors. A handler's existence is never counted as proof of parity.
+Keep the upstream Electron implementation runnable as an oracle until parity is demonstrated. CI pins Node 22.21.1, matching Electron 37.10.3's embedded Node version, rather than allowing host-runtime validation changes to alter source tests. This is not full runtime equivalence: the verified Linux Electron release uses ICU 74.2/Unicode 15.1, while standalone Node has different Unicode tables and V8. Runtime-sensitive behavior needs comparisons inside the packaged Electron application. The immutable source commit is fetched explicitly in shallow CI checkouts. No Node sidecar substitutes for unported Rust functionality. Unsupported operations return explicit errors. A handler's existence is never counted as proof of parity.
 
 Save snapshots retain their library context and a Rust-only renderer/module-epoch token. Acknowledgments can mark only the latest snapshot saved, and only if its tracked edit revision is still current. Newer edits stay unsaved; a closing save retries its newer snapshot, and library selection requires its pre-switch save to leave no tracked edits pending. Normal Rust Quit always captures a final snapshot, defers behind an active save and rechecks its tracked revision after asynchronous teardown. Native exit awaits a terminal FIFO library barrier covering earlier admission attempts, including those waiting for queue space. A failed drain keeps the window open unless the user explicitly discards unsaved work. Multiple-writer isolation, excluded fields changing after capture, unfinished teardown callbacks and cloud/legacy-drive closing paths remain uncertified.
 
@@ -56,6 +56,14 @@ npm run rust:bench
 ```
 
 `--ignore-scripts` supports Rust-only development without building Electron's native Node addons. Running the original Electron application still requires its normal native dependency installation. The full parity gate is expected to fail during migration.
+
+The official Linux Electron package can also supply an untouched GUI reference without rebuilding native addons. After verifying and extracting the package recorded in [the baseline receipt](baselines/electron-release-linux.json), check readiness with:
+
+```sh
+FREESHOW_ELECTRON_BIN=/absolute/path/to/extracted/opt/FreeShow/freeshow xvfb-run -a dbus-run-session -- node scripts/migration/probe-electron-release.mjs
+```
+
+The probe seeds a temporary app/data/XDG profile, disables updates, verifies the packaged versions, isolated paths, main window and preload, records runtime versions and removes its profile on exit. Readiness artifacts go to `test-output-rust/electron-release`; they contain no performance measurement. Identical release-mode workloads and separate GPU/software-rendering conditions are still required for a comparison.
 
 Media metadata requires installed ffmpeg/ffprobe; the Rust app discovers PATH/conventional locations and its own profile `bin` directory. `FREESHOW_RUST_FFMPEG` and `FREESHOW_RUST_FFPROBE` provide explicit executable candidates. Nothing is downloaded automatically. Unsupported metadata variants and operational failures surface explicit errors; an unavailable FFmpeg check retains its original negative result. Full codec/container and packaged-binary parity remain pending.
 
