@@ -1130,6 +1130,21 @@ impl Router {
         }
         Ok(out)
     }
+    /// Rebind a genuinely drained native run without resetting source-global
+    /// configuration/status or sticky LTC constructor failures. The host must
+    /// first join its actual IO owners; pure trusted receipts alone do no IO.
+    /// No old effect/listener authority survives the fresh private identity.
+    pub fn renew_after_drain(&mut self) -> Result<(), Error> {
+        if !self.drained() {
+            return Err(Error::state(
+                "Actual retirement receipts must drain before renewal",
+            ));
+        }
+        self.owner = Arc::new(());
+        self.next = 1;
+        self.retired = false;
+        Ok(())
+    }
     pub fn drained(&self) -> bool {
         self.retired
             && self.sync.is_none()

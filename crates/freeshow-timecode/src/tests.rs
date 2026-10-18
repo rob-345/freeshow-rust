@@ -372,3 +372,65 @@ fn retained_mtc_sender_and_late_failed_send_are_owned_even_after_mode_switch_and
     r.complete(&token(&retry), Completion::Done).unwrap();
     assert!(r.drained());
 }
+
+#[test]
+fn renewal_requires_drain_reseals_tokens_and_preserves_source_globals() {
+    let mut r = Router::new(false);
+    assert!(r.renew_after_drain().is_err());
+    let opened = start(&mut r, "receive", "MTC", 25.0);
+    let old_token = token(&opened);
+    let old_listener = r.accept_listener(&old_token).unwrap();
+    r.complete(&old_token, Completion::Opened).unwrap();
+    let fail = start(&mut r, "receive", "LTC", 24.0);
+    r.complete(
+        &token(&fail),
+        Completion::Failed(Error::native("actual unavailable")),
+    )
+    .unwrap();
+    r.begin(Command::Start {
+        kind: "send".into(),
+        mode: "LTC".into(),
+        framerate: Scalar::Text("30".into()),
+        data: Data::Json(serde_json::json!({"unknown":"日本語"})),
+    })
+    .unwrap();
+    let fail = r.begin(Command::Value(Number::new(123.0))).unwrap();
+    r.complete(
+        &token(&fail),
+        Completion::Failed(Error::native("actual unavailable")),
+    )
+    .unwrap();
+    r.update_status(Status::Play);
+    let retire = r.retire().unwrap();
+    assert!(!r.drained());
+    assert!(r.renew_after_drain().is_err());
+    for effect in retire.effects {
+        r.complete(&effect.token.unwrap(), Completion::Done)
+            .unwrap();
+    }
+    assert!(r.drained());
+    r.renew_after_drain().unwrap();
+    assert_eq!(r.snapshot().framerate, Scalar::Text("30".into()));
+    assert_eq!(r.snapshot().current_mode.as_deref(), Some("LTC"));
+    assert_eq!(
+        r.snapshot().send_data,
+        Data::Json(serde_json::json!({"unknown":"日本語"}))
+    );
+    assert!(r.snapshot().decoder_failed);
+    assert!(r.snapshot().encoder_failed);
+    assert!(r.update_status(Status::Play).effects.is_empty());
+    assert!(r
+        .begin(Command::Value(Number::new(456.0)))
+        .unwrap()
+        .effects
+        .is_empty());
+    assert!(r.complete(&old_token, Completion::Opened).is_err());
+    assert!(r.mtc_message(&old_listener, &[0xfa], 10.0).is_err());
+    let fresh = start(&mut r, "receive", "MTC", 0.0);
+    let fresh_token = token(&fresh);
+    assert_eq!(fresh_token.serial(), 2);
+    assert!(r.accept_listener(&old_token).is_err());
+    r.accept_listener(&fresh_token).unwrap();
+    r.complete(&fresh_token, Completion::Opened).unwrap();
+    assert_eq!(r.snapshot().owned_listeners, 1);
+}
