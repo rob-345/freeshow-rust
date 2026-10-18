@@ -1,0 +1,32 @@
+[package]
+name = "freeshow-remotes"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/rob-345/freeshow-rust"
+
+[workspace]
+
+[dependencies]
+axum = { version = "0.8.9", default-features = false, features = ["http1", "tokio"] }
+form_urlencoded = "1"
+httpdate = "1"
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio", "service"] }
+percent-encoding = "2"
+ryu-js = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order", "raw_value"] }
+socket2 = "0.6"
+socketioxide = { version = "=0.18.7", path = "../freeshow-api/vendor/socketioxide" }
+tokio = { version = "1", features = ["net", "rt", "sync", "time", "macros", "io-util", "io-std"] }
+tokio-stream = "0.1"
+tokio-util = { version = "0.7", features = ["rt"] }
+tower = { version = "0.5", features = ["util"] }
+uuid = { version = "1", features = ["v4"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = "3"
