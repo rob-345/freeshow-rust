@@ -14,7 +14,7 @@ fn request(command: &str, data: Value, context: &RuntimeContext) -> Request {
     serde_json::from_value(json!({"channel":"MAIN","data":{"channel":command,"data":data},"context":context,"listenerId":"media-copy-listener"})).unwrap()
 }
 struct Fixture {
-    dir: tempfile::TempDir,
+    _dir: tempfile::TempDir,
     library: LibraryService,
     native: media_copy::NativeMediaCopy,
     published: Arc<Mutex<Vec<Event>>>,
@@ -45,7 +45,7 @@ impl Fixture {
         )
         .unwrap();
         Self {
-            dir,
+            _dir: dir,
             library,
             native,
             published,
@@ -197,7 +197,7 @@ mod linux {
         .unwrap();
     }
     fn source(f: &Fixture, name: &str, bytes: &[u8]) -> PathBuf {
-        let dir = f.dir.path().join("Original media 敬拜");
+        let dir = f._dir.path().join("Original media 敬拜");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join(name);
         fs::write(&path, bytes).unwrap();
@@ -423,7 +423,7 @@ mod linux {
         let f = Fixture::new();
         let context = f.library.context().unwrap();
         let path = source(&f, "setting.bin", b"unchanged media");
-        let next = f.dir.path().join("changed media root");
+        let next = f._dir.path().join("changed media root");
         fs::create_dir(&next).unwrap();
         let changed = next.clone();
         let mut final_owner = hold(&f, move |runtime| {
@@ -485,7 +485,7 @@ mod linux {
         let f = Fixture::new();
         let context = f.library.context().unwrap();
         let path = source(&f, "root.bin", b"old library media");
-        let next = f.dir.path().join("next library");
+        let next = f._dir.path().join("next library");
         fs::create_dir(&next).unwrap();
         let update = request(
             "UPDATE_DATA_PATH",
@@ -537,7 +537,7 @@ mod linux {
         let f = Fixture::new();
         let context = f.library.context().unwrap();
         let path = source(&f, "missing-open.bin", b"real opaque bytes");
-        let custom = f.dir.path().join("not created yet 敬拜");
+        let custom = f._dir.path().join("not created yet 敬拜");
         f.library
             .dispatch(
                 request(
