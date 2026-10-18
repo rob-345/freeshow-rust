@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { randomUUID } from "node:crypto"
+import { randomInt, randomUUID } from "node:crypto"
 import { spawn } from "node:child_process"
 import dgram from "node:dgram"
 import fs from "node:fs"
@@ -23,14 +23,23 @@ async function until(get, ms = 2000) {
     }
     throw new Error("condition timed out")
 }
+const usedPortPairs = new Set()
 async function freePort() {
-    for (let attempt = 0; attempt < 10; attempt++) {
+    let lastError
+    for (let attempt = 0; attempt < 64; attempt++) {
+        // An OS-selected ephemeral port may repeatedly land beside a busy or
+        // excluded Windows port. Distinct high pairs also avoid our own reuse.
+        const port = randomInt(16384, 24575) * 2
+        if (usedPortPairs.has(port)) continue
+        usedPortPairs.add(port)
         const first = net.createServer()
-        await new Promise((resolve) => first.listen(0, "127.0.0.1", resolve))
-        const port = first.address().port
         const second = net.createServer()
         const udp = dgram.createSocket("udp4")
         try {
+            await new Promise((resolve, reject) => {
+                first.once("error", reject)
+                first.listen(port, "127.0.0.1", resolve)
+            })
             await new Promise((resolve, reject) => {
                 second.once("error", reject)
                 second.listen(port + 1, "127.0.0.1", resolve)
@@ -40,7 +49,8 @@ async function freePort() {
                 udp.bind(port, "127.0.0.1", resolve)
             })
             return port
-        } catch {
+        } catch (error) {
+            lastError = `${error.code}: ${error.message}`
         } finally {
             await Promise.all([first, second].map((server) => (server.listening ? new Promise((resolve) => server.close(resolve)) : null)))
             try {
@@ -48,7 +58,7 @@ async function freePort() {
             } catch {}
         }
     }
-    throw new Error("unable to reserve loopback API ports")
+    throw new Error(`unable to reserve distinct loopback API port pairs: ${lastError}`)
 }
 function rust(limits = {}) {
     const child = spawn(binary, [], { stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, FREESHOW_API_TEST_LIMITS: JSON.stringify({ reply_ms: 120, dynamic_ms: 150, handshake_ms: 300, ...limits }) } })
