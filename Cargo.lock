@@ -529,6 +529,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-discovery"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "socket2",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-documents"
 version = "0.1.0"
 dependencies = [

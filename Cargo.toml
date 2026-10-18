@@ -18,6 +18,7 @@ members = [
     "crates/freeshow-exif",
     "crates/freeshow-documents",
     "crates/freeshow-remotes",
+    "crates/freeshow-discovery",
     "crates/freeshow-encoders",
     "crates/freeshow-scriptures",
     "crates/freeshow-media-copy",
