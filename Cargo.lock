@@ -643,6 +643,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-scriptures"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-system"
 version = "0.1.0"
 dependencies = [
