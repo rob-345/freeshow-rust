@@ -184,3 +184,5 @@ CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=1 CARGO_
 CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo clippy --manifest-path /tmp/freeshow-discovery-host-check/Cargo.toml --offline --all-targets --target x86_64-pc-windows-gnu -- -D warnings
 CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo clippy --manifest-path /tmp/freeshow-discovery-host-check/Cargo.toml --offline --all-targets --target aarch64-apple-darwin -- -D warnings
 ```
+
+CI additionally exposed the independent cancellation wakeup path in failure retention. The unwind guard already preceded reply/consumer destruction, but `retain` cancelled waiters before storing the cause. It now stores the first failure before publishing closing/cancellation, so both wakeup paths observe the sticky cause. The unchanged real-panic witness regression passes 64 consecutive local executions; the complete focused discovery/query/remotes set also passes.

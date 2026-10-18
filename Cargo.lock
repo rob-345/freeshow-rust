@@ -828,6 +828,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-opus"
+version = "0.1.0"
+dependencies = [
+ "libloading",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-remotes"
 version = "0.1.0"
 dependencies = [
@@ -906,6 +917,15 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tokio-util",
+]
+
+[[package]]
+name = "freeshow-timecode"
+version = "0.1.0"
+dependencies = [
+ "freeshow-midi",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

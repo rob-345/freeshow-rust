@@ -5,8 +5,6 @@ edition = "2021"
 license = "GPL-3.0-only"
 description = "Bounded source timecode routing and LTC lifecycle intents"
 
-[workspace]
-
 [dependencies]
 freeshow-midi = { path = "../freeshow-midi" }
 serde = { version = "1", features = ["derive"] }
@@ -15,7 +13,3 @@ serde_json = { version = "1", features = ["preserve_order"] }
 [[bin]]
 name = "freeshow-timecode-parity"
 path = "src/bin/parity.rs"
-
-[profile.dev]
-debug = 0
-incremental = false

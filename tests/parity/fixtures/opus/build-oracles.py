@@ -10,13 +10,17 @@ import json
 import os
 from pathlib import Path
 import platform
+import shutil
 import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", required=True)
-parser.add_argument("--node-headers", default="/usr/include/node")
+node = Path(shutil.which("node") or "node").resolve()
+bundled_headers = node.parent.parent / "include/node"
+parser.add_argument("--node-headers", default=str(bundled_headers if (bundled_headers / "node_api.h").is_file() else Path("/usr/include/node")))
 parser.add_argument("--system-opus", default="/lib/x86_64-linux-gnu/libopus.so.0")
 args = parser.parse_args()
+assert (Path(args.node_headers) / "node_api.h").is_file(), "N-API headers required for original addon build"
 root = Path(__file__).resolve().parents[4]
 assert platform.system() == "Linux" and platform.machine() == "x86_64", "oracle build verified Linux/x64 only"
 package = root / "node_modules/@discordjs/opus"

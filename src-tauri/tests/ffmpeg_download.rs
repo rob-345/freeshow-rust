@@ -9,7 +9,9 @@ use freeshow_core::{
     service::LibraryService,
 };
 use freeshow_media::{MediaConfig, MediaService};
-use serde_json::{json, Value};
+use serde_json::json;
+#[cfg(unix)]
+use serde_json::Value;
 use std::{
     fs,
     io::Write,

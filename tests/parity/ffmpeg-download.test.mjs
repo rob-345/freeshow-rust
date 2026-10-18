@@ -35,11 +35,16 @@ const handler = main.properties.find((item) => item.name?.getText(responses) ===
 function oracle(directory, platform, arch, url, options = {}) {
     const events = [],
         trace = [],
+        chmods = [],
         chunks = [],
         requested = []
     let artifact, mode
     const boundaryFs = {
         ...fsp,
+        chmod: async (file, mode) => {
+            chmods.push(mode)
+            return fsp.chmod(file, mode)
+        },
         rename: async (from, to) => {
             artifact = await fsp.readFile(from)
             mode = (await fsp.stat(from)).mode & 0o777
@@ -86,7 +91,7 @@ function oracle(directory, platform, arch, url, options = {}) {
         console: { error() {}, warn() {} }
     })
     new vm.Script(ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText).runInContext(context, { timeout: 1000 })
-    return { ...context.result, events, trace, chunks, requested, artifact: () => artifact, mode: () => mode }
+    return { ...context.result, events, trace, chmods, chunks, requested, artifact: () => artifact, mode: () => mode }
 }
 async function native(cases) {
     const child = spawn(binary, [], { stdio: ["pipe", "pipe", "pipe"] })
@@ -181,7 +186,12 @@ test("real HTTP/gzip inert bytes match actual source pipeline and exact host mod
             assert.deepEqual(Buffer.from(value.bytes), bytes)
             assert.equal(expected.requested[0], expected.getDownloadUrl())
             assert.deepEqual(value.completionPlanIfInstalled, { reply, progress: structuredClone(expected.events.at(-1).data) })
-            assert.equal(value.install.mode, platform === "win32" ? null : expected.mode())
+            // Compare the actual source chmod request with the native install
+            // intent. A simulated Unix platform still executes on the host FS;
+            // Node on Windows cannot expose Unix execute bits through stat.
+            assert.deepEqual(expected.chmods, platform === "win32" ? [] : [0o755])
+            assert.equal(value.install.mode, expected.chmods[0] ?? null)
+            if (process.platform !== "win32" && platform !== "win32") assert.equal(expected.mode(), 0o755)
             assert.equal(value.install.destination, path.join(nativeRoot, platform === "win32" ? "ffmpeg.exe" : "ffmpeg"))
             const commands = normalize(value.install.postInstall, nativeRoot).map(({ program, args }) => [program, args])
             assert.deepEqual(

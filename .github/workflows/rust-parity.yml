@@ -38,7 +38,7 @@ jobs:
           cache: npm
       - run: rustup show
       - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libopus0 build-essential
       - uses: actions/cache@v4
         with:
           path: |
@@ -49,8 +49,14 @@ jobs:
           restore-keys: ${{ runner.os }}-${{ runner.arch }}-rust-core-
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run rust:snapshot
+      - if: runner.os == 'Linux'
+        run: |
+          python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles
+          echo "FREESHOW_OPUS_ORACLE_DIR=$GITHUB_WORKSPACE/target/opus-oracles" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_OPUS=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_OPUS_ORACLE=1" >> "$GITHUB_ENV"
       - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness -- -D warnings
+      - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness,freeshow-opus/test-harness -- -D warnings
       - run: npm run rust:test
       - run: npm run rust:parity:report
       - if: inputs.require_full_parity == true

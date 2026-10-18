@@ -225,12 +225,16 @@ fn failure(shared: &Shared) -> Option<WireError> {
         .map(|(code, message)| error(code, message.clone()))
 }
 fn retain(shared: &Shared, e: WireError) {
+    {
+        let mut first = shared.failure.lock().unwrap_or_else(|e| e.into_inner());
+        if first.is_none() {
+            *first = Some((e.code, e.message));
+        }
+    }
+    // Cancellation wakes request futures independently of their reply channel.
+    // Publish the sticky cause before either admission closes or waiters wake.
     shared.closing.store(true, Ordering::Release);
     shared.cancelled.cancel();
-    let mut first = shared.failure.lock().unwrap_or_else(|e| e.into_inner());
-    if first.is_none() {
-        *first = Some((e.code, e.message));
-    }
 }
 impl NetworkSnapshots {
     pub fn start(limits: SnapshotLimits) -> Result<Self> {
