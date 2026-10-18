@@ -108,6 +108,72 @@ mod files {
     use std::{fs, time::Duration};
     use tokio::{sync::oneshot, time::timeout};
 
+    #[tokio::test]
+    async fn completed_uncollected_replies_retain_whole_host_admission() {
+        use std::{
+            future::Future,
+            sync::atomic::{AtomicBool, Ordering},
+            task::{Context, Poll, Wake, Waker},
+        };
+        struct Ready(AtomicBool);
+        impl Wake for Ready {
+            fn wake(self: Arc<Self>) {
+                self.0.store(true, Ordering::Release);
+            }
+            fn wake_by_ref(self: &Arc<Self>) {
+                self.0.store(true, Ordering::Release);
+            }
+        }
+        let f = Fixture::new();
+        let context = f.library.context().unwrap();
+        let mut waiting = vec![];
+        for _ in 0..2 {
+            let ready = Arc::new(Ready(AtomicBool::new(false)));
+            let waker = Waker::from(ready.clone());
+            let mut future = Box::pin(
+                f.native
+                    .dispatch(request(json!({"name":"missing","id":"held"}), &context)),
+            );
+            assert!(future
+                .as_mut()
+                .poll(&mut Context::from_waker(&waker))
+                .is_pending());
+            waiting.push((ready, waker, future));
+        }
+        timeout(Duration::from_secs(3), async {
+            while waiting
+                .iter()
+                .any(|(ready, _, _)| !ready.0.load(Ordering::Acquire))
+            {
+                tokio::time::sleep(Duration::from_millis(1)).await;
+            }
+        })
+        .await
+        .unwrap();
+        // Wake is from the host oneshot becoming ready. Neither native caller
+        // has been polled again; replies are complete but remain uncollected.
+        assert_eq!(f.native.status()["requests"], 2);
+        assert_eq!(
+            f.native
+                .dispatch(request(json!({"name":"missing"}), &context))
+                .await
+                .unwrap_err()
+                .code,
+            "scriptures_busy"
+        );
+        for (_, waker, mut future) in waiting {
+            let Poll::Ready(result) = future.as_mut().poll(&mut Context::from_waker(&waker)) else {
+                panic!("Host completion woke before its reply was ready")
+            };
+            assert_eq!(
+                result.unwrap()[0].message.data,
+                Some(json!({"id":"held","error":"not_found"}))
+            );
+        }
+        assert_eq!(f.native.status()["requests"], 0);
+        f.close().await;
+    }
+
     async fn block_owner(
         f: &Fixture,
     ) -> (std::sync::mpsc::SyncSender<()>, tokio::task::JoinHandle<()>) {

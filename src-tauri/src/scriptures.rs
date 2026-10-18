@@ -184,14 +184,16 @@ impl NativeScriptures {
         // Own the whole admitted continuation through any ordered directory
         // attempt. Caller cancellation cannot suppress its independent ALERT.
         tokio::spawn(async move {
+            let retained = lease.clone();
             let result = native.run(request, lease).await;
-            if let Err(Err(error)) = send.send(result) {
+            if let Err((Err(error), _lease)) = send.send((result, retained)) {
                 eprintln!("Detached scripture request failed: {}", error.message);
             }
         });
-        receive
+        let (result, _lease) = receive
             .await
-            .map_err(|_| WireError::new("scriptures_worker", "Native scripture owner stopped"))?
+            .map_err(|_| WireError::new("scriptures_worker", "Native scripture owner stopped"))?;
+        result
     }
     async fn run(&self, request: Request, lease: Arc<Lease>) -> Result<Vec<Event>, WireError> {
         self.validate(&request, &lease)?;
