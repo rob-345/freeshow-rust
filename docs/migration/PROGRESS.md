@@ -274,3 +274,7 @@ FREESHOW_TEST_FONT_DIR=/home/rob-admin/.local/share/freeshow-test-fonts/usr/shar
 The local emoji package was extracted from `fonts-noto-color-emoji_2.047-0ubuntu0.24.04.1_all.deb` under `/home/rob-admin/.local/share/freeshow-test-fonts`, without system installation.
 
 These machine-specific variables are not required on a normal machine with Tauri's system development packages installed.
+
+## First expanded native CI run
+
+Run [39147987362](https://github.com/rob-345/freeshow-rust/actions/runs/39147987362) on `c9e62492` passed Linux/macOS/Windows core, the full Linux desktop workflow and the macOS native build/Clippy/host tests. Windows native build and Clippy also passed; one lookup host test expected a mixed-separator fixture path while the service correctly returned native separators. The fixture now joins separate path components without weakening value/cache assertions. The system integration and fixture correction are receiving a fresh six-job run. Windows/macOS GUI/hardware parity remains unverified.
