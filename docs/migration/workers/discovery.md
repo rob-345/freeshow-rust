@@ -4,8 +4,9 @@ This independent crate ports the publication helper in unchanged
 `src/electron/data/bonjour.ts` from Electron oracle
 `2d94defcf98175e4f5c9504e7f4fd1d33c35c975`. Its normalized source SHA256 is
 `6ff78829b6f8a383d7584fdbec69e134892bb3299fbd7189901e41bcd4c5e869`.
-It closes a specific transport capability gap; native host integration,
-packaged application discovery, and LAN interoperability are not claimed here.
+It closes a specific transport capability gap. The separate native host wrapper
+below is prepared and tested without shared routing/manifests; packaged application
+discovery and LAN interoperability are not claimed here.
 The existing `freeshow-api` already implements the pinned OSC receiver/action
 routing; this crate does not duplicate that listener.
 
@@ -155,6 +156,145 @@ Intentional differences are explicit:
   Windows/macOS LAN behavior were not exercised on this Linux worker. Controlled
   UDP validates wire semantics, not physical-network discovery or firewall reach.
 
+## Prepared native owner
+
+`src-tauri/src/discovery.rs` contains a native-only `NativeDiscovery` wrapper;
+`src-tauri/tests/discovery.rs` imports it directly. Neither file adds an IPC
+handler, changes remote/API ownership or emits a renderer success callback.
+The coordinator owns routing and application setup/teardown integration.
+
+```rust,ignore
+// Once during native setup, outside request paths. Keep these inputs if a
+// failed construction is retried; never recapture/reseed on library changes.
+let frozen = FrozenDiscoveryInputs::capture()?;
+let config = NativeDiscovery::production_config();
+let (discovery, native_events) = NativeDiscovery::new(library.clone(), config, frozen)?;
+// Listener owner has completed actual binding and still owns these listeners.
+let run = discovery.begin(&full_context, &bound_servers.generation.run).await?;
+for (name, actual_endpoint) in trusted_started_endpoints {
+    discovery.started_port(&run, name, actual_endpoint).await?;
+}
+discovery.stop(&run).await?; // before closing those listeners, even same-context restarts
+// Library continuation: only retires obsolete full contexts; never starts one.
+discovery.context_changed().await?;
+discovery.shutdown().await?;
+```
+
+`FrozenDiscoveryInputs` and opaque `DiscoveryRun` have private fields and no
+Deserialize. Inputs hold the startup hostname, ordered native interface snapshot
+and UUID entropy's first three random bytes. Config's instance ID is replaced by
+that frozen suffix. macOS production config selects `/usr/bin/dns-sd` directly;
+it does not use renderer paths or PATH lookup. Controlled tests provide a private
+helper executable or loopback transport through trusted native construction only.
+No production wrapper method accepts a `Request`/JSON command. The coordinator
+must call `started_port` from the native listener owner's actual bind receipt,
+never from requested config ports or client messages. A `SocketAddr` parameter is
+native provenance supplied by that owner, not a kernel listener liveness proof
+inside this independent wrapper. OUTPUT_STREAM still needs its real listener
+owner before that name may be published.
+
+The wrapper stores the full `RuntimeContext`, the listener owner's run nonce and
+a separate fresh discovery nonce. Admission and execution both validate full
+current context; every publication validates the exact binding token. Reusing a
+listener run string cannot authorize an old token. Stop accepts the exact old
+binding after selection so cleanup remains possible. Delayed context hooks leave
+an already-current fresh binding alone. Status's `actualPorts` records the first
+actual endpoint accepted for each publication name; it is scheduling evidence,
+not evidence of peer receipt or dns-sd registration. Existing names retain their
+first port until restart, matching the source.
+
+There are 16 admitted FIFO native jobs, one separately owned context cleanup,
+four coalesced native cleanup waiters and 64 forwarded native events, in addition
+to the independent service's configured bounds. Accepted jobs survive caller
+Drop without per-request tasks. Coalescing revisions and completion share a
+mutex, preventing a selection arriving at completion from being lost, including
+when its caller is dropped. Sustained dropped-caller churn is capped at sixteen
+cleanup passes, then returns terminal `discovery_refresh_limit`. Terminal
+cancellation bypasses both queues. There are three fixed host Tokio tasks:
+owner, event pump and supervisor, plus the service's one runtime/thread. No
+blocking-pool snapshot task or per-address task is hidden. Setup snapshot calls
+are synchronous and cannot be preempted.
+
+The supervisor joins the owner, always shuts down/joins the service, explicitly
+cancels and joins the pump, and preserves the first bounded terminal failure.
+Shutdown joins the finished supervisor; retry/context refresh cannot turn an
+owner panic or teardown failure into success. Lost supervisor completion triggers
+best-effort independent-service shutdown and pump cancellation while retaining a
+terminal failure; it does not claim that missing host task joins succeeded. Successful shutdown has no service
+socket or direct child. Dropping the final host requests cleanup; orderly CLOSE
+must await `shutdown`. Final OS/thread destructors and kernel calls remain outside
+hard wall-clock cancellation guarantees.
+
+Native events carry the original full context, listener run and service run.
+The pump checks current exact provenance before forwarding and uses `try_send`;
+receiver congestion drops bounded diagnostics with counters rather than blocking
+teardown or filling a WebView queue. These are native log/status evidence, not
+retained client actions. The eventual consumer must not retag already-forwarded
+old events or treat them as current availability. Keep logging bounded. A
+publication/start/stop failure must be logged explicitly while unrelated remote
+listener closure and accepted connection cleanup still complete.
+
+### Native OS snapshot boundaries
+
+Linux/macOS capture uses native `getifaddrs`, preserving returned candidate order,
+UP+RUNNING filtering, loopback flags and physical-address matching (including
+Linux alias prefixes). IPv4/IPv6 addresses are grouped by first interface name,
+then JavaScript integer-own-key order is applied. Windows uses native
+`GetAdaptersAddresses(AF_UNSPEC)` with the source libuv skip-anycast,
+skip-multicast and skip-DNS-server flags; Up status, FriendlyName, unicast order,
+physical-address length and loopback adapter type follow the inspected Node
+22.21.1 implementation. Raw hostname follows the native system service approach;
+the source's `.local` removal for display names is not applied to Bonjour hosts.
+No native collector subprocess, network request or multicast socket is used.
+
+Native output retains the crate's 32 interfaces/16 addresses per interface/name
+bounds. Unix list traversal is capped at 1024 entries; `getifaddrs` itself allocates
+its OS-owned list before Rust can check it, so that allocation and the syscall
+have no application-enforced memory/time cap. Windows supplies an aligned buffer
+capped at 256 KiB and makes at most three bounded-buffer calls. Native interface
+names/hostname with lone UTF-16 surrogates and unexpected address families fail
+explicitly. Calls are not atomic against adapter churn. The test brackets capture
+with Node reads, retries at most three changing snapshots, and compares only a
+stable pair rather than skipping a mismatch.
+
+The first actual Linux source/native capture matches hostname, ordered IPv4/IPv6
+candidates, family, internal flag and MAC, plus actual hash-pinned
+`getLocalIPs` output. The Node subprocess records its Node/libuv versions and is
+bounded to 15 seconds and 1 MiB per output stream. Native Windows/macOS order,
+adapter semantics and hostname behavior remain pending native CI; compilation
+is not evidence of those OS behaviors. The collector was informed by primary
+[Node OS bindings](https://github.com/nodejs/node/blob/v22.21.1/src/node_os.cc),
+[Linux libuv](https://github.com/nodejs/node/blob/v22.21.1/deps/uv/src/unix/linux.c),
+[macOS libuv](https://github.com/nodejs/node/blob/v22.21.1/deps/uv/src/unix/bsd-ifaddrs.c)
+and [Windows libuv](https://github.com/nodejs/node/blob/v22.21.1/deps/uv/src/win/util.c).
+No source body was vendored into this wrapper.
+
+The wrapper freezes the whole snapshot for its lifetime. Source TXT startup IP
+freezing is preserved; live source membership refresh and later per-publication
+hostname/interface changes remain deliberate unsupported refresh behavior.
+Native macOS registration, Windows/macOS LAN multicast/firewall reach, unusual
+adapter providers, exotic IPv6 formatting and network changes during capture are
+not certified. `Spawned` remains only process-creation evidence.
+
+### Coordinator dependency/wiring additions
+
+The final commit contains only the new module, new tests and this worker doc.
+The temporary standalone check manifest is outside the repository and is not an
+application integration. Required coordinator additions are:
+
+- Add the independent `freeshow-discovery` workspace member/native dependency,
+  removing its temporary workspace/lock as usual.
+- Add native Windows `windows-sys = "0.61"` features `Win32_Foundation`,
+  `Win32_NetworkManagement_IpHelper`, `Win32_NetworkManagement_Ndis`,
+  `Win32_Networking_WinSock`. Existing native Unix `libc`, UUID v4, Tokio and
+  tokio-util dependencies suffice; discovery's features supply runtime/net/time.
+- Add native test-only `socket2 = "0.6"` for the actual Windows exclusive-bind
+  failure fixture. All its sockets are loopback.
+- Construct once at setup, retain the bounded native event receiver for logging,
+  and pass an opaque run from actual remote listener start through stop/restart.
+  Refresh during accepted library continuation; explicitly await terminal CLOSE.
+  Do not add a renderer discovery ACK or port/path command.
+
 ## Integration order
 
 The native remote owner creates one discovery service, then begins a run and
@@ -198,4 +338,31 @@ checks passed. Checks used `CARGO_BUILD_JOBS=2`, `CARGO_INCREMENTAL=0`,
 CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 cargo test --manifest-path crates/freeshow-discovery/Cargo.toml --offline
 CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 cargo build --manifest-path crates/freeshow-discovery/Cargo.toml --example discovery-parity --offline
 FREESHOW_DISCOVERY_BIN="$PWD/crates/freeshow-remotes/target/debug/examples/discovery-parity" node --test tests/parity/discovery.test.mjs
+```
+
+Native wrapper focused preparation: eleven Linux host tests pass, covering actual
+UDP records/goodbyes/first-port retention, frozen full-context events, late timer
+cancellation, stale queued admission and reused listener IDs, dropped begin and
+coalesced retirement callers, overload/non-starvable terminal cleanup, an actual
+owner task panic with sticky retry failure and socket rebind, lost-supervisor fallback that remains failed while reclaiming the independent runtime, genuine controlled
+child force kill/reap, a removed executable spawn failure/recovery and the actual
+Node OS/source comparison. Unix helpers `exec /bin/sleep` so no test descendant
+escapes direct-child ownership; they never execute system dns-sd or advertise.
+Root native/GUI integration and physical network tests remain coordinator work.
+
+The wrapper checks above used the uncommitted temporary manifest
+`/tmp/freeshow-discovery-host-check/Cargo.toml`, depending only on this worktree's
+core/discovery libraries plus the native dependencies listed above, with its
+`[[test]]` pointing to the new `src-tauri/tests/discovery.rs`. No Tauri/GUI/native
+application binary or root assets were compiled. The equivalent integrated check
+is `cargo test --manifest-path src-tauri/Cargo.toml --test discovery` after the
+coordinator adds those dependencies. Exact local focused commands:
+
+```sh
+FREESHOW_TEST_NODE=/home/rob-admin/.local/share/freeshow-oracle-node/node-v22.21.1-linux-x64/bin/node CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo test --manifest-path /tmp/freeshow-discovery-host-check/Cargo.toml --offline --test discovery
+CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo clippy --manifest-path /tmp/freeshow-discovery-host-check/Cargo.toml --offline --all-targets -- -D warnings
+CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo clippy --manifest-path /tmp/freeshow-discovery-host-check/Cargo.toml --offline --all-targets --target x86_64-pc-windows-gnu -- -D warnings
+CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo clippy --manifest-path /tmp/freeshow-discovery-host-check/Cargo.toml --offline --all-targets --target aarch64-apple-darwin -- -D warnings
+rustfmt --edition 2021 --check src-tauri/src/discovery.rs src-tauri/tests/discovery.rs
+npx prettier --config config/formatting/.prettierrc.yaml --check docs/migration/workers/discovery.md
 ```
