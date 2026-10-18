@@ -1,5 +1,7 @@
 #[path = "../src/discovery.rs"]
 mod discovery;
+#[path = "../src/network_snapshot.rs"]
+mod network_snapshot;
 use discovery::{FrozenDiscoveryInputs, NativeDiscovery, NativeDiscoveryEvents};
 use freeshow_core::{
     protocol::{Request, RuntimeContext},
@@ -657,8 +659,9 @@ fn bounded_node(mut command: Command) -> Value {
     assert!(status.success(), "{err}");
     serde_json::from_str(&out).unwrap()
 }
-#[test]
-fn frozen_actual_os_candidates_and_hostname_match_node_native_order_and_source_get_local_ips() {
+#[tokio::test]
+async fn frozen_actual_os_candidates_and_hostname_match_node_native_order_and_source_get_local_ips()
+{
     // No publication or socket bind: compare native OS reads on this actual OS.
     let node = std::env::var_os("FREESHOW_TEST_NODE").unwrap_or_else(|| "node".into());
     let source =
@@ -688,11 +691,14 @@ fn frozen_actual_os_candidates_and_hostname_match_node_native_order_and_source_g
         command.args(["-e", script]).arg(&source).current_dir(root);
         bounded_node(command)
     };
+    let snapshots =
+        network_snapshot::NetworkSnapshots::start(network_snapshot::SnapshotLimits::default())
+            .unwrap();
     let mut stable = false;
     for _ in 0..3 {
         let before = capture_node();
         eprintln!("Native discovery source runtime: {}", before["runtime"]);
-        let inputs = FrozenDiscoveryInputs::capture().unwrap();
+        let inputs = FrozenDiscoveryInputs::capture(&snapshots).await.unwrap();
         let after = capture_node();
         if before != after {
             continue;
@@ -714,6 +720,7 @@ fn frozen_actual_os_candidates_and_hostname_match_node_native_order_and_source_g
     );
     // Production picks a fixed native mac executable, never a renderer path or
     // PATH lookup. Constructing this config does not create any socket/process.
+    snapshots.shutdown().await.unwrap();
     let config = NativeDiscovery::production_config();
     if cfg!(target_os = "macos") {
         assert!(

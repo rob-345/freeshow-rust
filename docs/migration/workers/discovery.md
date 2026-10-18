@@ -164,9 +164,11 @@ handler, changes remote/API ownership or emits a renderer success callback.
 The coordinator owns routing and application setup/teardown integration.
 
 ```rust,ignore
-// Once during native setup, outside request paths. Keep these inputs if a
-// failed construction is retried; never recapture/reseed on library changes.
-let frozen = FrozenDiscoveryInputs::capture()?;
+// One fixed OS worker shared with live MAIN.IP queries for the process lifetime.
+let snapshots = NetworkSnapshots::start(SnapshotLimits::default())?;
+// Once during async native setup. Keep these inputs if a failed construction
+// is retried; never recapture/reseed on library changes.
+let frozen = FrozenDiscoveryInputs::capture(&snapshots).await?;
 let config = NativeDiscovery::production_config();
 let (discovery, native_events) = NativeDiscovery::new(library.clone(), config, frozen)?;
 // Listener owner has completed actual binding and still owns these listeners.
@@ -178,6 +180,8 @@ discovery.stop(&run).await?; // before closing those listeners, even same-contex
 // Library continuation: only retires obsolete full contexts; never starts one.
 discovery.context_changed().await?;
 discovery.shutdown().await?;
+// Drain every live-query consumer too, then the shared OS owner last.
+snapshots.shutdown().await?;
 ```
 
 `FrozenDiscoveryInputs` and opaque `DiscoveryRun` have private fields and no
@@ -212,8 +216,13 @@ when its caller is dropped. Sustained dropped-caller churn is capped at sixteen
 cleanup passes, then returns terminal `discovery_refresh_limit`. Terminal
 cancellation bypasses both queues. There are three fixed host Tokio tasks:
 owner, event pump and supervisor, plus the service's one runtime/thread. No
-blocking-pool snapshot task or per-address task is hidden. Setup snapshot calls
-are synchronous and cannot be preempted.
+blocking-pool snapshot task or per-address task is hidden. The reusable collector
+in `network_snapshot.rs` adds one fixed OS worker shared by discovery startup and
+all live IP requests; creating/restarting a consumer does not create another
+thread. Startup capture awaits its bounded queue instead of blocking Tokio.
+Discovery shutdown does not close that shared owner. See
+[the live network query worker](network-queries.md) for its admission, retained
+completed-result ownership, retryable shutdown and syscall limits.
 
 The supervisor joins the owner, always shuts down/joins the service, explicitly
 cancels and joins the pump, and preserves the first bounded terminal failure.
@@ -236,7 +245,8 @@ listener closure and accepted connection cleanup still complete.
 
 ### Native OS snapshot boundaries
 
-Linux/macOS capture uses native `getifaddrs`, preserving returned candidate order,
+The shared `src-tauri/src/network_snapshot.rs` collector uses native `getifaddrs`
+on Linux/macOS, preserving returned candidate order,
 UP+RUNNING filtering, loopback flags and physical-address matching (including
 Linux alias prefixes). IPv4/IPv6 addresses are grouped by first interface name,
 then JavaScript integer-own-key order is applied. Windows uses native
@@ -278,7 +288,9 @@ not certified. `Spawned` remains only process-creation evidence.
 
 ### Coordinator dependency/wiring additions
 
-The final commit contains only the new module, new tests and this worker doc.
+The original native-host milestone is `2bbb1a1f`; the follow-up shared snapshot
+extraction changes only owned modules/tests/docs. Neither edits application
+routes, state or manifests.
 The temporary standalone check manifest is outside the repository and is not an
 application integration. Required coordinator additions are:
 
@@ -290,6 +302,11 @@ application integration. Required coordinator additions are:
   tokio-util dependencies suffice; discovery's features supply runtime/net/time.
 - Add native test-only `socket2 = "0.6"` for the actual Windows exclusive-bind
   failure fixture. All its sockets are loopback.
+- Add `network_snapshot` and `network_queries` modules and native direct
+  `serde = "1"` for bounded wire counting. Construct one `NetworkSnapshots`,
+  await `FrozenDiscoveryInputs::capture(&snapshots)`, and share its clone with
+  live IP queries. Drain all consumers before awaiting `snapshots.shutdown()`;
+  retain the owner after a retryable shutdown timeout.
 - Construct once at setup, retain the bounded native event receiver for logging,
   and pass an opaque run from actual remote listener start through stop/restart.
   Refresh during accepted library continuation; explicitly await terminal CLOSE.
