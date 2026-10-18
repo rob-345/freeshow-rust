@@ -92,15 +92,16 @@ def run():
         def script(source, *args):
             return command("POST", "/execute/sync", {"script": source, "args": list(args)})
 
-        def wait(predicate, label, seconds=25):
+        def wait(predicate, label, seconds=25, record=True):
             deadline = time.monotonic() + seconds
             last_error = None
             while time.monotonic() < deadline:
                 try:
                     value = predicate()
                     if value:
-                        steps.append(label)
-                        print("PASS", label, flush=True)
+                        if record:
+                            steps.append(label)
+                            print("PASS", label, flush=True)
                         return value
                 except Exception as error:
                     last_error = error
@@ -110,14 +111,22 @@ def run():
         def element(selector):
             return command("POST", "/element", {"using": "css selector", "value": selector})[ELEMENT]
 
+        def click_element(found, label):
+            reference = {ELEMENT: found}
+            script("arguments[0].scrollIntoView({block:'nearest',inline:'nearest'})", reference)
+            # Observe the hit target before the one actual WebDriver click. A
+            # fading Svelte backdrop can cover a button after its popup unmounts.
+            wait(lambda: script("const e=arguments[0],r=e.getBoundingClientRect();return r.width>0 && r.height>0 && e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))", reference), "Clickable " + label, record=False)
+            command("POST", f"/element/{found}/click", {})
+
         def click(selector):
-            command("POST", f"/element/{element(selector)}/click", {})
+            click_element(element(selector), selector)
 
         def click_text(text):
             # Locate by text in the real document, then perform a WebDriver click.
             literal = json.dumps(text)
             found = command("POST", "/element", {"using": "xpath", "value": f"//*[normalize-space(.)={literal} and not(.//*[normalize-space(.)={literal}])]"})[ELEMENT]
-            command("POST", f"/element/{found}/click", {})
+            click_element(found, text)
 
         def fill(selector, text):
             found = element(selector)

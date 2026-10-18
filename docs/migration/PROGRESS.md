@@ -66,6 +66,8 @@ The real Linux workflow now selects a folder during onboarding, saves there and 
 
 Latest local suite: **15 Rust tests, 33 Node tests and 15 frontend regression tests passed** (63 total), including the existing generated show/retention corpora. The core now exposes **32 MAIN handlers**; this remains a count of handlers, not a parity percentage. The expanded native Linux workflow passed. The frontend/native binary build, core/native Clippy, formatting and snapshot checks passed locally. The complete parity gate still fails because major features remain unported.
 
+Remote run `39127552216` passed core checks on all three operating systems. The desktop job reached the save-failure retry, then clicked New Show while a closing alert backdrop still covered it. The harness now observes the hit target before every actual click, without retrying click actions. The full local desktop workflow passed after this change.
+
 The untouched upstream unit baseline was run before changes: **179 passed, 2 failed** across 12 files. Both failures were in `src/electron/cloud/syncManager.test.ts`:
 
 1. `multiple machines sync scenarios > Scenario 1: if not found locally, and marked as 'deleted' in cloud: skip` (line 845).
