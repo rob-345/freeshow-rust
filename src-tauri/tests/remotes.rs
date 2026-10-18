@@ -1,5 +1,11 @@
 #[path = "../src/context_changes.rs"]
 mod context_changes;
+#[allow(dead_code)]
+#[path = "../src/discovery.rs"]
+mod discovery;
+#[allow(dead_code)]
+#[path = "../src/network_snapshot.rs"]
+mod network_snapshot;
 #[path = "../src/remotes.rs"]
 mod remotes;
 
@@ -8,17 +14,20 @@ use freeshow_core::{
     runtime::Runtime,
     service::LibraryService,
 };
+use freeshow_discovery::{
+    decode, DiscoveryConfig, DiscoveryPlatform, DiscoveryTransport, NetworkSnapshot, RecordData,
+};
 use freeshow_remotes::{RemoteConfig, ServerKind};
 use serde_json::{json, Value};
 use std::{
     future::{poll_fn, Future},
-    net::{Ipv4Addr, SocketAddr},
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     task::Poll,
     time::Duration,
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
+    net::{TcpStream, UdpSocket},
     sync::{mpsc, oneshot},
     time::timeout,
 };
@@ -38,6 +47,14 @@ fn fixture() -> (
     )
     .unwrap();
     let (send, receive) = mpsc::channel(16);
+    let config = remote_config(temp.path());
+    let native = remotes::NativeRemotes::new(library.clone(), config, move |event| {
+        send.try_send(event).map_err(|e| e.to_string())
+    })
+    .unwrap();
+    (temp, library, native, receive)
+}
+fn remote_config(root: &std::path::Path) -> RemoteConfig {
     let mut config = RemoteConfig {
         bind_ip: Ipv4Addr::LOCALHOST.into(),
         max_clients: 4,
@@ -45,7 +62,7 @@ fn fixture() -> (
         ..RemoteConfig::default()
     };
     for kind in ServerKind::ALL {
-        let dir = temp.path().join(kind.key());
+        let dir = root.join(kind.key());
         std::fs::create_dir(&dir).unwrap();
         std::fs::write(
             dir.join("index.html"),
@@ -54,11 +71,7 @@ fn fixture() -> (
         .unwrap();
         config.static_roots.insert(kind, dir);
     }
-    let native = remotes::NativeRemotes::new(library.clone(), config, move |event| {
-        send.try_send(event).map_err(|e| e.to_string())
-    })
-    .unwrap();
-    (temp, library, native, receive)
+    config
 }
 async fn start(native: &remotes::NativeRemotes, context: &RuntimeContext) -> SocketAddr {
     native.dispatch(request("MAIN","START",json!({"ports":{"remote":"0","stage":"0","controller":"0"},"disabled":{"remote":false,"stage":false,"controller":false},"max":10,"data":{}}),context),"main").await.unwrap();
@@ -518,4 +531,661 @@ async fn root_change_capacity_covers_detached_continuations_until_cleanup_finish
         changes.run(async { Ok(vec![]) }).await.unwrap_err().code,
         "context_change_shutdown"
     );
+}
+
+fn frozen_snapshot() -> NetworkSnapshot {
+    serde_json::from_value(json!({"hostname":"private-remote","interfaces":[{"name":"lo","addresses":[{"address":"127.0.0.1","family":"IPv4","internal":true,"mac":"00:00:00:00:00:00"}]}]})).unwrap()
+}
+struct DiscoveryFixture {
+    temp: tempfile::TempDir,
+    library: LibraryService,
+    native: remotes::NativeRemotes,
+    renderer: mpsc::Receiver<Event>,
+    discovery: discovery::NativeDiscovery,
+    peer: UdpSocket,
+}
+impl DiscoveryFixture {
+    async fn new(adjust: impl FnOnce(&mut DiscoveryConfig)) -> Self {
+        let temp = tempfile::tempdir().unwrap();
+        let library = LibraryService::start(
+            Runtime::new(temp.path().join("app"), temp.path().join("library")).unwrap(),
+        )
+        .unwrap();
+        let peer = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
+        let mut config = DiscoveryConfig::new([0xab, 0xcd, 0xef]);
+        config.platform = DiscoveryPlatform::Other;
+        config.probe_jitter = Duration::ZERO;
+        config.transport = DiscoveryTransport::Loopback {
+            bind: SocketAddrV4::new(Ipv4Addr::LOCALHOST, 0),
+            target: match peer.local_addr().unwrap() {
+                SocketAddr::V4(v) => v,
+                _ => unreachable!(),
+            },
+        };
+        adjust(&mut config);
+        let (discovery, events) = discovery::NativeDiscovery::new(
+            library.clone(),
+            config,
+            discovery::NativeDiscovery::test_inputs(frozen_snapshot(), [0xab, 0xcd, 0xef]),
+        )
+        .unwrap();
+        let (send, renderer) = mpsc::channel(16);
+        let native = remotes::NativeRemotes::new_with_discovery(
+            library.clone(),
+            remote_config(temp.path()),
+            discovery.clone(),
+            events,
+            move |event| send.try_send(event).map_err(|e| e.to_string()),
+        )
+        .unwrap();
+        Self {
+            temp,
+            library,
+            native,
+            renderer,
+            discovery,
+            peer,
+        }
+    }
+    fn context(&self) -> RuntimeContext {
+        self.library.context().unwrap()
+    }
+    fn endpoints(&self) -> std::collections::BTreeMap<String, SocketAddr> {
+        serde_json::from_value(self.native.status()["binding"]["bound"]["endpoints"].clone())
+            .unwrap()
+    }
+    async fn stop(&self) {
+        assert!(self
+            .native
+            .dispatch(
+                request("MAIN", "STOP", Value::Null, &self.context()),
+                "main"
+            )
+            .await
+            .unwrap()
+            .is_empty());
+    }
+}
+async fn condition(mut test: impl FnMut() -> bool) {
+    timeout(Duration::from_secs(4), async {
+        while !test() {
+            tokio::time::sleep(Duration::from_millis(2)).await;
+        }
+    })
+    .await
+    .unwrap();
+}
+fn normalize(record: &freeshow_discovery::Record) -> Value {
+    let (kind, data) = match &record.data {
+        RecordData::Name(name) => ("PTR", json!(name)),
+        RecordData::Srv {
+            port,
+            target,
+            priority,
+            weight,
+        } => (
+            "SRV",
+            json!({"port":port,"target":target,"priority":priority,"weight":weight}),
+        ),
+        RecordData::Txt(bytes) => ("TXT", json!(bytes)),
+        RecordData::A(ip) => ("A", json!(ip)),
+        RecordData::Aaaa(ip) => ("AAAA", json!(ip)),
+        _ => panic!("unexpected source record"),
+    };
+    json!({"name":record.name,"type":kind,"ttl":record.ttl,"data":data})
+}
+async fn positive_records(peer: &UdpSocket, services: usize) -> Vec<Value> {
+    timeout(Duration::from_secs(5), async {
+        let mut records = std::collections::BTreeMap::new();
+        let mut ports = std::collections::BTreeSet::new();
+        let mut bytes = [0; 9001];
+        loop {
+            let (n, _) = peer.recv_from(&mut bytes).await.unwrap();
+            for record in decode(&bytes[..n])
+                .unwrap()
+                .answers
+                .into_iter()
+                .filter(|r| r.ttl > 0)
+            {
+                if let RecordData::Srv { port, .. } = &record.data {
+                    ports.insert(*port);
+                }
+                let value = normalize(&record);
+                records.insert(value.to_string(), value);
+            }
+            if ports.len() == services {
+                return records.into_values().collect();
+            }
+        }
+    })
+    .await
+    .unwrap()
+}
+async fn no_late_positive(peer: &UdpSocket) {
+    let until = tokio::time::Instant::now() + Duration::from_millis(2100);
+    let mut bytes = [0; 9001];
+    while let Ok(Ok((n, _))) = timeout(
+        until.saturating_duration_since(tokio::time::Instant::now()),
+        peer.recv_from(&mut bytes),
+    )
+    .await
+    {
+        assert!(
+            decode(&bytes[..n])
+                .unwrap()
+                .answers
+                .iter()
+                .all(|r| r.ttl == 0),
+            "positive publication survived stop"
+        );
+    }
+}
+fn source_records(endpoints: &std::collections::BTreeMap<String, SocketAddr>) -> Vec<Value> {
+    use std::{
+        io::Read,
+        process::{Command, Stdio},
+        time::Instant,
+    };
+    let source = std::path::PathBuf::from(file!())
+        .parent()
+        .unwrap()
+        .join("../../tests/parity/discovery-oracle.mjs")
+        .canonicalize()
+        .unwrap();
+    let script = r#"import {pathToFileURL} from 'node:url'; const {originalDiscovery,dns}=await import(pathToFileURL(process.argv[1]));const snapshot=JSON.parse(process.argv[2]),ports=JSON.parse(process.argv[3]);const original=originalDiscovery(snapshot,{noIO:true});try{const map=new Map();for(const [name,port]of Object.entries(ports)){for(const r of dns.decode(dns.encode({type:'response',answers:original.records(name,port)})).answers){const v={name:r.name,type:r.type,ttl:r.ttl,data:r.type==='TXT'?r.data.map(v=>Array.from(v)):r.data};map.set(JSON.stringify(v),v);}} console.log(JSON.stringify([...map.values()]));}finally{await original.close();}"#;
+    let stdout = tempfile::NamedTempFile::new().unwrap();
+    let stderr = tempfile::NamedTempFile::new().unwrap();
+    let mut child =
+        Command::new(std::env::var_os("FREESHOW_TEST_NODE").unwrap_or_else(|| "node".into()))
+            .args(["--input-type=module", "-e", script])
+            .arg(source)
+            .arg(serde_json::to_string(&frozen_snapshot()).unwrap())
+            .arg(
+                serde_json::to_string(
+                    &endpoints
+                        .iter()
+                        .map(|(name, address)| (name, address.port()))
+                        .collect::<std::collections::BTreeMap<_, _>>(),
+                )
+                .unwrap(),
+            )
+            .stdin(Stdio::null())
+            .stdout(stdout.reopen().unwrap())
+            .stderr(stderr.reopen().unwrap())
+            .spawn()
+            .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let status = loop {
+        if let Some(status) = child.try_wait().unwrap() {
+            break status;
+        }
+        if Instant::now() >= deadline
+            || stdout.as_file().metadata().unwrap().len() > 1024 * 1024
+            || stderr.as_file().metadata().unwrap().len() > 1024 * 1024
+        {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic!("bounded discovery source oracle failed");
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    };
+    assert!(stdout.as_file().metadata().unwrap().len() <= 1024 * 1024);
+    assert!(stderr.as_file().metadata().unwrap().len() <= 1024 * 1024);
+    let mut out = String::new();
+    let mut err = String::new();
+    stdout.as_file().read_to_string(&mut out).unwrap();
+    stderr.as_file().read_to_string(&mut err).unwrap();
+    assert!(status.success(), "{err}");
+    let records: Vec<Value> = serde_json::from_str(&out).unwrap();
+    records
+        .into_iter()
+        .map(|v| (v.to_string(), v))
+        .collect::<std::collections::BTreeMap<_, _>>()
+        .into_values()
+        .collect()
+}
+#[tokio::test]
+async fn bound_three_ports_publish_actual_source_records_and_restart_with_frozen_txt() {
+    let mut fixture = DiscoveryFixture::new(|_| {}).await;
+    let first_context = fixture.context();
+    start(&fixture.native, &first_context).await;
+    let endpoints = fixture.endpoints();
+    assert_eq!(endpoints.len(), 3);
+    for endpoint in endpoints.values() {
+        assert!(TcpStream::connect(endpoint).await.is_ok());
+        assert_ne!(endpoint.port(), 0);
+    }
+    let records = positive_records(&fixture.peer, 3).await;
+    assert_eq!(records, source_records(&endpoints));
+    condition(|| {
+        fixture.native.status()["discovery"]["acceptedEvents"]
+            .as_u64()
+            .unwrap()
+            > 0
+    })
+    .await;
+    let generation = fixture.native.status()["binding"]["bound"]["generation"].clone();
+    assert_eq!(
+        fixture.native.status()["discovery"]["lastEvent"]["listenerRun"],
+        generation["run"]
+    );
+    // SERVER_DATA remains data only; embedded ports cannot redirect native listeners
+    // or replace source's first port retained until actual STOP/START.
+    fixture
+        .native
+        .dispatch(
+            request(
+                "MAIN",
+                "SERVER_DATA",
+                json!({"ports":{"remote":1},"remote":{"port":2}}),
+                &first_context,
+            ),
+            "main",
+        )
+        .await
+        .unwrap();
+    assert_eq!(fixture.endpoints(), endpoints);
+    for (kind, address) in &endpoints {
+        assert_eq!(
+            fixture.discovery.status()["binding"]["actualPorts"][kind],
+            address.to_string()
+        );
+    }
+    fixture.stop().await;
+    assert!(fixture.discovery.status()["binding"].is_null());
+    for endpoint in endpoints.values() {
+        assert!(TcpStream::connect(endpoint).await.is_err());
+    }
+    assert!(
+        fixture.renderer.try_recv().is_err(),
+        "discovery never invents a renderer ACK"
+    );
+    // Consume all old zero-TTL records before the fresh run.
+    while timeout(
+        Duration::from_millis(15),
+        fixture.peer.recv_from(&mut [0; 9001]),
+    )
+    .await
+    .is_ok()
+    {}
+    start(&fixture.native, &first_context).await;
+    let next = fixture.endpoints();
+    assert_ne!(
+        fixture.native.status()["binding"]["bound"]["generation"],
+        generation
+    );
+    assert_eq!(
+        positive_records(&fixture.peer, 3).await,
+        source_records(&next)
+    );
+    fixture.native.shutdown().await.unwrap();
+    assert_eq!(fixture.native.status()["discovery"]["joined"], true);
+    assert_eq!(fixture.discovery.status()["service"]["socket_open"], false);
+}
+#[tokio::test]
+async fn stop_and_context_retirement_before_browse_deadline_cancel_all_delayed_positives() {
+    let mut fixture = DiscoveryFixture::new(|_| {}).await;
+    let old = fixture.context();
+    start(&fixture.native, &old).await;
+    fixture.stop().await;
+    no_late_positive(&fixture.peer).await;
+    start(&fixture.native, &old).await;
+    let old_endpoints = fixture.endpoints();
+    let (_, id) = connect(old_endpoints["REMOTE"]).await;
+    let connected = event(&mut fixture.renderer).await;
+    complete(&fixture.native, &connected, true);
+    settle(&fixture.native, 1).await;
+    let new_path = fixture.temp.path().join("next");
+    std::fs::create_dir(&new_path).unwrap();
+    fixture
+        .library
+        .dispatch(
+            request(
+                "MAIN",
+                "UPDATE_DATA_PATH",
+                json!({"oldPath":old.data_path,"newPath":new_path}),
+                &old,
+            ),
+            "main",
+        )
+        .await
+        .unwrap();
+    let retiring = fixture.native.clone();
+    let refresh = tokio::spawn(async move { retiring.context_changed().await });
+    let cleanup = event(&mut fixture.renderer).await;
+    assert_eq!(cleanup.context.as_ref(), Some(&old));
+    assert_eq!(
+        cleanup.native_remote.as_ref().unwrap()["origin"],
+        "disconnect"
+    );
+    assert_eq!(
+        cleanup.native_remote.as_ref().unwrap()["message"],
+        json!({"channel":"DISCONNECT","id":id})
+    );
+    complete(&fixture.native, &cleanup, true);
+    refresh.await.unwrap().unwrap();
+    assert!(fixture.native.status()["binding"].is_null());
+    no_late_positive(&fixture.peer).await;
+    for endpoint in old_endpoints.values() {
+        assert!(TcpStream::connect(endpoint).await.is_err());
+    }
+    assert_eq!(
+        fixture
+            .native
+            .dispatch(request("MAIN", "START", Value::Null, &old), "main")
+            .await
+            .unwrap_err()
+            .code,
+        "stale_library"
+    );
+    fixture.native.shutdown().await.unwrap();
+}
+#[tokio::test]
+async fn disabled_servers_never_advertise_and_transport_bind_failure_does_not_disable_tcp() {
+    let occupied = socket2::Socket::new(
+        socket2::Domain::IPV4,
+        socket2::Type::DGRAM,
+        Some(socket2::Protocol::UDP),
+    )
+    .unwrap();
+    #[cfg(windows)]
+    {
+        use std::os::windows::io::AsRawSocket;
+        use windows_sys::Win32::Networking::WinSock::{
+            setsockopt, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
+        };
+        let enabled = 1i32;
+        // SAFETY: this live owned socket receives a correctly sized BOOL value.
+        assert_eq!(
+            unsafe {
+                setsockopt(
+                    occupied.as_raw_socket() as _,
+                    SOL_SOCKET,
+                    SO_EXCLUSIVEADDRUSE,
+                    (&enabled as *const i32).cast(),
+                    4,
+                )
+            },
+            0
+        );
+    }
+    occupied
+        .bind(&SocketAddr::from((Ipv4Addr::LOCALHOST, 0)).into())
+        .unwrap();
+    let address = occupied.local_addr().unwrap().as_socket_ipv4().unwrap();
+    let fixture = DiscoveryFixture::new(|config| {
+        if let DiscoveryTransport::Loopback { bind, .. } = &mut config.transport {
+            *bind = address;
+        }
+    })
+    .await;
+    let context = fixture.context();
+    let options = json!({"ports":{"remote":"0","stage":"0","controller":"0"},"disabled":{"remote":false,"stage":true,"controller":true},"data":{}});
+    assert!(fixture
+        .native
+        .dispatch(request("MAIN", "START", options, &context), "main")
+        .await
+        .unwrap()
+        .is_empty());
+    assert_eq!(fixture.endpoints().len(), 1);
+    let endpoint = fixture.endpoints()["REMOTE"];
+    assert_eq!(
+        http(endpoint, "GET", "/", "").await,
+        "explicit remote test fixture"
+    );
+    assert!(
+        fixture.native.status()["discovery"]["warnings"]
+            .as_u64()
+            .unwrap()
+            > 0
+    );
+    assert!(fixture.discovery.status()["binding"].is_null());
+    fixture.stop().await;
+    fixture.native.shutdown().await.unwrap();
+    assert!(TcpStream::connect(endpoint).await.is_err());
+    drop(occupied);
+    let rebound = UdpSocket::bind(address).await.unwrap();
+    drop(rebound);
+}
+#[tokio::test]
+async fn tokenless_begin_timeout_and_caller_drop_are_owned_until_stop_and_terminal() {
+    let fixture = DiscoveryFixture::new(|_| {}).await;
+    fixture
+        .native
+        .test_discovery_timeout(Duration::from_millis(50));
+    let (entered, ready) = oneshot::channel();
+    let (release, gate) = oneshot::channel();
+    let paused = fixture.discovery.clone();
+    let hold = tokio::spawn(async move { paused.pause(entered, gate).await });
+    ready.await.unwrap();
+    let caller = fixture.native.clone();
+    let context = fixture.context();
+    let task = tokio::spawn(async move { start(&caller, &context).await });
+    condition(|| fixture.discovery.status()["admittedRequests"] == 2).await;
+    task.abort();
+    let _ = task.await;
+    // After the operation deadline the native begin reply is still retained.
+    condition(|| {
+        fixture.native.status()["discovery"]["warnings"]
+            .as_u64()
+            .unwrap()
+            > 0
+    })
+    .await;
+    assert!(fixture.native.status()["binding"].is_object());
+    assert!(fixture.native.status()["binding"]["discoveryRun"].is_null());
+    release.send(()).unwrap();
+    hold.await.unwrap().unwrap();
+    fixture.stop().await;
+    assert!(fixture.discovery.status()["binding"].is_null());
+    no_late_positive(&fixture.peer).await;
+    // Cancel a second accepted begin before it has returned any token.
+    let (entered, ready) = oneshot::channel();
+    let (_release, gate) = oneshot::channel();
+    let paused = fixture.discovery.clone();
+    let hold = tokio::spawn(async move { paused.pause(entered, gate).await });
+    ready.await.unwrap();
+    let caller = fixture.native.clone();
+    let context = fixture.context();
+    let task = tokio::spawn(async move { start(&caller, &context).await });
+    condition(|| fixture.discovery.status()["admittedRequests"] == 2).await;
+    fixture
+        .native
+        .test_discovery_timeout(Duration::from_secs(3));
+    fixture.native.shutdown().await.unwrap();
+    assert!(task.await.is_err());
+    assert!(hold.await.unwrap().is_err());
+    assert_eq!(fixture.native.status()["discovery"]["joined"], true);
+    assert_eq!(fixture.discovery.status()["service"]["socket_open"], false);
+}
+#[cfg(unix)]
+#[tokio::test]
+async fn shutdown_timeout_retains_actual_child_and_later_retry_joins_after_remote_cleanup() {
+    use std::os::unix::fs::PermissionsExt;
+    let executable = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(executable.path(), "#!/bin/sh\nexec /bin/sleep 60\n").unwrap();
+    std::fs::set_permissions(executable.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    let executable = executable.into_temp_path();
+    let fixture = DiscoveryFixture::new(|config| {
+        config.platform = DiscoveryPlatform::Darwin {
+            dns_sd: Some(executable.to_path_buf()),
+        }
+    })
+    .await;
+    start(&fixture.native, &fixture.context()).await;
+    let endpoints = fixture.endpoints();
+    condition(|| fixture.discovery.status()["service"]["children"] == 3).await;
+    let (pause_entered, paused) = oneshot::channel();
+    let (_pause_release, pause_gate) = oneshot::channel();
+    let held = fixture.discovery.clone();
+    let hold = tokio::spawn(async move { held.pause(pause_entered, pause_gate).await });
+    paused.await.unwrap();
+    let (entered, ready) = oneshot::channel();
+    let (release, gate) = oneshot::channel();
+    fixture
+        .native
+        .test_discovery_drain(Duration::from_millis(30), entered, gate);
+    let caller = fixture.native.clone();
+    let task = tokio::spawn(async move { caller.shutdown().await });
+    ready.await.unwrap();
+    // Abort one shutdown waiter; the actual child/drain remain owned.
+    task.abort();
+    let _ = task.await;
+    condition(|| fixture.native.status()["binding"].is_null()).await;
+    assert_eq!(fixture.native.status()["discovery"]["joined"], false);
+    assert_eq!(fixture.discovery.status()["service"]["children"], 3);
+    // STOP is held behind the actual native owner, so these real direct children
+    // remain owned after remote TCP/renderer cleanup and a timed-out drain.
+    assert_eq!(
+        fixture.native.shutdown().await.unwrap_err().code,
+        "remote_discovery_shutdown_timeout"
+    );
+    for endpoint in endpoints.values() {
+        assert!(TcpStream::connect(endpoint).await.is_err());
+    }
+    fixture
+        .native
+        .test_discovery_timeout(Duration::from_secs(3));
+    release.send(()).unwrap();
+    fixture.native.shutdown().await.unwrap();
+    assert!(hold.await.unwrap().is_err());
+    fixture.native.shutdown().await.unwrap();
+    assert_eq!(fixture.native.status()["discovery"]["joined"], true);
+    assert_eq!(fixture.discovery.status()["service"]["children"], 0);
+    assert_eq!(fixture.discovery.status()["service"]["socket_open"], false);
+}
+
+#[tokio::test]
+async fn enabled_subset_and_all_disabled_use_only_actual_listener_evidence_and_old_tokens_fail() {
+    let fixture = DiscoveryFixture::new(|_| {}).await;
+    let context = fixture.context();
+    // Retain a genuine old native token, never a deserialized renderer token.
+    let _old_listener = std::net::TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+    let old = fixture
+        .discovery
+        .begin(&context, "0123456789abcdef0123456789abcdef")
+        .await
+        .unwrap();
+    let options = json!({"ports":{"remote":"0","stage":"0","controller":"0"},"disabled":{"remote":true,"stage":false,"controller":true},"data":{}});
+    fixture
+        .native
+        .dispatch(request("MAIN", "START", options, &context), "main")
+        .await
+        .unwrap();
+    assert_eq!(
+        fixture.endpoints().keys().collect::<Vec<_>>(),
+        vec!["STAGE"]
+    );
+    assert_eq!(
+        positive_records(&fixture.peer, 1).await,
+        source_records(&fixture.endpoints())
+    );
+    assert_eq!(
+        fixture.discovery.stop(&old).await.unwrap_err().code,
+        "stale_generation"
+    );
+    let actual = fixture.endpoints()["STAGE"];
+    assert_eq!(
+        fixture
+            .discovery
+            .started_port(&old, freeshow_discovery::DiscoveryName::Stage, actual)
+            .await
+            .unwrap_err()
+            .code,
+        "stale_generation"
+    );
+    assert!(TcpStream::connect(actual).await.is_ok());
+    fixture.stop().await;
+    let options = json!({"ports":{"remote":"0","stage":"0","controller":"0"},"disabled":{"remote":true,"stage":true,"controller":true},"data":{}});
+    fixture
+        .native
+        .dispatch(request("MAIN", "START", options, &context), "main")
+        .await
+        .unwrap();
+    assert!(fixture.endpoints().is_empty());
+    assert!(fixture.discovery.status()["binding"].is_null());
+    assert_eq!(fixture.discovery.status()["service"]["socket_open"], false);
+    // Drop only this consumer's discovery events; no renderer callback exists.
+    fixture.native.shutdown().await.unwrap();
+}
+#[tokio::test]
+async fn actual_discovery_owner_panic_is_sticky_but_does_not_skip_remote_teardown() {
+    let fixture = DiscoveryFixture::new(|_| {}).await;
+    let context = fixture.context();
+    start(&fixture.native, &context).await;
+    let endpoints = fixture.endpoints();
+    assert!(fixture.discovery.panic_owner().await.is_err());
+    assert_eq!(
+        http(endpoints["REMOTE"], "GET", "/", "").await,
+        "explicit remote test fixture"
+    );
+    let first = fixture.native.shutdown().await.unwrap_err();
+    assert_eq!(first.code, "discovery_owner");
+    assert_eq!(
+        fixture.native.shutdown().await.unwrap_err().message,
+        first.message
+    );
+    for endpoint in endpoints.values() {
+        assert!(TcpStream::connect(endpoint).await.is_err());
+    }
+    assert_eq!(fixture.discovery.status()["service"]["socket_open"], false);
+}
+
+#[tokio::test]
+async fn context_control_retires_discovery_work_after_timed_out_stop_removed_listener_binding() {
+    let fixture = DiscoveryFixture::new(|_| {}).await;
+    fixture
+        .native
+        .test_discovery_timeout(Duration::from_millis(50));
+    let (entered, ready) = oneshot::channel();
+    let (release, gate) = oneshot::channel();
+    let paused = fixture.discovery.clone();
+    let hold = tokio::spawn(async move { paused.pause(entered, gate).await });
+    ready.await.unwrap();
+    start(&fixture.native, &fixture.context()).await;
+    fixture.stop().await;
+    assert!(fixture.native.status()["binding"].is_null());
+    assert_eq!(fixture.discovery.status()["admittedRequests"], 2);
+    let old = fixture.context();
+    let new_path = fixture.temp.path().join("after-timed-stop");
+    std::fs::create_dir(&new_path).unwrap();
+    fixture
+        .library
+        .dispatch(
+            request(
+                "MAIN",
+                "UPDATE_DATA_PATH",
+                json!({"oldPath":old.data_path,"newPath":new_path}),
+                &old,
+            ),
+            "main",
+        )
+        .await
+        .unwrap();
+    fixture.native.context_changed().await.unwrap();
+    assert_eq!(
+        fixture.discovery.status()["admittedControls"],
+        1,
+        "no remote binding must not skip owned discovery context cleanup"
+    );
+    assert_eq!(
+        fixture.native.status()["discovery"]["lastWarning"]["stage"],
+        "context"
+    );
+    release.send(()).unwrap();
+    hold.await.unwrap().unwrap();
+    condition(|| {
+        fixture.discovery.status()["admittedControls"] == 0
+            && fixture.discovery.status()["admittedRequests"] == 0
+    })
+    .await;
+    assert!(fixture.discovery.status()["binding"].is_null());
+    assert_eq!(fixture.discovery.status()["service"]["socket_open"], false);
+    fixture
+        .native
+        .test_discovery_timeout(Duration::from_secs(3));
+    // Consume the held old begin result and prove the current native owner recovers.
+    start(&fixture.native, &fixture.context()).await;
+    fixture.native.shutdown().await.unwrap();
+    no_late_positive(&fixture.peer).await;
 }

@@ -1,9 +1,13 @@
 //! Bounded remote lifecycle, frozen context and completed renderer delivery.
+use crate::discovery::{
+    DiscoveryRun, NativeDiscovery, NativeDiscoveryEvent, NativeDiscoveryEvents,
+};
 use freeshow_core::{
     protocol::{Event, Request, RuntimeContext},
     service::LibraryService,
     WireError,
 };
+use freeshow_discovery::DiscoveryName;
 use freeshow_remotes::{
     BoundServers, RemoteConfig, RemoteEventKind, RemoteEvents, RemoteGeneration, RemoteOrigin,
     RemoteService, ServerKind,
@@ -11,7 +15,9 @@ use freeshow_remotes::{
 use serde_json::{json, Value};
 use std::{
     collections::BTreeMap,
+    future::Future,
     io::{self, Write},
+    pin::Pin,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex,
@@ -27,13 +33,64 @@ pub const COMMANDS: &[&str] = &["START", "STOP", "SERVER_DATA"];
 const MAX_REQUESTS: usize = 32;
 const DELIVERY_TIMEOUT: Duration = Duration::from_secs(5);
 const RETIRE_TIMEOUT: Duration = Duration::from_secs(15);
+const DISCOVERY_TIMEOUT: Duration = Duration::from_secs(3);
 type Sink = Arc<dyn Fn(Event) -> Result<(), String> + Send + Sync>;
+type NativeFuture<T> = Pin<Box<dyn Future<Output = Result<T, WireError>> + Send>>;
+
+enum DiscoveryPhase {
+    Starting(NativeFuture<DiscoveryRun>),
+    Ready(DiscoveryRun),
+    Stopping(DiscoveryRun, NativeFuture<()>),
+}
+#[derive(Default)]
+struct DiscoveryEvidence {
+    accepted: u64,
+    stale: u64,
+    warnings: u64,
+    last: Option<Value>,
+    last_warning: Option<Value>,
+}
+struct DiscoveryOwner {
+    service: NativeDiscovery,
+    phase: AsyncMutex<Option<DiscoveryPhase>>,
+    drain: AsyncMutex<Option<NativeFuture<()>>>,
+    joined: AtomicBool,
+    evidence: Mutex<DiscoveryEvidence>,
+    #[cfg(test)]
+    timeout: Mutex<Duration>,
+    #[cfg(test)]
+    drain_hook: Mutex<Option<(oneshot::Sender<()>, oneshot::Receiver<()>)>>,
+}
+impl DiscoveryOwner {
+    fn timeout(&self) -> Duration {
+        #[cfg(test)]
+        return *self.timeout.lock().unwrap();
+        #[cfg(not(test))]
+        DISCOVERY_TIMEOUT
+    }
+    fn warning(&self, stage: &str, error: &WireError) {
+        let mut message = error.message.clone();
+        if message.len() > 2048 {
+            let mut end = 2030;
+            while !message.is_char_boundary(end) {
+                end -= 1;
+            }
+            message.truncate(end);
+            message.push_str(" [truncated]");
+        }
+        eprintln!("Discovery {stage} {}: {message}", error.code);
+        let mut evidence = self.evidence.lock().unwrap_or_else(|e| e.into_inner());
+        evidence.warnings = evidence.warnings.saturating_add(1);
+        evidence.last_warning = Some(json!({"stage":stage,"code":error.code,"message":message}));
+    }
+}
 
 struct Binding {
     context: RuntimeContext,
     bound: BoundServers,
     retiring: bool,
     connections: BTreeMap<(ServerKind, String), bool>,
+    discovery: Option<DiscoveryRun>,
 }
 struct Delivery {
     id: String,
@@ -42,6 +99,7 @@ struct Delivery {
 struct Shared {
     library: LibraryService,
     service: RemoteService,
+    discovery: Option<DiscoveryOwner>,
     binding: Mutex<Option<Binding>>,
     publication: AsyncMutex<()>,
     pending: Mutex<Option<Delivery>>,
@@ -86,15 +144,54 @@ fn worker(message: &str) -> WireError {
     WireError::new("remotes_worker", message)
 }
 impl NativeRemotes {
+    // Kept for transport-only users/tests alongside production discovery ownership.
+    #[allow(dead_code)]
     pub fn new(
         library: LibraryService,
         config: RemoteConfig,
         sink: impl Fn(Event) -> Result<(), String> + Send + Sync + 'static,
     ) -> Result<Self, WireError> {
+        Self::construct(library, config, None, sink)
+    }
+    /// Discovery is native-owned and must have the same frozen library owner.
+    /// Its events are diagnostics only, never renderer/client success ACKs.
+    pub fn new_with_discovery(
+        library: LibraryService,
+        config: RemoteConfig,
+        discovery: NativeDiscovery,
+        events: NativeDiscoveryEvents,
+        sink: impl Fn(Event) -> Result<(), String> + Send + Sync + 'static,
+    ) -> Result<Self, WireError> {
+        Self::construct(library, config, Some((discovery, events)), sink)
+    }
+    fn construct(
+        library: LibraryService,
+        config: RemoteConfig,
+        discovery: Option<(NativeDiscovery, NativeDiscoveryEvents)>,
+        sink: impl Fn(Event) -> Result<(), String> + Send + Sync + 'static,
+    ) -> Result<Self, WireError> {
         let (service, events) = RemoteService::new(config).map_err(error)?;
+        let (discovery, discovery_events) = match discovery {
+            Some((service, events)) => (
+                Some(DiscoveryOwner {
+                    service,
+                    phase: AsyncMutex::new(None),
+                    drain: AsyncMutex::new(None),
+                    joined: AtomicBool::new(false),
+                    evidence: Mutex::new(DiscoveryEvidence::default()),
+                    #[cfg(test)]
+                    timeout: Mutex::new(DISCOVERY_TIMEOUT),
+                    #[cfg(test)]
+                    drain_hook: Mutex::new(None),
+                }),
+                Some(events),
+            ),
+            None => (None, None),
+        };
         let shared = Arc::new(Shared {
             library,
             service,
+            discovery,
             binding: Mutex::new(None),
             publication: AsyncMutex::new(()),
             pending: Mutex::new(None),
@@ -121,6 +218,7 @@ impl NativeRemotes {
             changes,
             pump_control,
             complete,
+            discovery_events,
         ));
         Ok(Self {
             shared,
@@ -142,7 +240,13 @@ impl NativeRemotes {
             "admittedRequests":MAX_REQUESTS-self.slots.available_permits(),
             "pendingDeliveries":usize::from(self.shared.pending.lock().unwrap_or_else(|e|e.into_inner()).is_some()),
             "binding":binding.as_ref().map(|b|json!({"context":b.context,"bound":b.bound,
-                "retiring":b.retiring,"connections":b.connections.len()})),
+                "retiring":b.retiring,"connections":b.connections.len(),
+                "discoveryRun":b.discovery.as_ref().map(|r|json!({"context":r.context(),"generation":r.generation(),"listenerRun":r.listener_run()}))})),
+            "discovery":self.shared.discovery.as_ref().map(|d|{
+                let evidence=d.evidence.lock().unwrap_or_else(|e|e.into_inner());
+                json!({"joined":d.joined.load(Ordering::Acquire),"acceptedEvents":evidence.accepted,"staleEvents":evidence.stale,
+                    "warnings":evidence.warnings,"lastEvent":evidence.last,"lastWarning":evidence.last_warning,"owner":d.service.status()})
+            }),
             "service":self.shared.service.stats(),
             "failure":*self.shared.failure.lock().unwrap_or_else(|e|e.into_inner())})
     }
@@ -245,10 +349,26 @@ impl NativeRemotes {
         self.shared.terminal.cancel();
         for mut done in [self.done.clone(), self.pump_done.clone()] {
             while !*done.borrow_and_update() {
-                done.changed()
-                    .await
-                    .map_err(|_| worker("Remote teardown stopped without completion"))?;
+                if done.changed().await.is_err() {
+                    // A lost legacy host task completion cannot skip discovery's
+                    // independent owner. Preserve this error on all later calls.
+                    record_failure(
+                        &self.shared,
+                        worker("Remote teardown stopped without completion"),
+                    );
+                    shutdown_discovery(&self.shared).await?;
+                    return Err(worker("Remote teardown stopped without completion"));
+                }
             }
+        }
+        // Command/pump completion is not proof that discovery descendants joined.
+        // Retry the retained real drain after an earlier operation timeout.
+        let discovery = shutdown_discovery(&self.shared).await;
+        if discovery
+            .as_ref()
+            .is_err_and(|error| error.code == "remote_discovery_shutdown_timeout")
+        {
+            return discovery;
         }
         if let Some((code, message)) = self
             .shared
@@ -259,7 +379,29 @@ impl NativeRemotes {
         {
             return Err(WireError::new(code, message.clone()));
         }
-        Ok(())
+        discovery
+    }
+    #[cfg(all(test, unix))]
+    pub(crate) fn test_discovery_drain(
+        &self,
+        timeout: Duration,
+        entered: oneshot::Sender<()>,
+        release: oneshot::Receiver<()>,
+    ) {
+        let discovery = self.shared.discovery.as_ref().unwrap();
+        *discovery.timeout.lock().unwrap() = timeout;
+        *discovery.drain_hook.lock().unwrap() = Some((entered, release));
+    }
+    #[cfg(test)]
+    pub(crate) fn test_discovery_timeout(&self, timeout: Duration) {
+        *self
+            .shared
+            .discovery
+            .as_ref()
+            .unwrap()
+            .timeout
+            .lock()
+            .unwrap() = timeout;
     }
 }
 fn validate_context(shared: &Shared, request: &Request) -> Result<(), WireError> {
@@ -281,12 +423,214 @@ fn record_failure(shared: &Shared, error: WireError) {
         *failure = Some((error.code, error.message));
     }
 }
+async fn next_discovery_event(
+    events: &mut Option<NativeDiscoveryEvents>,
+) -> Option<NativeDiscoveryEvent> {
+    match events {
+        Some(events) => events.recv().await,
+        None => std::future::pending().await,
+    }
+}
+fn observe_discovery(shared: &Shared, event: NativeDiscoveryEvent) {
+    let Some(discovery) = &shared.discovery else {
+        return;
+    };
+    let valid = shared
+        .binding
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .is_some_and(|binding| {
+            !binding.retiring
+                && binding.context == event.context
+                && binding.bound.generation.run == event.listener_run
+                && shared.library.context().ok().as_ref() == Some(&event.context)
+                && binding.discovery.as_ref().is_some_and(|run| {
+                    run.context() == &event.context
+                        && run.listener_run() == event.listener_run
+                        && run.generation() == &event.event.generation
+                })
+        });
+    if !valid {
+        let mut evidence = discovery.evidence.lock().unwrap_or_else(|e| e.into_inner());
+        evidence.stale = evidence.stale.saturating_add(1);
+        return;
+    }
+    if let freeshow_discovery::DiscoveryEventKind::Diagnostic { code, message } = &event.event.kind
+    {
+        discovery.warning("event", &WireError::new(code, message.clone()));
+    }
+    let mut evidence = discovery.evidence.lock().unwrap_or_else(|e| e.into_inner());
+    evidence.accepted = evidence.accepted.saturating_add(1);
+    evidence.last =
+        Some(json!({"context":event.context,"listenerRun":event.listener_run,"event":event.event}));
+}
+async fn resolve_begin(phase: &mut Option<DiscoveryPhase>) -> Result<DiscoveryRun, WireError> {
+    let result = match phase.as_mut() {
+        Some(DiscoveryPhase::Starting(future)) => future.await,
+        Some(DiscoveryPhase::Ready(run)) => return Ok(run.clone()),
+        _ => return Err(worker("Discovery has an unfinished stop")),
+    };
+    match result {
+        Ok(run) => {
+            *phase = Some(DiscoveryPhase::Ready(run.clone()));
+            Ok(run)
+        }
+        Err(error) => {
+            *phase = None;
+            Err(error)
+        }
+    }
+}
+async fn start_discovery(
+    shared: &Shared,
+    context: &RuntimeContext,
+    bound: &BoundServers,
+) -> Result<(), WireError> {
+    let Some(discovery) = &shared.discovery else {
+        return Ok(());
+    };
+    tokio::time::timeout(discovery.timeout(), async {
+        let mut phase = discovery.phase.lock().await;
+        if phase.is_some() {
+            return Err(WireError::new(
+                "remote_discovery_pending",
+                "An earlier discovery lifecycle still owns its run",
+            ));
+        }
+        let service = discovery.service.clone();
+        let context = context.clone();
+        let listener = bound.generation.run.clone();
+        *phase = Some(DiscoveryPhase::Starting(Box::pin(async move {
+            service.begin(&context, &listener).await
+        })));
+        let run = resolve_begin(&mut phase).await?;
+        {
+            let mut binding = shared.binding.lock().unwrap_or_else(|e| e.into_inner());
+            let current = binding
+                .as_mut()
+                .filter(|b| b.bound.generation == bound.generation && !b.retiring)
+                .ok_or_else(|| {
+                    WireError::new(
+                        "stale_generation",
+                        "Listeners retired before discovery begin completed",
+                    )
+                })?;
+            current.discovery = Some(run.clone());
+        }
+        for (kind, endpoint) in &bound.endpoints {
+            let name = match kind {
+                ServerKind::REMOTE => DiscoveryName::Remote,
+                ServerKind::STAGE => DiscoveryName::Stage,
+                ServerKind::CONTROLLER => DiscoveryName::Controller,
+            };
+            // Failure for one publication must not hide the other actual listeners.
+            if let Err(error) = discovery.service.started_port(&run, name, *endpoint).await {
+                discovery.warning("publish", &error);
+            }
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|_| {
+        WireError::new(
+            "remote_discovery_operation_timeout",
+            "Discovery start/publication still owns native work",
+        )
+    })?
+}
+async fn stop_discovery(shared: &Shared) -> Result<(), WireError> {
+    let Some(discovery) = &shared.discovery else {
+        return Ok(());
+    };
+    tokio::time::timeout(discovery.timeout(), async {
+        let mut phase = discovery.phase.lock().await;
+        if discovery.joined.load(Ordering::Acquire) {
+            phase.take();
+            return Ok(());
+        }
+        if phase.is_none() {
+            return Ok(());
+        }
+        if matches!(phase.as_ref(), Some(DiscoveryPhase::Starting(_))) {
+            resolve_begin(&mut phase).await?;
+        }
+        if let Some(DiscoveryPhase::Ready(run)) = phase.as_ref() {
+            let run = run.clone();
+            let service = discovery.service.clone();
+            let token = run.clone();
+            *phase = Some(DiscoveryPhase::Stopping(
+                run,
+                Box::pin(async move { service.stop(&token).await }),
+            ));
+        }
+        let (run, result) = match phase.as_mut() {
+            Some(DiscoveryPhase::Stopping(run, future)) => (run.clone(), future.await),
+            _ => return Ok(()),
+        };
+        // A failed stop does not authorize losing the opaque token. Terminal
+        // cleanup still owns the complete NativeDiscovery, including lost replies.
+        *phase = if result.is_ok() {
+            None
+        } else {
+            Some(DiscoveryPhase::Ready(run))
+        };
+        result
+    })
+    .await
+    .map_err(|_| {
+        WireError::new(
+            "remote_discovery_operation_timeout",
+            "Discovery stop still owns its lifecycle future/token",
+        )
+    })?
+}
+async fn shutdown_discovery(shared: &Shared) -> Result<(), WireError> {
+    let Some(discovery) = &shared.discovery else {
+        return Ok(());
+    };
+    tokio::time::timeout(discovery.timeout(), async {
+        let mut drain = discovery.drain.lock().await;
+        if discovery.joined.load(Ordering::Acquire) {
+            return Ok(());
+        }
+        if drain.is_none() {
+            let service = discovery.service.clone();
+            #[cfg(test)]
+            let hook = discovery.drain_hook.lock().unwrap().take();
+            *drain = Some(Box::pin(async move {
+                #[cfg(test)]
+                if let Some((entered, release)) = hook {
+                    let _ = entered.send(());
+                    let _ = release.await;
+                }
+                service.shutdown().await
+            }));
+        }
+        let result = drain.as_mut().unwrap().await;
+        drain.take();
+        if result.is_ok() {
+            discovery.joined.store(true, Ordering::Release);
+        } else if let Err(error) = &result {
+            record_failure(shared, WireError::new(error.code, error.message.clone()));
+        }
+        result
+    })
+    .await
+    .map_err(|_| {
+        WireError::new(
+            "remote_discovery_shutdown_timeout",
+            "Discovery descendants are still owned; shutdown must be retried",
+        )
+    })?
+}
 async fn owner(
     shared: Arc<Shared>,
     mut jobs: mpsc::Receiver<Job>,
     mut changes: mpsc::Receiver<ContextJob>,
     pump: mpsc::Sender<PumpControl>,
     complete: watch::Sender<bool>,
+    mut discovery_events: Option<NativeDiscoveryEvents>,
 ) {
     loop {
         tokio::select! {biased;
@@ -308,6 +652,10 @@ async fn owner(
                 };
                 if let Err(Err(error))=job.reply.send(result){eprintln!("Detached remote request failed: {}",error.message);}
             },
+            event=next_discovery_event(&mut discovery_events)=>match event {
+                Some(event)=>observe_discovery(&shared,event),
+                None=>discovery_events=None,
+            },
             else=>break,
         }
     }
@@ -320,13 +668,24 @@ async fn owner(
     while let Ok(change) = changes.try_recv() {
         let _ = change.reply.send(Err(stopped()));
     }
-    // Terminal cancellation bypasses ordinary work. The service cancels its
-    // current run before waiting for lifecycle ownership, then joins its thread.
+    // Terminal discovery cancellation also owns accepted token-less begins.
+    // Its bounded wait may expire; public shutdown retains and retries the drain.
+    if let Err(error) = shutdown_discovery(&shared).await {
+        if let Some(discovery) = &shared.discovery {
+            discovery.warning("shutdown", &error);
+        }
+    }
+    if let Err(error) = retire(&shared, &pump, true).await {
+        record_failure(&shared, error);
+    }
+    // Listener/runtime and renderer cleanup proceed even if discovery failed.
     if let Err(error) = shared.service.shutdown().await.map_err(error) {
         record_failure(&shared, error);
     }
-    if let Err(error) = retire(&shared, &pump, false).await {
-        record_failure(&shared, error);
+    if let Some(events) = discovery_events.as_mut() {
+        while let Ok(event) = events.try_recv() {
+            observe_discovery(&shared, event);
+        }
     }
     let _ = pump.send(PumpControl::Stop).await;
     complete.send_replace(true);
@@ -344,6 +703,7 @@ async fn dispatch(
                 validate_context(shared, &request)?;
                 start(
                     shared,
+                    pump,
                     request.context.unwrap(),
                     request.data["data"].clone(),
                 )
@@ -379,7 +739,12 @@ async fn dispatch(
     }
     Ok(Vec::new())
 }
-async fn start(shared: &Shared, context: RuntimeContext, options: Value) -> Result<(), WireError> {
+async fn start(
+    shared: &Shared,
+    pump: &mpsc::Sender<PumpControl>,
+    context: RuntimeContext,
+    options: Value,
+) -> Result<(), WireError> {
     // Early connections wait until their complete frozen binding is installed.
     let _publication = shared.publication.lock().await;
     let bound = shared
@@ -395,11 +760,28 @@ async fn start(shared: &Shared, context: RuntimeContext, options: Value) -> Resu
         ));
     }
     *shared.binding.lock().unwrap_or_else(|e| e.into_inner()) = Some(Binding {
-        context,
-        bound,
+        context: context.clone(),
+        bound: bound.clone(),
         retiring: false,
         connections: BTreeMap::new(),
+        discovery: None,
     });
+    if !bound.endpoints.is_empty() {
+        if let Err(error) = start_discovery(shared, &context, &bound).await {
+            if let Some(discovery) = &shared.discovery {
+                discovery.warning("start", &error);
+            }
+        }
+    }
+    drop(_publication);
+    if shared.library.context().map_err(WireError::from)? != context {
+        // No new connection can pass the pump's own frozen-context check.
+        retire(shared, pump, true).await?;
+        return Err(WireError::new(
+            "stale_library",
+            "Library changed while discovery/listeners started",
+        ));
+    }
     Ok(())
 }
 async fn refresh(shared: &Shared, pump: &mpsc::Sender<PumpControl>) -> Result<(), WireError> {
@@ -413,10 +795,28 @@ async fn refresh(shared: &Shared, pump: &mpsc::Sender<PumpControl>) -> Result<()
     // The retained SETTINGS handler starts the replacement only after its
     // DATA_PATH response has advanced the bridge. Starting here could lose a
     // new connection before the renderer knows its library context.
-    if changed {
-        retire(shared, pump, true).await?;
+    let retirement = if changed {
+        retire(shared, pump, true).await
+    } else {
+        Ok(())
+    };
+    // A timed-out begin/stop can still own discovery work after the listener
+    // binding is gone. Its native reserved/coalesced control retains cleanup
+    // across timeout/caller Drop and cannot retire a fresh current binding.
+    if let Some(discovery) = &shared.discovery {
+        let result = tokio::time::timeout(discovery.timeout(), discovery.service.context_changed())
+            .await
+            .unwrap_or_else(|_| {
+                Err(WireError::new(
+                    "remote_discovery_operation_timeout",
+                    "Obsolete discovery retirement remains natively owned",
+                ))
+            });
+        if let Err(error) = result {
+            discovery.warning("context", &error);
+        }
     }
-    Ok(())
+    retirement
 }
 async fn retire(
     shared: &Shared,
@@ -432,6 +832,13 @@ async fn retire(
         })
     };
     drop(publication);
+    // Never short-circuit listener and retained renderer cleanup on a discovery
+    // transport/operation error. Its exact token/future remains natively owned.
+    if let Err(error) = stop_discovery(shared).await {
+        if let Some(discovery) = &shared.discovery {
+            discovery.warning("stop", &error);
+        }
+    }
     let stopped = if stop {
         shared.service.stop().await.map_err(error)
     } else {
