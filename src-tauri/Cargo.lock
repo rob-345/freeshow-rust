@@ -1331,6 +1331,7 @@ dependencies = [
  "freeshow-audio",
  "freeshow-browse",
  "freeshow-core",
+ "freeshow-discovery",
  "freeshow-documents",
  "freeshow-encoders",
  "freeshow-exif",
@@ -1350,6 +1351,7 @@ dependencies = [
  "libc",
  "png 0.18.1",
  "serde_json",
+ "socket2",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
@@ -1358,7 +1360,20 @@ dependencies = [
  "tokio",
  "tokio-util",
  "uuid",
+ "windows-sys 0.61.2",
  "zip",
+]
+
+[[package]]
+name = "freeshow-discovery"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "socket2",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]

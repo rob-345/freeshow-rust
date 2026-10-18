@@ -366,3 +366,5 @@ CARGO_TARGET_DIR="$PWD/crates/freeshow-remotes/target" CARGO_BUILD_JOBS=1 CARGO_
 rustfmt --edition 2021 --check src-tauri/src/discovery.rs src-tauri/tests/discovery.rs
 npx prettier --config config/formatting/.prettierrc.yaml --check docs/migration/workers/discovery.md
 ```
+
+Coordinator workspace integration removes the temporary child workspace/lock and adds the native module tests/dependencies to the desktop test target and CI. Integrated focused checks pass nine crate tests, twelve actual-source tests and eleven Linux native host tests. Full local checks pass 296 Rust / 302 pinned-Node / 20 frontend and 100 native host tests. Production listener/setup/retirement wiring and actual Windows/macOS OS snapshot execution still need their integration evidence; the coordinator is not claiming multicast reach or native registration from these loopback/build checks.

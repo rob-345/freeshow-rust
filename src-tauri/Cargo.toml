@@ -27,6 +27,7 @@ freeshow-import-effects = { path = "../crates/freeshow-import-effects" }
 freeshow-browse = { path = "../crates/freeshow-browse" }
 freeshow-assets = { path = "../crates/freeshow-assets" }
 freeshow-remotes = { path = "../crates/freeshow-remotes" }
+freeshow-discovery = { path = "../crates/freeshow-discovery" }
 freeshow-encoders = { path = "../crates/freeshow-encoders" }
 freeshow-scriptures = { path = "../crates/freeshow-scriptures" }
 freeshow-media-copy = { path = "../crates/freeshow-media-copy" }
@@ -48,7 +49,11 @@ glib = "0.18"
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock"] }
+
 [dev-dependencies]
+socket2 = "0.6"
 png = "=0.18.1"
 tempfile = "3"
 zip = { version = "9", default-features = false, features = ["deflate"] }
