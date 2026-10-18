@@ -169,6 +169,14 @@ impl Pool {
                                 if files.len() >= handles_per_worker { return Err(Error::new("assets_busy", "File handle budget exhausted")); }
                                 let path = if expected.is_none() { std::fs::canonicalize(path).map_err(Error::os)? } else { path };
                                 work.control.check(&closing)?;
+                                // Windows ordinary file opens report access denied
+                                // for directories. Reject a proven directory with
+                                // the same typed outcome as other platforms; the
+                                // opened-handle check below still guards races.
+                                #[cfg(windows)]
+                                if std::fs::metadata(&path).map_err(Error::os)?.is_dir() {
+                                    return Err(Error::new("assets_invalid", "Only regular media files may be granted"));
+                                }
                                 let mut options = std::fs::OpenOptions::new(); options.read(true);
                                 #[cfg(unix)]
                                 { use std::os::unix::fs::OpenOptionsExt; options.custom_flags(libc::O_NONBLOCK); }
