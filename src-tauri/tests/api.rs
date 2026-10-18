@@ -11,6 +11,7 @@ use serde_json::{json, Value};
 use std::{
     future::{poll_fn, Future},
     net::{Ipv4Addr, TcpListener, UdpSocket},
+    sync::atomic::{AtomicU32, Ordering},
     task::Poll,
     time::Duration,
 };
@@ -51,12 +52,15 @@ fn fixture() -> (
     (temp, library, native, receive)
 }
 fn free_port() -> u16 {
-    for _ in 0..30 {
-        let first = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
-        let port = first.local_addr().unwrap().port();
-        if port == u16::MAX {
+    // Parallel tests must not hand out the same pair after dropping their
+    // probes but before their asynchronous native start owns the listeners.
+    static NEXT_PAIR: AtomicU32 = AtomicU32::new(0);
+    for _ in 0..128 {
+        let index = NEXT_PAIR.fetch_add(1, Ordering::Relaxed);
+        let port = 32768 + (((std::process::id() + index) % 8191) * 2) as u16;
+        let Ok(_first) = TcpListener::bind((Ipv4Addr::LOCALHOST, port)) else {
             continue;
-        }
+        };
         if let (Ok(_next), Ok(_udp)) = (
             TcpListener::bind((Ipv4Addr::LOCALHOST, port + 1)),
             UdpSocket::bind((Ipv4Addr::LOCALHOST, port)),
