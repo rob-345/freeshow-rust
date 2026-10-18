@@ -1,4 +1,8 @@
+pub mod archive;
+pub mod backup;
+pub mod dialog;
 pub mod protocol;
+pub mod restore;
 pub mod runtime;
 pub mod show;
 pub mod storage;
@@ -15,6 +19,8 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     #[error("file operation failed: {0}")]
     Io(#[from] std::io::Error),
+    #[error("archive operation failed: {0}")]
+    Archive(#[from] zip::result::ZipError),
 }
 
 #[derive(Debug, Serialize)]
@@ -31,6 +37,7 @@ impl From<Error> for WireError {
                 Error::Invalid(_) => "invalid_request",
                 Error::Json(_) => "invalid_json",
                 Error::Io(_) => "io_error",
+                Error::Archive(_) => "archive_error",
             },
             message: error.to_string(),
         }

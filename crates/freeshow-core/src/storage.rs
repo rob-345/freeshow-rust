@@ -1,10 +1,10 @@
 use crate::{Error, Result};
 use serde_json::{json, Value};
 use std::{
-    collections::HashMap,
     fs,
     io::Write,
     path::{Path, PathBuf},
+    sync::OnceLock,
 };
 
 pub const STORE_IDS: &[&str] = &[
@@ -28,51 +28,78 @@ pub const STORE_IDS: &[&str] = &[
 ];
 
 pub fn defaults(id: &str) -> Result<Value> {
-    let upstream: Value =
-        serde_json::from_str(include_str!("../../../tests/parity/fixtures/defaults.json"))?;
-    Ok(match id {
-        "config" => upstream["defaultConfig"].clone(),
-        "SETTINGS" => upstream["defaultSettings"].clone(),
-        "SYNCED_SETTINGS" => upstream["defaultSyncedSettings"].clone(),
-        "PROJECTS" => json!({"projects":{},"folders":{},"projectTemplates":{}}),
-        "ACCESS" => json!({"contentProviders":{},"secrets":{}}),
-        id if STORE_IDS.contains(&id) => json!({}),
-        _ => return Err(Error::Invalid(format!("unknown store {id}"))),
+    if id == "config" {
+        static DEFAULTS: OnceLock<Value> = OnceLock::new();
+        return Ok(DEFAULTS
+            .get_or_init(|| {
+                serde_json::from_str(include_str!("../../../tests/parity/fixtures/defaults.json"))
+                    .expect("generated defaults JSON")
+            })
+            .get("defaultConfig")
+            .unwrap()
+            .clone());
+    }
+    definitions()
+        .get(id)
+        .map(|value| value["defaults"].clone())
+        .ok_or_else(|| Error::Invalid(format!("unknown store {id}")))
+}
+
+pub fn definitions() -> &'static Value {
+    static STORES: OnceLock<Value> = OnceLock::new();
+    STORES.get_or_init(|| {
+        serde_json::from_str(include_str!("../../../tests/parity/fixtures/stores.json"))
+            .expect("generated stores JSON")
     })
 }
 
 pub fn portable(id: &str) -> bool {
-    matches!(
-        id,
-        "SYNCED_SETTINGS" | "THEMES" | "PROJECTS" | "STAGE" | "OVERLAYS" | "TEMPLATES" | "EVENTS"
-    )
+    definitions()[id]["portable"].as_bool().unwrap_or(false)
 }
 
 pub fn filename(id: &str) -> Result<String> {
-    defaults(id)?;
-    Ok(format!(
-        "{}.json",
-        match id {
-            "SYNCED_SETTINGS" => "settings_synced".into(),
-            "DRIVE_API_KEY" | "ACCESS" => id.into(),
-            _ => id.to_lowercase(),
-        }
-    ))
+    if id == "config" {
+        return Ok("config.json".into());
+    }
+    definitions()[id]["fileName"]
+        .as_str()
+        .map(|name| format!("{name}.json"))
+        .ok_or_else(|| Error::Invalid(format!("unknown store {id}")))
 }
 
 /// Write a complete file beside its destination, flush it, then atomically replace
 /// the destination. A failed serialization/write never truncates the old file.
 pub fn atomic_write(path: &Path, value: &Value, pretty: bool) -> Result<()> {
+    atomic_replace(path, |file| {
+        if pretty {
+            serde_json::to_writer_pretty(file, value)?;
+        } else {
+            serde_json::to_writer(file, value)?;
+        }
+        Ok(())
+    })
+}
+
+pub fn atomic_write_bytes(path: &Path, content: &[u8]) -> Result<()> {
+    atomic_replace(path, |file| {
+        file.write_all(content)?;
+        Ok(())
+    })
+}
+
+pub fn atomic_replace(path: &Path, write: impl FnOnce(&mut fs::File) -> Result<()>) -> Result<()> {
     let parent = path
         .parent()
         .ok_or_else(|| Error::Invalid("file has no parent".into()))?;
     fs::create_dir_all(parent)?;
     let mut file = tempfile::NamedTempFile::new_in(parent)?;
-    if pretty {
-        serde_json::to_writer_pretty(file.as_file_mut(), value)?;
-    } else {
-        serde_json::to_writer(file.as_file_mut(), value)?;
+    if path.exists() {
+        // Respect existing read-only/locking behavior and retain file modes.
+        let existing = fs::OpenOptions::new().write(true).open(path)?;
+        file.as_file()
+            .set_permissions(existing.metadata()?.permissions())?;
     }
+    write(file.as_file_mut())?;
     file.flush()?;
     file.as_file().sync_all()?;
     file.persist(path).map_err(|error| Error::Io(error.error))?;
@@ -98,7 +125,6 @@ pub fn leaf_path(directory: &Path, name: &str, extension: &str) -> Result<PathBu
 pub struct Stores {
     pub app_data: PathBuf,
     pub data: PathBuf,
-    cache: HashMap<String, Value>,
 }
 
 impl Stores {
@@ -109,11 +135,12 @@ impl Stores {
         fs::create_dir_all(data.join("Config"))?;
         fs::create_dir_all(data.join("Shows"))?;
         fs::create_dir_all(data.join("Bibles"))?;
-        Ok(Self {
-            app_data,
-            data,
-            cache: HashMap::new(),
-        })
+        let stores = Self { app_data, data };
+        // Conf applies top-level defaults once, when its stores are constructed.
+        for id in std::iter::once(&"config").chain(STORE_IDS.iter()) {
+            stores.initialize(id)?;
+        }
+        Ok(stores)
     }
 
     pub fn path(&self, id: &str) -> Result<PathBuf> {
@@ -126,10 +153,23 @@ impl Stores {
     }
 
     pub fn get(&mut self, id: &str) -> Result<Value> {
-        if let Some(value) = self.cache.get(id) {
-            return Ok(value.clone());
+        defaults(id)?;
+        match fs::read(self.path(id)?) {
+            Ok(bytes) => {
+                let value: Value = serde_json::from_slice(&bytes)?;
+                if !value.is_object() {
+                    return Err(Error::Invalid(format!("store {id} must be an object")));
+                }
+                Ok(value)
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(json!({})),
+            Err(error) => Err(error.into()),
         }
+    }
+
+    fn initialize(&self, id: &str) -> Result<()> {
         let mut value = defaults(id)?;
+        let mut original = json!({});
         match fs::read(self.path(id)?) {
             Ok(bytes) => {
                 let stored: Value = serde_json::from_slice(&bytes)?;
@@ -138,24 +178,27 @@ impl Stores {
                     .ok_or_else(|| Error::Invalid(format!("store {id} must be an object")))?;
                 // electron-store/Conf fills only absent top-level defaults.
                 value.as_object_mut().unwrap().extend(stored.clone());
+                original = Value::Object(stored.clone());
             }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
             Err(error) => return Err(error.into()),
         }
-        self.cache.insert(id.into(), value.clone());
-        Ok(value)
+        if value != original {
+            atomic_write(
+                &self.path(id)?,
+                &value,
+                !definitions()[id]["minify"].as_bool().unwrap_or(false),
+            )?;
+        }
+        Ok(())
     }
 
     pub fn set(&mut self, id: &str, value: Value) -> Result<()> {
         if !value.is_object() {
             return Err(Error::Invalid("store must be an object".into()));
         }
-        let pretty = !matches!(
-            id,
-            "SHOWS" | "HISTORY" | "MEDIA" | "CACHE" | "CACHE_SYNC" | "USAGE"
-        );
+        let pretty = !definitions()[id]["minify"].as_bool().unwrap_or(false);
         atomic_write(&self.path(id)?, &value, pretty)?;
-        self.cache.insert(id.into(), value); // Conf reapplies defaults at construction, not on every read.
         Ok(())
     }
 

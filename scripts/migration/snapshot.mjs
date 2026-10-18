@@ -7,7 +7,7 @@ import ts from "typescript"
 
 export const root = fileURLToPath(new URL("../../", import.meta.url))
 const upstreamCommit = "2d94defcf98175e4f5c9504e7f4fd1d33c35c975"
-const read = (name) => fs.readFileSync(path.join(root, name), "utf8")
+const read = (name) => fs.readFileSync(path.join(root, name), "utf8").replaceAll("\r\n", "\n")
 const parse = (name) => ts.createSourceFile(name, read(name), ts.ScriptTarget.Latest, true)
 
 function enumValues(name, enumName) {
@@ -37,6 +37,14 @@ const javascript = ts.transpileModule(read("src/electron/data/defaults.ts"), {
 }).outputText
 vm.runInNewContext(javascript, { exports }, { timeout: 1000 })
 const defaults = Object.fromEntries(["defaultConfig", "defaultSettings", "defaultSyncedSettings"].map((name) => [name, exports[name]]))
+const storeAst = parse("src/electron/data/store.ts")
+const storeDeclaration = storeAst.statements
+    .filter(ts.isVariableStatement)
+    .flatMap((statement) => statement.declarationList.declarations)
+    .find((node) => node.name.getText(storeAst) === "storeFilesData")
+if (!storeDeclaration?.initializer) throw new Error("Upstream store definitions missing")
+const storeContext = { ...exports, clone: structuredClone }
+vm.runInNewContext(ts.transpileModule(`globalThis.stores = ${storeDeclaration.initializer.getText(storeAst)}`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText, storeContext, { timeout: 1000 })
 
 const channelsFile = parse("src/types/Channels.ts")
 const channels = channelsFile.statements.filter(ts.isVariableStatement).flatMap((statement) => statement.declarationList.declarations.filter((node) => ts.isStringLiteral(node.initializer)).map((node) => node.initializer.text))
@@ -52,7 +60,8 @@ const inventory = {
 
 const artifacts = {
     "docs/migration/upstream-inventory.json": inventory,
-    "tests/parity/fixtures/defaults.json": defaults
+    "tests/parity/fixtures/defaults.json": defaults,
+    "tests/parity/fixtures/stores.json": storeContext.stores
 }
 let changed = false
 for (const [name, value] of Object.entries(artifacts)) {

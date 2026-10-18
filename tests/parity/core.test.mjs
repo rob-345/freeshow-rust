@@ -3,21 +3,12 @@ import { test } from "node:test"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { spawnSync } from "node:child_process"
+import { spawn } from "node:child_process"
+import { createInterface } from "node:readline"
+import { once } from "node:events"
 import Conf from "conf"
 import { root, showOracle, fileOracle, fixtureShow, clean, createSaveOracle } from "./oracle.mjs"
-
-const binary = process.env.FREESHOW_CORE_BIN || path.join(root, "target", "debug", process.platform === "win32" ? "freeshow-core.exe" : "freeshow-core")
-export function rust(cases, args = []) {
-    const process = spawnSync(binary, args, { input: cases.map((input) => JSON.stringify(input)).join("\n") + "\n", encoding: "utf8", maxBuffer: 64 * 1024 * 1024, timeout: 30000 })
-    assert.equal(process.error, undefined)
-    assert.equal(process.status, 0, process.stderr)
-    return process.stdout
-        .trim()
-        .split("\n")
-        .map((line) => JSON.parse(line))
-}
-export const request = (command, data, listenerId) => ({ op: "runtime", request: { channel: "MAIN", data: { channel: command, data }, listenerId } })
+import { binary, rust, request } from "./runner.mjs"
 
 for (const [operation, expected] of [
     ["show.trim", showOracle.trimShow],
@@ -130,15 +121,16 @@ test("load show preserves unknown fields and overrides stored ID as Electron doe
     assert.deepEqual(responses[2].value[0].message.data, { id: "absent", error: "not_found" })
 })
 
-test("invalid paths and unsupported backup fail before any save mutation", (t) => {
+test("invalid paths and reserved keys fail before any save mutation", (t) => {
     const temp = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-invalid-"))
     t.after(() => fs.rmSync(temp, { recursive: true, force: true }))
-    const responses = rust([request("SAVE", { SETTINGS: { initialized: true }, showsCache: { id: { name: "../escape" } } }), request("SAVE", { SETTINGS: { initialized: true }, customTriggers: { backup: true } }), request("SET_STORE_VALUE", { file: "config", key: "__proto__.polluted", value: true })], ["--app-data", path.join(temp, "app"), "--data-dir", path.join(temp, "data")])
+    const responses = rust([request("SAVE", { SETTINGS: { initialized: true }, showsCache: { id: { name: "../escape" } } }), request("SET_STORE_VALUE", { file: "config", key: "__proto__.polluted", value: true })], ["--app-data", path.join(temp, "app"), "--data-dir", path.join(temp, "data")])
     assert.deepEqual(
         responses.map((response) => response.error.code),
-        ["invalid_request", "unsupported_command", "invalid_request"]
+        ["invalid_request", "invalid_request"]
     )
-    assert.equal(fs.existsSync(path.join(temp, "app/settings.json")), false)
+    assert.equal(JSON.parse(fs.readFileSync(path.join(temp, "app/settings.json"), "utf8")).initialized, false)
+    assert.equal(fs.existsSync(path.join(temp, "escape.show")), false)
 })
 
 test("nested arrays and escaped store keys match electron-store's actual Conf dependency", (t) => {
@@ -161,4 +153,34 @@ test("nested arrays and escaped store keys match electron-store's actual Conf de
     )
     assert.deepEqual(responses.at(-2).value[0].message.data, clean(original.get("state")))
     assert.deepEqual(responses.at(-1).value[0].message.data, original.get("state.list.1.name"))
+})
+
+test("external store changes and deletion are visible without reapplying startup defaults", { timeout: 10000 }, async (t) => {
+    const temp = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-external-store-"))
+    const app = path.join(temp, "app")
+    const original = new Conf({ cwd: path.join(temp, "oracle"), projectName: "freeshow-parity", configName: "settings", defaults: { initialized: false, language: null } })
+    const child = spawn(binary, ["--app-data", app, "--data-dir", path.join(temp, "data")], { stdio: ["pipe", "pipe", "inherit"] })
+    const lines = createInterface({ input: child.stdout })[Symbol.asyncIterator]()
+    t.after(async () => {
+        if (child.exitCode === null && child.signalCode === null) {
+            const closed = once(child, "exit")
+            child.kill()
+            await closed
+        }
+        fs.rmSync(temp, { recursive: true, force: true })
+    })
+    const call = async (command, data) => {
+        child.stdin.write(JSON.stringify(request(command, data)) + "\n")
+        const { value } = await lines.next()
+        const result = JSON.parse(value)
+        assert.equal(result.ok, true, JSON.stringify(result.error))
+        return result.value[0].message.data
+    }
+    assert.equal((await call("SETTINGS")).initialized, original.store.initialized)
+    fs.writeFileSync(original.path, JSON.stringify({ language: "ja", future: { preserved: true } }))
+    fs.writeFileSync(path.join(app, "settings.json"), fs.readFileSync(original.path))
+    assert.deepEqual(await call("SETTINGS"), clean(original.store))
+    fs.unlinkSync(original.path)
+    fs.unlinkSync(path.join(app, "settings.json"))
+    assert.deepEqual(await call("SETTINGS"), clean(original.store))
 })

@@ -12,8 +12,7 @@ fn corrupt_store_is_reported_without_deleting_user_data() {
     let app = root.path().join("app");
     fs::create_dir_all(&app).unwrap();
     fs::write(app.join("settings.json"), "{broken").unwrap();
-    let mut stores = Stores::new(app.clone(), root.path().join("data")).unwrap();
-    assert!(stores.get("SETTINGS").is_err());
+    assert!(Stores::new(app.clone(), root.path().join("data")).is_err());
     assert_eq!(
         fs::read_to_string(app.join("settings.json")).unwrap(),
         "{broken"
@@ -42,15 +41,17 @@ fn atomic_replace_preserves_old_file_when_parent_is_unwritable() {
 }
 
 #[test]
-fn failed_store_write_does_not_change_in_memory_state() {
+fn failed_store_write_reports_the_disk_failure_without_hiding_it_in_a_cache() {
     let root = tempfile::tempdir().unwrap();
     let mut stores = Stores::new(root.path().join("app"), root.path().join("data")).unwrap();
     stores.set("CACHE", json!({"original":true})).unwrap();
     // Replace the destination with a directory, forcing atomic persist to fail.
-    fs::remove_file(stores.path("CACHE").unwrap()).unwrap();
+    let previous = stores.app_data.join("cache.previous.json");
+    fs::rename(stores.path("CACHE").unwrap(), &previous).unwrap();
     fs::create_dir(stores.path("CACHE").unwrap()).unwrap();
     assert!(stores.set("CACHE", json!({"changed":true})).is_err());
-    assert_eq!(stores.get("CACHE").unwrap(), json!({"original":true}));
+    assert!(stores.get("CACHE").is_err());
+    assert_eq!(fs::read_to_string(previous).unwrap(), "{\"original\":true}");
 }
 
 #[test]

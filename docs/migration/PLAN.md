@@ -34,7 +34,7 @@ npm run rust:bench
 
 `--ignore-scripts` supports Rust-only development without building Electron's native Node addons. Running the original Electron application still requires its normal native dependency installation. The full parity gate is expected to fail during migration.
 
-For Linux desktop automation, install `tauri-driver` (`cargo install tauri-driver --locked`), `webkit2gtk-driver`, Xvfb and D-Bus. Then:
+For Linux desktop automation, install `tauri-driver` (`cargo install tauri-driver --locked`), `webkit2gtk-driver`, `xdotool`, Xvfb and D-Bus. Then:
 
 ```sh
 npm run rust:frontend:build
@@ -42,7 +42,9 @@ cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol
 xvfb-run -a dbus-run-session -- python3 tests/desktop/smoke.py
 ```
 
-Set `FREESHOW_DESKTOP_BIN` when the binary is outside `target/debug`, such as `src-tauri/target/debug/freeshow-desktop`. Driver paths can be supplied with `TAURI_DRIVER` and `WEBKIT_WEBDRIVER`. Test profiles are temporary; screenshots and receipts go to `test-output-rust`.
+The desktop workflow also reopens the same profile, loads/renders the saved show, reads it through a native file picker, creates an automatic backup, restores it through the native restore picker, cancels a folder picker, and verifies a failed save can be retried after restoring file permissions.
+
+Set `FREESHOW_DESKTOP_BIN` when the binary is outside `target/debug`, such as `src-tauri/target/debug/freeshow-desktop`. Driver paths can be supplied with `TAURI_DRIVER` and `WEBKIT_WEBDRIVER`. `XDOTOOL` and `XDOTOOL_LIBRARY_PATH` support a user-local xdotool installation. Test profiles are temporary; screenshots and receipts go to `test-output-rust`.
 
 The desktop test uses the POSIX locale to exercise a WebKitGTK startup regression: `navigator.language` can be `C`, which `Intl.DateTimeFormat` rejects. The fork retains the 24-hour default for invalid tags, with regression tests for valid and invalid locales. WebKitWebDriver's text injection drops line breaks and non-BMP characters, so the test checks ordinary keyboard input and separately simulates a multiline paste input event for Unicode lyrics; this does not verify the native clipboard.
 
@@ -50,7 +52,7 @@ The desktop test uses the POSIX locale to exercise a WebKitGTK startup regressio
 
 1. **Pinned inventory and fixtures.** `upstream-inventory.json` records 153 MAIN commands, 13 IPC channels, renderer callbacks, and backend/server source files. The snapshot tool uses TypeScript's AST and executes only the constants module to capture defaults. `--check` rejects drift.
 2. **Differential unit tests.** The Node harness extracts and transpiles the original upstream function declarations. It compares their outputs with the Rust binary on generated, Unicode, malformed, numeric-ID, and missing-value inputs. The initial corpus supplies 1,024 show-helper comparisons. JSON parsing and repair are compared separately.
-3. **Persistence and failure tests.** Compare actual saved JSON and reply events, restart behavior, portable/local store paths, rename and delete rules, unknown-field preservation, corrupt data, failed writes, and duplicate IDs. Rust uses atomic file replacement. The initial SAVE oracle injects filesystem/store boundaries; it does not prove backups, cloud timestamp tracking, or native locking behavior.
+3. **Persistence and failure tests.** Compare actual saved JSON and reply events, restart behavior, portable/local store paths, rename and delete rules, unknown-field preservation, corrupt data, failed writes, and duplicate IDs. Rust uses atomic file replacement. The SAVE oracle executes the original save function against its actual `Conf` dependency. Backup tests run the original ZIP writer/reader against Rust archives and compare saved contents. Restore tests cover legacy JSON, mixed stores, malformed data, traversal names, oversized headers, commit failure and failed rollback. Cloud edit timestamps, large/atypical legacy archives and native locking behavior remain unverified.
 4. **Desktop workflows.** Drive the actual application through WebDriver, beginning with onboarding, project/show creation, Quick Lyrics, Unicode, and keyboard save. Expand to editing, undo/redo, layouts, output cues, settings, imports, exports, and restart recovery. Renderer-only mocks supplement these tests but cannot replace them.
 5. **Protocol tests.** Capture and replay remote/stage/controller, Socket.IO, REST/WebSocket, OSC/MIDI/timecode, and provider exchanges. Assert payloads, event order, authentication, reconnection, cancellation, and error behavior.
 6. **Media and hardware tests.** Use deterministic clips and reference audio; measure frame timing, transitions, seek, sync, and duration. NDI/OMT/Blackmagic and MIDI/audio/display devices require real loopback checks on supported operating systems. Record unavailable hardware as unverified.

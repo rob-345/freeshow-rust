@@ -1,6 +1,7 @@
 use crate::{
+    backup,
     protocol::{Event, Request},
-    show,
+    restore, show,
     storage::{self, Stores, STORE_IDS},
     Error, Result,
 };
@@ -35,6 +36,10 @@ pub const IMPLEMENTED_MAIN: &[&str] = &[
     "SAVE",
     "READ_FILE",
     "OUTPUT",
+    "BACKUPS",
+    "DELETE_BACKUP",
+    "RESTORE",
+    "REFRESH_SHOWS",
 ];
 
 pub struct Runtime {
@@ -120,11 +125,104 @@ impl Runtime {
                 .filter(|name| name.contains(".show") && name.len() > 5)
                 .collect::<Vec<_>>())),
             "GET_EMPTY_SHOWS" => Some(self.empty_shows(&data["cached"])?),
+            "REFRESH_SHOWS" => {
+                let (shows, _) = self.load_shows()?;
+                if shows.as_object().is_some_and(|shows| !shows.is_empty()) {
+                    events.push(Event::reply("MAIN", "REFRESH_SHOWS2", shows, None));
+                }
+                None
+            }
+            "BACKUPS" => Some(serde_json::to_value(backup::list(&self.stores.data)?)?),
+            "DELETE_BACKUP" => {
+                backup::remove(
+                    &self.stores.data,
+                    &PathBuf::from(required_string(data, "path")?),
+                )?;
+                None
+            }
+            "RESTORE" => {
+                let paths = if let Some(path) = data["path"].as_str() {
+                    vec![PathBuf::from(path)]
+                } else if let Some(paths) = data["paths"].as_array() {
+                    paths
+                        .iter()
+                        .map(|path| {
+                            path.as_str().map(PathBuf::from).ok_or_else(|| {
+                                Error::Invalid("restore paths must be strings".into())
+                            })
+                        })
+                        .collect::<Result<Vec<_>>>()?
+                } else {
+                    return Err(Error::Unsupported("RESTORE.file_picker".into()));
+                };
+                match restore::restore(&self.stores, &paths) {
+                    Ok(restored) => {
+                        if restored.recognized {
+                            events.push(Event::reply(
+                                "MAIN",
+                                "RESTORE2",
+                                json!({"starting":true}),
+                                None,
+                            ));
+                            for (id, value) in restored.stores {
+                                events.push(Event::reply("MAIN", &id, value, None));
+                            }
+                            if restored.shows {
+                                let (shows, _) = self.load_shows()?;
+                                events.push(Event::reply("MAIN", "SHOWS", shows, None));
+                            }
+                        }
+                        events.push(Event::reply(
+                            "MAIN",
+                            "RESTORE2",
+                            json!({"finished":restored.recognized}),
+                            None,
+                        ));
+                    }
+                    Err(error) => {
+                        events.push(Event::reply(
+                            "MAIN",
+                            "RESTORE2",
+                            json!({"finished":false}),
+                            None,
+                        ));
+                        events.push(Event::reply(
+                            "MAIN",
+                            "ALERT",
+                            error_alert("Could not restore backup", &error),
+                            None,
+                        ));
+                    }
+                }
+                None
+            }
             "SAVE" => {
-                self.save(data)?;
-                if !data["customTriggers"]["reset"].as_bool().unwrap_or(false) {
+                let is_backup = data["customTriggers"]["backup"].as_bool().unwrap_or(false);
+                let automatic = data["customTriggers"]["isAutoBackup"]
+                    .as_bool()
+                    .unwrap_or(false);
+                let backup_only = is_backup
+                    && automatic
+                    && !data["customTriggers"]["autosave"]
+                        .as_bool()
+                        .unwrap_or(false)
+                    && !data["closeWhenFinished"].as_bool().unwrap_or(false);
+                if backup_only {
+                    if let Some(settings) = data.get("SETTINGS").filter(|value| value.is_object()) {
+                        self.stores.set("SETTINGS", settings.clone())?;
+                    }
+                } else {
+                    self.save(data)?;
+                }
+                if backup_only || !data["customTriggers"]["reset"].as_bool().unwrap_or(false) {
                     let mut info = Map::new();
+                    if backup_only {
+                        info.insert("closeWhenFinished".into(), json!(false));
+                    }
                     for key in ["closeWhenFinished", "customTriggers"] {
+                        if backup_only && key == "closeWhenFinished" {
+                            continue;
+                        }
                         if let Some(value) = data.get(key) {
                             info.insert(key.into(), value.clone());
                         }
@@ -133,6 +231,30 @@ impl Runtime {
                 } else {
                     for id in ["SETTINGS", "SYNCED_SETTINGS"] {
                         events.push(Event::reply("MAIN", id, self.stores.get(id)?, None));
+                    }
+                }
+                if is_backup {
+                    match backup::create(&self.stores, automatic) {
+                        Ok(path) => events.push(Event::reply(
+                            "MAIN",
+                            "BACKUP",
+                            json!({"finished":true,"path":path}),
+                            None,
+                        )),
+                        Err(error) => {
+                            events.push(Event::reply(
+                                "MAIN",
+                                "BACKUP",
+                                json!({"finished":false}),
+                                None,
+                            ));
+                            events.push(Event::reply(
+                                "MAIN",
+                                "ALERT",
+                                error_alert("Could not create backup", &error),
+                                None,
+                            ));
+                        }
                     }
                 }
                 None
@@ -271,11 +393,6 @@ impl Runtime {
         if !data.is_object() {
             return Err(Error::Invalid("SAVE requires an object".into()));
         }
-        // Refuse unsupported backup before any writes; never acknowledge a backup
-        // as completed just because the underlying save worked.
-        if data["customTriggers"]["backup"].as_bool().unwrap_or(false) {
-            return Err(Error::Unsupported("SAVE.backup".into()));
-        }
         // Validate names before any mutation, including the path used by rename.
         for field in ["showsCache", "scripturesCache"] {
             for (id, value) in data[field].as_object().into_iter().flatten() {
@@ -372,4 +489,15 @@ fn required_string<'a>(value: &'a Value, key: &str) -> Result<&'a str> {
     value[key]
         .as_str()
         .ok_or_else(|| Error::Invalid(format!("{key} must be a string")))
+}
+
+fn error_alert(context: &str, error: &Error) -> Value {
+    // The shared alert component renders HTML. Escape filenames and parser
+    // messages before including them in its content.
+    let detail = error
+        .to_string()
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;");
+    json!(format!("<span>{context}: {detail}</span>"))
 }

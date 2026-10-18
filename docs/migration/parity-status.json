@@ -18,11 +18,11 @@
         "crates/freeshow-core/tests/storage.rs"
       ],
       "remaining": [
-        "external file edits",
+        "external edits during saves and multiple-instance locking",
         "portable data relocation",
         "legacy profile import",
         "Windows/macOS permission and locking behavior",
-        "cloud edit timestamps",
+        "unchanged-write suppression and cloud edit timestamps",
         "array length and unusual property edge cases"
       ]
     },
@@ -42,9 +42,13 @@
     {
       "id": "desktop",
       "status": "partial",
-      "tests": [],
+      "tests": [
+        "tests/parity/dialog.test.mjs",
+        "tests/desktop/smoke.py"
+      ],
       "remaining": [
-        "native file dialogs and drag/drop",
+        "positive folder selection and data relocation",
+        "native drag/drop",
         "menus and accelerators",
         "clipboard",
         "display hotplug and DPI",
@@ -57,12 +61,14 @@
       "id": "editor",
       "status": "partial",
       "tests": [
-        "tests/desktop/smoke.py"
+        "tests/desktop/smoke.py",
+        "src/frontend/rust/saveFailure.test.ts"
       ],
       "remaining": [
-        "editing, undo/redo, layouts, settings and restart recovery workflows",
+        "editing, undo/redo, layouts and settings workflows",
         "visual snapshots across WebView2, WKWebView and WebKitGTK",
-        "native clipboard, keyboard and accessibility parity"
+        "native clipboard, keyboard and accessibility parity",
+        "automatic-backup saved-state semantics"
       ]
     },
     {
@@ -78,15 +84,22 @@
     },
     {
       "id": "files-and-import-export",
-      "status": "pending",
-      "tests": [],
+      "status": "partial",
+      "tests": [
+        "tests/parity/backup.test.mjs",
+        "crates/freeshow-core/src/archive.rs",
+        "crates/freeshow-core/src/restore.rs",
+        "tests/desktop/smoke.py"
+      ],
       "remaining": [
-        "all import/export formats",
-        "scriptures",
-        "media discovery",
+        "other import/export formats",
+        "scriptures and media discovery",
         "PDF and PowerPoint",
-        "backups and restore",
-        "recording"
+        "recording",
+        "cloud backup bundle format",
+        "automatic restore-journal recovery after process crash",
+        "backup metadata and retention across operating systems/time zones",
+        "large and unusual legacy backup compatibility"
       ]
     },
     {

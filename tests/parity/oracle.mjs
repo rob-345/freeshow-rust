@@ -3,9 +3,11 @@ import path from "node:path"
 import vm from "node:vm"
 import { fileURLToPath } from "node:url"
 import ts from "typescript"
+import Conf from "conf"
 
 export const root = fileURLToPath(new URL("../../", import.meta.url))
 export const defaults = JSON.parse(fs.readFileSync(path.join(root, "tests/parity/fixtures/defaults.json"), "utf8"))
+export const storeDefinitions = JSON.parse(fs.readFileSync(path.join(root, "tests/parity/fixtures/stores.json"), "utf8"))
 
 // Extract the actual pinned upstream declarations. We never copy a reference
 // algorithm into the test. Only OS/Electron boundaries are injected.
@@ -59,23 +61,13 @@ export function fixtureShow(seed) {
 
 export function createSaveOracle(appData, dataDir) {
     const stores = {}
-    const storeIds = ["SHOWS", "SETTINGS", "SYNCED_SETTINGS", "PROJECTS", "STAGE", "THEMES", "OVERLAYS", "TEMPLATES", "EVENTS", "MEDIA", "HISTORY", "CACHE", "CACHE_SYNC", "USAGE", "ERROR_LOG", "DRIVE_API_KEY", "ACCESS"]
-    const portable = ["SYNCED_SETTINGS", "PROJECTS", "STAGE", "THEMES", "OVERLAYS", "TEMPLATES", "EVENTS"]
-    const storePath = (id) => path.join(portable.includes(id) ? path.join(dataDir, "Config") : appData, `${id === "SYNCED_SETTINGS" ? "settings_synced" : ["ACCESS", "DRIVE_API_KEY"].includes(id) ? id : id.toLowerCase()}.json`)
     const write = (file, content) => {
         fs.mkdirSync(path.dirname(file), { recursive: true })
         fs.writeFileSync(file, content)
     }
-    for (const id of storeIds) {
-        const initial = id === "SETTINGS" ? defaults.defaultSettings : id === "SYNCED_SETTINGS" ? defaults.defaultSyncedSettings : id === "PROJECTS" ? { projects: {}, folders: {}, projectTemplates: {} } : id === "ACCESS" ? { contentProviders: {}, secrets: {} } : {}
-        stores[id] = {
-            get store() {
-                return fs.existsSync(storePath(id)) ? JSON.parse(fs.readFileSync(storePath(id), "utf8")) : initial
-            },
-            set store(value) {
-                write(storePath(id), JSON.stringify(value))
-            }
-        }
+    new Conf({ cwd: appData, projectName: "freeshow-parity", configName: "config", defaults: defaults.defaultConfig })
+    for (const [id, data] of Object.entries(storeDefinitions)) {
+        stores[id] = new Conf({ cwd: data.portable ? path.join(dataDir, "Config") : appData, projectName: "freeshow-parity", configName: data.fileName, defaults: data.defaults, accessPropertiesByDotNotation: id !== "MEDIA" })
     }
     const events = []
     const getDataFolderPath = (id) => {
@@ -120,5 +112,5 @@ export function createSaveOracle(appData, dataDir) {
         },
         'let isSaving = false; const TRACK_FILE_MODIFIED = ["EVENTS", "THEMES", "MEDIA"];'
     )
-    return { save, events }
+    return { save, events, stores }
 }

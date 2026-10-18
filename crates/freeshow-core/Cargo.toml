@@ -11,6 +11,8 @@ serde_json = { version = "1", features = ["preserve_order"] }
 tempfile = "3"
 thiserror = "2"
 uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+zip = { version = "9", default-features = false, features = ["deflate"] }
 
 [[bin]]
 name = "freeshow-core"

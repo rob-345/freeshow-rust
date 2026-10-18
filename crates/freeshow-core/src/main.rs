@@ -30,6 +30,31 @@ fn evaluate(input: Value, runtime: &mut Runtime) -> Result<Value> {
         "show.text" => json!(show::text_content(&input["value"])),
         "show.searchText" => json!(show::search_text(&input["value"])),
         "show.empty" => json!(show::is_empty(&input["value"])),
+        "dialog.folder" => {
+            let path = input["selected"].as_str().map(std::path::Path::new);
+            serde_json::to_value(freeshow_core::dialog::folder_selected(
+                &input["data"],
+                path,
+            )?)?
+        }
+        "dialog.files" => {
+            let paths: Vec<PathBuf> = serde_json::from_value(input["selected"].clone())?;
+            serde_json::to_value(freeshow_core::dialog::files_selected(
+                &input["data"],
+                &paths,
+            )?)?
+        }
+        "backup.retention" => {
+            let backups: Vec<freeshow_core::backup::Backup> =
+                serde_json::from_value(input["backups"].clone())?;
+            json!(freeshow_core::backup::retention_paths(
+                &backups,
+                input["cutoffMs"]
+                    .as_i64()
+                    .ok_or_else(|| Error::Invalid("cutoffMs must be an integer".into()))?,
+                input["ignoreFloor"].as_bool().unwrap_or(false)
+            ))
+        }
         "bench.show.text" => {
             let corpus = input["corpus"]
                 .as_array()

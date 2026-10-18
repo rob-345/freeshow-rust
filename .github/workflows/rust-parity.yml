@@ -14,6 +14,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: rust-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   core:
     strategy:
@@ -31,6 +35,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: rustup show
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ runner.arch }}-rust-core-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-rust-core-
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run rust:snapshot
       - run: cargo fmt --all --check
@@ -48,14 +60,25 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev webkit2gtk-driver xvfb dbus-x11
+      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev webkit2gtk-driver xvfb dbus-x11 xdotool
       - run: rustup show
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ runner.arch }}-rust-desktop-${{ hashFiles('Cargo.lock', 'src-tauri/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-rust-desktop-
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run rust:frontend:build
       - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
-      - run: cargo install tauri-driver --locked
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol -- -D warnings
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      - run: cargo install tauri-driver --version 2.1.0 --locked
       - run: xvfb-run -a dbus-run-session -- python3 tests/desktop/smoke.py
       - uses: actions/upload-artifact@v4
         if: always()
