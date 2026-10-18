@@ -1,0 +1,27 @@
+[package]
+name = "freeshow-desktop"
+version = "0.1.0"
+description = "FreeShow Rust desktop runtime (migration in progress)"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/rob-345/freeshow-rust"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde_json = { version = "1", features = ["preserve_order"] }
+freeshow-core = { path = "../crates/freeshow-core" }
+
+[profile.dev]
+debug = 0
+incremental = false
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "baseline": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+  "featureAreas": [
+    {
+      "id": "show-helpers",
+      "status": "verified",
+      "tests": [
+        "tests/parity/core.test.mjs"
+      ],
+      "scope": "trim metadata, lyric text, search text, emptiness and JSON repair on the generated corpus"
+    },
+    {
+      "id": "storage",
+      "status": "partial",
+      "tests": [
+        "tests/parity/core.test.mjs",
+        "crates/freeshow-core/tests/storage.rs"
+      ],
+      "remaining": [
+        "external file edits",
+        "portable data relocation",
+        "legacy profile import",
+        "Windows/macOS permission and locking behavior",
+        "cloud edit timestamps"
+      ]
+    },
+    {
+      "id": "ipc",
+      "status": "partial",
+      "tests": [
+        "tests/parity/bridge.test.mjs"
+      ],
+      "remaining": [
+        "binary ArrayBuffer transport",
+        "MessagePort audio/video transport",
+        "backend-initiated request correlation",
+        "all command payload variants"
+      ]
+    },
+    {
+      "id": "desktop",
+      "status": "partial",
+      "tests": [],
+      "remaining": [
+        "native file dialogs and drag/drop",
+        "menus and accelerators",
+        "clipboard",
+        "display hotplug and DPI",
+        "cross-platform lifecycle",
+        "spellcheck",
+        "updates and crash reporting"
+      ]
+    },
+    {
+      "id": "editor",
+      "status": "partial",
+      "tests": [
+        "tests/desktop/smoke.py"
+      ],
+      "remaining": [
+        "editing, undo/redo, layouts, settings and restart recovery workflows",
+        "visual snapshots across WebView2, WKWebView and WebKitGTK",
+        "native clipboard, keyboard and accessibility parity"
+      ]
+    },
+    {
+      "id": "outputs",
+      "status": "pending",
+      "tests": [],
+      "remaining": [
+        "multi-window state and slide routing",
+        "multi-monitor alignment and transparency",
+        "frame-accurate transitions",
+        "preview capture"
+      ]
+    },
+    {
+      "id": "files-and-import-export",
+      "status": "pending",
+      "tests": [],
+      "remaining": [
+        "all import/export formats",
+        "scriptures",
+        "media discovery",
+        "PDF and PowerPoint",
+        "backups and restore",
+        "recording"
+      ]
+    },
+    {
+      "id": "media-and-audio",
+      "status": "pending",
+      "tests": [],
+      "remaining": [
+        "video codecs and seeking",
+        "audio mixing, routing, effects and recording",
+        "camera and desktop capture",
+        "Spotify and now-playing"
+      ]
+    },
+    {
+      "id": "network-and-control",
+      "status": "pending",
+      "tests": [],
+      "remaining": [
+        "remote, stage, controller and output-stream servers",
+        "Socket.IO, REST and WebSocket compatibility",
+        "OSC, MIDI, MTC and LTC"
+      ]
+    },
+    {
+      "id": "broadcast-hardware",
+      "status": "pending",
+      "tests": [],
+      "remaining": [
+        "NDI",
+        "OMT",
+        "Blackmagic",
+        "RTMP",
+        "WebRTC",
+        "Icecast",
+        "hardware loopback validation"
+      ]
+    },
+    {
+      "id": "cloud-and-providers",
+      "status": "pending",
+      "tests": [],
+      "remaining": [
+        "ChurchApps and Google Drive sync",
+        "Planning Center",
+        "OnStage",
+        "content licensing and downloads",
+        "lyric providers"
+      ]
+    },
+    {
+      "id": "ai",
+      "status": "pending",
+      "tests": [],
+      "remaining": [
+        "local models and setup",
+        "speech recognition",
+        "LLM providers",
+        "audio and transcript streaming"
+      ]
+    },
+    {
+      "id": "performance",
+      "status": "pending",
+      "tests": [
+        "scripts/migration/benchmark.mjs"
+      ],
+      "remaining": [
+        "comparable Electron baseline",
+        "cold/warm startup",
+        "process-tree memory",
+        "large library latency",
+        "output p50/p95/p99 frame timing",
+        "sustained playback and streaming"
+      ]
+    },
+    {
+      "id": "distribution",
+      "status": "pending",
+      "tests": [],
+      "remaining": [
+        "Windows/macOS/Linux native build verification",
+        "signed installers",
+        "upgrade and rollback",
+        "GPL notices and fork branding",
+        "replacement of inherited upstream publishing destinations"
+      ]
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+> **FreeShow Rust fork — migration in progress.** The existing Svelte UI is being connected to a Rust/Tauri runtime. This is a development build with substantial unported features; feature parity and application performance improvements have not been established. See [migration plan and test commands](docs/migration/PLAN.md) and [current progress](docs/migration/PROGRESS.md). Upstream documentation follows.
+
 <p align='center'>
  <a href='https://freeshow.app/'>
   <img src='https://github.com/ChurchApps/FreeShow/assets/17619496/02ac9807-1f47-47fc-b895-b35f857c2b57' width=150 />

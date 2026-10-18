@@ -1,0 +1,14 @@
+[workspace]
+members = ["crates/freeshow-core"]
+exclude = ["src-tauri"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/rob-345/freeshow-rust"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
