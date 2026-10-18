@@ -21,6 +21,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+import wave
 import zipfile
 import zlib
 import gi
@@ -59,7 +60,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -518,6 +519,36 @@ def run():
             (ARTIFACTS / "imports.json").write_text(json.dumps(imported, ensure_ascii=False, indent=2))
             steps.append("Retained Svelte text, ChordPro, CSV, native-show and project import converters persist Unicode lyrics and unknown fields")
             steps.append("Native project ZIP installs identical media bytes before publishing remapped paths and saves those references")
+            asset_audio = import_dir / "Native asset audio.wav"
+            with wave.open(str(asset_audio), "wb") as audio:
+                audio.setnchannels(1)
+                audio.setsampwidth(2)
+                audio.setframerate(8000)
+                audio.writeframes(bytes(16000))
+            asset_video = import_dir / "Native asset video.webm"
+            shutil.copyfile(ROOT / "crates/freeshow-assets/tools/fixtures/blue.webm", asset_video)
+            asset_show = json.loads(json.dumps(saved[1]))
+            asset_show["name"] = "Native asset delivery"
+            asset_show["media"] = {str(index): {"path":str(path)} for index,path in enumerate([installed_media,asset_audio,asset_video])}
+            (data_dir / "Shows" / "Native asset delivery.show").write_text(json.dumps(["native-assets-show",asset_show]))
+            script((ROOT / "tests/desktop/assets_probe.js").read_text(), {"id":"native-assets-show","name":asset_show["name"],"image":str(installed_media),"audio":str(asset_audio),"video":str(asset_video),"importUrlAtCallback":imported.get("importUrlAtCallback")})
+            assets = wait(lambda: script("return window.__assetsProbe.done ? window.__assetsProbe : null"), "Native grants reach retained callbacks and actual WebKit image/audio/video decoders", seconds=40)
+            assert "error" not in assets, assets
+            assert assets["origin"] == "tauri://localhost"
+            assert bytes(assets["pngBytes"]) == media_bytes
+            assert assets["head"] == {"status":200,"length":len(media_bytes),"bodyLength":0}
+            assert assets["range"] == {"status":206,"contentRange":f"bytes 0-7/{len(media_bytes)}","bytes":list(media_bytes[:8])}
+            assert assets["image"] == {"width":1,"height":1,"rgba":[0,0,0,255],"exported":True}
+            assert assets["corsRequired"] is True
+            assert len(assets["media"]) == 2
+            for media in assets["media"]:
+                assert abs(media["duration"]-1) < 0.02 and media["playedTime"] > 0.55 and media["playing"], media
+                if media["kind"] == "video":
+                    assert [media["width"],media["height"]] == [16,16]
+                    assert media["rgba"][0] < 10 and media["rgba"][1] < 10 and media["rgba"][2] > 240 and media["rgba"][3] == 255
+            (ARTIFACTS / "assets.json").write_text(json.dumps(assets, ensure_ascii=False, indent=2))
+            steps.append("Native HTTP GET, HEAD and Range preserve imported PNG bytes and CORS canvas pixels")
+            steps.append("Native media capabilities support real WebKit WAV/VP8 seeking and playback")
             click_text("Rust parity test")
             wait(lambda: script("return document.body.innerText.includes('Amazing grace')"), "Original show reselected after import checks")
 
@@ -602,6 +633,13 @@ def run():
                     output_window = handle
                     break
             assert output_window is not None, native_outputs
+            wait(lambda: script("return !!document.querySelector('main.background')"), "Output role bootstrap reached retained Svelte view")
+            output_asset = script("return {url:window.api.resolveFilePath(arguments[0]),context:window.api.getRuntimeContext()}", str(installed_media))
+            assert output_asset["url"] == assets["callbackUrls"][str(installed_media)], output_asset
+            assert output_asset["context"] == imported["context"], output_asset
+            assets["outputReplay"] = output_asset
+            (ARTIFACTS / "assets.json").write_text(json.dumps(assets, ensure_ascii=False, indent=2))
+            steps.append("New output WebView receives existing trusted media grants before its retained state handlers")
             script("window.__outputMessages=[];window.api.receive('OUTPUT',m=>{window.__outputMessages.push(m);if(window.__outputMessages.length>100)window.__outputMessages.shift()},'output-evidence')")
             command("POST", "/window", {"handle":main_window})
             wait(lambda: script("return document.querySelectorAll('#showArea .grid .slide.context').length>=2"), "Two live slide controls available")

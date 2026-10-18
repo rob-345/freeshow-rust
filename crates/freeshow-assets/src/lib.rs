@@ -101,6 +101,9 @@ pub struct GrantBatch {
 #[derive(Debug, Clone)]
 pub struct Config {
     pub allowed_origins: Vec<String>,
+    /// Trusted canonical protected-cache roots. Ciphertext must never acquire
+    /// a plaintext capability through an ordinary path or a native symlink.
+    pub protected_roots: Vec<PathBuf>,
     pub max_connections: usize,
     pub max_grants: usize,
     pub max_registry_bytes: usize,
@@ -120,6 +123,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             allowed_origins: Vec::new(),
+            protected_roots: Vec::new(),
             max_connections: 8,
             max_grants: 1024,
             max_registry_bytes: 8 * 1024 * 1024,
@@ -162,6 +166,13 @@ impl Config {
                     || origin.len() > 512
                     || !origin.is_ascii()
                     || origin.bytes().any(|byte| byte < 0x20 || byte == 0x7f)
+            })
+            || self.protected_roots.len() > 32
+            || self.protected_roots.iter().any(|root| {
+                !root.is_absolute()
+                    || root
+                        .to_str()
+                        .is_none_or(|text| text.len() > 32768 || text.contains('\0'))
             })
         {
             return Err(Error::new(
@@ -269,11 +280,17 @@ pub(crate) struct Connection {
 }
 pub(crate) struct Registry {
     pub context: Context,
+    revision: Revision,
     pub epoch: CancellationToken,
     pub grants: HashMap<String, Entry>,
     pub connections: HashMap<u64, Connection>,
     pub bytes: usize,
 }
+
+/// Native-only publication identity. Retaining this token prevents allocation
+/// reuse, so unchanged replay needs no path cloning or wrapping counter.
+#[derive(Clone)]
+pub struct Revision(Arc<()>);
 pub(crate) struct Shared {
     pub config: Config,
     pub authority: String,
@@ -372,6 +389,7 @@ impl AssetServer {
             token,
             registry: Mutex::new(Registry {
                 context,
+                revision: Revision(Arc::new(())),
                 epoch: CancellationToken::new(),
                 grants: HashMap::new(),
                 connections: HashMap::new(),
@@ -418,6 +436,7 @@ impl AssetServer {
         registry.epoch.cancel();
         registry.epoch = CancellationToken::new();
         registry.context = next;
+        registry.revision = Revision(Arc::new(()));
         registry.grants.clear();
         registry.bytes = 0;
         Ok(())
@@ -509,6 +528,19 @@ impl AssetServer {
         guard.0.take();
         let opened = opened?;
         self.context_control(context, &control)?;
+        if self
+            .0
+            .shared
+            .config
+            .protected_roots
+            .iter()
+            .any(|root| opened.path.starts_with(root))
+        {
+            return Err(Error::new(
+                "assets_protected",
+                "Protected cache bytes require decryption and license authorization",
+            ));
+        }
         let canonical = opened.path.to_str().ok_or_else(|| {
             Error::new(
                 "assets_encoding",
@@ -540,18 +572,29 @@ impl AssetServer {
                 "Library changed during asset authorization",
             ));
         }
-        if let Some(entry) = registry.grants.values().find(|entry| {
+        if let Some(entry) = registry.grants.values_mut().find(|entry| {
             entry.public.source_path == grant.source_path
                 && entry.path == opened.path
                 && entry.identity == opened.identity
                 && entry.public.mime_type == mime_type
         }) {
-            let mut public = entry.public.clone();
-            public.length = opened.length;
+            let changed = entry.public.length != opened.length;
+            entry.public.length = opened.length;
+            let public = entry.public.clone();
+            if changed {
+                registry.revision = Revision(Arc::new(()));
+            }
             return Ok((public, false));
         }
-        if registry.grants.len() >= self.0.shared.config.max_grants
-            || registry.bytes + bytes > self.0.shared.config.max_registry_bytes
+        let replaced = registry
+            .grants
+            .values()
+            .filter(|entry| entry.public.source_path == grant.source_path)
+            .map(|entry| (entry.public.id.clone(), entry.bytes))
+            .collect::<Vec<_>>();
+        let replaced_bytes = replaced.iter().map(|(_, bytes)| *bytes).sum::<usize>();
+        if registry.grants.len() - replaced.len() >= self.0.shared.config.max_grants
+            || registry.bytes - replaced_bytes + bytes > self.0.shared.config.max_registry_bytes
         {
             return Err(Error::new(
                 "assets_limit",
@@ -570,7 +613,16 @@ impl AssetServer {
             length: opened.length,
             context: context.clone(),
         };
-        registry.bytes += bytes;
+        for (old, _) in replaced {
+            registry.grants.remove(&old);
+            for connection in registry.connections.values() {
+                if connection.grant.as_deref() == Some(old.as_str()) {
+                    connection.cancel.cancel();
+                }
+            }
+        }
+        registry.bytes = registry.bytes - replaced_bytes + bytes;
+        registry.revision = Revision(Arc::new(()));
         registry.grants.insert(
             id,
             Entry {
@@ -645,6 +697,7 @@ impl AssetServer {
         if let Ok(mut registry) = self.0.shared.registry.lock() {
             if let Some(entry) = registry.grants.remove(id) {
                 registry.bytes -= entry.bytes;
+                registry.revision = Revision(Arc::new(()));
             }
             for connection in registry.connections.values() {
                 if connection.grant.as_deref() == Some(id) {
@@ -652,6 +705,40 @@ impl AssetServer {
                 }
             }
         }
+    }
+    /// Bounded replay for native output windows; never authorizes new paths.
+    pub fn snapshot(&self, context: &Context) -> Result<Vec<AssetGrant>, Error> {
+        Ok(self.snapshot_since(context, None)?.1.unwrap())
+    }
+    pub fn snapshot_since(
+        &self,
+        context: &Context,
+        previous: Option<&Revision>,
+    ) -> Result<(Revision, Option<Vec<AssetGrant>>), Error> {
+        self.context_control(context, &Control::default())?;
+        let registry = self
+            .0
+            .shared
+            .registry
+            .lock()
+            .map_err(|_| Error::new("assets_worker", "Asset registry lock poisoned"))?;
+        if &registry.context != context {
+            return Err(Error::new(
+                "assets_stale_context",
+                "Asset replay belongs to an obsolete library",
+            ));
+        }
+        let revision = registry.revision.clone();
+        if previous.is_some_and(|previous| Arc::ptr_eq(&previous.0, &revision.0)) {
+            return Ok((revision, None));
+        }
+        let mut grants = registry
+            .grants
+            .values()
+            .map(|entry| entry.public.clone())
+            .collect::<Vec<_>>();
+        grants.sort_unstable_by(|left, right| left.source_path.cmp(&right.source_path));
+        Ok((revision, Some(grants)))
     }
     pub fn status(&self) -> Status {
         let registry = self

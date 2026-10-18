@@ -10,6 +10,7 @@ use freeshow_imports::{ImportEvent, ImportRoots, ImportService, PreparedImport};
 use serde_json::{json, Value};
 use std::{
     collections::HashMap,
+    path::PathBuf,
     sync::{Arc, Mutex},
 };
 use tokio::sync::{Mutex as AsyncMutex, Notify, OwnedSemaphorePermit, Semaphore};
@@ -17,6 +18,14 @@ use tokio_util::sync::CancellationToken;
 
 pub const COMMANDS: &[&str] = &["IMPORT_FILES"];
 const MAX_REQUESTS: usize = 2;
+
+#[derive(Debug)]
+pub struct Imported {
+    pub events: Vec<Event>,
+    /// Only final installed or existing destinations, after the ordered commit.
+    pub media: Vec<PathBuf>,
+    pub context: RuntimeContext,
+}
 
 #[derive(Default)]
 struct Registry {
@@ -163,7 +172,7 @@ impl NativeImports {
         request: Request,
         window: &str,
         sink: impl Fn(Event) -> std::result::Result<(), String> + Send,
-    ) -> std::result::Result<Vec<Event>, WireError> {
+    ) -> std::result::Result<Imported, WireError> {
         if window != "main" {
             return Err(WireError::new(
                 "import_role",
@@ -175,6 +184,7 @@ impl NativeImports {
             .contextualize(&request, &mut [])
             .map_err(WireError::from)?;
         let context = request.context.as_ref().expect("lease validated context");
+        let captured = context.clone();
         let prepared = self
             .service
             .prepare_with_cancel(
@@ -216,6 +226,22 @@ impl NativeImports {
             .filter(|event| event.message.channel == "ALERT")
             .cloned()
             .collect();
+        let root = context.data_path.join("Imports");
+        let mut media = prepared
+            .plan
+            .installs
+            .iter()
+            .map(|item| root.join(item.destination.as_path()))
+            .chain(
+                prepared
+                    .plan
+                    .existing
+                    .iter()
+                    .map(|item| root.join(item.destination.as_path())),
+            )
+            .collect::<Vec<_>>();
+        media.sort();
+        media.dedup();
         let job = PreparedJob {
             prepared,
             _lease: lease,
@@ -224,7 +250,11 @@ impl NativeImports {
             .commit(request, window, move |runtime| job.commit(runtime))
             .await
         {
-            Ok(events) => Ok(events),
+            Ok(events) => Ok(Imported {
+                events,
+                media,
+                context: captured,
+            }),
             Err(error) => {
                 let mut prior = events(prior);
                 library

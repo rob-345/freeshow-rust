@@ -203,7 +203,9 @@ test("DOES_MEDIA_EXIST matches access/stat ctime floor, noCache, truthy mismatch
     fs.mkdirSync(cache)
     const input = path.join(dir, "音楽 🙌.png")
     fs.writeFileSync(input, png())
-    fs.utimesSync(input, -100.123, -50.654)
+    // Negative numeric utimes arguments mean "now" in Node. Dates express
+    // actual pre-epoch times without a same-millisecond ctime/mtime race.
+    fs.utimesSync(input, new Date(-100123), new Date(-50654))
     fs.chmodSync(input, 0o640)
     const ctime = Math.floor(fs.statSync(input).ctimeMs),
         oracle = original(cache),
@@ -221,6 +223,7 @@ test("DOES_MEDIA_EXIST matches access/stat ctime floor, noCache, truthy mismatch
         assert.ok(actual[index].effects.every((effect) => effect.kind === "invalidate" && effect.expected.length > 0))
     }
     assert.notEqual(ctime, Math.floor(fs.statSync(input).mtimeMs))
+    assert.ok(fs.statSync(input).mtimeMs < 0)
     assert.equal(actual[3].effects.length, 4)
     assert.equal(actual[5].effects.length, 0)
     for (const effect of actual[3].effects) assert.ok(fs.existsSync(path.join(cache, effect.destination)))
@@ -457,7 +460,11 @@ test("committed packaged PNG receipt pins source, runtime, decoded pixels and by
     assert.equal(fixture.failures[2].outputEmpty, false)
     assert.equal(fixture.failures[3].explicitUnsupported, true)
     for (const [file, functions] of Object.entries(fixture.sourceSha256)) {
-        const ast = ts.createSourceFile(file, fs.readFileSync(path.join(root, file), "utf8"), ts.ScriptTarget.Latest, true)
+        // The retained helpers now include native URL/CORS adaptations. This
+        // receipt describes the untouched packaged application's pinned source.
+        const source = spawnSync("git", ["show", `2d94defcf98175e4f5c9504e7f4fd1d33c35c975:${file}`], { cwd: root, encoding: "utf8" })
+        assert.equal(source.status, 0, source.stderr)
+        const ast = ts.createSourceFile(file, source.stdout, ts.ScriptTarget.Latest, true)
         for (const [name, expected] of Object.entries(functions)) {
             const node = ast.statements.find((node) => ts.isFunctionDeclaration(node) && node.name?.text === name)
             assert.ok(node)

@@ -21,6 +21,10 @@ const until = async (condition, description, timeout = 15000) => {
 window.api.receive(
     "MAIN",
     (message, listenerId) => {
+        if (message.channel === "IMPORT2" && message.data.channel === "freeshow_project") {
+            const path = JSON.parse(message.data.data[0].content).files[0]
+            proof.importUrlAtCallback = window.api.resolveFilePath?.(path)
+        }
         if (["IMPORT2", "ALERT"].includes(message.channel)) proof.events.push({ message: structuredClone(message), listenerId: listenerId ?? null })
     },
     listener

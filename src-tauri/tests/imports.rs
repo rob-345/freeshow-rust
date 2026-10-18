@@ -96,7 +96,7 @@ async fn text_transport_preserves_raw_unicode_context_and_no_ack_or_directory_ef
     let context = library.context().unwrap();
     let source = temp.path().join("敬拜.txt");
     fs::write(&source, "[Verse]\r\n[C]Hello 敬拜 🙌\r\n").unwrap();
-    let events = native
+    let imported = native
         .dispatch(
             &library,
             request("txt", std::slice::from_ref(&source), &context),
@@ -105,6 +105,9 @@ async fn text_transport_preserves_raw_unicode_context_and_no_ack_or_directory_ef
         )
         .await
         .unwrap();
+    assert!(imported.media.is_empty());
+    assert_eq!(imported.context, context);
+    let events = imported.events;
     assert_eq!(events.len(), 1);
     assert_eq!(events[0].message.channel, "IMPORT2");
     let payload = events[0].message.data.as_ref().unwrap();
@@ -122,6 +125,7 @@ async fn text_transport_preserves_raw_unicode_context_and_no_ack_or_directory_ef
             .dispatch(&library, request("txt", &[], &context), "main", |_| Ok(()))
             .await
             .unwrap()
+            .events
             .len(),
         0
     );
@@ -382,6 +386,36 @@ async fn tampered_private_stage_rejects_commit_and_retains_only_failure_alerts()
         .iter()
         .all(|event| event.message.channel == "ALERT" && event.listener_id.is_none()));
     assert!(!context.data_path.join("Imports").exists());
+    native.shutdown().await.unwrap();
+    assert_eq!(fs::read_dir(staging).unwrap().count(), 0);
+}
+
+#[tokio::test]
+async fn successful_import_publishes_only_final_committed_media_destinations() {
+    let (temp, library, native, staging) = setup();
+    let context = library.context().unwrap();
+    let source = bundle(temp.path(), "published.project");
+    let imported = native
+        .dispatch(
+            &library,
+            request("freeshow_project", &[source], &context),
+            "main",
+            |_| Ok(()),
+        )
+        .await
+        .unwrap();
+    assert_eq!(imported.context, context);
+    assert_eq!(imported.media.len(), 1);
+    assert!(imported.media[0].starts_with(context.data_path.join("Imports").join("Projects")));
+    assert!(!imported.media[0].starts_with(&staging));
+    assert_eq!(
+        fs::read(&imported.media[0]).unwrap(),
+        b"unaltered native media bytes"
+    );
+    assert!(imported
+        .events
+        .iter()
+        .any(|event| event.message.channel == "IMPORT2"));
     native.shutdown().await.unwrap();
     assert_eq!(fs::read_dir(staging).unwrap().count(), 0);
 }

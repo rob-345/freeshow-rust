@@ -12,6 +12,8 @@ const nativeDrop = ts.transpileModule(fs.readFileSync(path.join(root, "src/front
 const nativeDropUrl = `data:text/javascript;base64,${Buffer.from(nativeDrop).toString("base64")}`
 const fileStats = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/fileStats.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
 const fileStatsUrl = `data:text/javascript;base64,${Buffer.from(fileStats).toString("base64")}`
+const mediaUrl = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/mediaUrl.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+const mediaUrlModule = `data:text/javascript;base64,${Buffer.from(mediaUrl).toString("base64")}`
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -21,8 +23,46 @@ const javascript = ts
     })
     .outputText.replace('from "./nativeDrop"', `from "${nativeDropUrl}"`)
     .replace('from "./fileStats"', `from "${fileStatsUrl}"`)
+    .replace('from "./mediaUrl"', `from "${mediaUrlModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("native media capabilities publish before retained callbacks and stale library grants never enter the registry", () => {
+    const context = { runtimeId: "media", libraryGeneration: 1, dataPath: "/library" }
+    const errors = [], seen = []
+    const bridge = createRustApi(async () => [], (error) => errors.push(error), context)
+    const grant = (sourcePath, digit, current = context) => ({ id: digit.repeat(32), sourcePath, url: `http://127.0.0.1:43210/${"a".repeat(64)}/${digit.repeat(32)}`, mimeType: "image/png", length: 68, context: current })
+    const file = "/日本語/literal%20.png", media = grant(file, "1")
+    bridge.api.receive("MAIN", (message) => seen.push({ message, url: bridge.api.resolveFilePath(file) }))
+    const data = { id: "show", content: ["show", { media: { a: { path: file } }, future: true }] }
+    bridge.dispatch({ channel: "MAIN", message: { channel: "SHOW", data }, context, nativeAssets: [media] })
+    assert.equal(seen[0].message.data, data)
+    assert.equal(seen[0].url, media.url)
+    const next = { ...context, libraryGeneration: 2, dataPath: "/other" }, fresh = grant("/other/media.png", "2", next)
+    bridge.dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: next.dataPath }, context: next, nativeAssets: [fresh] }, { channel: "MAIN", data: { channel: "UPDATE_DATA_PATH" } })
+    assert.equal(bridge.api.resolveFilePath(fresh.sourcePath), fresh.url)
+    assert.equal(bridge.api.resolveFilePath(file), "")
+    bridge.dispatch({ channel: "MAIN", message: { channel: "SHOW", data }, context, nativeAssets: [media] })
+    assert.equal(seen.length, 2)
+    assert.equal(bridge.api.resolveFilePath(file), "")
+    assert.equal(bridge.api.resolveFilePath(fresh.sourcePath), fresh.url)
+    assert.ok(errors.every((error) => error.code === "assets_unregistered"))
+})
+
+test("output replay installs existing media before initial state and invalid publication cannot grant a path", () => {
+    const context = { runtimeId: "output-media", libraryGeneration: 3, dataPath: "/library" }
+    const errors = []
+    const { api, dispatch } = createRustApi(async () => [], (error) => errors.push(error), context)
+    const grant = { id: "1".repeat(32), sourcePath: "/source.png", url: `http://127.0.0.1:43210/${"a".repeat(64)}/${"1".repeat(32)}`, mimeType: "image/png", length: 68, context }
+    let observed
+    api.receive("OUTPUT", () => observed = api.resolveFilePath(grant.sourcePath))
+    dispatch({ channel: "OUTPUT", message: { channel: "SHOWS", data: {} }, context, nativeAssets: [grant] })
+    assert.equal(observed, grant.url)
+    dispatch({ channel: "OUTPUT", message: { channel: "SHOWS", data: {} }, context, nativeAssets: [{ ...grant, sourcePath: "/private", url: "file:///private" }] })
+    assert.equal(api.resolveFilePath("/private"), "")
+    assert.equal(api.resolveFilePath(grant.sourcePath), grant.url)
+    assert.ok(errors.some((error) => error.code === "assets_publication"))
+})
 
 test("READ_FOLDER delivery restores own undefined fields only after its library context is accepted", () => {
     const context = { runtimeId: "browse", libraryGeneration: 2, dataPath: "/library" }

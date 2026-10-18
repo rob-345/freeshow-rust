@@ -22,7 +22,11 @@ fn emit(window: &WebviewWindow, payload: Value) {
 /// Install once after the main WebviewWindow and LibraryService exist. Native
 /// callbacks only validate bounded strings/read context and dispatch events.
 /// Filesystem metadata uses at most two admitted blocking workers, never GTK.
-pub fn install(window: &WebviewWindow, library: LibraryService) -> Result<(), WireError> {
+pub fn install(
+    window: &WebviewWindow,
+    library: LibraryService,
+    assets: crate::assets::NativeAssets,
+) -> Result<(), WireError> {
     if window.label() != "main" {
         return Err(failed(
             "Native file drops are supported only in the main window",
@@ -65,6 +69,7 @@ pub fn install(window: &WebviewWindow, library: LibraryService) -> Result<(), Wi
                 let paths = paths.unwrap().clone();
                 let window = window_handle.clone();
                 let library = library.clone();
+                let assets = assets.clone();
                 let state = state.clone();
                 state_guard.accept_drop();
                 tauri::async_runtime::spawn(async move {
@@ -82,11 +87,21 @@ pub fn install(window: &WebviewWindow, library: LibraryService) -> Result<(), Wi
                         return;
                     }
                     match metadata {
-                        Ok(Ok(files)) => payload["files"] = json!(files),
+                        Ok(Ok(files)) => {
+                            payload["files"] = json!(files);
+                            match assets.drop_grants(&library, &gesture.context, &payload["files"]).await {
+                                Ok(grants) => payload["nativeAssets"] = grants,
+                                Err(error) => { payload["phase"] = json!("error"); payload["error"] = json!(error); }
+                            }
+                        },
                         error => {
                             payload["phase"] = json!("error");
                             payload["error"] = json!(failed(format!("Unable to read dropped-file metadata: {error:?}")));
                         }
+                    }
+                    if library.context().ok().as_ref() != Some(&gesture.context) || !state.lock().ok().is_some_and(|state| state.accepts_completion(gesture.sequence)) {
+                        payload["phase"] = json!("leave");
+                        payload.as_object_mut().unwrap().remove("nativeAssets");
                     }
                     emit(&window, payload);
                 });

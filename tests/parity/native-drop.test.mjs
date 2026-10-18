@@ -18,7 +18,7 @@ const mover = upstreamFunctions("src/frontend/components/helpers/mover.ts", ["ad
 const context = { runtimeId: "runtime-1", libraryGeneration: 3, dataPath: "/library/日本語" }
 const tick = () => new Promise(setImmediate)
 
-function fixture() {
+function fixture(publishAssets) {
     const listeners = new Map()
     const events = []
     const errors = []
@@ -73,11 +73,33 @@ function fixture() {
         }
     }
     let current = { ...context }
-    const adapter = createNativeDrop(target, { getRuntimeContext: () => current, reportError: (error) => errors.push(error) })
+    const adapter = createNativeDrop(target, { getRuntimeContext: () => current, reportError: (error) => errors.push(error), publishAssets })
     const files = ["/媒体/Grace 日本語.png", "/music/A&B.mp3", "/slides/Deck.pptx", "/projects/教会.project"].map((path, index) => ({ path, name: path.split("/").at(-1), directory: false, size: index + 8, lastModified: 1000 }))
     const payload = (phase, overrides = {}) => ({ phase, sequence: 1, context, files, position: { x: 200, y: 180, units: "logical", scaleFactor: 1 }, ...overrides })
     return { adapter, target, node, events, errors, files, payload, setContext: (value) => (current = value) }
 }
+
+test("only an accepted current drop publishes native grants before retained handlers", () => {
+    const order = [], grants = [{ sourcePath: "/media.png" }]
+    const f = fixture((captured, value) => { assert.deepEqual(captured, context); assert.equal(value, grants); order.push("grants"); return true })
+    f.node.handler = (event) => { if (event.type === "drop") order.push("retained") }
+    f.adapter.handle(f.payload("enter", { nativeAssets: grants }))
+    f.adapter.handle(f.payload("over", { nativeAssets: grants }))
+    assert.deepEqual(order, [])
+    f.adapter.handle(f.payload("drop", { nativeAssets: grants }))
+    assert.deepEqual(order, ["grants", "retained"])
+    f.adapter.handle(f.payload("enter", { sequence: 2 }))
+    f.setContext({ ...context, libraryGeneration: 4 })
+    f.adapter.handle(f.payload("drop", { sequence: 2, nativeAssets: grants }))
+    assert.deepEqual(order, ["grants", "retained"])
+    f.adapter.dispose()
+    const rejected = fixture(() => false)
+    rejected.adapter.handle(rejected.payload("enter"))
+    rejected.adapter.handle(rejected.payload("drop", { nativeAssets: grants }))
+    assert.equal(rejected.events.filter((event) => event.type === "drop").length, 0)
+    assert.equal(rejected.errors[0].code, "assets_publication")
+    rejected.adapter.dispose()
+})
 
 function sourceDropHandlers(showFilePath) {
     const histories = []

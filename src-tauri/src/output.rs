@@ -15,6 +15,7 @@ use tokio::sync::{mpsc, oneshot};
 struct Entry {
     endpoint: Endpoint,
     config: Value,
+    asset_revision: Option<freeshow_assets::Revision>,
 }
 
 struct Registry {
@@ -175,12 +176,44 @@ impl OutputService {
             endpoint.available = app.get_webview_window(&endpoint.label).is_some();
         }
         for delivery in output::route(&request.data, &endpoints).map_err(WireError::from)? {
-            app.emit_to(
-                delivery.target,
-                "freeshow://ipc",
-                json!({"channel":"OUTPUT","message":delivery.message,"context":context}),
-            )
-            .map_err(failed)?;
+            // Replay existing trusted grants only. Renderer output strings do
+            // not authorize file reads, and this takes no filesystem/library IO.
+            let publication = if delivery.target == "main" {
+                None
+            } else {
+                let previous = self
+                    .registry
+                    .read()
+                    .map_err(failed)?
+                    .entries
+                    .iter()
+                    .find(|entry| entry.endpoint.label == delivery.target)
+                    .and_then(|entry| entry.asset_revision.clone());
+                Some(
+                    app.state::<AppState>()
+                        .assets
+                        .replay_since(&context, previous.as_ref())?,
+                )
+            };
+            let mut envelope =
+                json!({"channel":"OUTPUT","message":delivery.message,"context":context});
+            if let Some((_, Some(grants))) = &publication {
+                envelope["nativeAssets"] = grants.clone();
+            }
+            app.emit_to(&delivery.target, "freeshow://ipc", envelope)
+                .map_err(failed)?;
+            if let Some((revision, Some(_))) = publication {
+                let mut state = self.registry.write().map_err(failed)?;
+                if state.context == context {
+                    if let Some(entry) = state
+                        .entries
+                        .iter_mut()
+                        .find(|entry| entry.endpoint.label == delivery.target)
+                    {
+                        entry.asset_revision = Some(revision);
+                    }
+                }
+            }
         }
         Ok(Vec::new())
     }
@@ -387,6 +420,7 @@ fn create(
             available: true,
         },
         config: config.clone(),
+        asset_revision: None,
     };
     {
         let mut state = registry.write().map_err(failed)?;

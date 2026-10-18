@@ -1255,6 +1255,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-asset-plans"
+version = "0.1.0"
+dependencies = [
+ "freeshow-assets",
+ "freeshow-files",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "freeshow-assets"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "getrandom 0.4.3",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "libc",
+ "serde",
+ "serde_json",
+ "socket2",
+ "tokio",
+ "tokio-util",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "freeshow-audio"
 version = "0.1.0"
 dependencies = [
@@ -1297,6 +1326,8 @@ name = "freeshow-desktop"
 version = "0.1.0"
 dependencies = [
  "freeshow-api",
+ "freeshow-asset-plans",
+ "freeshow-assets",
  "freeshow-audio",
  "freeshow-browse",
  "freeshow-core",
@@ -1306,6 +1337,7 @@ dependencies = [
  "freeshow-media",
  "freeshow-network",
  "freeshow-system",
+ "freeshow-thumbnails",
  "serde_json",
  "tauri",
  "tauri-build",
@@ -1385,6 +1417,22 @@ dependencies = [
  "serde_json",
  "tokio",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "freeshow-thumbnails"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "libc",
+ "png 0.18.1",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]

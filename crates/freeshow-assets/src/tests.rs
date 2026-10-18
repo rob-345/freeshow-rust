@@ -241,3 +241,125 @@ async fn file_size_and_registry_bytes_are_enforced_before_publication() {
         service.shutdown().await.unwrap();
     }
 }
+
+#[tokio::test]
+async fn protected_cache_bytes_cannot_be_granted_as_plain_or_replayed() {
+    let directory = tempfile::tempdir().unwrap();
+    let protected = directory.path().join("protected-cache");
+    std::fs::create_dir(&protected).unwrap();
+    let ciphertext = protected.join("no-extension-encrypted-bytes");
+    std::fs::write(&ciphertext, b"ciphertext must not be served").unwrap();
+    let service = AssetServer::start(
+        Config {
+            protected_roots: vec![std::fs::canonicalize(&protected).unwrap()],
+            ..Config::default()
+        },
+        context(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        service
+            .authorize(&context(), grant(&ciphertext), Control::default())
+            .await
+            .unwrap_err()
+            .code,
+        "assets_protected"
+    );
+    #[cfg(unix)]
+    {
+        let alias = directory.path().join("innocent.png");
+        std::os::unix::fs::symlink(&ciphertext, &alias).unwrap();
+        assert_eq!(
+            service
+                .authorize(&context(), grant(&alias), Control::default())
+                .await
+                .unwrap_err()
+                .code,
+            "assets_protected"
+        );
+    }
+    assert!(service.snapshot(&context()).unwrap().is_empty());
+    let ordinary = file(&directory, "ordinary.png");
+    let accepted = service
+        .authorize(&context(), grant(&ordinary), Control::default())
+        .await
+        .unwrap();
+    assert_eq!(service.snapshot(&context()).unwrap()[0].id, accepted.id);
+    let next = Context {
+        library_generation: 2,
+        ..context()
+    };
+    service.activate_context(next.clone()).unwrap();
+    assert_eq!(
+        service.snapshot(&context()).unwrap_err().code,
+        "assets_stale_context"
+    );
+    assert!(service.snapshot(&next).unwrap().is_empty());
+    service.shutdown().await.unwrap();
+    assert_eq!(service.snapshot(&next).unwrap_err().code, "assets_shutdown");
+}
+
+#[tokio::test]
+async fn replay_changes_only_with_publication_and_replacement_has_one_authoritative_source_key() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = file(&directory, "source.png");
+    let service = AssetServer::start(
+        Config {
+            max_grants: 1,
+            ..Config::default()
+        },
+        context(),
+    )
+    .await
+    .unwrap();
+    let first = service
+        .authorize(&context(), grant(&path), Control::default())
+        .await
+        .unwrap();
+    let (version, replay) = service.snapshot_since(&context(), None).unwrap();
+    assert_eq!(replay.unwrap().len(), 1);
+    assert!(service
+        .snapshot_since(&context(), Some(&version))
+        .unwrap()
+        .1
+        .is_none());
+    let deduplicated = service
+        .authorize(&context(), grant(&path), Control::default())
+        .await
+        .unwrap();
+    assert_eq!(deduplicated.id, first.id);
+    assert!(service
+        .snapshot_since(&context(), Some(&version))
+        .unwrap()
+        .1
+        .is_none());
+    std::fs::write(&path, b"same inode edited and resized").unwrap();
+    let resized = service
+        .authorize(&context(), grant(&path), Control::default())
+        .await
+        .unwrap();
+    assert_eq!(resized.id, first.id);
+    let (version, replay) = service.snapshot_since(&context(), Some(&version)).unwrap();
+    assert_eq!(replay.unwrap()[0].length, resized.length);
+    std::fs::rename(&path, path.with_extension("old")).unwrap();
+    std::fs::write(&path, b"replacement inode").unwrap();
+    let replacement = service
+        .authorize(&context(), grant(&path), Control::default())
+        .await
+        .unwrap();
+    assert_ne!(replacement.id, first.id);
+    let (version, replay) = service.snapshot_since(&context(), Some(&version)).unwrap();
+    let replay = replay.unwrap();
+    assert_eq!(replay.len(), 1);
+    assert_eq!(replay[0].id, replacement.id);
+    assert_eq!(service.status().grants, 1);
+    service.revoke(&replacement.id);
+    assert!(service
+        .snapshot_since(&context(), Some(&version))
+        .unwrap()
+        .1
+        .unwrap()
+        .is_empty());
+    service.shutdown().await.unwrap();
+}

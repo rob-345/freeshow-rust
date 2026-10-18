@@ -40,6 +40,10 @@ pub struct Event {
     pub listener_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context: Option<RuntimeContext>,
+    /// Bounded host-issued media capabilities. Kept outside the retained
+    /// application payload and accepted only after the event's context check.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_assets: Option<Value>,
 }
 
 impl Event {
@@ -53,6 +57,7 @@ impl Event {
             },
             listener_id,
             context: None,
+            native_assets: None,
         }
     }
 }

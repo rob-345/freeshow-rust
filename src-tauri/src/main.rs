@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod api;
+mod assets;
 mod browse;
 mod drop;
 mod files;
@@ -37,6 +38,7 @@ struct AppState {
     browse: browse::NativeBrowse,
     system: SystemService,
     api: api::NativeApi,
+    assets: assets::NativeAssets,
     osc: OscSender,
     app_data: PathBuf,
     error_log: PathBuf,
@@ -70,6 +72,11 @@ fn imports_status(app: tauri::AppHandle) -> serde_json::Value {
 }
 
 #[tauri::command]
+fn assets_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().assets.status()
+}
+
+#[tauri::command]
 fn api_status(app: tauri::AppHandle) -> serde_json::Value {
     app.state::<AppState>().api.status()
 }
@@ -88,6 +95,31 @@ fn contextual_events(
 
 #[tauri::command]
 async fn ipc_dispatch(
+    window: tauri::WebviewWindow,
+    request: Request,
+) -> Result<Vec<Event>, WireError> {
+    let app = window.app_handle().clone();
+    let assets = app.state::<AppState>().assets.clone();
+    let lease = assets.begin(&app.state::<AppState>().library, &request)?;
+    let mut events = dispatch_native(window, request).await?;
+    if let Some(lease) = lease {
+        assets
+            .complete(&app.state::<AppState>().library, lease, &mut events)
+            .await?;
+    }
+    // The bridge installs listeners before STARTUP. Its first role response
+    // carries the current bounded replay, including for newly created outputs.
+    for event in &mut events {
+        if event.channel == "STARTUP" && event.message.channel == "TYPE" {
+            if let Some(current) = &event.context {
+                event.native_assets = Some(assets.replay(current)?);
+            }
+        }
+    }
+    Ok(events)
+}
+
+async fn dispatch_native(
     window: tauri::WebviewWindow,
     request: Request,
 ) -> Result<Vec<Event>, WireError> {
@@ -135,13 +167,36 @@ async fn ipc_dispatch(
         }
         if imports::COMMANDS.contains(&command) {
             let state = app.state::<AppState>();
-            return state
+            let mut imported = state
                 .imports
                 .dispatch(&state.library, request, window.label(), |event| {
                     app.emit_to("main", "freeshow://ipc", event)
                         .map_err(|error| error.to_string())
                 })
-                .await;
+                .await?;
+            match state
+                .assets
+                .import_grants(&state.library, &imported.context, &imported.media)
+                .await
+            {
+                Ok(grants) => {
+                    if let Some(event) = imported
+                        .events
+                        .iter_mut()
+                        .find(|event| event.message.channel == "IMPORT2")
+                    {
+                        event.native_assets = Some(grants);
+                    }
+                }
+                Err(error) => eprintln!("Import media publication unavailable: {}", error.message),
+            }
+            if state.library.context().map_err(WireError::from)? != imported.context {
+                return Err(WireError::new(
+                    "stale_library",
+                    "Imported media belongs to an obsolete library",
+                ));
+            }
+            return Ok(imported.events);
         }
         if system::COMMANDS.contains(&command) {
             let state = app.state::<AppState>();
@@ -292,6 +347,7 @@ async fn ipc_dispatch(
                     api_result,
                     imports_result,
                     browse_result,
+                    assets_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -300,7 +356,8 @@ async fn ipc_dispatch(
                     state.system.shutdown(),
                     state.api.shutdown(),
                     state.imports.shutdown(),
-                    state.browse.shutdown()
+                    state.browse.shutdown(),
+                    state.assets.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
@@ -308,6 +365,7 @@ async fn ipc_dispatch(
                 api_result?;
                 imports_result?;
                 browse_result?;
+                assets_result?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -397,6 +455,19 @@ async fn ipc_dispatch(
         app.state::<AppState>().files.context_changed(&context);
         app.state::<AppState>().imports.context_changed(&context);
         app.state::<AppState>().browse.context_changed(&context);
+        if let Err(error) = app.state::<AppState>().assets.context_changed(&context) {
+            let mut alert = Event::reply(
+                "MAIN",
+                "ALERT",
+                json!(format!(
+                    "The library changed, but media revocation failed: {}",
+                    error.message
+                )),
+                None,
+            );
+            alert.context = Some(context.clone());
+            events.push(alert);
+        }
         if let Err(error) = app.state::<AppState>().api.context_changed().await {
             let mut alert = Event::reply(
                 "MAIN",
@@ -652,6 +723,11 @@ fn main() {
                 freeshow_browse::BrowseConfig::default(),
             )?);
             let library = LibraryService::start(runtime)?;
+            let assets = tauri::async_runtime::block_on(assets::NativeAssets::start(
+                &library.context()?,
+                &app_data,
+            ))
+            .map_err(|error| std::io::Error::other(error.message))?;
             let mut api_config = freeshow_api::ApiConfig::default();
             if let Ok(ip) = std::env::var("FREESHOW_RUST_API_BIND_IP") {
                 api_config.bind_ip = ip.parse()?;
@@ -675,6 +751,7 @@ fn main() {
                 browse,
                 system,
                 api,
+                assets,
                 osc,
                 app_data,
                 error_log,
@@ -684,8 +761,12 @@ fn main() {
             let main = app
                 .get_webview_window("main")
                 .ok_or_else(|| std::io::Error::other("Main WebView is unavailable"))?;
-            drop::install(&main, app.state::<AppState>().library.clone())
-                .map_err(|error| std::io::Error::other(error.message))?;
+            drop::install(
+                &main,
+                app.state::<AppState>().library.clone(),
+                app.state::<AppState>().assets.clone(),
+            )
+            .map_err(|error| std::io::Error::other(error.message))?;
             Ok(())
         })
         .on_menu_event(menu::on_menu_event)
@@ -712,7 +793,8 @@ fn main() {
             library_status,
             output_status,
             api_status,
-            imports_status
+            imports_status,
+            assets_status
         ])
         .build(tauri::generate_context!())
         .expect("FreeShow Rust could not start")

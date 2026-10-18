@@ -2,6 +2,7 @@
 // This module has no dependency on Electron or on the Svelte app.
 import { hydrateFileBrowse } from "./fileStats"
 import { installNativeDrop } from "./nativeDrop"
+import { createMediaUrlRegistry, type LocalAssetGrant } from "./mediaUrl"
 
 type Receiver = (data: any, listenerId?: string) => void
 export type RuntimeContext = {
@@ -14,6 +15,7 @@ export type RuntimeEvent = {
     message: any
     listenerId?: string
     context?: RuntimeContext
+    nativeAssets?: LocalAssetGrant[]
 }
 export type Transport = (request: { channel: string; data?: any; listenerId?: string; context?: RuntimeContext }) => Promise<RuntimeEvent[]>
 const mutations = new Set(["SAVE", "UPDATE_DATA_PATH", "SET_STORE_VALUE", "SET_MEDIA_FOLDER_PATH", "RESTORE", "DELETE_BACKUP"])
@@ -23,6 +25,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
     const receivers = new Map<string, Set<Receiver>>()
     const named = new Map<string, { channel: string; receiver: Receiver }>()
     let context = initialContext ? { ...initialContext } : undefined
+    const mediaUrls = createMediaUrlRegistry(() => context, (error) => reportError(error, { channel: "native-assets" }))
     let mutationQueue = Promise.resolve()
     let mediaSettingsQueue = Promise.resolve()
     let outputQueue = Promise.resolve()
@@ -36,6 +39,9 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
             const rootSelection = origin?.channel === "MAIN" && origin.data?.channel === "UPDATE_DATA_PATH"
             if (context && event.context.libraryGeneration > context.libraryGeneration && !(rootSelection && event.channel === "MAIN" && event.message.channel === "DATA_PATH")) return
             context = { ...event.context }
+        }
+        if (event.nativeAssets && (!event.context || !mediaUrls.publish(event.context, event.nativeAssets))) {
+            reportError({ code: "assets_publication", message: "Native media grants could not be published" }, event)
         }
         if (event.channel === "MAIN" && event.message.channel === "READ_FOLDER") hydrateFileBrowse("READ_FOLDER", event.message.data)
         // Snapshot listeners: handlers may unregister themselves during dispatch.
@@ -58,6 +64,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
 
     return {
         dispatch,
+        publishAssets: mediaUrls.publish,
         api: {
             send(channel: string, data?: any, listenerId?: string) {
                 // Electron serializes at send time. Output updates often reuse
@@ -103,6 +110,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 if (outputMessage) outputQueue = complete.catch(() => {})
             },
             getRuntimeContext: () => (context ? { ...context } : undefined),
+            resolveFilePath: mediaUrls.resolve,
             receive(channel: string, receiver: Receiver, id?: string) {
                 if (id && named.has(id)) {
                     const previous = named.get(id)!
@@ -153,6 +161,7 @@ export async function installRustBridge(target: Window = window) {
     if (nativeWindow.label === "main") {
         const drop = await installNativeDrop(target, {
             getRuntimeContext: bridge.api.getRuntimeContext,
+            publishAssets: bridge.publishAssets,
             reportError: (error) => {
                 console.error("FreeShow native file drop failed", error)
                 target.dispatchEvent(new CustomEvent("freeshow:runtime-error", { detail: { error, request: { channel: "native-drop" } } }))

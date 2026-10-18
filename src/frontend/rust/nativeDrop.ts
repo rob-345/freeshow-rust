@@ -1,5 +1,6 @@
 // Adapt native OS file drops to the retained Svelte DropArea/timeline handlers.
 // Local descriptors deliberately do not pretend to be empty browser Files.
+import type { LocalAssetGrant } from "./mediaUrl"
 export type DropContext = { runtimeId: string; libraryGeneration: number; dataPath: string }
 export type NativeFileInfo = { path: string; name: string; directory?: boolean; size?: number; lastModified?: number }
 export type NativeDropPayload = {
@@ -9,8 +10,9 @@ export type NativeDropPayload = {
     files?: NativeFileInfo[]
     position?: { x: number; y: number; units: "physical" | "logical"; scaleFactor: number }
     error?: { code: string; message: string }
+    nativeAssets?: LocalAssetGrant[]
 }
-type Options = { getRuntimeContext: () => DropContext | undefined; reportError: (error: unknown) => void }
+type Options = { getRuntimeContext: () => DropContext | undefined; reportError: (error: unknown) => void; publishAssets?: (context: DropContext, grants: LocalAssetGrant[]) => boolean }
 
 export function sameDropContext(a: DropContext | undefined, b: DropContext | undefined) {
     return !!a && !!b && a.runtimeId === b.runtimeId && a.libraryGeneration === b.libraryGeneration && a.dataPath === b.dataPath
@@ -150,6 +152,11 @@ export function createNativeDrop(target: Window, options: Options) {
             return
         }
         if (payload.phase === "drop") {
+            if (payload.nativeAssets && options.publishAssets && !options.publishAssets(payload.context, payload.nativeAssets)) {
+                clear()
+                options.reportError({ code: "assets_publication", message: "Dropped media grants could not be published" })
+                return
+            }
             // Recheck immediately before entering the original handlers. A
             // library change between Enter and Drop must not reinterpret files.
             if (payload.files?.length && sameDropContext(gesture.context, options.getRuntimeContext()))

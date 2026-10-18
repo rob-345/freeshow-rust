@@ -5,8 +5,6 @@ edition = "2021"
 license = "GPL-3.0-only"
 description = "Pure bounded trusted local-media grant preparation"
 
-[workspace]
-
 [dependencies]
 freeshow-assets = { path = "../freeshow-assets" }
 freeshow-files = { path = "../freeshow-files" }
@@ -16,7 +14,3 @@ serde_json = { version = "1", features = ["preserve_order"] }
 [[bin]]
 name = "freeshow-asset-plans-parity"
 path = "src/bin/parity.rs"
-
-[profile.dev]
-debug = 0
-incremental = false
