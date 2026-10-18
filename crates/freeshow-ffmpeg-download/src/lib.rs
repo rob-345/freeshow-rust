@@ -347,7 +347,7 @@ pub struct AcceptedInstall {
 /// Private artifact paths become available only after the native host accepts
 /// ownership. Keep this guard on the actual ordered IO owner through rename.
 impl PreparedDownload {
-    pub fn accept(self, current: &DownloadOwner) -> Result<AcceptedInstall> {
+    fn claim(&self, current: &DownloadOwner) -> Result<()> {
         self.job.control.check()?;
         if &self.job.plan.owner != current {
             return Err(Error::new(
@@ -364,6 +364,29 @@ impl PreparedDownload {
         }
         *phase = service::Phase::Accepted;
         drop(phase);
+        Ok(())
+    }
+    pub fn accept(self, current: &DownloadOwner) -> Result<AcceptedInstall> {
+        self.claim(current)?;
+        Ok(AcceptedInstall { job: self.job })
+    }
+    /// A whole-host owner needs a real cleanup receipt when acceptance fails,
+    /// including if a cancelled preparation's reaper already queued cleanup.
+    /// The original acceptance error remains primary; cleanup faults also stay
+    /// sticky in DownloadService status/shutdown.
+    pub async fn accept_or_discard(self, current: &DownloadOwner) -> Result<AcceptedInstall> {
+        if let Err(original) = self.claim(current) {
+            if let Err(cleanup) = self.discard().await {
+                return Err(Error::new(
+                    original.code,
+                    format!(
+                        "{}; cleanup failed [{}]: {}",
+                        original.message, cleanup.code, cleanup.message
+                    ),
+                ));
+            }
+            return Err(original);
+        }
         Ok(AcceptedInstall { job: self.job })
     }
     pub async fn discard(self) -> Result<()> {

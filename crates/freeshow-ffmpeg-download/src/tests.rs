@@ -591,3 +591,54 @@ async fn terminal_and_library_cancellation_revoke_unaccepted_artifacts_even_when
     service.shutdown().await.unwrap();
     server.close().await;
 }
+
+#[tokio::test]
+async fn rejected_acceptance_awaits_actual_cleanup_and_retains_both_acceptance_and_cleanup_faults()
+{
+    let root = tempfile::tempdir().unwrap();
+    let server = server(gzip(b"inert prepared bytes"), 200, true, false).await;
+    for foreign in [false, true] {
+        let service = DownloadService::start(config(&server.url)).unwrap();
+        let prepared = service
+            .begin(
+                plan(root.path()),
+                CancellationToken::new(),
+                Instant::now() + Duration::from_secs(2),
+            )
+            .unwrap()
+            .finish()
+            .await
+            .unwrap();
+        let unexpected = prepared.job.private.join("foreign");
+        if foreign {
+            std::fs::write(&unexpected, b"must remain").unwrap();
+        }
+        let wrong = DownloadOwner::new("runtime", 2, "/another/library").unwrap();
+        let error = prepared.accept_or_discard(&wrong).await.err().unwrap();
+        assert_eq!(error.code, "stale_generation");
+        assert!(error.message.contains("obsolete owner"));
+        assert_eq!(
+            service.status().admitted,
+            0,
+            "acceptance error is returned only after actual cleanup receipt"
+        );
+        if foreign {
+            assert!(error
+                .message
+                .contains("cleanup failed [download_filesystem]"));
+            assert_eq!(
+                service.status().failure.unwrap().code,
+                "download_filesystem"
+            );
+            assert_eq!(
+                service.shutdown().await.err().unwrap().code,
+                "download_filesystem"
+            );
+            assert_eq!(std::fs::read(unexpected).unwrap(), b"must remain");
+        } else {
+            assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+            service.shutdown().await.unwrap();
+        }
+    }
+    server.close().await;
+}
