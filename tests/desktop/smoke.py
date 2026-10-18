@@ -154,7 +154,7 @@ def run():
 
         def click_element(found, label):
             reference = {ELEMENT: found}
-            script("arguments[0].scrollIntoView({block:'nearest',inline:'nearest'})", reference)
+            wait(lambda: script("arguments[0].scrollIntoView({block:'nearest',inline:'nearest'});return true", reference), "Scrolled " + label, record=False)
             # Observe the hit target before the one actual WebDriver click. A
             # fading Svelte backdrop can cover a button after its popup unmounts.
             wait(lambda: script("const e=arguments[0],r=e.getBoundingClientRect();return r.width>0 && r.height>0 && e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))", reference), "Clickable " + label, record=False)
