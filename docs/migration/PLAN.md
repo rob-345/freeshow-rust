@@ -15,6 +15,8 @@ Preserve the existing Svelte interface first. `src/frontend/rust/bridge.ts` supp
 
 Keep the upstream Electron implementation runnable as an oracle until parity is demonstrated. No Node sidecar substitutes for unported Rust functionality. Unsupported operations return explicit errors. A handler's existence is never counted as proof of parity.
 
+Save snapshots retain their library context and a Rust-only renderer/module-epoch token. Acknowledgments can mark only the latest snapshot saved, and only if its tracked edit revision is still current. Newer edits stay unsaved; a closing save retries its newer snapshot, and library selection requires its pre-switch save to leave no tracked edits pending. This does not replace final-write draining, multiple-writer isolation or verification of asynchronous/excluded state.
+
 The Rust fork uses the separate application identifier `app.freeshow.rust`; its data defaults to an isolated `Data` directory inside its own application profile. A selected data library is persisted across restart. `FREESHOW_RUST_APP_DATA` and `FREESHOW_RUST_DATA_DIR` override those locations for tests. Existing Electron user data is not imported or modified implicitly. Library selection preserves shows/media in their existing folders and copies missing portable stores. Bulk relocation, legacy profile import, concurrent-save isolation and crash recovery need further verification and implementation.
 
 ### Concurrency

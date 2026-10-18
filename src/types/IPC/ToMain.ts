@@ -68,7 +68,7 @@ export interface ToMainSendPayloads {
     ///
     [ToMain.IMPORT2]: { channel: string; data: ({ content: Buffer | string | object; name?: string; extension?: string } | string)[] }
     [ToMain.SHOW2]: { error?: string; err?: NodeJS.ErrnoException; id: string }
-    [ToMain.SAVE2]: { closeWhenFinished: boolean; customTriggers: any }
+    [ToMain.SAVE2]: { closeWhenFinished: boolean; customTriggers: any; runtimeSaveToken?: string }
     [ToMain.REFRESH_SHOWS2]: TrimmedShows
     [ToMain.RESTORE2]: { starting?: boolean; finished?: boolean }
     [ToMain.API_TRIGGER2]: { action: string; returnId: string; data: any }

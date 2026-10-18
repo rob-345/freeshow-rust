@@ -120,6 +120,7 @@ import { isSyncing, socketDisconnect, syncWithCloud } from "./cloudSync"
 import { newToast, setStatus, startAutosave } from "./common"
 import { syncDrive } from "./drive"
 import { autoDisableRemoteController, stopRemoteController } from "./remoteController"
+import { acknowledgeSave, beginSave, isSaveMutationSuppressed, recordEdit, withoutSaveEdits } from "../rust/saveRevision"
 
 export function save(closeWhenFinished = false, customTriggers: SaveActions = {}, listenerId?: string) {
     updateSyncedOutputs()
@@ -248,8 +249,15 @@ export function save(closeWhenFinished = false, customTriggers: SaveActions = {}
     }
 
     if (!isBackupOnly(customTriggers, closeWhenFinished)) {
-        deletedShows.set([])
-        renamedShows.set([])
+        const clearQueues = () => {
+            deletedShows.set([])
+            renamedShows.set([])
+        }
+        if (typeof window !== "undefined" && (window as any).__TAURI__) {
+            saveData.runtimeSaveToken = beginSave()
+            // Moving operations into this snapshot is not a new user edit.
+            withoutSaveEdits(clearQueues)
+        } else clearQueues()
     }
 
     if (customTriggers.backup) newToast("settings.backup_started")
@@ -295,8 +303,20 @@ export function getSyncedSettings(): { [key in SaveListSyncedSettings]: any } {
     }
 }
 
-export async function saveComplete({ closeWhenFinished, customTriggers }: { closeWhenFinished: boolean; customTriggers?: SaveActions }) {
+export async function saveComplete({ closeWhenFinished, customTriggers, runtimeSaveToken }: { closeWhenFinished: boolean; customTriggers?: SaveActions; runtimeSaveToken?: string }) {
     if (isBackupOnly(customTriggers, closeWhenFinished)) return
+    if (typeof window !== "undefined" && (window as any).__TAURI__ && runtimeSaveToken !== undefined) {
+        const completion = acknowledgeSave(runtimeSaveToken)
+        if (completion === "superseded") return
+        if (completion === "edited") {
+            saved.set(false)
+            setStatus("", 0)
+            // Closing must save the newer snapshot before continuing. Ordinary
+            // acknowledgments leave these edits visibly unsaved for the next save.
+            if (closeWhenFinished) save(true, customTriggers)
+            return
+        }
+    }
     const alreadySaved = get(saved)
     if (!closeWhenFinished) {
         if ((!customTriggers?.autosave || !alreadySaved) && !customTriggers?.backup) setStatus("saved", 1)
@@ -372,26 +392,35 @@ export async function closeApp() {
 export function unsavedUpdater() {
     const cachedValues: { [key: string]: string } = {}
     const s = { ...saveList, folders, projects, showsCache, stageShows, deletedShows, renamedShows }
+    const useRevisions = typeof window !== "undefined" && (window as any).__TAURI__
 
     let initialized = false
     Object.keys(s).forEach((id) => {
         if (!s[id]) return
 
         s[id].subscribe((a: any) => {
-            if (customSavedListener[id] && a) {
-                a = customSavedListener[id](clone(a))
+            if ((customSavedListener[id] && a) || useRevisions) {
+                if (customSavedListener[id] && a) a = customSavedListener[id](clone(a))
                 let stringObj
                 try {
                     stringObj = JSON.stringify(a)
                 } catch {
-                    return
+                    // Preserve the legacy custom comparison. Other Rust stores
+                    // conservatively count a non-serializable update as an edit.
+                    if (customSavedListener[id]) return
                 }
-                if (cachedValues[id] === stringObj) return
-
-                cachedValues[id] = stringObj
+                if (stringObj !== undefined) {
+                    if (cachedValues[id] === stringObj) return
+                    cachedValues[id] = stringObj
+                }
             }
 
             if (!initialized) return
+
+            if (useRevisions) {
+                if (isSaveMutationSuppressed()) return
+                recordEdit()
+            }
 
             saved.set(false)
             if (id === "deletedShows" || id === "renamedShows") {

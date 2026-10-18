@@ -40,7 +40,7 @@ def free_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -376,12 +376,14 @@ def run():
             script("""
                 const send=window.api.send.bind(window.api);
                 window.__latestOutputData=null;window.__outputSnapshotVersion=0;window.__outputStates=[];
-                window.__showReadRequests=[];window.__showReadReplies=[];
+                window.__showReadRequests=[];window.__showReadReplies=[];window.__saveRequests=[];window.__saveAcks=[];
                 window.api.receive('MAIN',(message,listenerId)=>{
                     if(message.channel==='SHOW') window.__showReadReplies.push({data:message.data,listenerId,at:performance.now()});
+                    if(message.channel==='SAVE2') window.__saveAcks.push({data:message.data,listenerId,at:performance.now()});
                 },'native-show-read-test');
                 window.api.send=(channel,message,listener)=>{
                     if(channel==='MAIN' && message.channel==='SHOW') window.__showReadRequests.push({data:structuredClone(message.data),listenerId:listener,at:performance.now()});
+                    if(channel==='MAIN' && message.channel==='SAVE') window.__saveRequests.push({token:message.data?.runtimeSaveToken,names:Object.values(message.data?.showsCache || {}).map(show=>show.name),at:performance.now()});
                     if(channel==='OUTPUT' && message.channel==='OUTPUTS' && !message.data?.id) {
                         window.__latestOutputData=structuredClone(message.data);
                         window.__outputSnapshotVersion++;
@@ -615,6 +617,25 @@ def run():
                 assert cold_read["elapsedMs"] < 1500, cold_read
                 cold_read["uiElapsedMs"] = (time.monotonic() - read_start) * 1000
                 (ARTIFACTS / "uncached-show-read.json").write_text(json.dumps(cold_read, indent=2))
+                # Admit an ordinary save behind compression, then create real
+                # newer work before that save can read its captured snapshot.
+                wait(lambda: script("return window.__responsiveness.samples.length>=8"), "Eight paired samples before queued-save race")
+                request_count = script("return window.__saveRequests.length")
+                save_shortcut()
+                older_save = wait(lambda: script("return window.__saveRequests[arguments[0]]", request_count), "Ordinary save captured while backup owns the library")
+                assert isinstance(older_save["token"], str), older_save
+                click_text("New show")
+                wait(lambda: script("return !!document.querySelector('#name')"), "New edits during queued save")
+                fill("#name", "After queued save")
+                click_text("Quick lyrics")
+                wait(lambda: script("return !!document.querySelector('.popup textarea')"), "Queued-save newer lyrics input")
+                fill('.popup textarea', "Keep edits after the save snapshot")
+                click('[data-testid="create.show.popup.new.show"]')
+                wait(lambda: script("return !document.querySelector('#name') && document.body.innerText.includes('After queued save')"), "Newer show created before save acknowledgment")
+                queued_status = invoke("library_status")
+                assert queued_status["activeJob"]["listenerId"] == "backup-responsiveness", queued_status
+                assert queued_status["queuedJobs"] >= 1, queued_status
+                assert not (other / "Shows" / "After queued save.show").exists()
                 observed = wait(lambda: script("return window.__responsiveness.done && window.__responsiveness.probesComplete ? window.__responsiveness : null"), "Backup and independent control probes completed", seconds=90)
                 (ARTIFACTS / "responsiveness.json").write_text(json.dumps(observed, indent=2))
                 assert "error" not in observed and "probeError" not in observed, observed
@@ -655,6 +676,15 @@ def run():
                     assert cold_snapshot == cold_show
                     assert "Loaded from disk during compression" not in json.dumps(cold_snapshot)
                 steps.append("Both projections render cues and native handshakes during real 64 MiB backup; ZIP verified")
+                wait(lambda: script("return window.__saveAcks.some(ack=>ack.data.runtimeSaveToken===arguments[0])", older_save["token"]), "Older queued save acknowledged")
+                wait(lambda: script("return !!document.querySelector('.top .unsaved') && !document.querySelector('.status .saving')"), "Newer work remains visibly unsaved after old acknowledgment")
+                assert not (other / "Shows" / "After queued save.show").exists()
+                save_shortcut()
+                latest_path = other / "Shows" / "After queued save.show"
+                wait(lambda: latest_path.exists() and script("return !document.querySelector('.top .unsaved') && !!document.querySelector('.status .saved')"), "Latest snapshot persisted and marked saved")
+                latest = json.loads(latest_path.read_text())
+                assert "Keep edits after the save snapshot" in json.dumps(latest)
+                (ARTIFACTS / "save-revision-race.json").write_text(json.dumps({"older":older_save,"requests":script("return window.__saveRequests.slice(arguments[0])", request_count),"acks":script("return window.__saveAcks"),"savedShow":latest}, indent=2))
             finally:
                 for path in workload:
                     path.unlink(missing_ok=True)

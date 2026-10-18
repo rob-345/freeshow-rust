@@ -140,6 +140,20 @@ Remote run [39139061224](https://github.com/rob-345/freeshow-rust/actions/runs/3
 
 Remote run [39138007256](https://github.com/rob-345/freeshow-rust/actions/runs/39138007256) passed all three core jobs but again lost a desktop-driver response, this time during script setup. The test now keeps bounded execution receipts inside each WebView. Retrying a lost script response returns its retained result/promise/error instead of repeating a send or listener installation; three Node tests cover side effects, partial failures, asynchronous results and separate WebViews. A local run observed recovery of a dropped response in this same session. Clicks continue to rely on observing the resulting state after a lost response.
 
+## Save acknowledgments and newer edits (2026-10-18)
+
+Remote run [39139590968](https://github.com/rob-345/freeshow-rust/actions/runs/39139590968) on `097eddb6` passed all four jobs, including the Windows cleanup test and the 74-step Linux native workflow.
+
+Rust saves now carry an opaque renderer/module-epoch token captured with the snapshot. SAVE2 echoes it without storing it in the library. The frontend compares that snapshot's tracked edit revision with the current revision. An older acknowledgment cannot mark newer work saved or clear a later save's status. Backup-only operations do not replace the active save token. Moving captured rename/delete queues out of the frontend is excluded from edit tracking. Rust compares serialized tracked values so unchanged notifications do not invent edits, while retaining the existing timestamp/layout exclusions.
+
+If a closing save acknowledges an outdated snapshot, the frontend sends the newer snapshot before continuing. A library selection stops if edits remain after its correlated pre-switch acknowledgment. This guards that acknowledgment interval; it does not certify edits during the subsequent library commit or every asynchronous load/cloud/close callback. Minor fields excluded by the original saved-state rules, multiple writers, and accepted-write completion before application exit remain gaps.
+
+Seven source-driven Node regressions execute the real shared save/subscription functions: queue capture, newer lyrics, unchanged/excluded updates, old backup versus newer save status, independent renderer/module epochs, closing retries, and newer rename/delete operations. A Rust test verifies token/correlation echo and absence from stores; the library-selection test checks that a still-unsaved editor stays in its library.
+
+The real Linux workflow admits an ordinary save behind the 64 MiB backup, creates a new song through Quick Lyrics before the backend can process that snapshot, and waits for its exact token acknowledgment. The new song remains visibly unsaved and absent from disk. Another actual Ctrl+S writes its lyrics and clears the unsaved marker. `save-revision-race.json` records the captured names, tokens, acknowledgments and final show. The control/rendering probes complete at least eight paired samples before the ordered save establishes a read dependency.
+
+Latest local validation: **39 Rust, 54 Node and 18 frontend tests passed** (111 total), plus **82 native steps**. Core/native Clippy with warnings denied, the Windows GNU target Clippy cross-check, formatting, source snapshots, frontend production and native builds passed. This slice needs its own remote run. The full application parity gate remains failing.
+
 The untouched upstream unit baseline was run before changes: **179 passed, 2 failed** across 12 files. Both failures were in `src/electron/cloud/syncManager.test.ts`:
 
 1. `multiple machines sync scenarios > Scenario 1: if not found locally, and marked as 'deleted' in cloud: skip` (line 845).
@@ -157,9 +171,9 @@ The first release-mode lyric-extraction microbenchmark measured a median **95.93
 
 ## Next work
 
-1. Inspect remote CI for bounded show reads/snapshot compression and finish desktop transport verification.
+1. Inspect remote CI for save-revision acknowledgments. Finish accepted-write draining and final-save/close handling, including failures while closing.
 2. Extend output display/hotplug, transition, follower and preview behavior. Continue bounded read/CPU separation for other expensive operations with explicit snapshot/ordering semantics; keep output control independent of long filesystem/CPU jobs.
-3. Finish save/edit acknowledgments and concurrency, profile locking, context propagation across windows and pending-request cancellation. Add assisted recovery of retained snapshots. Continue native menus, shortcuts, close/save/capture lifecycle, unavailable-volume recovery and profile import. Bulk moving shows/media is a separate operation from selecting an existing library.
+3. Finish excluded/minor-field and asynchronous load/cloud/close saved-state races, overlapping library commits, profile locking, context propagation across windows and pending-request cancellation. Add assisted recovery of retained snapshots. Continue native menus, shortcuts, capture lifecycle, unavailable-volume recovery and profile import. Bulk moving shows/media is a separate operation from selecting an existing library.
 4. Suppress unchanged disk writes, preserve cloud edit timestamps and finish array-property semantics. Implement transaction-journal recovery after a crash and verify backup metadata/time zones. Automatic-backup saved-state/queue regressions and queued stale-library rejection are now covered; other overlapping operations remain uncertified.
 5. Continue through media/audio/capture, protocols/remote servers, hardware/broadcast, cloud/providers, AI and distribution as described in [PLAN.md](PLAN.md).
 6. Establish comparable release-build Electron startup/memory/rendering baselines and measure the Rust application before setting numerical acceptance thresholds.

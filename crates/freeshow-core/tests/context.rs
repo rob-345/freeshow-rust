@@ -56,6 +56,36 @@ fn files(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
 }
 
 #[test]
+fn save_acknowledgments_echo_the_snapshot_token_without_persisting_it() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut runtime = Runtime::new(temp.path().join("app"), temp.path().join("data")).unwrap();
+    let mut request = request(
+        "SAVE",
+        json!({"runtimeSaveToken":"snapshot-12","PROJECTS":{"projects":{}},"closeWhenFinished":false,"customTriggers":{}}),
+        Some(runtime.context()),
+    );
+    request.listener_id = Some("correlated-save".into());
+    let events = runtime.dispatch(request, "main").unwrap();
+    let saved = events
+        .iter()
+        .find(|event| event.message.channel == "SAVE2")
+        .unwrap();
+    assert_eq!(saved.listener_id.as_deref(), Some("correlated-save"));
+    assert_eq!(
+        saved.message.data.as_ref().unwrap()["runtimeSaveToken"],
+        "snapshot-12"
+    );
+    for id in ["SETTINGS", "PROJECTS"] {
+        assert!(runtime
+            .stores
+            .get(id)
+            .unwrap()
+            .get("runtimeSaveToken")
+            .is_none());
+    }
+}
+
+#[test]
 fn saves_from_a_previous_library_are_preserved_without_changing_either_library() {
     let temp = tempfile::tempdir().unwrap();
     let old = temp.path().join("A");

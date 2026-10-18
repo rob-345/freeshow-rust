@@ -27,6 +27,7 @@ export async function changeDataLocation(newPath: string) {
         if (!get(saved)) {
             const operationId = `data-location-${crypto.randomUUID()}`
             await waitForSave(window.api, window, operationId, () => save(false, { backup: true, isAutoBackup: true, autosave: true }, operationId))
+            if (!get(saved)) throw new Error("Changes were made while saving")
         }
         const result = await requestMain(Main.UPDATE_DATA_PATH, { newPath, oldPath: get(dataPath) }, undefined, 60000)
         if (!result) throw new Error("Data folder selection timed out")

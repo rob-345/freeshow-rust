@@ -402,7 +402,7 @@ impl Runtime {
                     if backup_only {
                         info.insert("closeWhenFinished".into(), json!(false));
                     }
-                    for key in ["closeWhenFinished", "customTriggers"] {
+                    for key in ["closeWhenFinished", "customTriggers", "runtimeSaveToken"] {
                         if backup_only && key == "closeWhenFinished" {
                             continue;
                         }

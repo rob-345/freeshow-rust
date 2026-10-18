@@ -30,10 +30,10 @@
         "array length and unusual property edge cases",
         "automatic recovery after a crash during library selection",
         "unavailable selected volumes and recovery UI",
-        "edits made while a save or library change is in flight",
+        "excluded/minor fields, asynchronous load/cloud/close state and edits during the library commit",
         "recovery UI and explicit reapplication of retained save snapshots"
       ],
-      "scope": "Compatible store/save operations, library provenance and ordered persistence on a bounded IO worker; transactional clearing of old live presentation references on selection; remaining cases below are uncertified; bounded SHOW readers share an IO barrier and wait for earlier mutation phases while copied backups compress"
+      "scope": "Compatible store/save operations, library provenance and ordered persistence on a bounded IO worker; transactional clearing of old live presentation references on selection; remaining cases below are uncertified; bounded SHOW readers share an IO barrier and wait for earlier mutation phases while copied backups compress; snapshot-token acknowledgments preserve newer tracked edits and guard the pre-switch save interval"
     },
     {
       "id": "ipc",
@@ -90,8 +90,9 @@
         "editing, undo/redo, layouts and settings workflows",
         "visual snapshots across WebView2, WKWebView and WebKitGTK",
         "native clipboard, keyboard and accessibility parity",
-        "overlapping saves and edits made while saving"
-      ]
+        "excluded/minor-field and asynchronous load/cloud/close saved state; remaining overlap variants"
+      ],
+      "scope": "Initial native editing plus source-driven save-token/revision checks; real newer-song creation behind a queued save remains unsaved until a second save"
     },
     {
       "id": "outputs",

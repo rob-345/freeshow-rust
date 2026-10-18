@@ -19,6 +19,7 @@ vi.mock("./saveCompletion", () => ({ waitForSave: vi.fn() }))
 describe("changing the Rust data library", () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        vi.mocked(waitForSave).mockReset()
         vi.stubGlobal("window", { __TAURI__: {}, api: {} })
         dataPath.set("/old")
         saved.set(false)
@@ -33,7 +34,10 @@ describe("changing the Rust data library", () => {
             expect(id).toMatch(/^data-location-/)
             expect(trigger()).toBe(true)
             await new Promise<void>((resolve) => {
-                release = resolve
+                release = () => {
+                    saved.set(true)
+                    resolve()
+                }
             })
         })
         const changing = changeDataLocation("/new")
@@ -53,6 +57,15 @@ describe("changing the Rust data library", () => {
         expect(get(dataPath)).toBe("/old")
         expect(get(activePopup)).toBe("alert")
         expect(get(alertMessage)).toContain("Could not change")
+    })
+
+    it("keeps the active library if newer edits remain after its save acknowledgment", async () => {
+        vi.mocked(waitForSave).mockResolvedValue()
+        await changeDataLocation("/new")
+        expect(requestMain).not.toHaveBeenCalled()
+        expect(get(dataPath)).toBe("/old")
+        expect(get(saved)).toBe(false)
+        expect(get(activePopup)).toBe("alert")
     })
 
     it("keeps the displayed path when the backend rejects the destination", async () => {
