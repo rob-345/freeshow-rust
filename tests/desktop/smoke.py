@@ -60,7 +60,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -118,7 +118,7 @@ def run():
             if isinstance(value, list):
                 return [entry for index, child in enumerate(value) for entry in audio_key_order(child, [*path, index])]
             return []
-        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"), HOSTNAME="freeshow-spoofed-environment.local", FREESHOW_RUST_API_BIND_IP="127.0.0.1",
+        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"), HOSTNAME="freeshow-spoofed-environment.local", FREESHOW_RUST_API_BIND_IP="127.0.0.1", FREESHOW_RUST_REMOTES_BIND_IP="127.0.0.1",
                    XDG_DATA_HOME=str(temp / "xdg-data"), XDG_CACHE_HOME=str(temp / "xdg-cache"),
                    XDG_CONFIG_HOME=str(temp / "xdg-config"), GSETTINGS_BACKEND="memory",
                    TAURI_WEBVIEW_AUTOMATION="true", WEBKIT_DISABLE_COMPOSITING_MODE="1",
@@ -465,6 +465,59 @@ def run():
             initial_api = wait(lambda: invoke("api_status")["binding"], "Retained window.api starts native REST, Socket.IO and OSC listeners")
             probe_api("initial", "Amazing grace")
             steps.append("Real REST on both ports and Socket.IO polling/WebSocket reach retained show and dynamic-value handlers")
+
+            remote_password, stage_password = os.urandom(20).hex(), os.urandom(20).hex()
+            remote_receipts = {}
+            configured_remotes = script("""
+                return (async()=>{
+                    const context=window.api.getRuntimeContext();
+                    const write=(file,key,value)=>window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',data:{channel:'SET_STORE_VALUE',data:{file,key,value}},context}});
+                    await write('SETTINGS','ports',{remote:'0',stage:'0',controller:'0',companion:arguments[0]});
+                    await write('SETTINGS','disabledServers',{remote:false,stage:false,controller:false,output_stream:true});
+                    await write('SETTINGS','serverData',{remote:{password:arguments[1]},companion:{enabled:false,password:arguments[2]}});
+                    await write('STAGE','native-stage-test',{name:'Rust native Stage 敬拜',password:arguments[3],settings:{color:'#000000'},items:{}});
+                    const read=command=>new Promise((resolve,reject)=>{
+                        const id='native-remote-settings-'+command,timer=setTimeout(()=>reject(new Error(command+' deadline')),4000);
+                        window.api.receive('MAIN',(message,listenerId)=>{if(listenerId!==id)return;clearTimeout(timer);window.api.removeListener('MAIN',id);resolve(message.data);},id);
+                        window.api.send('MAIN',{channel:command},id);
+                    });
+                    await read('STAGE');await read('SETTINGS');return true;
+                })();
+            """, api_port, remote_password, api_password, stage_password)
+            assert configured_remotes is True
+            initial_remote = wait(lambda: (lambda value: value if value and len(value['bound']['endpoints']) == 3 else None)(invoke('remotes_status')['binding']), 'Retained settings start all three bounded native remote listeners')
+
+            def probe_remotes(phase, expected_text, pages=False):
+                context = script('return window.api.getRuntimeContext()')
+                binding = wait(lambda: invoke('remotes_status')['binding'], 'Current remote binding is available')
+                assert binding['context'] == context, binding
+                endpoints = binding['bound']['endpoints']
+                payload = {'endpoints':endpoints,'password':remote_password,'stagePassword':stage_password,'showId':saved[0],'expectedText':expected_text}
+                result = subprocess.run(['node','tests/desktop/remotes_client.mjs'],input=json.dumps(payload),text=True,capture_output=True,cwd=ROOT,timeout=30)
+                assert result.returncode == 0,(result.stdout,result.stderr)
+                receipt = {'context':context,'bound':binding['bound'],'clients':json.loads(result.stdout),'pages':[]}
+                assert len(receipt['clients']['receipts']) == 6
+                if pages:
+                    for kind in ['REMOTE','STAGE','CONTROLLER']:
+                        url = 'http://' + endpoints[kind] + '/'
+                        if kind == 'STAGE': url += '?id=native-stage-test&password=' + stage_password
+                        page_fixture = {'kind':kind,'url':url,'password':remote_password}
+                        page = subprocess.run(['/usr/bin/python3','tests/desktop/remotes_pages.py'],input=json.dumps(page_fixture),text=True,capture_output=True,cwd=ROOT,env=env,timeout=25)
+                        assert page.returncode == 0,(kind,page.stdout,page.stderr)
+                        page_receipt=json.loads(page.stdout)
+                        assert page_receipt['resources'] and page_receipt['authenticated'] and page_receipt['errors'] == [], page_receipt
+                        for asset in ['client.js','styles.css']:
+                            assert any(resource['name'].endswith('/'+asset) and resource['bytes'] > 0 for resource in page_receipt['resources']),page_receipt
+                        receipt['pages'].append(page_receipt)
+                assert context == script('return window.api.getRuntimeContext()')
+                wait(lambda: invoke('remotes_status')['pendingDeliveries'] == 0 and invoke('remotes_status')['binding']['connections'] == 0, 'Real remote clients disconnect through retained cleanup')
+                remote_receipts[phase]=receipt
+                (ARTIFACTS/'remotes.json').write_text(json.dumps(remote_receipts,indent=2))
+                return receipt
+
+            probe_remotes('initial','Amazing grace',pages=True)
+            steps.append('Real remote and stage passwords, show queries and controller replies reach retained handlers over polling and WebSockets')
+            steps.append('Unchanged remote, stage and controller client pages load and authenticate in separate ephemeral WebKit views')
 
             # Import raw native/text formats through the retained Svelte
             # converters, then persist with the real keyboard shortcut.
@@ -830,6 +883,9 @@ def run():
             assert switched_api["endpoints"]["generation"]["run"] != initial_api["endpoints"]["generation"]["run"]
             probe_api("switched", "Second library lyric")
             steps.append("Native API automatically restarts for the selected library and returns its same-ID show")
+            probe_remotes('switched','Second library lyric')
+            assert remote_receipts['switched']['bound']['generation']['run'] != initial_remote['bound']['generation']['run']
+            steps.append('Retained settings restart remotes only after library selection and return the new same-ID show')
             (ARTIFACTS / "library-switch.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
 
             # A delayed save from the previous library must become a recovery

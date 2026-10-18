@@ -26,6 +26,7 @@ freeshow-imports = { path = "../crates/freeshow-imports" }
 freeshow-import-effects = { path = "../crates/freeshow-import-effects" }
 freeshow-browse = { path = "../crates/freeshow-browse" }
 freeshow-assets = { path = "../crates/freeshow-assets" }
+freeshow-remotes = { path = "../crates/freeshow-remotes" }
 freeshow-exif = { path = "../crates/freeshow-exif" }
 freeshow-documents = { path = "../crates/freeshow-documents" }
 freeshow-thumbnails = { path = "../crates/freeshow-thumbnails" }

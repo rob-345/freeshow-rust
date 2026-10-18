@@ -4,8 +4,9 @@ This independent crate ports the three Socket.IO transports in the unchanged
 Electron `src/electron/servers.ts` at
 `2d94defcf98175e4f5c9504e7f4fd1d33c35c975` (1.6.7-beta.2). It does not establish
 complete remotes, network, or application parity. The retained renderer still owns
-password checks, permissions, control actions and responses. Actual production
-client bundles and native host wiring remain coordinator work.
+password checks, permissions, control actions and responses. The production
+client build and native host are now integrated; see [native integration](../native-remotes.md)
+for its separate acceptance evidence and remaining gaps.
 
 ## Native host contract
 
@@ -240,10 +241,11 @@ rustfmt --edition 2021 --check crates/freeshow-remotes/src/transport.rs
 npx prettier --config config/formatting/.prettierrc.yaml --check tests/parity/remotes.test.mjs tests/parity/remotes-oracle.mjs docs/migration/workers/remotes.md
 ```
 
-For coordinator integration, remove this crate's temporary standalone `[workspace]`
-and lockfile, add it to the shared workspace/native dependencies, and repoint
-socketioxide from `../freeshow-api/vendor/socketioxide` to the coordinator's already
-reviewed `../../vendor/socketioxide`. Do not modify the vendor or enable new shared
-serde number features. The example is a loopback JSON-lines driver, independent of
-Tauri and AppState; the host owns main-only admission, frozen contexts, event
-publication ordering, old-run disconnect cleanup, and real asset roots.
+The shared workspace/native dependencies now include this crate, and the
+socketioxide dependency uses the existing reviewed `../../vendor/socketioxide`.
+The temporary standalone workspace and lockfile have been removed. No vendor
+changes or new shared serde number features were introduced. The example remains
+a loopback JSON-lines driver, independent of Tauri and AppState. The production
+host owns main-only admission, frozen contexts, completed event publication,
+old-run disconnect cleanup and real compiled client resource roots; see
+[its contract and limitations](../native-remotes.md).

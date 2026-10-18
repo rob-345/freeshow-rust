@@ -3,12 +3,14 @@
 mod api;
 mod assets;
 mod browse;
+mod context_changes;
 mod drop;
 mod file_reads;
 mod files;
 mod imports;
 mod menu;
 mod output;
+mod remotes;
 mod system;
 mod thumbnails;
 
@@ -32,6 +34,7 @@ use tauri_plugin_opener::OpenerExt;
 
 struct AppState {
     library: LibraryService,
+    context_changes: context_changes::ContextChanges,
     outputs: output::OutputService,
     media: MediaService,
     audio: AudioService,
@@ -41,6 +44,7 @@ struct AppState {
     browse: browse::NativeBrowse,
     system: SystemService,
     api: api::NativeApi,
+    remotes: remotes::NativeRemotes,
     assets: assets::NativeAssets,
     thumbnails: thumbnails::NativeThumbnails,
     osc: OscSender,
@@ -131,6 +135,24 @@ fn api_status(app: tauri::AppHandle) -> serde_json::Value {
     app.state::<AppState>().api.status()
 }
 
+#[tauri::command]
+fn remotes_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().remotes.status()
+}
+
+#[tauri::command]
+fn remote_delivery_complete(
+    window: tauri::WebviewWindow,
+    id: String,
+    accepted: bool,
+) -> Result<(), WireError> {
+    window
+        .app_handle()
+        .state::<AppState>()
+        .remotes
+        .complete(window.label(), &id, accepted)
+}
+
 fn contextual_events(
     app: &tauri::AppHandle,
     request: &Request,
@@ -151,7 +173,14 @@ async fn ipc_dispatch(
     let app = window.app_handle().clone();
     let assets = app.state::<AppState>().assets.clone();
     let lease = assets.begin(&app.state::<AppState>().library, &request)?;
-    let mut events = dispatch_native(window, request).await?;
+    let mut events = if request.channel == "MAIN" && request.data["channel"] == "UPDATE_DATA_PATH" {
+        app.state::<AppState>()
+            .context_changes
+            .run(async move { dispatch_native(window, request).await })
+            .await?
+    } else {
+        dispatch_native(window, request).await?
+    };
     if let Some(lease) = lease {
         assets
             .complete(&app.state::<AppState>().library, lease, &mut events)
@@ -190,6 +219,18 @@ async fn dispatch_native(
     }
     if request.channel == "LOADED" {
         return Ok(Vec::new());
+    }
+    if freeshow_remotes::ServerKind::ALL
+        .iter()
+        .any(|kind| kind.channel() == request.channel)
+        || request.channel == "MAIN"
+            && remotes::COMMANDS.contains(&request.data["channel"].as_str().unwrap_or(""))
+    {
+        return app
+            .state::<AppState>()
+            .remotes
+            .dispatch(request, window.label())
+            .await;
     }
     if request.channel == "OUTPUT" {
         return app
@@ -422,6 +463,7 @@ async fn dispatch_native(
             "CLOSE" => {
                 let state = app.state::<AppState>();
                 let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
+                state.context_changes.close_and_drain().await?;
                 let drained = state.library.finish_writes().await;
                 if !discard {
                     drained.map_err(WireError::from)?;
@@ -438,6 +480,7 @@ async fn dispatch_native(
                     assets_result,
                     thumbnails_result,
                     file_reads_result,
+                    remotes_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -449,7 +492,8 @@ async fn dispatch_native(
                     state.browse.shutdown(),
                     state.assets.shutdown(),
                     state.thumbnails.shutdown(),
-                    state.file_reads.shutdown()
+                    state.file_reads.shutdown(),
+                    state.remotes.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
@@ -460,6 +504,7 @@ async fn dispatch_native(
                 assets_result?;
                 thumbnails_result?;
                 file_reads_result?;
+                remotes_result?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -570,6 +615,19 @@ async fn dispatch_native(
                 "ALERT",
                 json!(format!(
                     "The library changed, but API restart failed: {}",
+                    error.message
+                )),
+                None,
+            );
+            alert.context = Some(context.clone());
+            events.push(alert);
+        }
+        if let Err(error) = app.state::<AppState>().remotes.context_changed().await {
+            let mut alert = Event::reply(
+                "MAIN",
+                "ALERT",
+                json!(format!(
+                    "The library changed, but remote restart failed: {}",
                     error.message
                 )),
                 None,
@@ -846,8 +904,28 @@ fn main() {
                 })
             })
             .map_err(|error| std::io::Error::other(error.message))?;
+            let mut remote_config = freeshow_remotes::RemoteConfig::default();
+            if let Ok(ip) = std::env::var("FREESHOW_RUST_REMOTES_BIND_IP") {
+                remote_config.bind_ip = ip.parse()?;
+            }
+            let resources = app.path().resource_dir()?.join("remotes");
+            for kind in freeshow_remotes::ServerKind::ALL {
+                remote_config
+                    .static_roots
+                    .insert(kind, resources.join(kind.key()));
+            }
+            let remote_app = app.handle().clone();
+            let remotes = tauri::async_runtime::block_on(async {
+                remotes::NativeRemotes::new(library.clone(), remote_config, move |event| {
+                    remote_app
+                        .emit_to("main", "freeshow://ipc", event)
+                        .map_err(|error| error.to_string())
+                })
+            })
+            .map_err(|error| std::io::Error::other(error.message))?;
             app.manage(AppState {
                 library,
+                context_changes: context_changes::ContextChanges::new(),
                 outputs,
                 media,
                 audio,
@@ -856,6 +934,7 @@ fn main() {
                 browse,
                 system,
                 api,
+                remotes,
                 assets,
                 thumbnails,
                 file_reads,
@@ -900,6 +979,8 @@ fn main() {
             library_status,
             output_status,
             api_status,
+            remotes_status,
+            remote_delivery_complete,
             imports_status,
             assets_status,
             thumbnails_status,

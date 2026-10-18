@@ -16,6 +16,7 @@
   },
   "bundle": {
     "active": false,
+    "resources": { "../dist-rust/remotes/": "remotes/" },
     "icon": ["../public/512x512.png", "../public/icon.ico", "../public/icon.icns"]
   }
 }

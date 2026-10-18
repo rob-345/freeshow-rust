@@ -18,7 +18,7 @@
     "scripts": {
         "rust:dev": "tauri dev",
         "rust:build": "tauri build --no-bundle",
-        "rust:frontend:dev": "vite --config vite.rust.config.mjs",
+        "rust:frontend:dev": "node scripts/migration/build-frontend.mjs --clients-only && vite --config vite.rust.config.mjs",
         "rust:frontend:build": "node scripts/migration/build-frontend.mjs",
         "rust:snapshot": "node scripts/migration/snapshot.mjs --check",
         "rust:test": "cargo test --workspace && cargo build --workspace --all-targets && node --test tests/parity/*.test.mjs && vitest run --config config/testing/vitest.config.ts src/frontend/utils/localeTime.test.ts src/frontend/rust/*.test.ts",

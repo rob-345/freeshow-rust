@@ -171,6 +171,12 @@ impl ImportService {
             .failed
             .load(std::sync::atomic::Ordering::Acquire)
     }
+    /// Wait for already released private staging. Live plans retain their leases
+    /// and do not delay this barrier; ordinary admission limits still apply.
+    pub async fn finish_cleanup(&self) -> Result<()> {
+        let _serial = self.inner.shutdown.lock().await;
+        self.inner.cleanup.fence().await
+    }
     pub async fn prepare(
         &self,
         command: &str,

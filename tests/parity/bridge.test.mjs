@@ -37,6 +37,99 @@ const javascript = ts
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
 
+test("remote native provenance preserves raw messages and fences exact owned disconnects across a library switch", async () => {
+    const context = { runtimeId: "remote", libraryGeneration: 1, dataPath: "/old" },
+        next = { ...context, libraryGeneration: 2, dataPath: "/new" }
+    const deliveries = [],
+        errors = [],
+        receipts = []
+    const bridge = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context,
+        undefined,
+        async (id, accepted) => receipts.push({ id, accepted })
+    )
+    for (const channel of ["REMOTE", "STAGE", "CONTROLLER"]) bridge.api.receive(channel, (message, id) => deliveries.push({ channel, message, id }))
+    let serial = 0
+    const event = (origin, message, overrides = {}) => ({ channel: "REMOTE", message: { channel: "NATIVE_REMOTE", data: null }, context, nativeRemote: { deliveryId: "native-remote-" + (++serial).toString(16).padStart(32, "0"), run: "a".repeat(32), server: "REMOTE", sourceSocket: "real-socket", origin, message, ...overrides } })
+    bridge.dispatch(event("connection", { channel: "CONNECTION", id: "real-socket", data: { name: "Linux" } }))
+    const raw = [{ channel: "CONNECTION", id: "spoofed", origin: "connection", data: { any: true } }, { channel: "DISCONNECT", id: 123 }, ["truthy", { channel: "ACTION" }], "primitive", { channel: "QUERY", unknown: 1 }]
+    for (const message of raw) bridge.dispatch(event("client", message))
+    assert.deepEqual(
+        deliveries.slice(1).map((x) => x.message),
+        raw,
+        "retained source receives unchanged raw JSON including spoofed payload IDs"
+    )
+    bridge.dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: next.dataPath }, context: next }, { channel: "MAIN", data: { channel: "UPDATE_DATA_PATH" } })
+    const before = deliveries.length
+    for (const [origin, message, metadata, frozen] of [
+        ["client", { channel: "ACTION" }, {}, context],
+        ["client", { channel: "DISCONNECT", id: "real-socket" }, {}, context],
+        ["disconnect", { channel: "DISCONNECT", id: "spoofed" }, { sourceSocket: "spoofed" }, context],
+        ["disconnect", { channel: "DISCONNECT", id: "real-socket", data: "extra action" }, {}, context],
+        ["disconnect", { channel: "DISCONNECT", id: "real-socket" }, { run: "b".repeat(32) }, context],
+        ["disconnect", { channel: "DISCONNECT", id: "real-socket" }, {}, { ...context, dataPath: "/wrong" }],
+        ["connection", { channel: "CONNECTION", id: "real-socket" }, {}, context]
+    ])
+        bridge.dispatch({ ...event(origin, message, metadata), context: frozen })
+    assert.equal(deliveries.length, before)
+    assert.ok(receipts.slice(-7).every((x) => x.accepted === false))
+    bridge.dispatch(event("disconnect", { channel: "DISCONNECT", id: "real-socket" }))
+    assert.deepEqual(deliveries.at(-1), { channel: "REMOTE", message: { channel: "DISCONNECT", id: "real-socket" }, id: undefined })
+    assert.deepEqual(bridge.api.getRuntimeContext(), next, "cleanup never retags the current library")
+    bridge.dispatch(event("disconnect", { channel: "DISCONNECT", id: "real-socket" }))
+    assert.equal(deliveries.length, before + 1, "cleanup is one-use")
+    assert.equal(receipts.at(-1).accepted, false)
+    assert.deepEqual(errors, [])
+    await tick()
+})
+
+test("remote sends snapshot payloads at call time and preserve lifecycle ordering without socket ACKs", async () => {
+    const context = { runtimeId: "remote-queue", libraryGeneration: 1, dataPath: "/one" },
+        sent = [],
+        errors = []
+    let release
+    const held = new Promise((resolve) => {
+        release = resolve
+    })
+    const bridge = createRustApi(
+        async (request) => {
+            sent.push(structuredClone(request))
+            if (sent.length === 1) await held
+            return []
+        },
+        (error) => errors.push(error),
+        context
+    )
+    const start = { channel: "START", data: { disabled: { remote: false }, max: 10 } },
+        message = { channel: "QUERY", id: "actual", data: { value: 1 } }
+    bridge.api.send("MAIN", start)
+    bridge.api.send("REMOTE", message)
+    bridge.api.send("MAIN", { channel: "SERVER_DATA", data: { remote: { password: "secret" } } })
+    message.data.value = 999
+    start.data.max = 0
+    await tick()
+    assert.equal(sent.length, 1)
+    assert.equal(sent[0].data.data.max, 10)
+    release()
+    await tick()
+    await tick()
+    assert.deepEqual(
+        sent.map((x) => x.channel),
+        ["MAIN", "REMOTE", "MAIN"]
+    )
+    assert.equal(sent[1].data.data.value, 1)
+    assert.deepEqual(sent[1].context, context)
+    const old = { channel: "ACTION", data: { value: 1 } }
+    bridge.api.send("CONTROLLER", old)
+    const next = { ...context, libraryGeneration: 2, dataPath: "/two" }
+    bridge.dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: next.dataPath }, context: next }, { channel: "MAIN", data: { channel: "UPDATE_DATA_PATH" } })
+    await tick()
+    assert.equal(sent.length, 3, "queued old-context outgoing client actions are cancelled")
+    assert.deepEqual(errors, [])
+})
+
 test("native EXIF callbacks preserve actual source clone values, own undefined and property order", async (t) => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-exif-bridge-"))
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
@@ -55,7 +148,11 @@ test("native EXIF callbacks preserve actual source clone values, own undefined a
     const original = upstreamFunctions("src/electron/utils/files.ts", ["readExifData"], { ExifImage, actionComplete: () => {} })
     const context = { runtimeId: "exif-values", libraryGeneration: 1, dataPath: directory }
     const errors = []
-    const { api, dispatch } = createRustApi(async () => [], (error) => errors.push(error), context)
+    const { api, dispatch } = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context
+    )
     const propertyOrder = (actual, expected) => {
         if (!expected || typeof expected !== "object" || ArrayBuffer.isView(expected)) return
         assert.deepEqual(Object.keys(actual), Object.keys(expected))
@@ -65,7 +162,14 @@ test("native EXIF callbacks preserve actual source clone values, own undefined a
     for (const [index, id] of ids.entries()) {
         const expected = structuredClone(await original.readExifData({ id }))
         let received
-        api.receive("MAIN", (message, listenerId) => { assert.equal(listenerId, id); received = message.data }, "exif-source")
+        api.receive(
+            "MAIN",
+            (message, listenerId) => {
+                assert.equal(listenerId, id)
+                received = message.data
+            },
+            "exif-source"
+        )
         const value = outcomes[index]
         assert.equal(value.sourceCompatible, true, id)
         dispatch({ channel: "MAIN", message: { channel: "READ_EXIF", data: value.reply }, listenerId: id, context, nativeExif: value.hydration })
@@ -77,20 +181,21 @@ test("native EXIF callbacks preserve actual source clone values, own undefined a
 
 test("EXIF restoration rejects malformed envelopes atomically and never hydrates stale replies", () => {
     const context = { runtimeId: "exif-validation", libraryGeneration: 2, dataPath: "/new" }
-    const errors = [], replies = []
-    const { api, dispatch } = createRustApi(async () => [], (error) => errors.push(error), context)
+    const errors = [],
+        replies = []
+    const { api, dispatch } = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context
+    )
     api.receive("MAIN", (message) => replies.push(message))
     const data = { id: "file.jpg", exif: { image: { Keep: null }, exif: { Bytes: [0, 256] } } }
     const snapshot = structuredClone(data)
     const metadata = { undefinedPaths: ["/exif/image/Keep"], specialNumbers: [], byteBuffers: ["/exif/exif/Bytes"] }
     dispatch({ channel: "MAIN", message: { channel: "READ_EXIF", data }, context, nativeExif: metadata })
     assert.deepEqual(data, snapshot, "a late validation failure cannot apply earlier undefined writes")
-    for (const patch of [
-        { undefinedPaths: ["/id"] }, { undefinedPaths: ["/exif/__proto__/polluted"] },
-        { undefinedPaths: ["/exif/missing/child"] }, { undefinedPaths: ["/exif/image/Keep", "/exif/image/Keep"] },
-        { specialNumbers: [{ path: "/exif/image/Keep", kind: "unknown" }] },
-        { objectKeys: [{ path: "/exif/image", keys: ["Invented"] }] }
-    ]) dispatch({ channel: "MAIN", message: { channel: "READ_EXIF", data }, context, nativeExif: { undefinedPaths: [], specialNumbers: [], byteBuffers: [], ...patch } })
+    for (const patch of [{ undefinedPaths: ["/id"] }, { undefinedPaths: ["/exif/__proto__/polluted"] }, { undefinedPaths: ["/exif/missing/child"] }, { undefinedPaths: ["/exif/image/Keep", "/exif/image/Keep"] }, { specialNumbers: [{ path: "/exif/image/Keep", kind: "unknown" }] }, { objectKeys: [{ path: "/exif/image", keys: ["Invented"] }] }])
+        dispatch({ channel: "MAIN", message: { channel: "READ_EXIF", data }, context, nativeExif: { undefinedPaths: [], specialNumbers: [], byteBuffers: [], ...patch } })
     assert.deepEqual(replies, [])
     assert.equal(errors.length, 7)
     assert.ok(errors.every((error) => error.code === "exif_publication"))
@@ -103,9 +208,22 @@ test("EXIF restoration rejects malformed envelopes atomically and never hydrates
 
 test("retained canvas completion sends a one-use raw byte snapshot without a JSON write request", async () => {
     const context = { runtimeId: "capture", libraryGeneration: 1, dataPath: "/library" }
-    const raw = [], json = [], errors = []
-    const { api, dispatch } = createRustApi(async (request) => { json.push(request); return [] }, (error) => errors.push(error), context, async (upload) => { raw.push(upload) })
-    const id = "native-thumbnail-" + "a".repeat(32), output = "/private/canvas.png"
+    const raw = [],
+        json = [],
+        errors = []
+    const { api, dispatch } = createRustApi(
+        async (request) => {
+            json.push(request)
+            return []
+        },
+        (error) => errors.push(error),
+        context,
+        async (upload) => {
+            raw.push(upload)
+        }
+    )
+    const id = "native-thumbnail-" + "a".repeat(32),
+        output = "/private/canvas.png"
     const bytes = new Uint8Array([0, 255, 128])
     api.receive("MAIN", (message) => {
         assert.equal(message.data.id, id)
@@ -129,8 +247,20 @@ test("retained canvas completion sends a one-use raw byte snapshot without a JSO
 
 test("private canvas uploads reject mismatched paths, oversized data and obsolete contexts", async () => {
     const context = { runtimeId: "capture", libraryGeneration: 1, dataPath: "/library" }
-    const errors = [], raw = [], json = []
-    const { api, dispatch } = createRustApi(async (request) => { json.push(request); return [] }, (error) => errors.push(error), context, async (upload) => { raw.push(upload) })
+    const errors = [],
+        raw = [],
+        json = []
+    const { api, dispatch } = createRustApi(
+        async (request) => {
+            json.push(request)
+            return []
+        },
+        (error) => errors.push(error),
+        context,
+        async (upload) => {
+            raw.push(upload)
+        }
+    )
     const output = "/private/canvas.png"
     const register = (digit) => {
         const id = "native-thumbnail-" + digit.repeat(32)
@@ -139,7 +269,8 @@ test("private canvas uploads reject mismatched paths, oversized data and obsolet
     }
     api.send("MAIN", { channel: "SAVE_IMAGE", data: { id: register("1"), path: "/arbitrary/write.png", buffer: new ArrayBuffer(1) } })
     api.send("MAIN", { channel: "SAVE_IMAGE", data: { id: register("2"), path: output, buffer: new ArrayBuffer(8 * 1024 * 1024 + 1) } })
-    const obsolete = register("3"), next = { ...context, libraryGeneration: 2, dataPath: "/other" }
+    const obsolete = register("3"),
+        next = { ...context, libraryGeneration: 2, dataPath: "/other" }
     dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: next.dataPath }, context: next }, { channel: "MAIN", data: { channel: "UPDATE_DATA_PATH" } })
     api.send("MAIN", { channel: "SAVE_IMAGE", data: { id: obsolete } })
     await tick()
@@ -150,8 +281,20 @@ test("private canvas uploads reject mismatched paths, oversized data and obsolet
 
 test("retained canvas failure completes only its private request and ordinary image exports stay explicit", async () => {
     const context = { runtimeId: "capture", libraryGeneration: 1, dataPath: "/library" }
-    const raw = [], json = [], errors = []
-    const { api, dispatch } = createRustApi(async (request) => { json.push(request); return [] }, (error) => errors.push(error), context, async (upload) => { raw.push(upload) })
+    const raw = [],
+        json = [],
+        errors = []
+    const { api, dispatch } = createRustApi(
+        async (request) => {
+            json.push(request)
+            return []
+        },
+        (error) => errors.push(error),
+        context,
+        async (upload) => {
+            raw.push(upload)
+        }
+    )
     const id = "native-thumbnail-" + "b".repeat(32)
     dispatch({ channel: "MAIN", message: { channel: "CAPTURE_CANVAS", data: { id, output: "/private/canvas.png" } }, context, nativeCapture: { id } })
     api.send("MAIN", { channel: "SAVE_IMAGE", data: { id } })
@@ -167,16 +310,23 @@ test("retained canvas failure completes only its private request and ordinary im
 
 test("native media capabilities publish before retained callbacks and stale library grants never enter the registry", () => {
     const context = { runtimeId: "media", libraryGeneration: 1, dataPath: "/library" }
-    const errors = [], seen = []
-    const bridge = createRustApi(async () => [], (error) => errors.push(error), context)
+    const errors = [],
+        seen = []
+    const bridge = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context
+    )
     const grant = (sourcePath, digit, current = context) => ({ id: digit.repeat(32), sourcePath, url: `http://127.0.0.1:43210/${"a".repeat(64)}/${digit.repeat(32)}`, mimeType: "image/png", length: 68, context: current })
-    const file = "/日本語/literal%20.png", media = grant(file, "1")
+    const file = "/日本語/literal%20.png",
+        media = grant(file, "1")
     bridge.api.receive("MAIN", (message) => seen.push({ message, url: bridge.api.resolveFilePath(file) }))
     const data = { id: "show", content: ["show", { media: { a: { path: file } }, future: true }] }
     bridge.dispatch({ channel: "MAIN", message: { channel: "SHOW", data }, context, nativeAssets: [media] })
     assert.equal(seen[0].message.data, data)
     assert.equal(seen[0].url, media.url)
-    const next = { ...context, libraryGeneration: 2, dataPath: "/other" }, fresh = grant("/other/media.png", "2", next)
+    const next = { ...context, libraryGeneration: 2, dataPath: "/other" },
+        fresh = grant("/other/media.png", "2", next)
     bridge.dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: next.dataPath }, context: next, nativeAssets: [fresh] }, { channel: "MAIN", data: { channel: "UPDATE_DATA_PATH" } })
     assert.equal(bridge.api.resolveFilePath(fresh.sourcePath), fresh.url)
     assert.equal(bridge.api.resolveFilePath(file), "")
@@ -190,10 +340,14 @@ test("native media capabilities publish before retained callbacks and stale libr
 test("output replay installs existing media before initial state and invalid publication cannot grant a path", () => {
     const context = { runtimeId: "output-media", libraryGeneration: 3, dataPath: "/library" }
     const errors = []
-    const { api, dispatch } = createRustApi(async () => [], (error) => errors.push(error), context)
+    const { api, dispatch } = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context
+    )
     const grant = { id: "1".repeat(32), sourcePath: "/source.png", url: `http://127.0.0.1:43210/${"a".repeat(64)}/${"1".repeat(32)}`, mimeType: "image/png", length: 68, context }
     let observed
-    api.receive("OUTPUT", () => observed = api.resolveFilePath(grant.sourcePath))
+    api.receive("OUTPUT", () => (observed = api.resolveFilePath(grant.sourcePath)))
     dispatch({ channel: "OUTPUT", message: { channel: "SHOWS", data: {} }, context, nativeAssets: [grant] })
     assert.equal(observed, grant.url)
     dispatch({ channel: "OUTPUT", message: { channel: "SHOWS", data: {} }, context, nativeAssets: [{ ...grant, sourcePath: "/private", url: "file:///private" }] })

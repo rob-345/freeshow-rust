@@ -47,13 +47,13 @@
         "MessagePort audio/video transport",
         "backend-initiated request correlation outside the run-scoped inbound API",
         "all command payload variants",
-        "mutable IPC payload snapshot semantics outside output and save",
+        "mutable IPC payload snapshot semantics outside output, remotes and save",
         "multi-window context propagation for remaining window types; output recreation is covered",
         "cancellation of pending requests after library changes",
         "IPC payload-byte and waiting-caller limits",
         "bounded native dialog/read concurrency"
       ],
-      "scope": "tested legacy bridge plus Rust session/library provenance, ordered mutations, and rejection of obsolete replies; bounded library admission, dropped callers, worker shutdown and independent context/status snapshots; separate ordered output/lifecycle queues, output send-time snapshots and scoped native event subscriptions; separate bounded SHOW admission with write fences and independent receiver-closure detection; registered retained-thumbnail completions snapshot bounded ArrayBuffer bytes at send time through a private one-use raw Tauri command; narrow trusted READ_EXIF restoration preserves Uint8Array, own undefined/order, NaN/infinities/negative zero after context checks and complete validation"
+      "scope": "tested legacy bridge plus Rust session/library provenance, ordered mutations, and rejection of obsolete replies; bounded library admission, dropped callers, worker shutdown and independent context/status snapshots; separate ordered output/lifecycle queues, output send-time snapshots and scoped native event subscriptions; separate bounded SHOW admission with write fences and independent receiver-closure detection; registered retained-thumbnail completions snapshot bounded ArrayBuffer bytes at send time through a private one-use raw Tauri command; narrow trusted READ_EXIF restoration preserves Uint8Array, own undefined/order, NaN/infinities/negative zero after context checks and complete validation; private raw remote envelopes retain source payloads/IDs separately from trusted lifecycle metadata and one-use delivery completions, and cleanup preserves current context"
     },
     {
       "id": "desktop",
@@ -233,17 +233,24 @@
         "crates/freeshow-api/src/broker.rs",
         "crates/freeshow-api/src/server.rs",
         "src-tauri/tests/api.rs",
-        "tests/desktop/api_client.mjs"
+        "tests/desktop/api_client.mjs",
+        "tests/parity/remotes.test.mjs",
+        "crates/freeshow-remotes/src/server.rs",
+        "crates/freeshow-remotes/src/state.rs",
+        "src-tauri/tests/remotes.rs",
+        "tests/desktop/remotes_client.mjs",
+        "tests/desktop/remotes_pages.py"
       ],
       "remaining": [
-        "remote, stage, controller and output-stream servers",
+        "remotes: OUTPUT_STREAM/OUTPUT_FRAME and stage mirror acquisition, Bonjour, now-playing covers, binary/nonfinite/lone-surrogate wire cases, full remote/controller action and stage item workflows, service-worker lifecycle and packaged Windows/macOS browser behavior",
         "inbound API: complete binary/typed-array and nonfinite/rare native numeric fidelity, lone UTF-16, ancillary Socket.IO assets/legacy transports and malformed OSC cases",
         "MIDI, MTC and LTC",
         "pending sends across library switches; one bounded OS DNS lookup cannot be interrupted",
         "other protocol servers/providers and full cross-platform application workflows",
-        "inbound API: listener-restart disconnects during library changes, later async renderer action effects and actual Windows/macOS application workflows"
+        "inbound API: listener-restart disconnects during library changes, later async renderer action effects and actual Windows/macOS application workflows",
+        "remotes: already-running asynchronous retained actions across context changes, source client-ID spoofing quirks outside private cleanup ownership, unresponsive-renderer cleanup failures and hard OS-call shutdown deadlines"
       ],
-      "scope": "Outbound EMIT_OSC string-handler coercion/bytes compared with original TS/osc-js, bounded FIFO/DNS, cancellation/deadlines and real loopback; native window.api send runs independently of library compression; bounded inbound REST on both ports, genuine Socket.IO polling/WebSocket/upgrade and OSC receive/action API, private run-scoped replies, frozen native host contexts, bounded FIFO lifecycle/event routing and terminal cleanup"
+      "scope": "Outbound EMIT_OSC string-handler coercion/bytes compared with original TS/osc-js, bounded FIFO/DNS, cancellation/deadlines and real loopback; native window.api send runs independently of library compression; bounded inbound REST on both ports, genuine Socket.IO polling/WebSocket/upgrade and OSC receive/action API, private run-scoped replies, frozen native host contexts, bounded FIFO lifecycle/event routing and terminal cleanup; bounded REMOTE/STAGE/CONTROLLER Socket.IO transports and unchanged compiled client resources, native lifecycle ownership, trusted raw-message provenance, one completed synchronous renderer delivery at a time, exact owned disconnect cleanup across library changes, bounded caller-independent root-change continuations and retained SETTINGS-driven replacement startup"
     },
     {
       "id": "broadcast-hardware",

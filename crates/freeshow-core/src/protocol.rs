@@ -51,6 +51,9 @@ pub struct Event {
     /// Trusted READ_EXIF restoration of own undefined, IEEE special numbers and bytes.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub native_exif: Option<Value>,
+    /// Private remote provenance and delivery receipt; retained messages are raw JSON.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_remote: Option<Value>,
 }
 
 impl Event {
@@ -67,6 +70,7 @@ impl Event {
             native_assets: None,
             native_capture: None,
             native_exif: None,
+            native_remote: None,
         }
     }
 }

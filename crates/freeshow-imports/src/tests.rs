@@ -586,3 +586,48 @@ async fn failed_private_cleanup_is_diagnostic_and_stops_new_staging() {
         "cleanup_failure"
     );
 }
+
+#[tokio::test]
+async fn cleanup_barrier_waits_released_staging_without_waiting_live_plans_or_bypassing_capacity() {
+    let dir = tempfile::tempdir().unwrap();
+    let service = ImportService::new(ImportConfig {
+        max_prepared: 1,
+        ..ImportConfig::default()
+    })
+    .unwrap();
+    let source = zip(
+        &dir,
+        "barrier.project",
+        &[
+            ("data.json", b"{\"files\":[\"/original/a.png\"]}"),
+            ("a.png", b"original bytes"),
+        ],
+    );
+    let prepared = service
+        .prepare(
+            "IMPORT_FILES",
+            &payload("freeshow_project", paths(&source)),
+            roots(&dir),
+        )
+        .await
+        .unwrap();
+    let staging = prepared.plan.staging_directory().unwrap().to_owned();
+    tokio::time::timeout(Duration::from_secs(2), service.finish_cleanup())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(staging.is_dir());
+    assert_eq!(
+        error(&service, &payload("txt", vec![]), &dir).await.code,
+        "busy"
+    );
+    drop(prepared);
+    service.finish_cleanup().await.unwrap();
+    assert!(!staging.exists());
+    let next = service
+        .prepare("IMPORT_FILES", &payload("txt", vec![]), roots(&dir))
+        .await
+        .unwrap();
+    drop(next);
+    service.shutdown().await.unwrap();
+}

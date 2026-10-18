@@ -26,7 +26,8 @@ export class Host {
             const pending = this.waiting.shift()
             if (pending) pending.resolve(JSON.parse(line))
         })
-        this.child.on("exit", (code) => {
+        // close follows stdio drain; exit can precede the last JSON line.
+        this.child.on("close", (code) => {
             for (const pending of this.waiting.splice(0)) pending.reject(new Error(`Asset host exited ${code}: ${this.stderr}`))
         })
     }

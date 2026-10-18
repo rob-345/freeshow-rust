@@ -1338,6 +1338,7 @@ dependencies = [
  "freeshow-imports",
  "freeshow-media",
  "freeshow-network",
+ "freeshow-remotes",
  "freeshow-system",
  "freeshow-thumbnail-effects",
  "freeshow-thumbnails",
@@ -1434,6 +1435,29 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "freeshow-remotes"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "form_urlencoded",
+ "httpdate",
+ "hyper",
+ "hyper-util",
+ "libc",
+ "percent-encoding",
+ "ryu-js",
+ "serde",
+ "serde_json",
+ "socket2",
+ "socketioxide",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tower",
+ "uuid",
 ]
 
 [[package]]
@@ -4447,6 +4471,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.9",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3d06f0b082ba57c26b79407372e57cf2a1e28124f78e9479fe80322cf53420b"
+dependencies = [
+ "futures-core",
+ "pin-project-lite",
+ "tokio",
 ]
 
 [[package]]

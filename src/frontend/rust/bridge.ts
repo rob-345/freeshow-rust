@@ -20,23 +20,94 @@ export type RuntimeEvent = {
     nativeAssets?: LocalAssetGrant[]
     nativeCapture?: { id: string }
     nativeExif?: ExifHydration
+    nativeRemote?: {
+        deliveryId: string
+        run: string
+        server: string
+        sourceSocket: string
+        origin: "connection" | "client" | "disconnect"
+        message: any
+    }
 }
 export type Transport = (request: { channel: string; data?: any; listenerId?: string; context?: RuntimeContext }) => Promise<RuntimeEvent[]>
 const mutations = new Set(["SAVE", "UPDATE_DATA_PATH", "SET_STORE_VALUE", "SET_MEDIA_FOLDER_PATH", "RESTORE", "DELETE_BACKUP"])
 const outputLifecycle = new Set(["CREATE", "REMOVE", "TOGGLE_OUTPUTS", "UPDATE_BOUNDS", "SET_VALUE", "FOCUS", "TO_FRONT", "MOVE"])
+const remoteChannels = new Set(["REMOTE", "STAGE", "CONTROLLER"])
+const remoteCommands = new Set(["START", "STOP", "SERVER_DATA"])
+export type RemoteCompletion = (id: string, accepted: boolean) => Promise<unknown>
 
-export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext, captureTransport?: CaptureTransport) {
+export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext, captureTransport?: CaptureTransport, remoteCompletion?: RemoteCompletion) {
     const receivers = new Map<string, Set<Receiver>>()
     const named = new Map<string, { channel: string; receiver: Receiver }>()
     let context = initialContext ? { ...initialContext } : undefined
-    const mediaUrls = createMediaUrlRegistry(() => context, (error) => reportError(error, { channel: "native-assets" }))
-    const captures = createCaptureBridge(() => context, captureTransport, (error) => reportError(error, { channel: "native-thumbnail" }))
+    const mediaUrls = createMediaUrlRegistry(
+        () => context,
+        (error) => reportError(error, { channel: "native-assets" })
+    )
+    const captures = createCaptureBridge(
+        () => context,
+        captureTransport,
+        (error) => reportError(error, { channel: "native-thumbnail" })
+    )
     let mutationQueue = Promise.resolve()
     let mediaSettingsQueue = Promise.resolve()
     let outputQueue = Promise.resolve()
     let outputLifecycleQueue = Promise.resolve()
+    let remoteQueue = Promise.resolve()
+    const remoteConnections = new Map<string, RuntimeContext>()
+
+    function deliver(channel: string, message: any, listenerId?: string) {
+        for (const receiver of [...(receivers.get(channel) || [])]) {
+            try {
+                receiver(message, listenerId)
+            } catch (error) {
+                reportError(error, { channel, message, listenerId })
+            }
+        }
+    }
+
+    function remote(event: RuntimeEvent): boolean {
+        const metadata = event.nativeRemote!
+        const frozen = event.context
+        if (!frozen || !remoteChannels.has(event.channel) || event.channel !== metadata.server || !/^native-remote-[0-9a-f]{32}$/.test(metadata.deliveryId) || !/^[0-9a-f]{32}$/.test(metadata.run) || typeof metadata.sourceSocket !== "string" || !metadata.sourceSocket || metadata.sourceSocket.length > 128 || !["connection", "client", "disconnect"].includes(metadata.origin)) {
+            reportError({ code: "remote_publication", message: "Invalid native remote envelope" }, event)
+            return false
+        }
+        const key = JSON.stringify([frozen.runtimeId, metadata.run, event.channel, metadata.sourceSocket])
+        const owned = remoteConnections.get(key)
+        const equal = (a: RuntimeContext | undefined, b: RuntimeContext) => !!a && a.runtimeId === b.runtimeId && a.libraryGeneration === b.libraryGeneration && a.dataPath === b.dataPath
+        const cleanup = metadata.origin === "disconnect" && equal(owned, frozen)
+        // Only an owned genuine disconnect crosses a library switch. It neither
+        // changes context nor permits another old client action through.
+        if (!cleanup && !equal(context, frozen)) return false
+        if (metadata.origin !== "client") {
+            if (metadata.message?.channel !== (metadata.origin === "connection" ? "CONNECTION" : "DISCONNECT") || metadata.message?.id !== metadata.sourceSocket) return false
+            if (metadata.origin === "connection") {
+                if (owned || remoteConnections.size >= 192) return false
+                remoteConnections.set(key, { ...frozen })
+            } else {
+                if (!cleanup || typeof metadata.message !== "object" || Array.isArray(metadata.message) || Object.keys(metadata.message).length !== 2) return false
+                remoteConnections.delete(key)
+            }
+        }
+        deliver(event.channel, metadata.message, event.listenerId)
+        return true
+    }
 
     function dispatch(event: RuntimeEvent, origin?: { channel: string; data?: any }) {
+        if (event.nativeRemote) {
+            let accepted = false
+            try {
+                accepted = remote(event)
+            } finally {
+                // This private native completion only bounds synchronous UI
+                // delivery. The original Socket.IO protocol has no success ACK.
+                if (remoteCompletion && /^native-remote-[0-9a-f]{32}$/.test(event.nativeRemote.deliveryId)) {
+                    remoteCompletion(event.nativeRemote.deliveryId, accepted).catch((error) => reportError(error, { channel: "native-remote-completion" }))
+                }
+            }
+            return
+        }
         if (event.context) {
             if (context && (event.context.runtimeId !== context.runtimeId || event.context.libraryGeneration < context.libraryGeneration)) return
             // Only the completed root-selection response may advance a library.
@@ -60,13 +131,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
         }
         if (event.channel === "MAIN" && event.message.channel === "READ_FOLDER") hydrateFileBrowse("READ_FOLDER", event.message.data)
         // Snapshot listeners: handlers may unregister themselves during dispatch.
-        for (const receiver of [...(receivers.get(event.channel) || [])]) {
-            try {
-                receiver(event.message, event.listenerId)
-            } catch (error) {
-                reportError(error, event)
-            }
-        }
+        deliver(event.channel, event.message, event.listenerId)
     }
 
     function removeListener(channel: string, id: string) {
@@ -85,7 +150,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 if (channel === "MAIN" && data?.channel === "SAVE_IMAGE" && captures.complete(data.data)) return
                 // Electron serializes at send time. Output updates often reuse
                 // mutable Svelte objects; queued cues must keep their snapshot.
-                if (channel === "OUTPUT") data = structuredClone(data)
+                if (channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && remoteCommands.has(data?.channel))) data = structuredClone(data)
                 // SAVE snapshots its context before its deferred send. Other
                 // requests belong to the library visible when send is called.
                 const captured = channel === "MAIN" && data?.channel === "SAVE" ? data.data?.runtimeContext || context : context
@@ -103,7 +168,8 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 const mediaSettingsRead = mediaSettingsQuery || (channel === "MAIN" && data?.channel === "LOCATE_MEDIA_FILE")
                 const outputMutation = channel === "OUTPUT" && outputLifecycle.has(data?.channel)
                 const outputMessage = channel === "OUTPUT" && !outputMutation
-                const queue = serialized ? mutationQueue : outputMutation ? outputLifecycleQueue : outputMessage ? outputQueue : Promise.resolve()
+                const remoteRequest = remoteChannels.has(channel) || (channel === "MAIN" && remoteCommands.has(data?.channel))
+                const queue = serialized ? mutationQueue : outputMutation ? outputLifecycleQueue : outputMessage ? outputQueue : remoteRequest ? remoteQueue : Promise.resolve()
                 // A reset immediately asks for the default media path. Wait for
                 // its earlier setting write, while unrelated saves/backups do
                 // not delay reads of already committed media configuration.
@@ -112,7 +178,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                     .then(() => {
                         // A library switch cancels obsolete output work. It
                         // must never replay the old snapshot into new windows.
-                        if (channel === "OUTPUT" && request.context && context && (request.context.runtimeId !== context.runtimeId || request.context.libraryGeneration !== context.libraryGeneration)) return []
+                        if ((channel === "OUTPUT" || remoteChannels.has(channel)) && request.context && context && (request.context.runtimeId !== context.runtimeId || request.context.libraryGeneration !== context.libraryGeneration)) return []
                         return transport(request)
                     })
                     .then((events) => events.forEach((event) => dispatch(event, request)))
@@ -124,6 +190,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 if (mediaSettingsWrite || mediaSettingsQuery) mediaSettingsQueue = complete.catch(() => {})
                 if (outputMutation) outputLifecycleQueue = complete.catch(() => {})
                 if (outputMessage) outputQueue = complete.catch(() => {})
+                if (remoteRequest) remoteQueue = complete.catch(() => {})
             },
             getRuntimeContext: () => (context ? { ...context } : undefined),
             resolveFilePath: mediaUrls.resolve,
@@ -167,7 +234,8 @@ export async function installRustBridge(target: Window = window) {
             )
         },
         context,
-        ({ id, buffer, failed }) => tauri.core.invoke("thumbnail_complete", buffer, { headers: { "x-freeshow-capture": id, "x-freeshow-capture-failed": failed ? "1" : "0" } })
+        ({ id, buffer, failed }) => tauri.core.invoke("thumbnail_complete", buffer, { headers: { "x-freeshow-capture": id, "x-freeshow-capture-failed": failed ? "1" : "0" } }),
+        (id, accepted) => tauri.core.invoke("remote_delivery_complete", { id, accepted })
     )
     await tauri.event.listen(
         "freeshow://ipc",

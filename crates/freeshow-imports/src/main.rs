@@ -47,6 +47,9 @@ fn main() {
                 json!({"error":{"code":error.code,"message":error.message,"priorEvents":error.prior_events}})
             }
         };
+        // Each oracle line is independent. Dropping its plan queues cleanup;
+        // wait for that released staging before admitting the next fixture.
+        runtime.block_on(service.finish_cleanup()).unwrap();
         serde_json::to_writer(&mut output, &response).unwrap();
         writeln!(&mut output).unwrap();
         output.flush().unwrap();
