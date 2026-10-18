@@ -184,6 +184,13 @@ impl MediaService {
         result
     }
 
+    /// Clear the source FFmpeg path cache after a completed native installation.
+    /// Waiting for the resolver lock prevents an already-running probe from
+    /// publishing its old result after this invalidation has completed.
+    pub async fn clear_ffmpeg_path_cache(&self) {
+        *self.inner.ffmpeg.lock().await = None;
+    }
+
     /// Cancel admitted requests, kill/reap their processes, then wait for all permits.
     /// Call while the application's Tokio runtime is still alive.
     pub async fn shutdown(&self) {
@@ -446,6 +453,78 @@ mod tests {
         tokio::time::timeout(Duration::from_secs(1), shutdown)
             .await
             .unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn cache_invalidation_follows_real_inflight_resolution_and_selects_a_new_binary() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = tempfile::tempdir().unwrap();
+        let first = dir.path().join("first 日本語");
+        let second = dir.path().join("second Ελληνικά");
+        let marker = |suffix: &str| PathBuf::from(format!("{}{suffix}", first.display()));
+        std::fs::write(&first, b"#!/bin/sh\nexit 0\n").unwrap();
+        std::fs::write(&second, b"#!/bin/sh\nexit 0\n").unwrap();
+        for path in [&first, &second] {
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        let service = MediaService::new(MediaConfig {
+            ffmpeg_candidates: vec![first.clone(), second.clone()],
+            discover_system: false,
+            ..MediaConfig::default()
+        })
+        .unwrap();
+        let check = || service.dispatch("FFMPEG_CHECK", Value::Null);
+        assert_eq!(check().await.unwrap().data["path"], first.to_str().unwrap());
+        std::fs::remove_file(&first).unwrap();
+        assert_eq!(
+            check().await.unwrap().data["path"],
+            first.to_str().unwrap(),
+            "the original successful cache survives removal until explicit invalidation"
+        );
+        service.clear_ffmpeg_path_cache().await;
+        assert_eq!(
+            check().await.unwrap().data["path"],
+            second.to_str().unwrap()
+        );
+
+        // Restore the first real executable, then hold its actual resolver child.
+        std::fs::copy(&second, &first).unwrap();
+        std::fs::write(&first, b"#!/bin/sh\n: > \"$0.ready\"\nwhile [ ! -e \"$0.release\" ]; do sleep 0.01; done\nexit 0\n").unwrap();
+        service.clear_ffmpeg_path_cache().await;
+        let owned = service.clone();
+        let resolving =
+            tokio::spawn(async move { owned.dispatch("FFMPEG_CHECK", Value::Null).await });
+        tokio::time::timeout(Duration::from_secs(3), async {
+            while !tokio::fs::try_exists(marker(".ready")).await.unwrap() {
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .unwrap();
+        let clear = service.clear_ffmpeg_path_cache();
+        tokio::pin!(clear);
+        tokio::select! {
+            biased;
+            _ = &mut clear => panic!("invalidation overtook the real in-flight resolver"),
+            _ = tokio::task::yield_now() => {},
+        }
+        std::fs::write(marker(".release"), []).unwrap();
+        assert_eq!(
+            resolving.await.unwrap().unwrap().data["path"],
+            first.to_str().unwrap()
+        );
+        tokio::time::timeout(Duration::from_secs(3), clear)
+            .await
+            .unwrap();
+        std::fs::remove_file(&first).unwrap();
+        assert_eq!(
+            check().await.unwrap().data["path"],
+            second.to_str().unwrap(),
+            "the old resolver cannot republish its cache after invalidation"
+        );
+        service.shutdown().await;
     }
 
     #[test]
