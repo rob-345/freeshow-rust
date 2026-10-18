@@ -1308,13 +1308,15 @@ mod tests {
     use super::*;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     fn port() -> u16 {
-        for _ in 0..100 {
-            let first = std::net::TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
-            let p = first.local_addr().unwrap().port();
-            if p == 65535 {
-                continue;
-            }
-            if let (Ok(_second), Ok(_udp)) = (
+        // Keep parallel lifecycle tests on distinct adjacent pairs, below the
+        // usual client ephemeral range. Port-zero probes can immediately hand
+        // a released pair to another test or one of its outbound connections.
+        static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        for _ in 0..128 {
+            let index = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let p = 20000 + 2 * ((std::process::id().wrapping_add(index) % 5000) as u16);
+            if let (Ok(_first), Ok(_second), Ok(_udp)) = (
+                std::net::TcpListener::bind((Ipv4Addr::LOCALHOST, p)),
                 std::net::TcpListener::bind((Ipv4Addr::LOCALHOST, p + 1)),
                 std::net::UdpSocket::bind((Ipv4Addr::LOCALHOST, p)),
             ) {
