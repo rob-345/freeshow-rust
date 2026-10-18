@@ -94,7 +94,7 @@ pub enum CacheGuard {
     Absent,
     Existing(FileIdentity),
 }
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 pub struct SourceGuard {
     pub path: String,
     pub expected: FileIdentity,
@@ -153,9 +153,17 @@ pub struct ThumbnailDiagnostic {
     pub code: String,
     pub message: String,
 }
+/// Opaque native plan identity; no deserialization or public constructor.
+#[derive(Clone, Debug)]
+pub struct PlanIdentity(std::sync::Arc<()>);
+impl PartialEq for PlanIdentity {
+    fn eq(&self, other: &Self) -> bool {
+        std::sync::Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+impl Eq for PlanIdentity {}
 /// Keeps staging and a separately bounded prepared lease alive until host commit.
-/// Host MUST validate runtime context, ensure_current(), relative cache root,
-/// all identities/hash/guards and ordered effects before publishing `reply`.
+/// Host validates context, identity/hash/guards and ordered effects before reply.
 pub struct PreparedThumbnail {
     pub reply: Value,
     pub outcome: ThumbnailOutcome,
@@ -173,8 +181,47 @@ pub struct PreparedThumbnail {
     destination: Option<CacheRelativePath>,
     guard: CacheGuard,
     failure_matches_request: bool,
+    captured_cache_root: PathBuf,
+    identity: PlanIdentity,
+    preparation_acknowledged: bool,
 }
 impl PreparedThumbnail {
+    pub fn identity(&self) -> PlanIdentity {
+        self.identity.clone()
+    }
+    pub fn captured_cache_root(&self) -> &Path {
+        &self.captured_cache_root
+    }
+    /// Trusted native owner only: call after a successful invalidation receipt.
+    /// Foreign/duplicate/wrong-state proofs fail before changing any plan state.
+    pub fn acknowledge_pre_capture_invalidation(
+        &mut self,
+        identity: &PlanIdentity,
+        root: &Path,
+        destination: &CacheRelativePath,
+        expected: &FileIdentity,
+    ) -> Result<()> {
+        self.ensure_current()?;
+        if identity != &self.identity
+            || self.preparation_acknowledged
+            || self.outcome != ThumbnailOutcome::CapturePending
+            || root.as_os_str() != self.captured_cache_root.as_os_str()
+            || self.cache_root.as_os_str() != self.captured_cache_root.as_os_str()
+            || self.destination.as_ref() != Some(destination)
+            || self.guard != CacheGuard::Existing(expected.clone())
+            || self.effects.len() != 1
+            || !matches!(&self.effects[0],CacheEffect::Invalidate{destination:d,expected:e} if d==destination&&e==expected)
+        {
+            return Err(ThumbnailError::new(
+                "invalid_preparation_acknowledgement",
+                "Invalid/foreign/duplicate preparation receipt",
+            ));
+        }
+        self.effects.clear();
+        self.guard = CacheGuard::Absent;
+        self.preparation_acknowledged = true;
+        Ok(())
+    }
     pub fn ensure_current(&self) -> Result<()> {
         if self.cancel.is_cancelled() || self.request_cancel.is_cancelled() {
             Err(ThumbnailError::new("cancelled", "Thumbnail plan cancelled"))
@@ -234,3 +281,10 @@ impl Budget {
 }
 #[cfg(test)]
 mod tests;
+
+/// Trusted native synchronous owner helper. Direct Linux statx on the already
+/// anchored handle preserves the exact thumbnail identity/ctime projection.
+/// No content read, filesystem fallback, runtime or worker is created here.
+pub fn trusted_file_identity(file: &std::fs::File) -> Result<FileIdentity> {
+    stat::identity_from_file(file)
+}

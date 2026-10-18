@@ -230,6 +230,9 @@ impl ThumbnailService {
             destination: None,
             guard: CacheGuard::Absent,
             failure_matches_request: true,
+            captured_cache_root: roots.cache_root.clone(),
+            identity: PlanIdentity(Arc::new(())),
+            preparation_acknowledged: false,
         };
         self.submit(Task::Prepare(input, plan), cancel, request_cancel)
             .await

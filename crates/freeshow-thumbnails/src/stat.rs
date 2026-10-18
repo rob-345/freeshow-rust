@@ -55,20 +55,7 @@ pub(crate) fn read(path: &Path, nofollow: bool, budget: &Budget) -> Result<Optio
         };
     }
     let s = unsafe { result.assume_init() };
-    Ok(Some(Stat {
-        identity: FileIdentity {
-            device: libc::makedev(s.stx_dev_major, s.stx_dev_minor),
-            inode: s.stx_ino,
-            length: s.stx_size,
-            mode: s.stx_mode as u32,
-            mtime_seconds: s.stx_mtime.tv_sec,
-            mtime_nanos: s.stx_mtime.tv_nsec,
-            ctime_seconds: s.stx_ctime.tv_sec,
-            ctime_nanos: s.stx_ctime.tv_nsec,
-        },
-        mtime_ms: s.stx_mtime.tv_sec as f64 * 1000.0 + s.stx_mtime.tv_nsec as f64 / 1_000_000.0,
-        ctime_ms: s.stx_ctime.tv_sec as f64 * 1000.0 + s.stx_ctime.tv_nsec as f64 / 1_000_000.0,
-    }))
+    Ok(Some(project(s)))
 }
 #[cfg(not(target_os = "linux"))]
 pub(crate) fn access(_: &Path, _: &Budget) -> Result<bool> {
@@ -86,4 +73,59 @@ pub(crate) fn read(_: &Path, _: bool, _: &Budget) -> Result<Option<Stat>> {
 }
 pub(crate) fn regular(stat: &Stat) -> bool {
     stat.identity.mode & 0o170000 == 0o100000
+}
+
+#[cfg(target_os = "linux")]
+fn project(s: libc::statx) -> Stat {
+    Stat {
+        identity: FileIdentity {
+            device: libc::makedev(s.stx_dev_major, s.stx_dev_minor),
+            inode: s.stx_ino,
+            length: s.stx_size,
+            mode: s.stx_mode as u32,
+            mtime_seconds: s.stx_mtime.tv_sec,
+            mtime_nanos: s.stx_mtime.tv_nsec,
+            ctime_seconds: s.stx_ctime.tv_sec,
+            ctime_nanos: s.stx_ctime.tv_nsec,
+        },
+        mtime_ms: s.stx_mtime.tv_sec as f64 * 1000.0 + s.stx_mtime.tv_nsec as f64 / 1_000_000.0,
+        ctime_ms: s.stx_ctime.tv_sec as f64 * 1000.0 + s.stx_ctime.tv_nsec as f64 / 1_000_000.0,
+    }
+}
+#[cfg(target_os = "linux")]
+pub(crate) fn identity_from_file(file: &std::fs::File) -> Result<FileIdentity> {
+    use std::{mem::MaybeUninit, os::fd::AsRawFd};
+    let mut result = MaybeUninit::<libc::statx>::zeroed();
+    // SAFETY: file owns its fd; the empty path and statx output remain valid for
+    // this synchronous AT_EMPTY_PATH syscall. No pointer or descriptor escapes.
+    let status = unsafe {
+        libc::syscall(
+            libc::SYS_statx,
+            file.as_raw_fd(),
+            c"".as_ptr(),
+            libc::AT_EMPTY_PATH,
+            libc::STATX_BASIC_STATS | libc::STATX_BTIME,
+            result.as_mut_ptr(),
+        )
+    };
+    if status != 0 {
+        let error = std::io::Error::last_os_error();
+        let code = error.raw_os_error().unwrap_or(0);
+        return Err(ThumbnailError::new(
+            if [libc::EINVAL, libc::EPERM, libc::ENOSYS, libc::EOPNOTSUPP].contains(&code) {
+                "unsupported_stat_backend"
+            } else {
+                "thumbnail_io_error"
+            },
+            error.to_string(),
+        ));
+    }
+    Ok(project(unsafe { result.assume_init() }).identity)
+}
+#[cfg(not(target_os = "linux"))]
+pub(crate) fn identity_from_file(_: &std::fs::File) -> Result<FileIdentity> {
+    Err(ThumbnailError::new(
+        "unsupported_platform",
+        "Thumbnail identity verified on Linux only",
+    ))
 }
