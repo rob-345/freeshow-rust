@@ -1,0 +1,218 @@
+[
+  {
+    "path": "",
+    "root": "",
+    "dir": "",
+    "base": "",
+    "ext": "",
+    "name": "",
+    "joined": "next"
+  },
+  {
+    "path": "/",
+    "root": "/",
+    "dir": "/",
+    "base": "",
+    "ext": "",
+    "name": "",
+    "joined": "/next"
+  },
+  {
+    "path": "//",
+    "root": "/",
+    "dir": "/",
+    "base": "",
+    "ext": "",
+    "name": "",
+    "joined": "/next"
+  },
+  {
+    "path": "///",
+    "root": "/",
+    "dir": "/",
+    "base": "",
+    "ext": "",
+    "name": "",
+    "joined": "/next"
+  },
+  {
+    "path": "a",
+    "root": "",
+    "dir": "",
+    "base": "a",
+    "ext": "",
+    "name": "a",
+    "joined": "a/next"
+  },
+  {
+    "path": "a/",
+    "root": "",
+    "dir": "",
+    "base": "a",
+    "ext": "",
+    "name": "a",
+    "joined": "a/next"
+  },
+  {
+    "path": "a//b",
+    "root": "",
+    "dir": "a/",
+    "base": "b",
+    "ext": "",
+    "name": "b",
+    "joined": "a/b/next"
+  },
+  {
+    "path": "/a/b/",
+    "root": "/",
+    "dir": "/a",
+    "base": "b",
+    "ext": "",
+    "name": "b",
+    "joined": "/a/b/next"
+  },
+  {
+    "path": "/a/../b/",
+    "root": "/",
+    "dir": "/a/..",
+    "base": "b",
+    "ext": "",
+    "name": "b",
+    "joined": "/b/next"
+  },
+  {
+    "path": "../x",
+    "root": "",
+    "dir": "..",
+    "base": "x",
+    "ext": "",
+    "name": "x",
+    "joined": "../x/next"
+  },
+  {
+    "path": "./x",
+    "root": "",
+    "dir": ".",
+    "base": "x",
+    "ext": "",
+    "name": "x",
+    "joined": "x/next"
+  },
+  {
+    "path": ".",
+    "root": "",
+    "dir": "",
+    "base": ".",
+    "ext": "",
+    "name": ".",
+    "joined": "next"
+  },
+  {
+    "path": "..",
+    "root": "",
+    "dir": "",
+    "base": "..",
+    "ext": "",
+    "name": "..",
+    "joined": "../next"
+  },
+  {
+    "path": "...",
+    "root": "",
+    "dir": "",
+    "base": "...",
+    "ext": ".",
+    "name": "..",
+    "joined": ".../next"
+  },
+  {
+    "path": ".hidden",
+    "root": "",
+    "dir": "",
+    "base": ".hidden",
+    "ext": "",
+    "name": ".hidden",
+    "joined": ".hidden/next"
+  },
+  {
+    "path": "a.",
+    "root": "",
+    "dir": "",
+    "base": "a.",
+    "ext": ".",
+    "name": "a",
+    "joined": "a./next"
+  },
+  {
+    "path": "a..txt",
+    "root": "",
+    "dir": "",
+    "base": "a..txt",
+    "ext": ".txt",
+    "name": "a.",
+    "joined": "a..txt/next"
+  },
+  {
+    "path": "/a/.hidden",
+    "root": "/",
+    "dir": "/a",
+    "base": ".hidden",
+    "ext": "",
+    "name": ".hidden",
+    "joined": "/a/.hidden/next"
+  },
+  {
+    "path": "//a/b",
+    "root": "/",
+    "dir": "//a",
+    "base": "b",
+    "ext": "",
+    "name": "b",
+    "joined": "/a/b/next"
+  },
+  {
+    "path": "a///b",
+    "root": "",
+    "dir": "a//",
+    "base": "b",
+    "ext": "",
+    "name": "b",
+    "joined": "a/b/next"
+  },
+  {
+    "path": "/a//b/",
+    "root": "/",
+    "dir": "/a/",
+    "base": "b",
+    "ext": "",
+    "name": "b",
+    "joined": "/a/b/next"
+  },
+  {
+    "path": "a/b//",
+    "root": "",
+    "dir": "a",
+    "base": "b",
+    "ext": "",
+    "name": "b",
+    "joined": "a/b/next"
+  },
+  {
+    "path": "🙌.MP4",
+    "root": "",
+    "dir": "",
+    "base": "🙌.MP4",
+    "ext": ".MP4",
+    "name": "🙌",
+    "joined": "🙌.MP4/next"
+  },
+  {
+    "path": "a\\b.txt",
+    "root": "",
+    "dir": "",
+    "base": "a\\b.txt",
+    "ext": ".txt",
+    "name": "a\\b",
+    "joined": "a\\b.txt/next"
+  }
+]

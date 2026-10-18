@@ -1,0 +1,78 @@
+{
+    "schemaVersion": 1,
+    "kind": "actual-packaged-Electron-IPC-contract",
+    "upstreamCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "releaseAsset": "FreeShow-1.6.7-beta.2-amd64.deb",
+    "releaseAssetSha256": "1e50bb99dc2c30e09bf6210b7e169ec7025a8d5a6f04627bb5bbb4832cd219da",
+    "runtime": {
+        "electron": "37.10.3",
+        "node": "22.21.1",
+        "v8": "13.8.258.32-electron.0",
+        "uv": "1.51.0",
+        "icu": "74.2",
+        "unicode": "15.1"
+    },
+    "profileIsolation": true,
+    "temporaryProfileRemoved": true,
+    "commands": ["FILE_INFO", "READ_FOLDER", "GET_SIMILAR"],
+    "statShape": {
+        "keys": ["dev", "mode", "nlink", "uid", "gid", "rdev", "blksize", "ino", "size", "blocks", "atimeMs", "mtimeMs", "ctimeMs", "birthtimeMs"],
+        "prototype": "Object",
+        "dates": [
+            {
+                "key": "atime",
+                "own": false,
+                "type": "undefined",
+                "date": false
+            },
+            {
+                "key": "mtime",
+                "own": false,
+                "type": "undefined",
+                "date": false
+            },
+            {
+                "key": "ctime",
+                "own": false,
+                "type": "undefined",
+                "date": false
+            },
+            {
+                "key": "birthtime",
+                "own": false,
+                "type": "undefined",
+                "date": false
+            }
+        ],
+        "methods": "undefined"
+    },
+    "folderShapes": [
+        {
+            "ownNoMedia": true,
+            "noMediaType": "undefined"
+        },
+        {
+            "ownNoMedia": true,
+            "noMediaType": "boolean"
+        },
+        {
+            "ownNoMedia": false,
+            "noMediaType": "undefined"
+        }
+    ],
+    "sourceSha256": {
+        "readFolderContent": "3322a51b1f26f0488f304f9ee97f04ef8938169d210d6e87c6d341e6950430b9",
+        "getFileInfo": "a4c0fb98570a6c5ebe31fe4edac1240309ade53758ed706d009c38653e689abd",
+        "getFileStats": "2cbc6ff954a58accb8db0f64cbaa643ba4d22322e30c85304c38ef16320776eb",
+        "getFileStatsAsync": "a2e05ce45a2efdb4178efdf02fdadef4ac4a582c8a16f5edab5d37fc7d28738f",
+        "getSimularPaths": "8e81959f750b1e67450a6254009e0787649b2cd492fca6f723c4ecedcab4ef06",
+        "similarity": "c24481f97806513e0b3da403bd7f84a986c669f7bcbc278c56ccd4900be71c4a",
+        "readFolder": "a74864a85f5e12164eee41e9259f8bccd7cf03dd5ee7573654ff6f576feff1ef",
+        "readFolderAsync": "59f0432c11cf1e9971cf51d8e9bd987636e94a000be2ccfd2f5d514a8ded6feb"
+    },
+    "nonemptyReplies": {
+        "FILE_INFO": true,
+        "READ_FOLDER": true,
+        "GET_SIMILAR": true
+    }
+}
