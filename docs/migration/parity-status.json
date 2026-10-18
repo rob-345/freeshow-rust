@@ -22,7 +22,8 @@
         "portable data relocation",
         "legacy profile import",
         "Windows/macOS permission and locking behavior",
-        "cloud edit timestamps"
+        "cloud edit timestamps",
+        "array length and unusual property edge cases"
       ]
     },
     {

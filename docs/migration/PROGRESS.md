@@ -13,12 +13,12 @@ Status: **active, incomplete**. Full feature parity and application performance 
 - Added differential tests using extracted original TypeScript functions, filesystem/restart/failure checks, bridge correlation/lifecycle checks, and the parity report/acceptance gate.
 - Drove the real Linux Tauri binary through WebKitWebDriver: onboarding, new project, new song, ordinary keyboard input, simulated multiline paste input, Japanese text/emoji, Ctrl+S, and saved-file verification passed. Native clipboard integration remains unverified.
 - Fixed an observed WebKitGTK startup problem: the POSIX `C` browser locale caused `Intl.DateTimeFormat` to abort onboarding mount. Invalid locale tags now retain the 24-hour default; valid locale behavior has regression tests.
-- Added a CI workflow for core checks on Linux/Windows/macOS and real Linux desktop automation. Remote CI results still need inspection after pushing.
+- Added a CI workflow for core checks on Linux/Windows/macOS and real Linux desktop automation. The first remote core runs passed on Linux and macOS; Windows and the Linux desktop job were still running at the latest inspection. The latest commit must receive its own checks.
 
 ## Verification
 
 - Rust core integration tests: **4 passed**, covering corrupt data, failed writes, atomic replacement and duplicate IDs.
-- Node differential/bridge tests: **17 passed**, including **1,024** generated show-helper comparisons, 15 parser inputs, storage/restart and save/rename/delete scenarios.
+- Node differential/bridge tests: **18 passed**, including **1,024** generated show-helper comparisons, 15 parser inputs, storage/restart and save/rename/delete scenarios.
 - Locale regression tests: **2 passed**.
 - Core Clippy with warnings denied, Rust formatting, added TypeScript/JS formatting, snapshot drift checks and `git diff --check`: passed locally.
 - Rust frontend production bundle and Linux desktop binary with embedded assets: built successfully.
@@ -32,6 +32,8 @@ The untouched upstream unit baseline was run before changes: **179 passed, 2 fai
 
 These baseline failures have not been fixed or represented as migration regressions. The complete original Electron UI test was not run; normal native Node addon installation is still required for that baseline.
 
+An additional differential test against the actual `Conf` dependency exposed array values being replaced by objects and doubled backslashes being collapsed in dotted store keys. Both were fixed, and the new regression test passes with the full local suite. Unusual array-property/length behavior remains outside this test.
+
 ## Initial measurement
 
 The first release-mode lyric-extraction microbenchmark measured a median **95.93 ms** for the original TypeScript helper versus **42.01 ms** for Rust (**2.28×**) across 20,000 extractions per sample, with three warmup rounds and nine measured samples. Outputs/checksums matched.
@@ -42,7 +44,7 @@ The first release-mode lyric-extraction microbenchmark measured a median **95.93
 
 1. Inspect the first remote CI runs and fix platform-specific build/test failures.
 2. Extend the real desktop test to reopen saved projects/shows; port native dialogs, menus/shortcuts, close/save/recovery and portable data relocation.
-3. Complete store semantics (external changes, escaped paths/arrays, legacy profile import), cloud edit timestamps, backups and restore with differential/failure tests.
+3. Complete store semantics (external changes, remaining array-property edge cases, legacy profile import), cloud edit timestamps, backups and restore with differential/failure tests.
 4. Port output window lifecycle and MAIN/output state routing, then add display/transition/preview tests.
 5. Continue through media/audio/capture, protocols/remote servers, hardware/broadcast, cloud/providers, AI and distribution as described in [PLAN.md](PLAN.md).
 6. Establish comparable release-build Electron startup/memory/rendering baselines and measure the Rust application before setting numerical acceptance thresholds.

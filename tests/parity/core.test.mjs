@@ -4,6 +4,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
+import Conf from "conf"
 import { root, showOracle, fileOracle, fixtureShow, clean, createSaveOracle } from "./oracle.mjs"
 
 const binary = process.env.FREESHOW_CORE_BIN || path.join(root, "target", "debug", process.platform === "win32" ? "freeshow-core.exe" : "freeshow-core")
@@ -138,4 +139,26 @@ test("invalid paths and unsupported backup fail before any save mutation", (t) =
         ["invalid_request", "unsupported_command", "invalid_request"]
     )
     assert.equal(fs.existsSync(path.join(temp, "app/settings.json")), false)
+})
+
+test("nested arrays and escaped store keys match electron-store's actual Conf dependency", (t) => {
+    const temp = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-conf-"))
+    t.after(() => fs.rmSync(temp, { recursive: true, force: true }))
+    const original = new Conf({ cwd: path.join(temp, "oracle"), projectName: "freeshow-parity", name: "config" })
+    const changes = [
+        ["state", { list: [{ name: "First" }, { name: "Second" }] }],
+        ["state.list.0.name", "Updated"],
+        ["state.literal\\.key", { preserved: true }],
+        ["state.folder\\\\name.value", "double backslash"],
+        ["state.trailing\\\\", "trailing backslash"],
+        ["state.empty..key", false]
+    ]
+    for (const [key, value] of changes) original.set(key, value)
+    const responses = rust([...changes.map(([key, value]) => request("SET_STORE_VALUE", { file: "config", key, value })), request("GET_STORE_VALUE", { file: "config", key: "state" }), request("GET_STORE_VALUE", { file: "config", key: "state.list.1.name" })], ["--app-data", path.join(temp, "app"), "--data-dir", path.join(temp, "data")])
+    assert.ok(
+        responses.every((response) => response.ok),
+        JSON.stringify(responses)
+    )
+    assert.deepEqual(responses.at(-2).value[0].message.data, clean(original.get("state")))
+    assert.deepEqual(responses.at(-1).value[0].message.data, original.get("state.list.1.name"))
 })

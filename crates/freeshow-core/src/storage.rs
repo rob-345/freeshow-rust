@@ -166,7 +166,12 @@ impl Stores {
         }
         let mut current = &value;
         for segment in key_segments(key)? {
-            current = current.get(segment).unwrap_or(&Value::Null);
+            current = if let Value::Array(array) = current {
+                array_index(&segment).and_then(|index| array.get(index))
+            } else {
+                current.get(segment)
+            }
+            .unwrap_or(&Value::Null);
         }
         Ok(current.clone())
     }
@@ -178,53 +183,65 @@ impl Stores {
         } else {
             key_segments(key)?
         };
-        let mut current = &mut store;
-        for segment in &segments[..segments.len() - 1] {
-            if !current.is_object() {
-                *current = json!({});
-            }
-            current = current
-                .as_object_mut()
-                .unwrap()
-                .entry(segment.clone())
-                .or_insert_with(|| json!({}));
-        }
-        if !current.is_object() {
-            *current = json!({});
-        }
-        current
-            .as_object_mut()
-            .unwrap()
-            .insert(segments.last().unwrap().clone(), value);
+        set_nested(&mut store, &segments, value)?;
         self.set(id, store)
     }
+}
+
+fn array_index(segment: &str) -> Option<usize> {
+    segment
+        .parse::<u32>()
+        .ok()
+        .filter(|index| *index != u32::MAX && index.to_string() == segment)
+        .map(|index| index as usize)
+}
+
+fn set_nested(current: &mut Value, segments: &[String], value: Value) -> Result<()> {
+    if segments.is_empty() {
+        *current = value;
+        return Ok(());
+    }
+    let segment = &segments[0];
+    if let Value::Array(array) = current {
+        // JavaScript's non-index array properties are not serialized by JSON.
+        let Some(index) = array_index(segment) else {
+            return Ok(());
+        };
+        if index > 1_000_000 {
+            return Err(Error::Invalid(
+                "store array index exceeds the supported limit".into(),
+            ));
+        }
+        if array.len() <= index {
+            array.resize(index + 1, Value::Null);
+        }
+        return set_nested(&mut array[index], &segments[1..], value);
+    }
+    if !current.is_object() {
+        *current = json!({});
+    }
+    let child = current
+        .as_object_mut()
+        .unwrap()
+        .entry(segment.clone())
+        .or_insert(Value::Null);
+    set_nested(child, &segments[1..], value)
 }
 
 fn key_segments(key: &str) -> Result<Vec<String>> {
     // dot-prop supports escaped periods (not array-index notation in this
     // upstream version). Reject prototype keys as dot-prop does.
     let mut result = Vec::new();
-    let mut segment = String::new();
-    let mut escaped = false;
-    for ch in key.chars() {
-        if escaped {
-            if ch != '.' && ch != '\\' {
-                segment.push('\\');
-            }
-            segment.push(ch);
-            escaped = false;
-        } else if ch == '\\' {
-            escaped = true;
-        } else if ch == '.' {
-            result.push(std::mem::take(&mut segment));
-        } else {
-            segment.push(ch);
+    let mut pieces = key.split('.').peekable();
+    while let Some(piece) = pieces.next() {
+        let mut segment = piece.to_string();
+        while segment.ends_with('\\') && pieces.peek().is_some() {
+            segment.pop();
+            segment.push('.');
+            segment.push_str(pieces.next().unwrap());
         }
+        result.push(segment);
     }
-    if escaped {
-        segment.push('\\');
-    }
-    result.push(segment);
     if result
         .iter()
         .any(|part| matches!(part.as_str(), "__proto__" | "constructor" | "prototype"))
