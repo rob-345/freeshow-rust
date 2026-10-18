@@ -272,18 +272,22 @@
         "tests/parity/discovery-oracle.mjs",
         "crates/freeshow-discovery/src/service.rs",
         "crates/freeshow-discovery/src/dns.rs",
-        "src-tauri/tests/discovery.rs"
+        "src-tauri/tests/discovery.rs",
+        "tests/parity/midi.test.mjs",
+        "tests/parity/midi-ports.test.mjs",
+        "crates/freeshow-midi/src/tests.rs",
+        "crates/freeshow-midi-ports/src/tests.rs"
       ],
       "remaining": [
         "remotes: OUTPUT_STREAM/OUTPUT_FRAME and stage mirror acquisition, Bonjour, now-playing covers, binary/nonfinite/lone-surrogate wire cases, full remote/controller action and stage item workflows, service-worker lifecycle and packaged Windows/macOS browser behavior",
         "inbound API: complete binary/typed-array and nonfinite/rare native numeric fidelity, lone UTF-16, ancillary Socket.IO assets/legacy transports and malformed OSC cases",
-        "MIDI, MTC and LTC",
+        "MIDI/MTC: production host and retained renderer hydration/timecode router; full-frame SysEx bounded backend assembly; actual hardware/loopback and Windows/macOS runtime; LTC remains pending",
         "pending sends across library switches; one bounded OS DNS lookup cannot be interrupted",
         "other protocol servers/providers and full cross-platform application workflows",
         "inbound API: listener-restart disconnects during library changes, later async renderer action effects and actual Windows/macOS application workflows",
         "remotes: already-running asynchronous retained actions across context changes, source client-ID spoofing quirks outside private cleanup ownership, unresponsive-renderer cleanup failures and hard OS-call shutdown deadlines"
       ],
-      "scope": "Outbound EMIT_OSC string-handler coercion/bytes compared with original TS/osc-js, bounded FIFO/DNS, cancellation/deadlines and real loopback; native window.api send runs independently of library compression; bounded inbound REST on both ports, genuine Socket.IO polling/WebSocket/upgrade and OSC receive/action API, private run-scoped replies, frozen native host contexts, bounded FIFO lifecycle/event routing and terminal cleanup; bounded REMOTE/STAGE/CONTROLLER Socket.IO transports and unchanged compiled client resources, native lifecycle ownership, trusted raw-message provenance, one completed synchronous renderer delivery at a time, exact owned disconnect cleanup across library changes, bounded caller-independent root-change continuations and retained SETTINGS-driven replacement startup; bounded discovery foundation and native-only owner preserve source service names/TXT/probes, actual bound endpoints, frozen native OS inputs and private listener/context runs, with real loopback UDP/goodbyes and supervised direct-child teardown; production remote hookup and real multicast/native registration remain pending"
+      "scope": "Outbound EMIT_OSC string-handler coercion/bytes compared with original TS/osc-js, bounded FIFO/DNS, cancellation/deadlines and real loopback; native window.api send runs independently of library compression; bounded inbound REST on both ports, genuine Socket.IO polling/WebSocket/upgrade and OSC receive/action API, private run-scoped replies, frozen native host contexts, bounded FIFO lifecycle/event routing and terminal cleanup; bounded REMOTE/STAGE/CONTROLLER Socket.IO transports and unchanged compiled client resources, native lifecycle ownership, trusted raw-message provenance, one completed synchronous renderer delivery at a time, exact owned disconnect cleanup across library changes, bounded caller-independent root-change continuations and retained SETTINGS-driven replacement startup; bounded discovery foundation and native-only owner preserve source service names/TXT/probes, actual bound endpoints, frozen native OS inputs and private listener/context runs, with real loopback UDP/goodbyes and supervised direct-child teardown; production remote hookup and real multicast/native registration remain pending; MIDI/MTC source logic and native ALSA/CoreMIDI/WinMM port foundations preserve tested JZZ selectors, message/receive projections, shared handles, real callback admission fences, bounded fixed-owner queues and sticky teardown; native Linux probe records actual ALSA permission denial rather than an empty successful list; production host/hydrated callbacks and physical delivery remain pending"
     },
     {
       "id": "broadcast-hardware",

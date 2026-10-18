@@ -1,5 +1,7 @@
 # MIDI and MTC logic
 
+This foundation now belongs to the shared workspace. The companion [native port owner](midi-ports.md) adds real ALSA/CoreMIDI/WinMM calls; production host, callback hydration, global timecode routing and physical delivery remain separate work. The isolation notes below describe the original pure-logic slice.
+
 This independent crate ports the pinned source's MIDI value and MTC state logic. It does not enumerate OS devices, bind a physical/virtual MIDI port, schedule output, or wire the native host/UI. There is no placeholder native backend returning fabricated device lists or claiming delivery. The retained Svelte MIDI actions and timecode consumers remain unchanged.
 
 The oracle is FreeShow commit `2d94defcf98175e4f5c9504e7f4fd1d33c35c975`, version `1.6.7-beta.2`: `src/electron/utils/midi.ts`, `src/electron/timecode/MTC.ts`, and `timecode.ts`. Tests execute those actual function declarations with controlled port/clock boundaries and the installed `JZZ@1.9.5` packet constructors and message descriptions. `NOTICE` records its source hash and MIT license.

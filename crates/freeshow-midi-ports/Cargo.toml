@@ -5,8 +5,6 @@ edition = "2021"
 license = "GPL-3.0-only"
 description = "Bounded native MIDI port ownership for retained FreeShow MIDI flows"
 
-[workspace]
-
 [features]
 default = ["native"]
 native = ["dep:midir"]
@@ -22,7 +20,3 @@ tokio-util = { version = "0.7", features = ["rt"] }
 [[bin]]
 name = "freeshow-midi-ports-parity"
 path = "src/bin/parity.rs"
-
-[profile.dev]
-debug = 0
-incremental = false
