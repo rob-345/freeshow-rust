@@ -491,6 +491,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-audio-pipeline"
+version = "0.1.0"
+dependencies = [
+ "ryu-js",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-browse"
 version = "0.1.0"
 dependencies = [

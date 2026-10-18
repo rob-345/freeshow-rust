@@ -307,7 +307,13 @@ async fn accepted_drop_is_terminal_because_partial_outputs_are_unknown() {
     let s = service();
     let a = prepare(&s, 960).await.accept(sinks().context()).unwrap();
     drop(a);
-    s.shutdown().await.unwrap();
+    for _ in 0..2 {
+        assert_eq!(
+            s.shutdown().await.unwrap_err().code,
+            "audio_owner_abandoned"
+        );
+        assert!(s.inner.worker.lock().unwrap().is_none());
+    }
     assert_eq!(
         s.prepare(&[], &meta(), &sinks(), CancellationToken::new())
             .await
@@ -368,7 +374,7 @@ async fn accepted_expiry_terminates_owner_and_rejects_late_completion() {
             .code,
         "audio_owner_timeout"
     );
-    s.shutdown().await.unwrap();
+    assert_eq!(s.shutdown().await.unwrap_err().code, "audio_owner_timeout");
     assert_eq!(
         s.prepare(&[], &meta(), &sinks(), CancellationToken::new())
             .await
@@ -452,7 +458,7 @@ async fn unexpected_worker_exit_fences_admission_and_terminal_drain() {
             .code,
         "audio_worker_error"
     );
-    s.shutdown().await.unwrap();
+    assert_eq!(s.shutdown().await.unwrap_err().code, "audio_worker_error");
 }
 #[tokio::test]
 async fn submitted_finish_survives_dropped_awaiting_caller() {

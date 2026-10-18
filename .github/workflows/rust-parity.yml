@@ -48,7 +48,7 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run rust:snapshot
       - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness -- -D warnings
       - run: npm run rust:test
       - run: npm run rust:parity:report
       - if: inputs.require_full_parity == true

@@ -4,6 +4,7 @@ members = [
     "crates/freeshow-media",
     "crates/freeshow-network",
     "crates/freeshow-audio",
+    "crates/freeshow-audio-pipeline",
     "crates/freeshow-files",
     "crates/freeshow-system",
     "crates/freeshow-api",

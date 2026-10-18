@@ -224,10 +224,11 @@ impl Drop for WorkerExit {
                     "audio_worker_error",
                     "Audio owner exited unexpectedly; partial effects require reconciliation",
                 );
-                *inner
+                inner
                     .terminal
                     .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(error.clone());
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .get_or_insert_with(|| error.clone());
                 inner.terminal.clear_poison();
                 inner.closing.store(true, Ordering::Release);
                 inner.cancel.cancel();
@@ -488,11 +489,16 @@ impl AudioPipelineService {
         // Worker signals just before returning. Joining can include final TLS /
         // destructors; no zero-blocking guarantee is made for that final step.
         if let Some(worker) = self.inner.worker.lock().unwrap().take() {
-            worker
-                .join()
-                .map_err(|_| Error::new("audio_worker_error", "Audio owner panicked"))?;
+            if worker.join().is_err() {
+                self.inner.terminal.lock().unwrap().get_or_insert_with(|| {
+                    Error::new("audio_worker_error", "Audio owner panicked")
+                });
+            }
         }
-        Ok(())
+        match self.inner.terminal.lock().unwrap().as_ref() {
+            Some(error) => Err(error.clone()),
+            None => Ok(()),
+        }
     }
     pub fn terminal_error(&self) -> Option<Error> {
         self.inner.terminal.lock().unwrap().clone()
