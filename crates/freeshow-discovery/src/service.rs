@@ -292,7 +292,7 @@ enum Phase {
         delay: Duration,
     },
     Failed,
-    Child(Child),
+    Child(Box<Child>),
 }
 impl Run {
     fn event(&self, name: Option<DiscoveryName>, kind: DiscoveryEventKind) {
@@ -426,7 +426,7 @@ impl Run {
                     .spawn()
                     .map_err(|e| DiscoveryError::new("dns_sd_spawn", e.to_string()))?;
                 self.event(Some(name), DiscoveryEventKind::Spawned);
-                Phase::Child(child)
+                Phase::Child(Box::new(child))
             }
         };
         self.entries.insert(name, Entry { records, phase });
