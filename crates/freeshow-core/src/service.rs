@@ -361,7 +361,7 @@ mod tests {
             .unwrap();
         let events = timeout(DEADLINE, changed).await.unwrap().unwrap().unwrap();
         let new = service.context().unwrap();
-        assert_eq!(new.data_path, destination);
+        assert_eq!(new.data_path, fs::canonicalize(destination).unwrap());
         assert_eq!(new.library_generation, context.library_generation + 1);
         assert!(events
             .iter()
