@@ -33,7 +33,8 @@ jobs:
       - run: git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975
       - uses: actions/setup-node@v5
         with:
-          node-version: 24
+          # Match Node bundled by the pinned Electron 37.10.3 oracle.
+          node-version: 22.21.1
           cache: npm
       - run: rustup show
       - uses: actions/cache@v4
@@ -60,7 +61,8 @@ jobs:
       - run: git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975
       - uses: actions/setup-node@v5
         with:
-          node-version: 24
+          # Match Node bundled by the pinned Electron 37.10.3 oracle.
+          node-version: 22.21.1
           cache: npm
       - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev webkit2gtk-driver xvfb dbus-x11 xdotool ffmpeg python3-gi gir1.2-atspi-2.0 at-spi2-core fonts-noto-color-emoji
       - run: rustup show
