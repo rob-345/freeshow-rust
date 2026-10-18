@@ -2,6 +2,7 @@
 // actual ZIP job runs; both output WebViews report visible renderer progress.
 const templates = arguments[0]
 const texts = arguments[1]
+const show = arguments[2]
 const ids = Object.keys(templates)
 const invoke = window.__TAURI__.core.invoke
 const context = window.api.getRuntimeContext()
@@ -43,7 +44,7 @@ invoke("ipc_dispatch", { request: { channel: "MAIN", listenerId: "backup-respons
     try {
         while (!observed.done && performance.now() - started < 90000 && observed.samples.length < 1024) {
             const before = await invoke("library_status")
-            if (before.activeJob?.listenerId === "backup-responsiveness") {
+            if (before.activeJob?.listenerId === "backup-responsiveness" && before.activeJob.phase === "backupCompression") {
                 const probeId = `projection-${sequence}`
                 const cueData = {}
                 ids.forEach((id, index) => {
@@ -64,10 +65,18 @@ invoke("ipc_dispatch", { request: { channel: "MAIN", listenerId: "backup-respons
                 window.api.send("OUTPUT", { channel: "OUTPUTS", data: cueData })
                 const probeStart = performance.now()
                 const controls = Promise.all([invoke("runtime_context"), invoke("ipc_dispatch", { request: { channel: "MAIN", data: { channel: "MAXIMIZED" } } }), invoke("ipc_dispatch", { request: { channel: "MAIN", data: { channel: "GET_OS" } } })]).then(([current, maximized, os]) => ({ current, maximized, os, elapsedMs: performance.now() - probeStart }))
-                const [control, acks] = await Promise.all([controls, rendered])
+                const diskReads = Promise.all(
+                    ids.map(async (id) => {
+                        const readStart = performance.now()
+                        const events = await invoke("ipc_dispatch", { request: { channel: "MAIN", listenerId: `${probeId}-${id}-disk-read`, context, data: { channel: "SHOW", data: show } } })
+                        const event = events[0]
+                        return { elapsedMs: performance.now() - readStart, context: event.context, channel: event.message.channel, id: event.message.data.id, name: event.message.data.content[1].name }
+                    })
+                )
+                const [control, acks, reads] = await Promise.all([controls, rendered, diskReads])
                 const after = await invoke("library_status")
-                if (after.activeJob?.listenerId === "backup-responsiveness" && !observed.done) {
-                    observed.samples.push({ ...control, acks, sequence, sinceBackupStartMs: performance.now() - started, queueCapacity: after.queueCapacity })
+                if (after.activeJob?.listenerId === "backup-responsiveness" && after.activeJob.phase === "backupCompression" && !observed.done) {
+                    observed.samples.push({ ...control, acks, reads, phase: after.activeJob.phase, sequence, sinceBackupStartMs: performance.now() - started, queueCapacity: after.queueCapacity })
                 }
                 sequence++
             }

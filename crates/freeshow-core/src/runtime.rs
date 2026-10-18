@@ -6,7 +6,10 @@ use crate::{
     Error, Result,
 };
 use serde_json::{json, Map, Value};
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 pub const IMPLEMENTED_MAIN: &[&str] = &[
     "LOG",
@@ -49,6 +52,62 @@ pub struct Runtime {
     pub development: bool,
     runtime_id: String,
     library_generation: u64,
+}
+
+pub(crate) struct PreparedDispatch {
+    events: Vec<Event>,
+    backup: Option<backup::Snapshot>,
+}
+
+impl From<Vec<Event>> for PreparedDispatch {
+    fn from(events: Vec<Event>) -> Self {
+        Self {
+            events,
+            backup: None,
+        }
+    }
+}
+
+impl PreparedDispatch {
+    pub(crate) fn has_backup(&self) -> bool {
+        self.backup.is_some()
+    }
+
+    pub(crate) fn finish(mut self) -> Vec<Event> {
+        if let Some(snapshot) = self.backup {
+            append_backup_result(&mut self.events, snapshot.finish());
+        }
+        self.events
+    }
+}
+
+/// An immutable root/context descriptor; it never constructs or writes stores.
+#[derive(Clone)]
+pub(crate) struct ShowReader {
+    data: PathBuf,
+    context: RuntimeContext,
+}
+
+impl ShowReader {
+    pub(crate) fn dispatch(&self, request: Request) -> Result<Vec<Event>> {
+        if request.channel != "MAIN" || request.data["channel"] != "SHOW" {
+            return Err(Error::Unsupported("show reader command".into()));
+        }
+        if request.context.as_ref() != Some(&self.context) {
+            return Err(Error::StaleLibrary {
+                recovery_path: None,
+                recovery_error: None,
+            });
+        }
+        let mut event = Event::reply(
+            "MAIN",
+            "SHOW",
+            load_show(&self.data, &request.data["data"])?,
+            request.listener_id,
+        );
+        event.context = Some(self.context.clone());
+        Ok(vec![event])
+    }
 }
 
 impl Runtime {
@@ -109,7 +168,22 @@ impl Runtime {
         })
     }
 
+    pub(crate) fn show_reader(&self) -> ShowReader {
+        ShowReader {
+            data: self.stores.data.clone(),
+            context: self.context(),
+        }
+    }
+
     pub fn dispatch(&mut self, request: Request, window: &str) -> Result<Vec<Event>> {
+        Ok(self.prepare_dispatch(request, window)?.finish())
+    }
+
+    pub(crate) fn prepare_dispatch(
+        &mut self,
+        request: Request,
+        window: &str,
+    ) -> Result<PreparedDispatch> {
         if request.channel == "STARTUP" && request.data["channel"] == "READY" {
             let mut event = Event::reply(
                 "STARTUP",
@@ -122,11 +196,11 @@ impl Runtime {
                 request.listener_id,
             );
             event.message.auto_profile = Some(String::new());
-            return Ok(vec![event]);
+            return Ok(vec![event].into());
         }
         // LOADED is emitted by upstream despite not being in ValidChannels.
         if request.channel == "LOADED" {
-            return Ok(vec![]);
+            return Ok(vec![].into());
         }
         if request.channel != "MAIN" {
             return Err(Error::Unsupported(request.channel));
@@ -154,6 +228,7 @@ impl Runtime {
         }
         let data = &request.data["data"];
         let mut events = Vec::new();
+        let mut backup = None;
         let response = match command {
             "LOG" => {
                 eprintln!("{data}");
@@ -347,27 +422,9 @@ impl Runtime {
                     }
                 }
                 if is_backup {
-                    match backup::create(&self.stores, automatic) {
-                        Ok(path) => events.push(Event::reply(
-                            "MAIN",
-                            "BACKUP",
-                            json!({"finished":true,"path":path}),
-                            None,
-                        )),
-                        Err(error) => {
-                            events.push(Event::reply(
-                                "MAIN",
-                                "BACKUP",
-                                json!({"finished":false}),
-                                None,
-                            ));
-                            events.push(Event::reply(
-                                "MAIN",
-                                "ALERT",
-                                error_alert("Could not create backup", &error),
-                                None,
-                            ));
-                        }
+                    match backup::prepare(&self.stores, automatic) {
+                        Ok(snapshot) => backup = Some(snapshot),
+                        Err(error) => append_backup_result(&mut events, Err(error)),
                     }
                 }
                 None
@@ -386,7 +443,7 @@ impl Runtime {
         if let Some(data) = response {
             events.push(Event::reply("MAIN", command, data, request.listener_id));
         }
-        Ok(events)
+        Ok(PreparedDispatch { events, backup })
     }
 
     fn show_path(&self, name: &str) -> Result<PathBuf> {
@@ -402,29 +459,7 @@ impl Runtime {
     }
 
     pub fn load_show(&self, data: &Value) -> Result<Value> {
-        let id = data["id"].as_str().unwrap_or("");
-        let name = data["name"]
-            .as_str()
-            .filter(|name| !name.is_empty())
-            .unwrap_or(id);
-        let text = match fs::read_to_string(self.show_path(name)?) {
-            Ok(text) => text,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                return Ok(json!({"error":"not_found","id":id}))
-            }
-            Err(error) => return Err(error.into()),
-        };
-        let Some(mut content) = show::parse_json(&text).filter(show::truthy) else {
-            return Ok(json!({"error":"not_found","id":id}));
-        };
-        if !id.is_empty() {
-            if let Some(array) = content.as_array_mut() {
-                if !array.is_empty() {
-                    array[0] = json!(id);
-                }
-            }
-        }
-        Ok(json!({"id":id,"content":content}))
+        load_show(&self.stores.data, data)
     }
 
     fn load_shows(&mut self) -> Result<(Value, Vec<Event>)> {
@@ -613,4 +648,56 @@ fn error_alert(context: &str, error: &Error) -> Value {
         .replace('<', "&lt;")
         .replace('>', "&gt;");
     json!(format!("<span>{context}: {detail}</span>"))
+}
+
+fn load_show(directory: &Path, data: &Value) -> Result<Value> {
+    let id = data["id"].as_str().unwrap_or("");
+    let name = data["name"]
+        .as_str()
+        .filter(|name| !name.is_empty())
+        .unwrap_or(id);
+    let text = match fs::read_to_string(storage::leaf_path(&directory.join("Shows"), name, "show")?)
+    {
+        Ok(text) => text,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(json!({"error":"not_found","id":id}))
+        }
+        Err(error) => return Err(error.into()),
+    };
+    let Some(mut content) = show::parse_json(&text).filter(show::truthy) else {
+        return Ok(json!({"error":"not_found","id":id}));
+    };
+    if !id.is_empty() {
+        if let Some(array) = content.as_array_mut() {
+            if !array.is_empty() {
+                array[0] = json!(id);
+            }
+        }
+    }
+    Ok(json!({"id":id,"content":content}))
+}
+
+fn append_backup_result(events: &mut Vec<Event>, result: Result<PathBuf>) {
+    match result {
+        Ok(path) => events.push(Event::reply(
+            "MAIN",
+            "BACKUP",
+            json!({"finished":true,"path":path}),
+            None,
+        )),
+        Err(error) => {
+            events.push(Event::reply(
+                "MAIN",
+                "BACKUP",
+                json!({"finished":false}),
+                None,
+            ));
+            events.push(Event::reply(
+                "MAIN",
+                "ALERT",
+                error_alert("Could not create backup", &error),
+                None,
+            ));
+        }
+    }
 }

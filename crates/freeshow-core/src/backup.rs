@@ -19,7 +19,37 @@ pub struct Backup {
     pub size: u64,
 }
 
+/// Private copies keep compression independent of later source-file changes.
+/// Preparation must run in the ordered library phase. External writers are not
+/// locked: this is a stable completed copy, not a filesystem-wide atomic view.
+pub struct Snapshot {
+    _directory: tempfile::TempDir,
+    entries: Vec<Source>,
+    path: PathBuf,
+    data: PathBuf,
+    automatic: bool,
+    now: DateTime<Local>,
+}
+
+impl Snapshot {
+    pub fn finish(self) -> Result<PathBuf> {
+        archive::write_zip(&self.entries, &self.path)?;
+        if self.automatic {
+            if let Some(cutoff) = retention_cutoff(self.now) {
+                for old in retention_paths(&list(&self.data)?, cutoff, false) {
+                    remove(&self.data, &old)?;
+                }
+            }
+        }
+        Ok(self.path.clone())
+    }
+}
+
 pub fn create(stores: &Stores, automatic: bool) -> Result<PathBuf> {
+    prepare(stores, automatic)?.finish()
+}
+
+pub fn prepare(stores: &Stores, automatic: bool) -> Result<Snapshot> {
     let folder = stores.data.join("Backups");
     fs::create_dir_all(&folder)?;
     let now = Local::now();
@@ -62,15 +92,43 @@ pub fn create(stores: &Stores, automatic: bool) -> Result<PathBuf> {
             });
         }
     }
-    archive::write_zip(&entries, &path)?;
-    if automatic {
-        if let Some(cutoff) = retention_cutoff(now) {
-            for old in retention_paths(&list(&stores.data)?, cutoff, false) {
-                remove(&stores.data, &old)?;
-            }
+    let directory = tempfile::Builder::new()
+        .prefix("freeshow-backup-")
+        .tempdir()?;
+    let mut copied = Vec::new();
+    for (index, entry) in entries.into_iter().enumerate() {
+        archive::validate_name(&entry.name)?;
+        match fs::metadata(&entry.path) {
+            Ok(metadata) if metadata.is_file() => {}
+            Ok(_) => continue,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(error) => return Err(error.into()),
         }
+        let destination = directory.path().join(index.to_string());
+        // Copy bytes rather than hardlinking. In-place external edits must not
+        // change an already prepared backup. No file contents accumulate in RAM.
+        fs::copy(entry.path, &destination)?;
+        #[cfg(windows)]
+        {
+            // Windows copies the read-only attribute too, which would prevent
+            // TempDir from removing this private copy after compression.
+            let mut permissions = fs::metadata(&destination)?.permissions();
+            permissions.set_readonly(false);
+            fs::set_permissions(&destination, permissions)?;
+        }
+        copied.push(Source {
+            name: entry.name,
+            path: destination,
+        });
     }
-    Ok(path)
+    Ok(Snapshot {
+        _directory: directory,
+        entries: copied,
+        path,
+        data: stores.data.clone(),
+        automatic,
+        now,
+    })
 }
 
 pub fn list(data: &Path) -> Result<Vec<Backup>> {
@@ -197,4 +255,81 @@ fn change_time_ms(metadata: &fs::Metadata) -> f64 {
         .unwrap_or_default()
         .as_secs_f64()
         * 1000.0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn prepared_backup_keeps_copied_bytes_after_in_place_edits_renames_and_deletes() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut stores = Stores::new(temp.path().join("app"), temp.path().join("data")).unwrap();
+        stores.set("PROJECTS", json!({"original":true})).unwrap();
+        let shows = stores.data.join("Shows");
+        fs::write(shows.join("Original.show"), b"original show").unwrap();
+        fs::write(shows.join("Deleted.show"), b"deleted later").unwrap();
+        let snapshot = prepare(&stores, false).unwrap();
+        let staging = snapshot._directory.path().to_path_buf();
+        // fs::write truncates in place: a hardlink would corrupt the snapshot.
+        fs::write(stores.path("PROJECTS").unwrap(), b"{\"changed\":true}").unwrap();
+        fs::write(shows.join("Original.show"), b"changed show").unwrap();
+        fs::rename(shows.join("Original.show"), shows.join("Renamed.show")).unwrap();
+        fs::remove_file(shows.join("Deleted.show")).unwrap();
+        fs::write(shows.join("Added.show"), b"new show").unwrap();
+        let archive = snapshot.finish().unwrap();
+        assert!(!staging.exists());
+        let entries = archive::read_zip(&archive)
+            .unwrap()
+            .into_iter()
+            .map(|entry| (entry.name, entry.content))
+            .collect::<std::collections::HashMap<_, _>>();
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&entries["PROJECTS.json"]).unwrap(),
+            json!({"original":true})
+        );
+        assert_eq!(entries["SHOWS/Original.show"], b"original show");
+        assert_eq!(entries["SHOWS/Deleted.show"], b"deleted later");
+        assert!(!entries.contains_key("SHOWS/Renamed.show"));
+        assert!(!entries.contains_key("SHOWS/Added.show"));
+        let abandoned = prepare(&stores, false).unwrap();
+        let staging = abandoned._directory.path().to_path_buf();
+        drop(abandoned);
+        assert!(!staging.exists());
+    }
+
+    #[test]
+    fn failed_compression_cleans_snapshot_without_publishing_an_archive() {
+        let temp = tempfile::tempdir().unwrap();
+        let stores = Stores::new(temp.path().join("app"), temp.path().join("data")).unwrap();
+        let snapshot = prepare(&stores, false).unwrap();
+        let staging = snapshot._directory.path().to_path_buf();
+        let output = snapshot.path.clone();
+        // Removing the destination directory represents a disconnected volume.
+        fs::remove_dir(stores.data.join("Backups")).unwrap();
+        assert!(snapshot.finish().is_err());
+        assert!(!output.exists());
+        assert!(!staging.exists());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_read_only_sources_do_not_leave_read_only_temporary_copies() {
+        let temp = tempfile::tempdir().unwrap();
+        let stores = Stores::new(temp.path().join("app"), temp.path().join("data")).unwrap();
+        let show = stores.data.join("Shows/Read only.show");
+        fs::write(&show, b"read only source").unwrap();
+        let mut permissions = fs::metadata(&show).unwrap().permissions();
+        permissions.set_readonly(true);
+        fs::set_permissions(&show, permissions).unwrap();
+        let prepared = prepare(&stores, false);
+        let mut permissions = fs::metadata(&show).unwrap().permissions();
+        permissions.set_readonly(false);
+        fs::set_permissions(show, permissions).unwrap();
+        let snapshot = prepared.unwrap();
+        let staging = snapshot._directory.path().to_path_buf();
+        snapshot.finish().unwrap();
+        assert!(!staging.exists());
+    }
 }

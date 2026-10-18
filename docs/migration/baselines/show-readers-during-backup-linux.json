@@ -1,0 +1,2443 @@
+{
+  "measuredAt": "2026-10-18T15:05:12.641942+00:00",
+  "scenario": "Two cached projections, paired filesystem SHOW reads and a real uncached UI load during copied-snapshot ZIP compression",
+  "scope": "One Linux native debug run under Xvfb. The UI cache miss is observed through the real presenting-page click and correlated MAIN.SHOW request/reply. Filesystem/OS caches were not flushed and were warmed by library scans and snapshot copying. Filesystem read round trips include JSON parsing and IPC. Visible projection acknowledgments inspect DOM/CSS/RAF progress plus configured fades and native startup handshakes, not physical scanout. No Electron comparison, cold physical-disk result, production tail latency or application-level speedup is certified.",
+  "environment": {
+    "platform": "Linux",
+    "arch": "x86_64",
+    "kernel": "6.8.0-146-generic",
+    "cpu": "Intel(R) Core(TM) i5-8500T CPU @ 2.10GHz",
+    "rust": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "buildProfile": "debug",
+    "desktop": "Tauri / WebKitGTK; Xvfb; WEBKIT_DISABLE_COMPOSITING_MODE=1",
+    "fonts": "Noto Color Emoji 2.047 from Ubuntu package copied into isolated XDG profile",
+    "systemLibraryVersions": {
+      "libgtk-3-0t64:amd64": "3.24.41-4ubuntu1.2",
+      "libjavascriptcoregtk-4.1-0:amd64": "2.52.6-0ubuntu0.24.04.1",
+      "libwebkit2gtk-4.1-0:amd64": "2.52.6-0ubuntu0.24.04.1"
+    }
+  },
+  "sourceBaseCommit": "0531ad08af7748126a31cbba2d0059e6fc136bae",
+  "sourceFilesSha256": {
+    "crates/freeshow-core/src/location.rs": "f314f9eaa1afaca24e574c90bec74877b6f6069958ff34143127d7c9d2e69f1c",
+    "src-tauri/src/output.rs": "ebbd11ded36a5d952c1411972be242d1365942c4b6d031434da1d6c58b9a5a96",
+    "src-tauri/src/main.rs": "56ac8084801f12d9e4eb21b42de1907e6af751a1eaccd9db187902e20e1c1f60",
+    "src/frontend/rust/bridge.ts": "fce0a6a208ffad70d8852a8f98bd9ab874704de83a46b3f05da82041dc72de85",
+    "src/frontend/IPC/responsesMain.ts": "52aa19e73743717fa4ce6b26ea2eeaf1951c75fae3174be4d419a9aebe93d8aa",
+    "tests/desktop/smoke.py": "b1240db260ab3e84dd27bb0832bb726b53feddc5c4f93c9d13f345b4c3d2c3b9",
+    "tests/desktop/output_probe.js": "f9adaaeb3a6990df1a079c0059298e4a91ad3968865b09b1b62402fa8b50f99b",
+    "tests/desktop/backup_probe.js": "950b776e44707b2625ec129eb2b4fc14dc526644ec89e68f8782cad96348a94f",
+    "crates/freeshow-core/src/runtime.rs": "b54cd92deacde30d1ef94723f51e71196995ba8572f5cd535aa237d288765239",
+    "crates/freeshow-core/src/service.rs": "8349d079868508f36b3aac8154d47e8de01d12ccc966e354c53580b94e2514c3",
+    "crates/freeshow-core/src/backup.rs": "9178f3fb89fa69df4cf828509bbb62a9b9786c1ad0445f44a2c3a61477716a3b",
+    "crates/freeshow-core/Cargo.toml": "9cf9041342e23b2fbfd6f986823018dea0b57507b1d819ae02db8b7c7141f21f",
+    "Cargo.lock": "cb01ca2bc748b19f0d37798e375cd354c0cc12317a8db7b7d29f2fa26503dbd7",
+    "src-tauri/Cargo.lock": "30c654d7309ebde3cce6e316141bca9d3751ea8ae5e35c8d8c27f4cedf5e250e",
+    "tests/parity/desktop-harness.test.mjs": "a317df59b98cd235cf8339f4af79a7d15e4ecfad4408e5c0a4b4115819971803"
+  },
+  "binarySha256": "4c2035450b01634fa7a3e4c42f7fc984d4637fe95bf260633a7ea59651be8e71",
+  "workload": {
+    "projections": 2,
+    "logicalSizePerProjection": {
+      "width": 640,
+      "height": 360
+    },
+    "fixtureCount": 4,
+    "paddingBytesPerFixture": 16777216,
+    "generator": "Python random.Random(20261018), 256 KiB random bytes hex-encoded and repeated 32 times per fixture",
+    "zipCompression": "Deflate level 6",
+    "zipVerified": "entry lengths, CRCs and complete decompression",
+    "readerWorkers": 2,
+    "readerQueueCapacity": 8,
+    "backupSnapshot": "Private file copies prepared on the ordered owner; compression runs on that same thread while two readers may run independently. Subsequent mutations remain queued.",
+    "uncachedShow": "One additional fixture is edited in place after the snapshot is ready; its real UI load sees the edit and the archive is verified to retain the original."
+  },
+  "overlap": "Exact backup listener and backupCompression phase checked before and after each recorded paired cue/filesystem-read sample. The uncached UI load also completes within that phase.",
+  "thresholdsMs": {
+    "control": 1500,
+    "deliveryRoundTrip": 500,
+    "visibleRoundTrip": 1500,
+    "filesystemRead": 1500,
+    "uncachedUiRequest": 1500
+  },
+  "quantiles": "nearest rank over this single run; not a production tail-latency estimate",
+  "backupMs": 23722,
+  "pairedCueSamples": 24,
+  "summary": {
+    "controls": {
+      "samples": 24,
+      "p50Ms": 2,
+      "p95Ms": 3,
+      "p99Ms": 3.0,
+      "maxMs": 3.0
+    },
+    "filesystemReadRoundTrip": {
+      "samples": 48,
+      "p50Ms": 2,
+      "p95Ms": 4,
+      "p99Ms": 15,
+      "maxMs": 15
+    },
+    "deliveryRoundTrip": {
+      "samples": 48,
+      "p50Ms": 6,
+      "p95Ms": 16,
+      "p99Ms": 17,
+      "maxMs": 17
+    },
+    "visibleRoundTrip": {
+      "samples": 48,
+      "p50Ms": 850,
+      "p95Ms": 874.0,
+      "p99Ms": 876.0,
+      "maxMs": 876.0
+    },
+    "uncachedUiRequestMs": 49,
+    "uncachedUiObservedMs": 577.795093995519,
+    "uncachedUiObservedScope": "From before the automated click through visible show-grid text, including WebDriver and polling overhead; not an application-only render measurement."
+  },
+  "raw": {
+    "backup": {
+      "finished": true,
+      "path": "/tmp/freeshow-desktop-test-503k8q4s/other-library/Backups/2026-10-18_15-04_auto.zip"
+    },
+    "outputIds": [
+      "default",
+      "cb9e76b066c"
+    ],
+    "context": {
+      "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+      "libraryGeneration": 1,
+      "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+    },
+    "probesComplete": true,
+    "backupMs": 23722,
+    "done": true,
+    "samples": [
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 834,
+            "outputId": "default",
+            "transportRoundTripMs": 8,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 808,
+            "visibility": "visible",
+            "probeId": "projection-0",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 27,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 8,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 23,
+            "visibility": "visible",
+            "probeId": "projection-0",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 0,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 957.0000000000036
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1.999999999996362
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1.999999999996362
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 844.0000000000036,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 8,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 822,
+            "visibility": "visible",
+            "probeId": "projection-1",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "default": {
+            "roundTripMs": 836,
+            "outputId": "default",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 822.9999999999991,
+            "visibility": "visible",
+            "probeId": "projection-1",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 1.999999999996362,
+        "phase": "backupCompression",
+        "sequence": 1,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 1908.0000000000036
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 876.0000000000073,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 871.0000000000009,
+            "visibility": "visible",
+            "probeId": "projection-2",
+            "text": "  Second library lyric 1 \n "
+          },
+          "default": {
+            "roundTripMs": 875,
+            "outputId": "default",
+            "transportRoundTripMs": 6.999999999996362,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 872,
+            "visibility": "visible",
+            "probeId": "projection-2",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 2,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 2886.0000000000073
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 831,
+            "outputId": "default",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 814,
+            "visibility": "visible",
+            "probeId": "projection-3",
+            "text": "  Second library lyric 1 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 823,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 812,
+            "visibility": "visible",
+            "probeId": "projection-3",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 3,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 3824
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 855,
+            "outputId": "default",
+            "transportRoundTripMs": 17,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 844.9999999999991,
+            "visibility": "visible",
+            "probeId": "projection-4",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 851,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 17,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 840,
+            "visibility": "visible",
+            "probeId": "projection-4",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 4,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 4785
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2.000000000007276
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2.000000000007276
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 850,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5.000000000007276,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 846,
+            "visibility": "visible",
+            "probeId": "projection-5",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "default": {
+            "roundTripMs": 850,
+            "outputId": "default",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 846,
+            "visibility": "visible",
+            "probeId": "projection-5",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 2.000000000007276,
+        "phase": "backupCompression",
+        "sequence": 5,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 5739
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 861,
+            "outputId": "default",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 856,
+            "visibility": "visible",
+            "probeId": "projection-6",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 861,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 855,
+            "visibility": "visible",
+            "probeId": "projection-6",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 6,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 6702
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 840,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 815,
+            "visibility": "visible",
+            "probeId": "projection-7",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "default": {
+            "roundTripMs": 825,
+            "outputId": "default",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 815.0000000000018,
+            "visibility": "visible",
+            "probeId": "projection-7",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 3,
+        "phase": "backupCompression",
+        "sequence": 7,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 7648
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 15
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 15
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 867,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 16,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 851,
+            "visibility": "visible",
+            "probeId": "projection-8",
+            "text": "  Second library lyric 1 \n "
+          },
+          "default": {
+            "roundTripMs": 859,
+            "outputId": "default",
+            "transportRoundTripMs": 16,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 846,
+            "visibility": "visible",
+            "probeId": "projection-8",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 3.000000000007276,
+        "phase": "backupCompression",
+        "sequence": 8,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 8617
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 857.0000000000073,
+            "outputId": "default",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 854,
+            "visibility": "visible",
+            "probeId": "projection-9",
+            "text": "  Second library lyric 1 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 857.0000000000073,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 853,
+            "visibility": "visible",
+            "probeId": "projection-9",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 9,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 9577
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 861,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 856.9999999999982,
+            "visibility": "visible",
+            "probeId": "projection-10",
+            "text": "  Second library lyric 1 \n "
+          },
+          "default": {
+            "roundTripMs": 861,
+            "outputId": "default",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 858,
+            "visibility": "visible",
+            "probeId": "projection-10",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 10,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 10540
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1.999999999992724
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1.999999999992724
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 849,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 827,
+            "visibility": "visible",
+            "probeId": "projection-11",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "default": {
+            "roundTripMs": 837,
+            "outputId": "default",
+            "transportRoundTripMs": 7,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 827,
+            "visibility": "visible",
+            "probeId": "projection-11",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 1.999999999992724,
+        "phase": "backupCompression",
+        "sequence": 11,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 11494
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 828,
+            "outputId": "default",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 815,
+            "visibility": "visible",
+            "probeId": "projection-12",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 828,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 813,
+            "visibility": "visible",
+            "probeId": "projection-12",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 12,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 12436
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 3
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 838,
+            "outputId": "default",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 822,
+            "visibility": "visible",
+            "probeId": "projection-13",
+            "text": "  Second library lyric 1 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 828,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 818,
+            "visibility": "visible",
+            "probeId": "projection-13",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 13,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 13378
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 859,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 848,
+            "visibility": "visible",
+            "probeId": "projection-14",
+            "text": "  Second library lyric 1 \n "
+          },
+          "default": {
+            "roundTripMs": 854,
+            "outputId": "default",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 840,
+            "visibility": "visible",
+            "probeId": "projection-14",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 14,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 14339
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1.999999999992724
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1.999999999992724
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 844,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 7.000000000007276,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 824,
+            "visibility": "visible",
+            "probeId": "projection-15",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "default": {
+            "roundTripMs": 835,
+            "outputId": "default",
+            "transportRoundTripMs": 7.000000000007276,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 825,
+            "visibility": "visible",
+            "probeId": "projection-15",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 3,
+        "phase": "backupCompression",
+        "sequence": 15,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 15292
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2.000000000007276
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2.000000000007276
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 863,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5.000000000007276,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 857.0000000000036,
+            "visibility": "visible",
+            "probeId": "projection-16",
+            "text": "  Second library lyric 1 \n "
+          },
+          "default": {
+            "roundTripMs": 858,
+            "outputId": "default",
+            "transportRoundTripMs": 5.000000000007276,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 854.9999999999964,
+            "visibility": "visible",
+            "probeId": "projection-16",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2.000000000007276,
+        "phase": "backupCompression",
+        "sequence": 16,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 16257
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 861,
+            "outputId": "default",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 856,
+            "visibility": "visible",
+            "probeId": "projection-17",
+            "text": "  Second library lyric 1 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 860,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 855,
+            "visibility": "visible",
+            "probeId": "projection-17",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 17,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 17220
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 864,
+            "outputId": "default",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 859.0000000000036,
+            "visibility": "visible",
+            "probeId": "projection-18",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 823,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 803,
+            "visibility": "visible",
+            "probeId": "projection-18",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 18,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 18186
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 854,
+            "outputId": "default",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 846,
+            "visibility": "visible",
+            "probeId": "projection-19",
+            "text": "  Second library lyric 1 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 854,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 842,
+            "visibility": "visible",
+            "probeId": "projection-19",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 19,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 19146
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 3
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 4
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "default": {
+            "roundTripMs": 847,
+            "outputId": "default",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 805.0000000000036,
+            "visibility": "visible",
+            "probeId": "projection-20",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "cb9e76b066c": {
+            "roundTripMs": 831.0000000000073,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 6,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 802,
+            "visibility": "visible",
+            "probeId": "projection-20",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 3,
+        "phase": "backupCompression",
+        "sequence": 20,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 20100
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1.000000000007276
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 1.000000000007276
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 839,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5.000000000007276,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 808,
+            "visibility": "visible",
+            "probeId": "projection-21",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "default": {
+            "roundTripMs": 829,
+            "outputId": "default",
+            "transportRoundTripMs": 5.000000000007276,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 806,
+            "visibility": "visible",
+            "probeId": "projection-21",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 2.000000000007276,
+        "phase": "backupCompression",
+        "sequence": 21,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 21041
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2.000000000007276
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2.000000000007276
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 874.0000000000073,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 8.000000000007276,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 863,
+            "visibility": "visible",
+            "probeId": "projection-22",
+            "text": "  Second library lyric 1 \n "
+          },
+          "default": {
+            "roundTripMs": 874.0000000000073,
+            "outputId": "default",
+            "transportRoundTripMs": 5.000000000007276,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 862.9999999999964,
+            "visibility": "visible",
+            "probeId": "projection-22",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          }
+        },
+        "elapsedMs": 2.000000000007276,
+        "phase": "backupCompression",
+        "sequence": 22,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 22019
+      },
+      {
+        "reads": [
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          },
+          {
+            "name": "Second library",
+            "channel": "SHOW",
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "id": "9578e60e94a",
+            "elapsedMs": 2
+          }
+        ],
+        "maximized": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "MAXIMIZED",
+              "data": false
+            }
+          }
+        ],
+        "queueCapacity": 8,
+        "acks": {
+          "cb9e76b066c": {
+            "roundTripMs": 838,
+            "outputId": "cb9e76b066c",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 803,
+            "visibility": "visible",
+            "probeId": "projection-23",
+            "text": "  Second library lyric 0 \n Second library lyric 0 \n "
+          },
+          "default": {
+            "roundTripMs": 831,
+            "outputId": "default",
+            "transportRoundTripMs": 5,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+            },
+            "role": "output",
+            "phase": "rendered",
+            "renderMs": 801,
+            "visibility": "visible",
+            "probeId": "projection-23",
+            "text": "  Second library lyric 1 \n "
+          }
+        },
+        "elapsedMs": 2,
+        "phase": "backupCompression",
+        "sequence": 23,
+        "current": {
+          "dataPath": "/tmp/freeshow-desktop-test-503k8q4s/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "2007c18d-f6d0-48a4-b48f-02aea0eb2764"
+        },
+        "os": [
+          {
+            "channel": "MAIN",
+            "message": {
+              "channel": "GET_OS",
+              "data": {
+                "name": "",
+                "platform": "linux",
+                "arch": "x64"
+              }
+            }
+          }
+        ],
+        "sinceBackupStartMs": 22968
+      }
+    ]
+  },
+  "uncachedUiRaw": {
+    "reply": {
+      "at": 31078,
+      "data": {
+        "id": "uncached-show",
+        "content": [
+          "uncached-show",
+          {
+            "slides": {
+              "9e9578e60e9": {
+                "color": "#5825f5",
+                "globalGroup": "verse",
+                "notes": "",
+                "items": [
+                  {
+                    "lines": [
+                      {
+                        "align": "",
+                        "text": [
+                          {
+                            "value": "Loaded from disk during compression",
+                            "style": "font-size: 100px;"
+                          }
+                        ]
+                      },
+                      {
+                        "align": "",
+                        "text": [
+                          {
+                            "value": "Loaded from disk during compression",
+                            "style": "font-size: 100px;"
+                          }
+                        ]
+                      }
+                    ],
+                    "type": "text",
+                    "style": "top:88px;left:50px;height:904px;width:1820px;",
+                    "align": "",
+                    "auto": false
+                  }
+                ],
+                "group": "Verse",
+                "settings": {}
+              },
+              "e9578e60e94": {
+                "color": "#f525d2",
+                "globalGroup": "chorus",
+                "notes": "",
+                "items": [
+                  {
+                    "lines": [
+                      {
+                        "align": "",
+                        "text": [
+                          {
+                            "value": "Loaded from disk during compression",
+                            "style": "font-size: 100px;"
+                          }
+                        ]
+                      }
+                    ],
+                    "type": "text",
+                    "style": "top:88px;left:50px;height:904px;width:1820px;",
+                    "align": "",
+                    "auto": false
+                  }
+                ],
+                "group": "Chorus",
+                "settings": {}
+              }
+            },
+            "layouts": {
+              "09e9578e60e": {
+                "name": "Default",
+                "notes": "",
+                "slides": [
+                  {
+                    "id": "9e9578e60e9"
+                  },
+                  {
+                    "id": "e9578e60e94"
+                  }
+                ]
+              }
+            },
+            "media": {},
+            "category": "song",
+            "settings": {
+              "template": "default",
+              "activeLayout": "09e9578e60e"
+            },
+            "name": "Uncached during backup",
+            "private": false,
+            "meta": {},
+            "timestamps": {
+              "modified": 1792335856022,
+              "created": 1792335856019,
+              "used": null
+            },
+            "quickAccess": {}
+          }
+        ]
+      },
+      "listenerId": "SHOW1435c"
+    },
+    "request": {
+      "at": 31029,
+      "data": {
+        "name": "Uncached during backup",
+        "id": "uncached-show"
+      },
+      "listenerId": "SHOW1435c"
+    },
+    "elapsedMs": 49,
+    "uiElapsedMs": 577.795093995519
+  }
+}

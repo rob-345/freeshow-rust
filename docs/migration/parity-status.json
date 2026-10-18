@@ -19,7 +19,8 @@
         "crates/freeshow-core/tests/location.rs",
         "crates/freeshow-core/tests/context.rs",
         "crates/freeshow-core/src/service.rs",
-        "tests/parity/library-frontend.test.mjs"
+        "tests/parity/library-frontend.test.mjs",
+        "crates/freeshow-core/src/backup.rs"
       ],
       "remaining": [
         "external edits during saves and multiple-instance locking",
@@ -32,7 +33,7 @@
         "edits made while a save or library change is in flight",
         "recovery UI and explicit reapplication of retained save snapshots"
       ],
-      "scope": "Compatible store/save operations, library provenance and ordered persistence on a bounded IO worker; transactional clearing of old live presentation references on selection; remaining cases below are uncertified"
+      "scope": "Compatible store/save operations, library provenance and ordered persistence on a bounded IO worker; transactional clearing of old live presentation references on selection; remaining cases below are uncertified; bounded SHOW readers share an IO barrier and wait for earlier mutation phases while copied backups compress"
     },
     {
       "id": "ipc",
@@ -52,14 +53,15 @@
         "IPC payload-byte and waiting-caller limits",
         "bounded native dialog/read concurrency"
       ],
-      "scope": "tested legacy bridge plus Rust session/library provenance, ordered mutations, and rejection of obsolete replies; bounded library admission, dropped callers, worker shutdown and independent context/status snapshots; separate ordered output/lifecycle queues, output send-time snapshots and scoped native event subscriptions"
+      "scope": "tested legacy bridge plus Rust session/library provenance, ordered mutations, and rejection of obsolete replies; bounded library admission, dropped callers, worker shutdown and independent context/status snapshots; separate ordered output/lifecycle queues, output send-time snapshots and scoped native event subscriptions; separate bounded SHOW admission with write fences and independent receiver-closure detection"
     },
     {
       "id": "desktop",
       "status": "partial",
       "tests": [
         "tests/parity/dialog.test.mjs",
-        "tests/desktop/smoke.py"
+        "tests/desktop/smoke.py",
+        "tests/parity/desktop-harness.test.mjs"
       ],
       "remaining": [
         "native drag/drop",
@@ -119,7 +121,8 @@
         "tests/parity/backup.test.mjs",
         "crates/freeshow-core/src/archive.rs",
         "crates/freeshow-core/src/restore.rs",
-        "tests/desktop/smoke.py"
+        "tests/desktop/smoke.py",
+        "crates/freeshow-core/src/backup.rs"
       ],
       "remaining": [
         "other import/export formats",
@@ -129,8 +132,10 @@
         "cloud backup bundle format",
         "automatic restore-journal recovery after process crash",
         "backup metadata and retention across operating systems/time zones",
-        "large and unusual legacy backup compatibility"
-      ]
+        "large and unusual legacy backup compatibility",
+        "backup temporary-space budgets, external edits during snapshot copying and crash-orphan cleanup"
+      ],
+      "scope": "Source-compared saves/ZIP contents and restores; private disk copies isolate compression from later file edits, with normal success/failure cleanup"
     },
     {
       "id": "media-and-audio",
@@ -206,10 +211,10 @@
         "large library latency",
         "output p50/p95/p99 frame timing",
         "sustained playback and streaming",
-        "uncached output loads and responsiveness under other background IO/CPU workloads",
+        "uncached projected content and responsiveness under other background IO/CPU workloads",
         "bounded parallel CPU work and supervised media subprocesses"
       ],
-      "scope": "Helper microbenchmark plus debug-build controls and two warm cached projections during a real 64 MiB ZIP backup; receipt and DOM/CSS/RAF visible-state round trips measured, without physical scanout or application-level speedup certification"
+      "scope": "Helper microbenchmark plus Linux debug controls, paired disk SHOW reads, a real uncached presenting UI load and two warm cached projections during 64 MiB ZIP compression; DOM/CSS/RAF progress measured without physical scanout or application-level speedup certification"
     },
     {
       "id": "distribution",

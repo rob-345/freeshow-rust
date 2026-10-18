@@ -7,6 +7,7 @@ Every test run has fresh application, WebKit, data, and cache directories.
 """
 import base64
 from http.client import RemoteDisconnected
+import itertools
 import json
 import os
 from pathlib import Path
@@ -39,7 +40,7 @@ def free_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -73,16 +74,16 @@ def run():
             data = None if payload is None else json.dumps(payload).encode()
             request = urllib.request.Request(base + route, data=data, method=method, headers={"Content-Type": "application/json"})
             # The WebKit proxy occasionally resets an idle connection while
-            # finding an element. Re-observe that same live session for reads;
-            # never retry clicks, key input, or mutating scripts automatically.
-            read_only = method == "GET" or route.endswith(("/element", "/elements"))
-            for attempt in range(3 if read_only else 1):
+            # finding an element or selecting an existing WebView. These reads
+            # and exact window selections can be repeated in the same session.
+            repeatable = method == "GET" or route.endswith(("/element", "/elements")) or (method == "POST" and route.endswith("/window") and payload and "handle" in payload)
+            for attempt in range(3 if repeatable else 1):
                 try:
                     with urllib.request.urlopen(request, timeout=40) as response:
                         result = json.load(response)["value"]
                     break
                 except (RemoteDisconnected, ConnectionResetError):
-                    if not read_only or attempt == 2 or process.poll() is not None:
+                    if not repeatable or attempt == 2 or process.poll() is not None:
                         raise
                     print("Re-observing WebDriver after a reset during", route, flush=True)
                     time.sleep(0.1)
@@ -95,11 +96,43 @@ def run():
         def command(method, route, payload=None):
             return http(method, f"/session/{session}" + route, payload)
 
+        script_sequence = itertools.count()
+
         def script(source, *args):
-            return command("POST", "/execute/sync", {"script": source, "args": list(args)})
+            # The proxy can drop a response after executing JavaScript. Keep a
+            # receipt in this same WebView so reconnecting never repeats a send,
+            # listener installation or other side effect. Errors are retained
+            # too; a new WebView/session is not substituted after a failure.
+            key = str(next(script_sequence))
+            wrapped = """
+                const receipts=window.__desktopScriptReceipts ||= new Map();
+                const key=KEY;
+                if(!receipts.has(key)) {
+                    const entry={state:'running'};
+                    receipts.set(key,entry);
+                    if(receipts.size>128)receipts.delete(receipts.keys().next().value);
+                    try {
+                        entry.value=(function(){ SOURCE }).apply(window,arguments);
+                        entry.state='done';
+                    } catch(error) {
+                        entry.state='error';entry.error=String(error);throw error;
+                    }
+                }
+                const entry=receipts.get(key);
+                if(entry.state!=='done')throw new Error(entry.error || 'Script still running');
+                return entry.value;
+            """.replace("KEY", json.dumps(key), 1).replace("SOURCE", source, 1)
+            for attempt in range(3):
+                try:
+                    return command("POST", "/execute/sync", {"script": wrapped, "args": list(args)})
+                except (RemoteDisconnected, ConnectionResetError):
+                    if attempt == 2 or process.poll() is not None:
+                        raise
+                    print("Recovering script response through its WebView receipt:", key, flush=True)
+                    time.sleep(0.1)
 
         def invoke(name, arguments=None):
-            result = command("POST", "/execute/async", {"script": "const done=arguments[arguments.length-1];window.__TAURI__.core.invoke(arguments[0],arguments[1]).then(value=>done({ok:true,value})).catch(error=>done({ok:false,error}))", "args": [name, arguments or {}]})
+            result = script("return window.__TAURI__.core.invoke(arguments[0],arguments[1]).then(value=>({ok:true,value})).catch(error=>({ok:false,error}))", name, arguments or {})
             assert result["ok"], result
             return result.get("value")
 
@@ -343,7 +376,12 @@ def run():
             script("""
                 const send=window.api.send.bind(window.api);
                 window.__latestOutputData=null;window.__outputSnapshotVersion=0;window.__outputStates=[];
+                window.__showReadRequests=[];window.__showReadReplies=[];
+                window.api.receive('MAIN',(message,listenerId)=>{
+                    if(message.channel==='SHOW') window.__showReadReplies.push({data:message.data,listenerId,at:performance.now()});
+                },'native-show-read-test');
                 window.api.send=(channel,message,listener)=>{
+                    if(channel==='MAIN' && message.channel==='SHOW') window.__showReadRequests.push({data:structuredClone(message.data),listenerId:listener,at:performance.now()});
                     if(channel==='OUTPUT' && message.channel==='OUTPUTS' && !message.data?.id) {
                         window.__latestOutputData=structuredClone(message.data);
                         window.__outputSnapshotVersion++;
@@ -464,6 +502,16 @@ def run():
                         for text in line.get("text", []):
                             text["value"] = f"Second library lyric {index}"
             (other / "Shows" / "Second library.show").write_text(json.dumps(other_show))
+            cold_show = json.loads(json.dumps(other_show))
+            cold_show[0] = "uncached-show"
+            cold_show[1]["name"] = "Uncached during backup"
+            for slide in cold_show[1]["slides"].values():
+                for item in slide.get("items", []):
+                    for line in item.get("lines", []):
+                        for text in line.get("text", []):
+                            text["value"] = "Initial backup snapshot lyric"
+            cold_path = other / "Shows" / "Uncached during backup.show"
+            cold_path.write_text(json.dumps(cold_show))
             target_projects = '{"projects":{},"folders":{},"projectTemplates":{}}'
             (other / "Config" / "projects.json").write_text(target_projects)
             click_text("New show")
@@ -550,7 +598,23 @@ def run():
                             output.write(piece)
                             crc = zlib.crc32(piece, crc)
                     workload[path] = {"size": path.stat().st_size, "crc": crc}
-                script((ROOT / "tests/desktop/backup_probe.js").read_text(), templates, ["Second library lyric 0", "Second library lyric 1"])
+                assert not script("return window.__showReadRequests.some(request=>request.data?.id==='uncached-show')")
+                script((ROOT / "tests/desktop/backup_probe.js").read_text(), templates, ["Second library lyric 0", "Second library lyric 1"], {"id": saved[0], "name": "Second library"})
+                wait(lambda: invoke("library_status")["activeJob"]["phase"] == "backupCompression", "Backup private snapshot prepared")
+                # Change the original in place after copying. A new UI load must
+                # see this edit while the ZIP retains the prepared original.
+                cold_path.write_text(json.dumps(cold_show).replace("Initial backup snapshot lyric", "Loaded from disk during compression"))
+                read_start = time.monotonic()
+                click_text("Uncached during backup")
+                wait(lambda: script("return document.querySelector('#showArea')?.innerText.includes('Loaded from disk during compression')"), "Uncached show loaded through real presenting UI during compression")
+                cold_status = invoke("library_status")
+                assert cold_status["activeJob"]["listenerId"] == "backup-responsiveness"
+                assert cold_status["activeJob"]["phase"] == "backupCompression"
+                cold_read = script("const request=window.__showReadRequests.find(request=>request.data?.id==='uncached-show');const reply=window.__showReadReplies.find(reply=>reply.listenerId===request?.listenerId);return {request,reply,elapsedMs:reply?.at-request?.at}")
+                assert cold_read["reply"]["data"]["content"][0] == "uncached-show", cold_read
+                assert cold_read["elapsedMs"] < 1500, cold_read
+                cold_read["uiElapsedMs"] = (time.monotonic() - read_start) * 1000
+                (ARTIFACTS / "uncached-show-read.json").write_text(json.dumps(cold_read, indent=2))
                 observed = wait(lambda: script("return window.__responsiveness.done && window.__responsiveness.probesComplete ? window.__responsiveness : null"), "Backup and independent control probes completed", seconds=90)
                 (ARTIFACTS / "responsiveness.json").write_text(json.dumps(observed, indent=2))
                 assert "error" not in observed and "probeError" not in observed, observed
@@ -562,6 +626,14 @@ def run():
                     assert isinstance(sample["maximized"][0]["message"]["data"], bool)
                     assert sample["os"][0]["message"]["data"]["platform"] == "linux"
                     assert sample["queueCapacity"] == 8
+                    assert sample["phase"] == "backupCompression"
+                    assert len(sample["reads"]) == 2
+                    for read in sample["reads"]:
+                        assert read["elapsedMs"] < 1500, read
+                        assert read["context"] == observed["context"]
+                        assert read["id"] == saved[0]
+                        assert read["name"] == "Second library"
+                        assert read["channel"] == "SHOW"
                     assert set(sample["acks"]) == {output_id, secondary_id}
                     for index, projected_id in enumerate(current_windows):
                         ack = sample["acks"][projected_id]
@@ -579,6 +651,9 @@ def run():
                         assert info.file_size == expected["size"]
                         assert info.CRC == expected["crc"]
                     assert archive.testzip() is None
+                    cold_snapshot = json.loads(archive.read("SHOWS/Uncached during backup.show"))
+                    assert cold_snapshot == cold_show
+                    assert "Loaded from disk during compression" not in json.dumps(cold_snapshot)
                 steps.append("Both projections render cues and native handshakes during real 64 MiB backup; ZIP verified")
             finally:
                 for path in workload:
