@@ -14,7 +14,7 @@ const policy = upstreamFunctions("src/frontend/utils/savePolicy.ts", ["isBackupO
 // Execute the actual shared frontend save functions. Only external side effects
 // and Svelte stores are injected, so queue clearing and saved-state updates are
 // checked independently of the Rust implementation.
-function frontend() {
+function frontend(context) {
     const stores = Object.fromEntries(storeImport.importClause.namedBindings.elements.map((node) => [node.name.text, writable({})]))
     stores.saved.set(false)
     stores.statusIndicator.set("")
@@ -37,7 +37,8 @@ function frontend() {
         sendMain: (...args) => sent.push(args),
         syncWithCloud: async () => {},
         isOutCleared: () => true,
-        isSyncing: false
+        isSyncing: false,
+        window: { api: { getRuntimeContext: () => (context ? { ...context } : undefined) } }
     })
     return { ...functions, stores, sent, flush: () => timers.splice(0).forEach((callback) => callback()) }
 }
@@ -73,4 +74,15 @@ test("busy frontend save leaves pending operations intact and sends no request",
     f.flush()
     assert.equal(f.sent.length, 0)
     assert.equal(get(f.stores.deletedShows).length, 1)
+})
+
+test("save snapshots its library context before the deferred IPC send", () => {
+    const context = { runtimeId: "session", libraryGeneration: 0, dataPath: "/old" }
+    const f = frontend(context)
+    f.save()
+    context.libraryGeneration = 1
+    context.dataPath = "/new"
+    f.flush()
+    assert.equal(f.sent[0][1].runtimeContext.libraryGeneration, 0)
+    assert.equal(f.sent[0][1].runtimeContext.dataPath, "/old")
 })

@@ -1,6 +1,6 @@
 use crate::{
     backup, location,
-    protocol::{Event, Request},
+    protocol::{Event, Request, RuntimeContext},
     restore, show,
     storage::{self, Stores, STORE_IDS},
     Error, Result,
@@ -47,6 +47,8 @@ pub struct Runtime {
     pub stores: Stores,
     pub version: String,
     pub development: bool,
+    runtime_id: String,
+    library_generation: u64,
 }
 
 impl Runtime {
@@ -60,6 +62,50 @@ impl Runtime {
             stores: Stores::new(app_data, data)?,
             version: "1.6.7-beta.2-rust.1".into(),
             development: cfg!(debug_assertions),
+            runtime_id: uuid::Uuid::new_v4().to_string(),
+            library_generation: 0,
+        })
+    }
+
+    pub fn context(&self) -> RuntimeContext {
+        RuntimeContext {
+            runtime_id: self.runtime_id.clone(),
+            library_generation: self.library_generation,
+            data_path: self.stores.data.clone(),
+        }
+    }
+
+    pub fn validate_context(&self, request: &Request) -> Result<()> {
+        let expected = self.context();
+        let snapshot_context = request.data["data"].get("runtimeContext");
+        let snapshot_matches = request.data["channel"] != "SAVE"
+            || snapshot_context.is_none()
+            || snapshot_context
+                .and_then(|value| serde_json::from_value::<RuntimeContext>(value.clone()).ok())
+                .as_ref()
+                == Some(&expected);
+        if request.context.as_ref() == Some(&expected) && snapshot_matches {
+            return Ok(());
+        }
+        let mut recovery_path = None;
+        let mut recovery_error = None;
+        // Preserve an old save as an isolated recovery artifact. Applying it to
+        // either library automatically could overwrite newer user edits.
+        if request.channel == "MAIN" && request.data["channel"] == "SAVE" {
+            let path = self
+                .stores
+                .app_data
+                .join("Recovery")
+                .join(format!("save-{}.json", uuid::Uuid::new_v4()));
+            let snapshot = json!({"version":1,"createdAt":chrono::Utc::now().to_rfc3339(),"request":request,"activeContext":self.context()});
+            match storage::atomic_write(&path, &snapshot, true) {
+                Ok(()) => recovery_path = Some(path),
+                Err(error) => recovery_error = Some(error.to_string()),
+            }
+        }
+        Err(Error::StaleLibrary {
+            recovery_path,
+            recovery_error,
         })
     }
 
@@ -86,6 +132,26 @@ impl Runtime {
             return Err(Error::Unsupported(request.channel));
         }
         let command = required_string(&request.data, "channel")?;
+        if storage::portable(command)
+            || (command == "GET_STORE_VALUE"
+                && storage::portable(request.data["data"]["file"].as_str().unwrap_or("")))
+            || matches!(
+                command,
+                "SAVE"
+                    | "UPDATE_DATA_PATH"
+                    | "SET_STORE_VALUE"
+                    | "RESTORE"
+                    | "DELETE_BACKUP"
+                    | "SHOW"
+                    | "SHOWS"
+                    | "FULL_SHOWS_LIST"
+                    | "GET_EMPTY_SHOWS"
+                    | "REFRESH_SHOWS"
+                    | "BACKUPS"
+            )
+        {
+            self.validate_context(&request)?;
+        }
         let data = &request.data["data"];
         let mut events = Vec::new();
         let response = match command {
@@ -102,12 +168,19 @@ impl Runtime {
             }
             "DATA_PATH" => Some(json!(self.stores.data)),
             "UPDATE_DATA_PATH" => {
+                if self.library_generation == u64::MAX {
+                    return Err(Error::Invalid("library generation exhausted".into()));
+                }
+                let previous = self.stores.data.clone();
                 match location::select(
                     &mut self.stores,
                     &PathBuf::from(required_string(data, "newPath")?),
                     &PathBuf::from(required_string(data, "oldPath")?),
                 ) {
                     Ok(values) => {
+                        if self.stores.data != previous {
+                            self.library_generation += 1;
+                        }
                         events.push(Event::reply(
                             "MAIN",
                             "DATA_PATH",

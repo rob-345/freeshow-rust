@@ -16,7 +16,8 @@
       "tests": [
         "tests/parity/core.test.mjs",
         "crates/freeshow-core/tests/storage.rs",
-        "crates/freeshow-core/tests/location.rs"
+        "crates/freeshow-core/tests/location.rs",
+        "crates/freeshow-core/tests/context.rs"
       ],
       "remaining": [
         "external edits during saves and multiple-instance locking",
@@ -24,9 +25,10 @@
         "Windows/macOS permission and locking behavior",
         "unchanged-write suppression and cloud edit timestamps",
         "array length and unusual property edge cases",
-        "queued saves and edits during a library switch",
         "automatic recovery after a crash during library selection",
-        "unavailable selected volumes and recovery UI"
+        "unavailable selected volumes and recovery UI",
+        "edits made while a save or library change is in flight",
+        "recovery UI and explicit reapplication of retained save snapshots"
       ]
     },
     {
@@ -39,8 +41,12 @@
         "binary ArrayBuffer transport",
         "MessagePort audio/video transport",
         "backend-initiated request correlation",
-        "all command payload variants"
-      ]
+        "all command payload variants",
+        "mutable IPC payload snapshot semantics",
+        "multi-window context propagation",
+        "cancellation of pending requests after library changes"
+      ],
+      "scope": "tested legacy bridge plus Rust session/library provenance, ordered mutations, and rejection of obsolete replies"
     },
     {
       "id": "desktop",

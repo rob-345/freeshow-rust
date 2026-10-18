@@ -37,7 +37,7 @@ def free_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "library-switch.png", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "library-switch.png", "stale-save-recovery.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -272,7 +272,7 @@ def run():
             wait(lambda: script("return window.__nativeEvents.some(m=>m.channel==='RESTORE2' && m.data.finished===true)"), "Native restore picker and transaction completed")
             assert json.loads(show_path.read_text()) == saved
 
-            script("window.__cancelResult=null;window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',data:{channel:'OPEN_FOLDER',data:{channel:'NATIVE_TEST',title:'Cancel FreeShow Folder Selection'}}}}).then(events=>window.__cancelResult=events)")
+            script("window.__cancelResult=null;window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context:window.api.getRuntimeContext(),data:{channel:'OPEN_FOLDER',data:{channel:'NATIVE_TEST',title:'Cancel FreeShow Folder Selection'}}}}).then(events=>window.__cancelResult=events)")
             folder = wait(lambda: native_dialog("Cancel FreeShow Folder Selection"), "Native folder picker")
             native_keys("windowfocus", "--sync", folder)
             native_keys("key", "--clearmodifiers", "Escape")
@@ -294,6 +294,7 @@ def run():
 
             # Switch an already-loaded library with unsaved work. The target has
             # a different song using the SAME ID, exercising cache invalidation.
+            old_context = script("return window.api.getRuntimeContext()")
             other = temp / "other-library"
             (other / "Shows").mkdir(parents=True)
             (other / "Config").mkdir()
@@ -335,6 +336,24 @@ def run():
             click_text("Second library")
             wait(lambda: script("return document.body.innerText.includes('Second library lyric') && !document.body.innerText.includes('Amazing grace')"), "Same-ID show cache cleared across libraries")
             (ARTIFACTS / "library-switch.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
+
+            # A delayed save from the previous library must become a recovery
+            # file rather than writing settings or shows into the selected one.
+            previous_settings = settings_path.read_bytes()
+            previous_show = (other / "Shows" / "Second library.show").read_bytes()
+            script("window.api.send('MAIN',{channel:'SAVE',data:{runtimeContext:arguments[0],SETTINGS:{stale:true},PROJECTS:{stale:true},showsCache:{old:{name:'Rejected old-library song',slides:{}}}}})", old_context)
+            stale = wait(lambda: script("return window.__testRuntimeErrors.find(e=>e.error?.code==='stale_library')?.error"), "Previous-library save rejected")
+            recovery_path = Path(stale["recoveryPath"])
+            assert recovery_path.parent == temp / "app" / "Recovery"
+            recovery = json.loads(recovery_path.read_text())
+            assert recovery["request"]["context"] == old_context
+            assert recovery["request"]["data"]["data"]["showsCache"]["old"]["name"] == "Rejected old-library song"
+            assert settings_path.read_bytes() == previous_settings
+            assert (other / "Shows" / "Second library.show").read_bytes() == previous_show
+            assert (other / "Config" / "projects.json").read_text() == target_projects
+            assert not (other / "Shows" / "Rejected old-library song.show").exists()
+            wait(lambda: script("return document.body.innerText.includes('previous library or session') && document.body.innerText.includes('Recovery file:')"), "Old save retained with visible recovery location")
+            (ARTIFACTS / "stale-save-recovery.json").write_text(json.dumps(recovery, indent=2))
             assert script("return window.__testErrors") == []
             errors = script("return window.__testRuntimeErrors")
             # Unsupported features remain visible in the receipt; they are never

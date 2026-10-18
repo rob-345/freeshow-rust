@@ -68,7 +68,7 @@ test("native event registration completes before window.api is exposed", async (
     let receiveEvent, finish
     const target = {
         __TAURI__: {
-            core: { invoke: async () => [] },
+            core: { invoke: async () => ({ runtimeId: "test", libraryGeneration: 0, dataPath: "/data" }) },
             event: {
                 listen: (_name, callback) => {
                     receiveEvent = callback
@@ -80,6 +80,7 @@ test("native event registration completes before window.api is exposed", async (
         }
     }
     const installing = installRustBridge(target)
+    await tick()
     assert.equal(target.api, undefined)
     finish(() => {})
     await installing
@@ -115,4 +116,91 @@ test("missing native file path reports incomplete support", () => {
     assert.equal(api.showFilePath({ name: "test.show", path: "/test.show" }), "/test.show")
     assert.equal(api.showFilePath({ name: "test.show" }), "")
     assert.equal(errors[0][0].code, "unsupported_command")
+})
+
+const contextA = { runtimeId: "runtime-test", libraryGeneration: 0, dataPath: "/library-a" }
+const contextB = { ...contextA, libraryGeneration: 1, dataPath: "/library-b" }
+
+test("mutating requests run in order while window/control channels can still be sent", async () => {
+    const waiting = [],
+        calls = [],
+        errors = [],
+        received = []
+    const { api } = createRustApi(
+        (request) => {
+            calls.push(request)
+            if (request.channel !== "MAIN" || request.data.channel === "MINIMIZE") return Promise.resolve([])
+            return new Promise((resolve, reject) => waiting.push({ request, resolve, reject }))
+        },
+        (...error) => errors.push(error),
+        contextA
+    )
+    api.receive("MAIN", (message) => received.push(message.channel))
+    api.send("MAIN", { channel: "SAVE", data: {} })
+    api.send("MAIN", { channel: "UPDATE_DATA_PATH", data: { newPath: "/library-b" } })
+    api.send("MAIN", { channel: "SAVE", data: { runtimeContext: contextA } })
+    api.send("MAIN", { channel: "MINIMIZE" })
+    api.send("OUTPUT", { channel: "SLIDE" })
+    await tick()
+    assert.deepEqual(
+        calls.map((request) => request.data.channel),
+        ["SAVE", "MINIMIZE", "SLIDE"]
+    )
+    waiting.shift().resolve([{ channel: "MAIN", message: { channel: "SAVE2", data: {} }, context: contextA }])
+    await tick()
+    assert.equal(received[0], "SAVE2")
+    assert.equal(waiting[0].request.data.channel, "UPDATE_DATA_PATH")
+    waiting.shift().resolve([{ channel: "MAIN", message: { channel: "DATA_PATH", data: "/library-b" }, context: contextB }])
+    await tick()
+    assert.deepEqual(api.getRuntimeContext(), contextB)
+    // The queued old snapshot keeps its own provenance even after the switch.
+    assert.deepEqual(waiting[0].request.context, contextA)
+    waiting.shift().reject({ code: "stale_library", recoveryPath: "/app/Recovery/save.json" })
+    await tick()
+    assert.equal(errors[0][0].code, "stale_library")
+    api.send("MAIN", { channel: "SET_STORE_VALUE", data: {} })
+    await tick()
+    assert.deepEqual(waiting[0].request.context, contextB)
+    waiting.shift().resolve([])
+    await tick()
+})
+
+test("late replies from old libraries/sessions cannot replace current state or expose mutable context", () => {
+    const calls = []
+    const supplied = { ...contextA }
+    const { api, dispatch } = createRustApi(
+        async () => [],
+        () => {},
+        supplied
+    )
+    supplied.dataPath = "/changed-by-the-caller"
+    assert.deepEqual(api.getRuntimeContext(), contextA)
+    api.receive("MAIN", (message) => calls.push(message.data))
+    dispatch({ channel: "MAIN", message: { channel: "PROJECTS", data: "premature" }, context: contextB })
+    dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: "early path query" }, context: contextB }, { channel: "MAIN", data: { channel: "DATA_PATH" } })
+    assert.deepEqual(api.getRuntimeContext(), contextA)
+    dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: "new" }, context: contextB }, { channel: "MAIN", data: { channel: "UPDATE_DATA_PATH" } })
+    dispatch({ channel: "MAIN", message: { channel: "SHOWS", data: "stale" }, context: contextA })
+    dispatch({ channel: "MAIN", message: { channel: "SHOWS", data: "previous process" }, context: { ...contextB, runtimeId: "old-process" } })
+    const copy = api.getRuntimeContext()
+    copy.dataPath = "/changed-from-outside"
+    assert.deepEqual(api.getRuntimeContext(), contextB)
+    assert.deepEqual(calls, ["new"])
+})
+
+test("a rejected mutation reports its failure before the next mutation starts", async () => {
+    const order = []
+    const { api } = createRustApi(
+        async (request) => {
+            order.push(request.data.channel)
+            if (request.data.channel === "SAVE") throw { code: "io_error" }
+            return []
+        },
+        (error) => order.push(error.code),
+        contextA
+    )
+    api.send("MAIN", { channel: "SAVE", data: {} })
+    api.send("MAIN", { channel: "UPDATE_DATA_PATH", data: {} })
+    await tick()
+    assert.deepEqual(order, ["SAVE", "io_error", "UPDATE_DATA_PATH"])
 })

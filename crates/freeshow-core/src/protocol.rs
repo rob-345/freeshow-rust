@@ -1,7 +1,16 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::path::PathBuf;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RuntimeContext {
+    pub runtime_id: String,
+    pub library_generation: u64,
+    pub data_path: PathBuf,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Request {
     pub channel: String,
@@ -9,6 +18,8 @@ pub struct Request {
     pub data: Value,
     #[serde(default)]
     pub listener_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<RuntimeContext>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,6 +38,8 @@ pub struct Event {
     pub message: Message,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub listener_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<RuntimeContext>,
 }
 
 impl Event {
@@ -39,6 +52,7 @@ impl Event {
                 auto_profile: None,
             },
             listener_id,
+            context: None,
         }
     }
 }

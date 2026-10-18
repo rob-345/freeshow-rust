@@ -2,12 +2,25 @@ import { get } from "svelte/store"
 import { isBackupOnly } from "../utils/savePolicy"
 
 type SaveStores = Pick<typeof import("../stores"), "saved" | "statusIndicator" | "deletedShows" | "renamedShows" | "shows" | "alertMessage" | "activePopup">
+type Failure = { code?: string; recoveryPath?: string; recoveryError?: string }
+
+// If disk recovery fails, retain the complete snapshot while the window is open.
+// These snapshots must never be merged into the newly selected library's queues.
+export const retainedStaleSaves: { request: any; error: Failure }[] = []
+const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!)
 
 // The shared frontend clears pending rename/delete operations before sending a
 // SAVE. Restore those operations on a rejected native save so retry keeps them.
-export function recoverFailedSave(request: any, stores: SaveStores): boolean {
+export function recoverFailedSave(request: any, stores: SaveStores, error: Failure = {}): boolean {
     if (request?.channel !== "MAIN" || request?.data?.channel !== "SAVE") return false
     const payload = request.data.data || {}
+    if (error.code === "stale_library") {
+        if (!error.recoveryPath) retainedStaleSaves.push({ request, error })
+        const recovery = error.recoveryPath ? `Recovery file: <code>${escapeHtml(error.recoveryPath)}</code>` : "No recovery file could be written. Keep this window open; the unsaved snapshot remains in memory."
+        stores.alertMessage.set(`A save from a previous library or session was kept separate from the current library.<br>${recovery}`)
+        stores.activePopup.set("alert")
+        return true
+    }
     // Backup-only operations never removed these queues before dispatch.
     if (isBackupOnly(payload.customTriggers, payload.closeWhenFinished)) {
         stores.statusIndicator.set("error")

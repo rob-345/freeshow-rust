@@ -243,6 +243,9 @@ export function save(closeWhenFinished = false, customTriggers: SaveActions = {}
     }
 
     const saveData = clone(allSavedData)
+    if (typeof window !== "undefined" && window.api.getRuntimeContext) {
+        saveData.runtimeContext = window.api.getRuntimeContext()
+    }
 
     if (!isBackupOnly(customTriggers, closeWhenFinished)) {
         deletedShows.set([])

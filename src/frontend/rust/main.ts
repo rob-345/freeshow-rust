@@ -4,7 +4,10 @@ import { recoverFailedSave } from "./saveFailure"
 async function start() {
     await installRustBridge()
     const stores = await import("../stores")
-    window.addEventListener("freeshow:runtime-error", (event: Event) => recoverFailedSave((event as CustomEvent).detail?.request, stores))
+    window.addEventListener("freeshow:runtime-error", (event: Event) => {
+        const { request, error } = (event as CustomEvent).detail || {}
+        recoverFailedSave(request, stores, error)
+    })
     // Install window.api before evaluating App.svelte and its startup code.
     await import("../main")
 }

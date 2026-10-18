@@ -1,12 +1,34 @@
 import { describe, expect, it } from "vitest"
 import { get, writable } from "svelte/store"
-import { recoverFailedSave } from "./saveFailure"
+import { recoverFailedSave, retainedStaleSaves } from "./saveFailure"
 
 function state() {
     return { saved: writable(true), statusIndicator: writable("saving"), deletedShows: writable<any[]>([]), renamedShows: writable<any[]>([]), shows: writable<any>({}), alertMessage: writable(""), activePopup: writable<any>(null) }
 }
 
 describe("Rust save failure recovery", () => {
+    it("keeps old-library operations out of current state and escapes the recovery path", () => {
+        const stores = state()
+        stores.deletedShows.set([{ id: "current", name: "Current library" }])
+        const request = { channel: "MAIN", data: { channel: "SAVE", data: { deletedShows: [{ id: "old", name: "Old library" }] } } }
+        recoverFailedSave(request, stores, { code: "stale_library", recoveryPath: '/app/Recovery/<unsafe>&".json' })
+        expect(get(stores.deletedShows)).toEqual([{ id: "current", name: "Current library" }])
+        expect(get(stores.saved)).toBe(true)
+        expect(get(stores.statusIndicator)).toBe("saving")
+        expect(get(stores.alertMessage)).toContain("&lt;unsafe&gt;&amp;&quot;")
+        expect(get(stores.alertMessage)).not.toContain("<unsafe>")
+    })
+
+    it("retains the complete stale snapshot in memory if disk recovery failed", () => {
+        retainedStaleSaves.length = 0
+        const stores = state()
+        const request = { channel: "MAIN", data: { channel: "SAVE", data: { showsCache: { song: { lyrics: "Keep these edits" } } } } }
+        recoverFailedSave(request, stores, { code: "stale_library", recoveryError: "disk full" })
+        expect(retainedStaleSaves[0].request).toBe(request)
+        expect(get(stores.alertMessage)).toContain("Keep this window open")
+        expect(get(stores.saved)).toBe(true)
+        retainedStaleSaves.length = 0
+    })
     it("retains failed operations and newer rename chains without dropping an undo", () => {
         const stores = state()
         stores.shows.set({ song: { name: "Newest" }, undeleted: { name: "Restored by undo" } })

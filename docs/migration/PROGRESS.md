@@ -58,7 +58,7 @@ Remote run [39126074008](https://github.com/rob-345/freeshow-rust/actions/runs/3
 
 The selector follows the upstream distinction between selecting a library and moving its contents: **shows and media stay in their existing folders**. Existing destination portable-store values win; missing portable stores are copied from the current library, with the original top-level defaults applied. The previous library is retained. Source/destination JSON and managed paths are validated before file changes. Portable-store changes, cache/undo invalidation and the configuration update use the same staged commit/rollback mechanism as restore; the configuration update is last. A failed rollback retains its journal and original files. Automatic crash recovery and multiple-instance/concurrent-save isolation remain pending. Failed preparation can leave newly created empty managed subfolders.
 
-The Rust frontend waits for a correlated ordinary-save acknowledgment before switching when edits are unsaved. A failed save prevents the switch. The displayed path and portable-store state change after a successful backend commit. Show/scripture caches, active editing state and undo history are invalidated across libraries, including when both libraries reuse a show ID. The tested normal workflow does not certify saves or edits racing a library change; queued stale payloads still need root/generation guards.
+The Rust frontend waits for a correlated ordinary-save acknowledgment before switching when edits are unsaved. A failed save prevents the switch. The displayed path and portable-store state change after a successful backend commit. Show/scripture caches, active editing state and undo history are invalidated across libraries, including when both libraries reuse a show ID. The next slice below adds root/generation guards for queued stale payloads; edits made during an in-flight save remain uncertified.
 
 Automatic-backup-only operations no longer clear queued renames/deletions or mark unsaved edits as saved. Their failure handler also leaves those queues intact. Tests execute the actual shared frontend save functions, plus acknowledgment/failure/timeout handling and the folder-change orchestration. These saved-state fixes also apply to the shared Electron frontend; the pinned Electron backend oracle remains unchanged.
 
@@ -67,6 +67,22 @@ The real Linux workflow now selects a folder during onboarding, saves there and 
 Latest local suite: **15 Rust tests, 33 Node tests and 15 frontend regression tests passed** (63 total), including the existing generated show/retention corpora. The core now exposes **32 MAIN handlers**; this remains a count of handlers, not a parity percentage. The expanded native Linux workflow passed. The frontend/native binary build, core/native Clippy, formatting and snapshot checks passed locally. The complete parity gate still fails because major features remain unported.
 
 Remote run `39127552216` passed core checks on all three operating systems. The desktop job reached the save-failure retry, then clicked New Show while a closing alert backdrop still covered it. The harness now observes the hit target before every actual click, without retrying click actions. The full local desktop workflow passed after this change.
+
+Remote run [39128049382](https://github.com/rob-345/freeshow-rust/actions/runs/39128049382) on `752fc7d7` then passed all four jobs, including the complete library-selection workflow.
+
+## Queued-save library provenance (2026-10-18)
+
+The Rust runtime now assigns each process a session ID and each successful library change a generation. Library-dependent reads and writes require the current context. Returning to the same folder does not make earlier requests valid again, and a new process rejects contexts from the previous process. Failed/unchanged selections retain their generation.
+
+The desktop bridge obtains the initial context before exposing `window.api`. SAVE captures that context with its data before the deferred send. The backend checks both the outer request and any captured SAVE context, so retagging only the envelope cannot apply an old snapshot. The bridge sends mutation requests in order and handles each result/failure before starting the next mutation. Window/control channels are not placed in that frontend queue; most filesystem work still shares the backend mutex, so this does not prove output responsiveness during backups.
+
+Desktop core replies carry context metadata. Replies from an earlier generation or process cannot replace current state. Only the DATA_PATH marker within a completed UPDATE_DATA_PATH response advances a client's library context. An unrelated reply or standalone path query cannot prematurely tag old UI data with a new generation. Multi-window propagation and cancellation of pending request listeners remain to be implemented. The headless parity adapter supplies current context for legacy comparisons; direct Rust boundary tests and native automation separately verify rejection behavior.
+
+A rejected stale SAVE is atomically retained under the fork profile's `Recovery/save-<uuid>.json`, including the original request data/context and the active context. Neither library is modified by that save. The UI shows the escaped recovery-file path and does not merge old rename/delete operations into the current library. If writing the recovery file fails, the error reports that failure and the frontend retains the complete snapshot in memory while the window remains open. An assisted recovery/reapplication UI is still pending; old snapshots are not automatically applied over newer work.
+
+Latest local validation: **23 Rust tests, 37 Node tests and 17 frontend tests passed** (77 total). New tests cover stale/missing contexts, A→B→A selection, process restart, invalid retagging, stale reads, explicit recovery-write failure, snapshot capture before deferred IPC, ordered mutations, late replies and destination-state isolation. The real Linux workflow passed **39 recorded steps**, including rejection of an old-library save, inspecting its recovery file, an unchanged destination and the visible recovery location. Core/native Clippy, formatting, snapshot checks and frontend/native builds passed locally. This slice needs its own remote CI run. The complete parity gate continues to fail.
+
+This protects queued requests across library changes; it does not certify concurrent edits during a save, acknowledgment of newer edits, multiple writers in the same library, profile locks or process-crash recovery. Those cases remain in the status manifest.
 
 The untouched upstream unit baseline was run before changes: **179 passed, 2 failed** across 12 files. Both failures were in `src/electron/cloud/syncManager.test.ts`:
 
@@ -85,10 +101,10 @@ The first release-mode lyric-extraction microbenchmark measured a median **95.93
 
 ## Next work
 
-1. Inspect remote CI for the data-library slice and fix any platform-specific failures.
-2. Guard queued saves with their originating library/generation, and finish save/edit concurrency and profile locking. Continue native menus, shortcuts, close/save/capture lifecycle, unavailable-volume recovery and profile import. Data-root selection, portable-store copying and positive Linux folder selection are implemented above; bulk moving shows/media is a separate operation.
-3. Suppress unchanged disk writes, preserve cloud edit timestamps and finish array-property semantics. Implement transaction-journal recovery after a crash and verify backup metadata/time zones. Automatic-backup saved-state/queue regressions are now covered; overlapping operations remain uncertified.
-4. Port output window lifecycle and MAIN/output state routing, then add display/transition/preview tests.
+1. Inspect remote CI for the context/provenance slice and fix any platform-specific failures.
+2. Port output window lifecycle and MAIN/output state routing, keeping control independent of long filesystem jobs, then add display/transition/preview tests.
+3. Finish save/edit acknowledgments and concurrency, profile locking, context propagation across windows and pending-request cancellation. Add assisted recovery of retained snapshots. Continue native menus, shortcuts, close/save/capture lifecycle, unavailable-volume recovery and profile import. Bulk moving shows/media is a separate operation from selecting an existing library.
+4. Suppress unchanged disk writes, preserve cloud edit timestamps and finish array-property semantics. Implement transaction-journal recovery after a crash and verify backup metadata/time zones. Automatic-backup saved-state/queue regressions and queued stale-library rejection are now covered; other overlapping operations remain uncertified.
 5. Continue through media/audio/capture, protocols/remote servers, hardware/broadcast, cloud/providers, AI and distribution as described in [PLAN.md](PLAN.md).
 6. Establish comparable release-build Electron startup/memory/rendering baselines and measure the Rust application before setting numerical acceptance thresholds.
 

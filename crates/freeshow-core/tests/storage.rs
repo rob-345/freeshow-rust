@@ -65,9 +65,10 @@ fn duplicate_show_ids_get_distinct_persisted_ids() {
         )
         .unwrap();
     }
-    let request =
-        serde_json::from_value::<Request>(json!({"channel":"MAIN","data":{"channel":"SHOWS"}}))
-            .unwrap();
+    let request = serde_json::from_value::<Request>(
+        json!({"channel":"MAIN","context":runtime.context(),"data":{"channel":"SHOWS"}}),
+    )
+    .unwrap();
     let events = runtime.dispatch(request, "main").unwrap();
     let shows = events
         .last()

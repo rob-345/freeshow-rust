@@ -13,6 +13,11 @@ use serde::Serialize;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("request belongs to a previous library or runtime session")]
+    StaleLibrary {
+        recovery_path: Option<std::path::PathBuf>,
+        recovery_error: Option<String>,
+    },
     #[error("unsupported command: {0}")]
     Unsupported(String),
     #[error("invalid request: {0}")]
@@ -26,23 +31,49 @@ pub enum Error {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WireError {
     pub code: &'static str,
     pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recovery_path: Option<std::path::PathBuf>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recovery_error: Option<String>,
+}
+
+impl WireError {
+    pub fn new(code: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            code,
+            message: message.into(),
+            recovery_path: None,
+            recovery_error: None,
+        }
+    }
 }
 
 impl From<Error> for WireError {
     fn from(error: Error) -> Self {
-        Self {
-            code: match &error {
+        let mut wire = Self::new(
+            match &error {
+                Error::StaleLibrary { .. } => "stale_library",
                 Error::Unsupported(_) => "unsupported_command",
                 Error::Invalid(_) => "invalid_request",
                 Error::Json(_) => "invalid_json",
                 Error::Io(_) => "io_error",
                 Error::Archive(_) => "archive_error",
             },
-            message: error.to_string(),
+            error.to_string(),
+        );
+        if let Error::StaleLibrary {
+            recovery_path,
+            recovery_error,
+        } = error
+        {
+            wire.recovery_path = recovery_path;
+            wire.recovery_error = recovery_error;
         }
+        wire
     }
 }
 

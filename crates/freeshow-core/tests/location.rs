@@ -136,10 +136,12 @@ fn ipc_reports_success_and_failure_with_the_active_path_and_correlation_id() {
     let new = temp.path().join("new");
     fs::create_dir(&new).unwrap();
     let mut runtime = Runtime::new(temp.path().join("app"), old.clone()).unwrap();
-    let request = || {
-        serde_json::from_value::<Request>(json!({"channel":"MAIN", "listenerId":"picker-1", "data":{"channel":"UPDATE_DATA_PATH","data":{"oldPath":old,"newPath":new}}})).unwrap()
+    let request = |context: freeshow_core::protocol::RuntimeContext| {
+        serde_json::from_value::<Request>(json!({"channel":"MAIN", "listenerId":"picker-1", "context":context, "data":{"channel":"UPDATE_DATA_PATH","data":{"oldPath":old,"newPath":new}}})).unwrap()
     };
-    let events = runtime.dispatch(request(), "main").unwrap();
+    let events = runtime
+        .dispatch(request(runtime.context()), "main")
+        .unwrap();
     assert!(events
         .iter()
         .any(|event| event.message.channel == "DATA_PATH"));
@@ -151,7 +153,9 @@ fn ipc_reports_success_and_failure_with_the_active_path_and_correlation_id() {
         events.last().unwrap().message.data.as_ref().unwrap()["success"],
         true
     );
-    let failed = runtime.dispatch(request(), "main").unwrap();
+    let failed = runtime
+        .dispatch(request(runtime.context()), "main")
+        .unwrap();
     assert!(!failed
         .iter()
         .any(|event| event.message.channel == "DATA_PATH"));

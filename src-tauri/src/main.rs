@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use freeshow_core::{
-    protocol::{Event, Request},
+    protocol::{Event, Request, RuntimeContext},
     runtime::Runtime,
     WireError,
 };
@@ -13,6 +13,37 @@ use tauri_plugin_opener::OpenerExt;
 
 struct AppState {
     runtime: Mutex<Runtime>,
+}
+
+#[tauri::command]
+async fn runtime_context(app: tauri::AppHandle) -> Result<RuntimeContext, WireError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let runtime = state
+            .runtime
+            .lock()
+            .map_err(|_| WireError::new("runtime_error", "Runtime lock poisoned"))?;
+        Ok(runtime.context())
+    })
+    .await
+    .map_err(|error| WireError::new("runtime_error", error.to_string()))?
+}
+
+fn contextual_events(
+    app: &tauri::AppHandle,
+    request: &Request,
+    mut events: Vec<Event>,
+) -> Result<Vec<Event>, WireError> {
+    let state = app.state::<AppState>();
+    let runtime = state
+        .runtime
+        .lock()
+        .map_err(|_| WireError::new("runtime_error", "Runtime lock poisoned"))?;
+    runtime.validate_context(request).map_err(WireError::from)?;
+    for event in &mut events {
+        event.context = Some(runtime.context());
+    }
+    Ok(events)
 }
 
 #[tauri::command]
@@ -30,10 +61,7 @@ async fn ipc_dispatch(
                 request.listener_id.clone(),
             )]
         };
-        let native_error = |error: tauri::Error| WireError {
-            code: "window_error",
-            message: error.to_string(),
-        };
+        let native_error = |error: tauri::Error| WireError::new("window_error", error.to_string());
         match command {
             "MAXIMIZED" => return Ok(reply(json!(window.is_maximized().map_err(native_error)?))),
             "MINIMIZE" => {
@@ -76,14 +104,11 @@ async fn ipc_dispatch(
     }
     let label = window.label().to_string();
     let state = window.app_handle().clone();
-    // Filesystem and JSON work run off the GUI event loop. One mutex serializes
-    // writes across windows so overlapping saves cannot race.
+    // Filesystem and JSON work run off the GUI event loop. The mutex runs writes
+    // one at a time; context checks reject requests for an obsolete library.
     tauri::async_runtime::spawn_blocking(move || {
         let app = state;
-        let native_error = |error: String| WireError {
-            code: "native_error",
-            message: error,
-        };
+        let native_error = |error: String| WireError::new("native_error", error);
         let to_path = |file: tauri_plugin_dialog::FilePath| {
             file.into_path()
                 .map_err(|error| native_error(error.to_string()))
@@ -173,6 +198,7 @@ async fn ipc_dispatch(
                                             channel: "MAIN".into(),
                                             data: json!({"channel":command}),
                                             listener_id: None,
+                                            context: request.context.clone(),
                                         },
                                         &label,
                                     )
@@ -184,7 +210,7 @@ async fn ipc_dispatch(
                         freeshow_core::dialog::folder_selected(&data, selected.as_deref())
                             .map_err(WireError::from)?,
                     );
-                    return Ok(events);
+                    return contextual_events(&app, &request, events);
                 }
                 "OPEN_FILE" | "RESTORE"
                     if command == "OPEN_FILE"
@@ -237,8 +263,9 @@ async fn ipc_dispatch(
                         .map(to_path)
                         .collect::<Result<Vec<_>, WireError>>()?;
                     if command == "OPEN_FILE" {
-                        return freeshow_core::dialog::files_selected(&data, &paths)
-                            .map_err(WireError::from);
+                        let events = freeshow_core::dialog::files_selected(&data, &paths)
+                            .map_err(WireError::from)?;
+                        return contextual_events(&app, &request, events);
                     }
                     request.data["data"] = json!({"paths":paths});
                 }
@@ -246,11 +273,15 @@ async fn ipc_dispatch(
             }
         }
         let state = app.state::<AppState>();
-        let mut runtime = state.runtime.lock().map_err(|_| WireError {
-            code: "runtime_error",
-            message: "Runtime lock poisoned".into(),
-        })?;
-        let events = runtime.dispatch(request, &label).map_err(WireError::from)?;
+        let mut runtime = state
+            .runtime
+            .lock()
+            .map_err(|_| WireError::new("runtime_error", "Runtime lock poisoned"))?;
+        let mut events = runtime.dispatch(request, &label).map_err(WireError::from)?;
+        let context = runtime.context();
+        for event in &mut events {
+            event.context = Some(context.clone());
+        }
         drop(runtime);
         if command == "SAVE"
             && !data["customTriggers"]["isAutoBackup"]
@@ -275,10 +306,7 @@ async fn ipc_dispatch(
         Ok(events)
     })
     .await
-    .map_err(|error| WireError {
-        code: "runtime_error",
-        message: error.to_string(),
-    })?
+    .map_err(|error| WireError::new("runtime_error", error.to_string()))?
 }
 
 fn main() {
@@ -306,7 +334,7 @@ fn main() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![ipc_dispatch])
+        .invoke_handler(tauri::generate_handler![ipc_dispatch, runtime_context])
         .run(tauri::generate_context!())
         .expect("FreeShow Rust could not start");
 }

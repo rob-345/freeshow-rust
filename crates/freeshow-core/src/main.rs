@@ -12,6 +12,7 @@ use std::{
 fn evaluate(input: Value, runtime: &mut Runtime) -> Result<Value> {
     Ok(match input["op"].as_str().unwrap_or("") {
         "capabilities" => json!({"main": IMPLEMENTED_MAIN}),
+        "runtime.context" => json!(runtime.context()),
         "batch" => Value::Array(
             input["cases"]
                 .as_array()
@@ -85,7 +86,12 @@ fn evaluate(input: Value, runtime: &mut Runtime) -> Result<Value> {
             json!({"samplesMs":samples,"checksum":checksum})
         }
         "runtime" => {
-            let request: Request = serde_json::from_value(input["request"].clone())?;
+            let mut request: Request = serde_json::from_value(input["request"].clone())?;
+            // The legacy parity adapter supplies the current context. Explicit
+            // contexts are preserved for stale-session/generation tests.
+            if request.context.is_none() {
+                request.context = Some(runtime.context());
+            }
             serde_json::to_value(
                 runtime.dispatch(request, input["window"].as_str().unwrap_or("main"))?,
             )?
