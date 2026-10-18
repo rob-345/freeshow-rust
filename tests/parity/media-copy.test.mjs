@@ -51,7 +51,7 @@ function pureUpath() {
     new vm.Script(fs.readFileSync(require.resolve("upath"), "utf8")).runInContext(context)
     return exports
 }
-function oracle(item, posix = false) {
+function oracle(item, posix = false, copyFile = fs.copyFile) {
     const copies = [],
         folders = [],
         errors = [],
@@ -62,7 +62,7 @@ function oracle(item, posix = false) {
     const boundary = Object.create(fs)
     boundary.copyFile = (source, target, callback) => {
         copies.push({ source, target })
-        fs.copyFile(source, target, callback)
+        copyFile(source, target, callback)
     }
     boundary.mkdirSync = (folder, options) => {
         folders.push(folder)
@@ -344,24 +344,56 @@ test("actual extraction null/items-shape errors stay explicit failures rather th
     }
 })
 
-test("hash-colliding sources have an explicit deterministic native coalescing gap from original concurrent copy timing", async (t) => {
-    const dir = temporary(t),
-        first = write(dir, "Aa/common/same.bin", "first"),
-        second = write(dir, "BB/common/same.bin", "second"),
-        data = request("MEDIA_FOLDER_COPY", dir, { paths: [first, second] })
-    const source = oracle(data)
-    assert.equal(source.getFileParentFolderId(first), source.getFileParentFolderId(second))
-    const [native] = rust([data])
-    const reply = await source.MEDIA_FOLDER_COPY(data.data)
-    await Promise.all(source.pending)
-    assert.equal(reply, true)
-    const output = fs.readFileSync(path.join(data.syncRoot, source.getFileParentFolderId(first), "same.bin"), "utf8")
-    assert.ok(["first", "second"].includes(output))
-    if (linux) {
-        assert.equal(native.staged.length, 1)
-        assert.equal(Buffer.from(native.staged[0].hex, "hex").toString(), "first")
-        assert.ok(native.plan.observations.some((o) => o.kind === "duplicateDestination"))
-    } else assert.equal(native.error.code, "unsupported_platform")
+test("controlled real colliding copy completions prove the source scheduling gap from deterministic native coalescing", { timeout: 15000 }, async (t) => {
+    for (const order of [
+        [0, 1],
+        [1, 0]
+    ]) {
+        const dir = temporary(t),
+            first = write(dir, "Aa/common/same.bin", "first"),
+            second = write(dir, "BB/common/same.bin", "second"),
+            data = request("MEDIA_FOLDER_COPY", dir, { paths: [first, second] })
+        const held = []
+        let started
+        const bothStarted = new Promise((resolve) => {
+            started = resolve
+        })
+        const source = oracle(data, false, (from, to, callback) => {
+            held.push({ from, to, callback })
+            if (held.length === 2) started()
+        })
+        assert.equal(source.getFileParentFolderId(first), source.getFileParentFolderId(second))
+        const [native] = rust([data])
+        const finished = source.MEDIA_FOLDER_COPY(data.data)
+        // Hold only the actual filesystem call boundary until both original
+        // copy decisions are made. Complete each real fs.copyFile in a known
+        // order; do not assume an unrestricted overwrite race has only two
+        // possible byte strings (truncate/write operations can interleave).
+        await bothStarted
+        assert.equal(held.length, 2)
+        assert.equal(held[0].to, held[1].to)
+        for (const index of order) {
+            const copy = held.find((copy) => copy.from === [first, second][index])
+            await new Promise((resolve, reject) =>
+                fs.copyFile(copy.from, copy.to, (error) => {
+                    copy.callback(error)
+                    if (error) reject(error)
+                    else resolve()
+                })
+            )
+        }
+        assert.equal(await finished, true)
+        await Promise.all(source.pending)
+        assert.equal(source.copies.length, 2)
+        assert.equal(source.errors.length, 0)
+        const output = fs.readFileSync(held[0].to, "utf8")
+        assert.equal(output, ["first", "second"][order[1]])
+        if (linux) {
+            assert.equal(native.staged.length, 1)
+            assert.equal(Buffer.from(native.staged[0].hex, "hex").toString(), "first")
+            assert.ok(native.plan.observations.some((o) => o.kind === "duplicateDestination"))
+        } else assert.equal(native.error.code, "unsupported_platform")
+    }
 })
 
 test("denied Shows folders use actual silent source fallback while frozen project media is still collected", async (t) => {

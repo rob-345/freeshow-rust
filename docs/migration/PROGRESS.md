@@ -417,3 +417,5 @@ SET_RTMP_ENCODER reconfiguration, binary downloads, actual GPU coverage,
 Windows/macOS media/GUI behavior, anchored external filesystem races and hard
 whole-host/OS cancellation deadlines remain incomplete. No application speedup
 or complete parity is claimed.
+
+The [first media-copy CI run](https://github.com/rob-345/freeshow-rust/actions/runs/39165878701) on `4f4b7aa4` passed Windows core and the full 142-step Linux desktop job. Linux/macOS core exposed a fixture assumption that a concurrent source overwrite could yield only either complete input string. The corrected test holds only the real `fs.copyFile` boundary until both original decisions exist, then completes both actual copies in each controlled order, asserting exact final bytes, two attempts, true reply and no source errors. It retains native first-source coalescing assertions and adds no skip. Native macOS/Windows strict checks exposed a TempDir lifetime field read only by Linux tests; its `_dir` spelling now states that retained lifetime purpose without suppressing warnings. Production copy behavior is unchanged by these corrections. A fresh complete CI run remains required.
