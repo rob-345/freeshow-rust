@@ -1,5 +1,7 @@
 # Native Icecast sender
 
+Coordinator integration adds this crate to the shared workspace/root lock and enables only its test CLI feature in source-test builds and strict core CI. The integrated 20 Rust tests and nine pinned-source Node suites pass without skips. Actual desktop AUDIO, Opus encoding and status delivery are still unwired.
+
 This preparation branch owns only `crates/freeshow-icecast`, the new Icecast parity corpus/receipt, and this document. The temporary standalone workspace/lock must be removed when the coordinator adds the crate to the root workspace. No desktop, IPC, audio codec, root manifest, frontend, or CI wiring is included.
 
 The oracle is the complete `src/electron/audio/IcecastSender.ts` at immutable revision `2d94defcf98175e4f5c9504e7f4fd1d33c35c975`. Tests transpile its actual declarations, replacing only import boundaries, random serial generation, and (for controlled tests) socket/clock/timer implementations. The real paired loopback comparison uses Node's actual TCP sockets and timers. Source hashes normalize CRLF. No third-party or production Icecast server is contacted.

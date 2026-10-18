@@ -50,7 +50,7 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run rust:snapshot
       - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness -- -D warnings
+      - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness -- -D warnings
       - run: npm run rust:test
       - run: npm run rust:parity:report
       - if: inputs.require_full_parity == true
@@ -89,7 +89,7 @@ jobs:
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --locked
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets --locked -- -D warnings
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery --test network_queries --locked
 
   desktop-linux:
     runs-on: ubuntu-24.04
@@ -120,7 +120,7 @@ jobs:
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets -- -D warnings
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery --test network_queries
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
       - run: cargo build --workspace --all-targets

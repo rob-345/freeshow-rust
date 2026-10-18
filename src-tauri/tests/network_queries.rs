@@ -47,6 +47,68 @@ async fn switch(library: &LibraryService, old: &RuntimeContext, path: &std::path
     assert_ne!(library.context().unwrap(), *old);
 }
 #[tokio::test]
+async fn actual_live_ip_capture_finishes_while_the_ordered_library_owner_is_held() {
+    let (_temp, library, snapshots, native) = setup();
+    let context = library.context().unwrap();
+    let (entered, ready) = tokio::sync::oneshot::channel();
+    let (release, gate) = std::sync::mpsc::channel();
+    let owned = library.clone();
+    let held_context = context.clone();
+    let held = tokio::spawn(async move {
+        owned
+            .commit(
+                request(Some(&held_context), Value::Null),
+                "main",
+                move |_| {
+                    let _ = entered.send(());
+                    gate.recv_timeout(Duration::from_secs(10)).unwrap();
+                    Ok(Vec::new())
+                },
+            )
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(3), ready)
+        .await
+        .unwrap()
+        .unwrap();
+    let before = snapshots.status()["nativeCaptures"].as_u64().unwrap();
+    let events = tokio::time::timeout(
+        Duration::from_secs(3),
+        native.dispatch(
+            request(Some(&context), json!({"interfaces":"ignored"})),
+            "main",
+        ),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert!(
+        !held.is_finished(),
+        "the actual ordered library owner is still blocked"
+    );
+    assert_eq!(events[0].context.as_ref(), Some(&context));
+    assert_eq!(events[0].message.channel, "IP");
+    assert_eq!(
+        events[0]
+            .message
+            .data
+            .as_ref()
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .last(),
+        Some(&json!("localhost"))
+    );
+    assert_eq!(
+        snapshots.status()["nativeCaptures"].as_u64().unwrap(),
+        before + 1
+    );
+    release.send(()).unwrap();
+    held.await.unwrap().unwrap();
+    native.shutdown().await.unwrap();
+    snapshots.shutdown().await.unwrap();
+}
+#[tokio::test]
 async fn actual_main_ip_replies_match_fresh_native_source_and_ignore_payload_authority() {
     let (_temp, library, snapshots, native) = setup();
     let context = library.context().unwrap();

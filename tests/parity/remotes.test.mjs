@@ -662,8 +662,47 @@ test("fixed static workers and queued streams stay bounded and shutdown cancels 
             const socket = net.createConnection({ host: "127.0.0.1", port: ports.REMOTE })
             slow.push(socket)
             await new Promise((resolve) => socket.once("connect", resolve))
+            // A reserved admission can still be waiting in the one-slot queue.
+            // Real response headers prove the sole file worker dequeued/opened
+            // the first stream before the second request fills that queue.
+            const firstHeaders =
+                i === 0
+                    ? new Promise((resolve, reject) => {
+                          let received = Buffer.alloc(0)
+                          const timer = setTimeout(() => {
+                              cleanup()
+                              reject(new Error("Static worker did not produce response headers"))
+                          }, 3000)
+                          const cleanup = () => {
+                              clearTimeout(timer)
+                              socket.off("data", data)
+                              socket.off("error", failed)
+                          }
+                          const failed = (error) => {
+                              cleanup()
+                              reject(error)
+                          }
+                          const data = (chunk) => {
+                              received = Buffer.concat([received, chunk])
+                              const end = received.indexOf("\r\n\r\n")
+                              if (end >= 0) {
+                                  socket.pause()
+                                  cleanup()
+                                  resolve(received.subarray(0, end).toString())
+                              } else if (received.length > 65536) {
+                                  cleanup()
+                                  reject(new Error("Static response header exceeds fixture bound"))
+                              }
+                          }
+                          socket.on("data", data)
+                          socket.on("error", failed)
+                      })
+                    : null
             socket.write("GET /stream.bin HTTP/1.1\r\nHost: localhost\r\n\r\n")
-            if (i === 0) await until(async () => (await service.request({ op: "stats" })).value.static_requests === 1)
+            if (i === 0) {
+                assert.match(await firstHeaders, /^HTTP\/1\.1 200/)
+                await until(async () => (await service.request({ op: "stats" })).value.static_requests === 1)
+            }
         }
         await until(async () => (await service.request({ op: "stats" })).value.static_requests === 2)
         assert.equal((await httpRequest(ports.REMOTE, { url: "/asset.txt" })).status, 503)

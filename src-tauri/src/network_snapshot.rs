@@ -156,6 +156,22 @@ struct Completion {
     permit: OwnedSemaphorePermit,
     keepalive: Box<dyn Send>,
 }
+// Publish terminal failure before unwinding drops this work's reply and consumer
+// lease. Otherwise a woken consumer could observe an apparently healthy owner.
+struct WorkFailureGuard(Arc<Shared>);
+impl Drop for WorkFailureGuard {
+    fn drop(&mut self) {
+        if std::thread::panicking() {
+            retain(
+                &self.0,
+                error(
+                    "network_snapshot_worker",
+                    "Native network OS worker panicked",
+                ),
+            );
+        }
+    }
+}
 /// Retains both real admission and an optional native consumer guard until the
 /// completed result is collected/dropped, including abandoned IPC waiters.
 pub struct Captured<T> {
@@ -253,6 +269,7 @@ impl NetworkSnapshots {
                     {
                         drop(queued);
                         state.active.store(1, Ordering::Release);
+                        let _failure = WorkFailureGuard(state.clone());
                         let result = (|| {
                             budget.check()?;
                             #[cfg(test)]
@@ -1181,6 +1198,40 @@ mod tests {
             "network_snapshot_deadline"
         );
         service.shutdown().await.unwrap();
+    }
+    #[tokio::test]
+    async fn panic_failure_is_visible_before_the_real_consumer_guard_is_released() {
+        struct Witness(Arc<Shared>, Option<oneshot::Sender<bool>>);
+        impl Drop for Witness {
+            fn drop(&mut self) {
+                let _ = self.1.take().unwrap().send(failure(&self.0).is_some());
+            }
+        }
+        let service = NetworkSnapshots::start(SnapshotLimits::default()).unwrap();
+        let (send, released) = oneshot::channel();
+        let result = service
+            .request(
+                Operation::Panic,
+                SnapshotControl::default(),
+                Box::new(Witness(service.inner.shared.clone(), Some(send))),
+            )
+            .await;
+        assert!(result.is_err());
+        assert!(
+            service.terminal_error().is_some(),
+            "the failed caller must already see sticky terminal state"
+        );
+        assert!(
+            tokio::time::timeout(Duration::from_secs(1), released)
+                .await
+                .unwrap()
+                .unwrap(),
+            "actual consumer lease destruction must observe the retained failure"
+        );
+        assert_eq!(
+            service.shutdown().await.unwrap_err().code,
+            "network_snapshot_worker"
+        );
     }
     #[tokio::test]
     async fn actual_worker_panic_is_sticky_across_shutdown_retries_and_new_requests() {

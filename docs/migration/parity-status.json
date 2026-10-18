@@ -276,7 +276,11 @@
         "tests/parity/midi.test.mjs",
         "tests/parity/midi-ports.test.mjs",
         "crates/freeshow-midi/src/tests.rs",
-        "crates/freeshow-midi-ports/src/tests.rs"
+        "crates/freeshow-midi-ports/src/tests.rs",
+        "src-tauri/tests/network_queries.rs",
+        "src-tauri/src/network_snapshot.rs",
+        "tests/desktop/network_queries_oracle.mjs",
+        "tests/desktop/network_queries_probe.js"
       ],
       "remaining": [
         "remotes: OUTPUT_STREAM/OUTPUT_FRAME and stage mirror acquisition, Bonjour, now-playing covers, binary/nonfinite/lone-surrogate wire cases, full remote/controller action and stage item workflows, service-worker lifecycle and packaged Windows/macOS browser behavior",
@@ -285,23 +289,30 @@
         "pending sends across library switches; one bounded OS DNS lookup cannot be interrupted",
         "other protocol servers/providers and full cross-platform application workflows",
         "inbound API: listener-restart disconnects during library changes, later async renderer action effects and actual Windows/macOS application workflows",
-        "remotes: already-running asynchronous retained actions across context changes, source client-ID spoofing quirks outside private cleanup ownership, unresponsive-renderer cleanup failures and hard OS-call shutdown deadlines"
+        "remotes: already-running asynchronous retained actions across context changes, source client-ID spoofing quirks outside private cleanup ownership, unresponsive-renderer cleanup failures and hard OS-call shutdown deadlines",
+        "native addresses: unusual adapter churn/providers, exotic IPv6 formatting, OS allocation/call bounds and actual Windows/macOS live-query execution"
       ],
-      "scope": "Outbound EMIT_OSC string-handler coercion/bytes compared with original TS/osc-js, bounded FIFO/DNS, cancellation/deadlines and real loopback; native window.api send runs independently of library compression; bounded inbound REST on both ports, genuine Socket.IO polling/WebSocket/upgrade and OSC receive/action API, private run-scoped replies, frozen native host contexts, bounded FIFO lifecycle/event routing and terminal cleanup; bounded REMOTE/STAGE/CONTROLLER Socket.IO transports and unchanged compiled client resources, native lifecycle ownership, trusted raw-message provenance, one completed synchronous renderer delivery at a time, exact owned disconnect cleanup across library changes, bounded caller-independent root-change continuations and retained SETTINGS-driven replacement startup; bounded discovery foundation and native-only owner preserve source service names/TXT/probes, actual bound endpoints, frozen native OS inputs and private listener/context runs, with real loopback UDP/goodbyes and supervised direct-child teardown; production remote hookup and real multicast/native registration remain pending; MIDI/MTC source logic and native ALSA/CoreMIDI/WinMM port foundations preserve tested JZZ selectors, message/receive projections, shared handles, real callback admission fences, bounded fixed-owner queues and sticky teardown; native Linux probe records actual ALSA permission denial rather than an empty successful list; production host/hydrated callbacks and physical delivery remain pending"
+      "scope": "Outbound EMIT_OSC string-handler coercion/bytes compared with original TS/osc-js, bounded FIFO/DNS, cancellation/deadlines and real loopback; native window.api send runs independently of library compression; bounded inbound REST on both ports, genuine Socket.IO polling/WebSocket/upgrade and OSC receive/action API, private run-scoped replies, frozen native host contexts, bounded FIFO lifecycle/event routing and terminal cleanup; bounded REMOTE/STAGE/CONTROLLER Socket.IO transports and unchanged compiled client resources, native lifecycle ownership, trusted raw-message provenance, one completed synchronous renderer delivery at a time, exact owned disconnect cleanup across library changes, bounded caller-independent root-change continuations and retained SETTINGS-driven replacement startup; bounded discovery foundation and native-only owner preserve source service names/TXT/probes, actual bound endpoints, frozen native OS inputs and private listener/context runs, with real loopback UDP/goodbyes and supervised direct-child teardown; production remote hookup and real multicast/native registration remain pending; MIDI/MTC source logic and native ALSA/CoreMIDI/WinMM port foundations preserve tested JZZ selectors, message/receive projections, shared handles, real callback admission fences, bounded fixed-owner queues and sticky teardown; native Linux probe records actual ALSA permission denial rather than an empty successful list; production host/hydrated callbacks and physical delivery remain pending; MAIN.IP is routed through one shared fixed OS owner with fresh interface-only captures, ignored bounded payloads, source address order/duplicates, full-context replies and real caller-independent OS leases; bounded shared startup snapshots remain frozen for discovery; production live-IP GUI evidence is pending"
     },
     {
       "id": "broadcast-hardware",
-      "status": "pending",
-      "tests": [],
+      "status": "partial",
+      "tests": [
+        "tests/parity/icecast.test.mjs",
+        "tests/parity/icecast-loopback.receipt.json",
+        "crates/freeshow-icecast/src/tests.rs",
+        "crates/freeshow-icecast/src/service_tests.rs"
+      ],
       "remaining": [
         "NDI",
         "OMT",
         "Blackmagic",
         "RTMP",
         "WebRTC",
-        "Icecast",
+        "Icecast: production AUDIO/Opus/now-playing/status integration, actual server authorization/playback, source own-undefined restoration, Windows/macOS runtime and documented bounded scheduling/backpressure differences",
         "hardware loopback validation"
-      ]
+      ],
+      "scope": "Bounded Icecast TCP/Ogg foundation uses one singleton socket/timer owner and a process-shared bounded DNS owner, exact supported source headers/lacing/CRC, real loopback writes and metadata/EOS chains, precise source cooldown/starvation boundary tests, sealed local observations, cancellation/backpressure and sticky teardown; raw source/native CRCs are verified before serial normalization. No production AUDIO delivery, codec, external server, playback or hardware claim."
     },
     {
       "id": "cloud-and-providers",

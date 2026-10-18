@@ -60,7 +60,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -81,6 +81,7 @@ def run():
         audio_fixture = temp / "音量 Native tags.flac"
         subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=8000:duration=1", "-c:a", "flac", "-threads", "1", "-metadata", "title=Native 敬拜 café", "-metadata", "artist=Artist Ελληνικά", "-metadata", "replaygain_album_gain=+9.0 dB", "-metadata", "replaygain_track_peak=0.8", "-y", str(audio_fixture)], check=True, timeout=15)
         expected_audio = json.loads(subprocess.check_output(["node", "tests/desktop/audio_oracle.mjs", str(audio_fixture)], cwd=ROOT, text=True, timeout=15))
+        expected_network = json.loads(subprocess.check_output(["node", "tests/desktop/network_queries_oracle.mjs"], cwd=ROOT, text=True, timeout=15))
         assert expected_audio["common"]["title"] == "Native 敬拜 café" and expected_audio["replayGainMultiplier"] == 1.25
         expected_system = json.loads(subprocess.check_output(["node", "tests/desktop/system_oracle.mjs"], cwd=ROOT, text=True, timeout=15))
         browse_folder = temp / "browse-fixtures 敬拜"
@@ -720,6 +721,20 @@ def run():
             invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":copy_context,"data":{"channel":"SET_MEDIA_FOLDER_PATH","data":""}}})
             steps.append("Retained BUNDLE installs exact original show/project/overlay/template media bytes without inventing a success callback")
             encoder_cache = temp / "app" / "encoder-detection.json"
+            network_receipts = {}
+            def probe_network_queries(phase):
+                observed = script((ROOT / "tests/desktop/network_queries_probe.js").read_text())
+                assert observed["context"] == observed["current"] == invoke("runtime_context"), observed
+                assert len(observed["replies"]) == 7 and observed["status"]["requests"] == 0, observed
+                assert observed["status"]["snapshots"]["nativeCaptures"] >= observed["before"]["snapshots"]["nativeCaptures"] + 7, observed
+                for reply in observed["replies"]:
+                    assert reply["listenerId"] == reply["expectedListenerId"], reply
+                    assert reply["message"]["data"] == expected_network["ips"], (reply,expected_network)
+                network_receipts[phase] = {"source":expected_network,"native":observed}
+                (ARTIFACTS / "network-queries.json").write_text(json.dumps(network_receipts,ensure_ascii=False,indent=2))
+                return observed
+            probe_network_queries("normal")
+            steps.append("Retained MAIN.IP callbacks match actual pinned-source OS addresses and perform fresh native captures while ignoring spoofed payloads")
             encoder_check = invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":invoke("runtime_context"),"data":{"channel":"FFMPEG_CHECK"}}})[0]["message"]["data"]
             assert encoder_check["installed"] is True
             encoder_receipts = {}
@@ -1190,6 +1205,11 @@ def run():
                 steps.append("Native media-folder query reads its committed snapshot and resolves the default during ZIP compression")
                 steps.append("Native OS and device names match original kernel queries despite spoofed environment during ZIP compression")
                 steps.append("Native RAM and optimized-mode decision match original source on captured inputs during ZIP compression")
+                network_during_backup = probe_network_queries("backup")
+                assert network_during_backup["elapsedMs"] < 1500, network_during_backup
+                network_backup_status = invoke("library_status")
+                assert network_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and network_backup_status["activeJob"]["phase"] == "backupCompression", network_backup_status
+                steps.append("Seven retained MAIN.IP callbacks preserve source addresses, fresh capture counts and current context during the same real ZIP compression")
                 api_during_backup = probe_api("backup", "Second library lyric")
                 assert api_during_backup["elapsedMs"] < 2500, api_during_backup
                 api_backup_status = invoke("library_status")

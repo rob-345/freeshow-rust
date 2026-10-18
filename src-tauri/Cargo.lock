@@ -1350,6 +1350,7 @@ dependencies = [
  "glib",
  "libc",
  "png 0.18.1",
+ "serde",
  "serde_json",
  "socket2",
  "tauri",

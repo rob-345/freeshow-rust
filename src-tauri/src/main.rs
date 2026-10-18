@@ -14,6 +14,8 @@ mod files;
 mod imports;
 mod media_copy;
 mod menu;
+mod network_queries;
+mod network_snapshot;
 mod output;
 mod remotes;
 mod scriptures;
@@ -52,6 +54,8 @@ struct AppState {
     imports: imports::NativeImports,
     browse: browse::NativeBrowse,
     system: SystemService,
+    network_snapshots: network_snapshot::NetworkSnapshots,
+    network_queries: network_queries::NativeNetworkQueries,
     api: api::NativeApi,
     remotes: remotes::NativeRemotes,
     assets: assets::NativeAssets,
@@ -165,6 +169,11 @@ fn remotes_status(app: tauri::AppHandle) -> serde_json::Value {
 }
 
 #[tauri::command]
+fn network_queries_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().network_queries.status()
+}
+
+#[tauri::command]
 fn remote_delivery_complete(
     window: tauri::WebviewWindow,
     id: String,
@@ -266,6 +275,13 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if network_queries::COMMANDS.contains(&command) {
+            return app
+                .state::<AppState>()
+                .network_queries
+                .dispatch(request, window.label())
+                .await;
+        }
         if media_copy::COMMANDS.contains(&command) {
             if window.label() != "main" {
                 return Err(WireError::new(
@@ -507,10 +523,6 @@ async fn dispatch_native(
                 let state = app.state::<AppState>();
                 let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
                 state.context_changes.close_and_drain().await?;
-                let drained = state.library.finish_writes().await;
-                if !discard {
-                    drained.map_err(WireError::from)?;
-                }
                 let (
                     _,
                     _,
@@ -527,6 +539,7 @@ async fn dispatch_native(
                     encoders_result,
                     scriptures_result,
                     media_copy_result,
+                    network_queries_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -542,8 +555,12 @@ async fn dispatch_native(
                     state.remotes.shutdown(),
                     state.encoders.shutdown(),
                     state.scriptures.shutdown(),
-                    state.media_copy.shutdown()
+                    state.media_copy.shutdown(),
+                    state.network_queries.shutdown()
                 );
+                // Shared OS ownership outlives every consumer, including discovery
+                // when its remote owner is installed. Always attempt its real drain.
+                let network_snapshots_result = state.network_snapshots.shutdown().await;
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
                     .map_err(|error| WireError::new("system_worker", error.to_string()))?;
@@ -557,6 +574,14 @@ async fn dispatch_native(
                 encoders_result?;
                 scriptures_result?;
                 media_copy_result?;
+                network_queries_result?;
+                network_snapshots_result?;
+                // Accepted native effects may still need the ordered library owner.
+                // A timed-out owner retains write admission for its real drain retry.
+                let drained = state.library.finish_writes().await;
+                if !discard {
+                    drained.map_err(WireError::from)?;
+                }
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -650,6 +675,9 @@ async fn dispatch_native(
         app.state::<AppState>().file_reads.context_changed(&context);
         app.state::<AppState>().scriptures.context_changed(&context);
         app.state::<AppState>().media_copy.context_changed(&context);
+        app.state::<AppState>()
+            .network_queries
+            .context_changed(&context);
         if let Err(error) = app.state::<AppState>().assets.context_changed(&context) {
             let mut alert = Event::reply(
                 "MAIN",
@@ -944,6 +972,14 @@ fn main() {
                 freeshow_browse::BrowseConfig::default(),
             )?);
             let library = LibraryService::start(runtime)?;
+            let network_snapshots = network_snapshot::NetworkSnapshots::start(
+                network_snapshot::SnapshotLimits::default(),
+            )
+            .map_err(|error| std::io::Error::other(error.message))?;
+            let network_queries = network_queries::NativeNetworkQueries::new(
+                library.clone(),
+                network_snapshots.clone(),
+            );
             let assets = tauri::async_runtime::block_on(assets::NativeAssets::start(
                 &library.context()?,
                 &app_data,
@@ -1045,6 +1081,8 @@ fn main() {
                 imports,
                 browse,
                 system,
+                network_snapshots,
+                network_queries,
                 api,
                 remotes,
                 assets,
@@ -1092,6 +1130,7 @@ fn main() {
             output_status,
             api_status,
             remotes_status,
+            network_queries_status,
             remote_delivery_complete,
             imports_status,
             assets_status,
