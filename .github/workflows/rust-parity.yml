@@ -95,7 +95,7 @@ jobs:
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --locked
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets --locked -- -D warnings
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery --test network_queries --test ffmpeg_download --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery --test network_queries --test ffmpeg_download --test midi --test audio_pipeline --locked
 
   desktop-linux:
     runs-on: ubuntu-24.04
@@ -107,7 +107,7 @@ jobs:
           # Match Node bundled by the pinned Electron 37.10.3 oracle.
           node-version: 22.21.1
           cache: npm
-      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev libasound2-dev webkit2gtk-driver xvfb dbus-x11 xdotool ffmpeg python3-gi gir1.2-atspi-2.0 at-spi2-core fonts-noto-color-emoji
+      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev libasound2-dev libopus0 build-essential webkit2gtk-driver xvfb dbus-x11 xdotool ffmpeg python3-gi gir1.2-atspi-2.0 at-spi2-core fonts-noto-color-emoji
       - run: rustup show
       - uses: actions/cache@v4
         with:
@@ -118,6 +118,12 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-rust-desktop-${{ hashFiles('Cargo.lock', 'src-tauri/Cargo.lock', 'rust-toolchain.toml') }}
           restore-keys: ${{ runner.os }}-${{ runner.arch }}-rust-desktop-
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: |
+          python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles
+          echo "FREESHOW_OPUS_ORACLE_DIR=$GITHUB_WORKSPACE/target/opus-oracles" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_OPUS=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_NATIVE_AUDIO_ORACLE=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_NATIVE_AUDIO_NODE=$(command -v node)" >> "$GITHUB_ENV"
       - run: npm run rust:frontend:build
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol
@@ -126,7 +132,7 @@ jobs:
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets -- -D warnings
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery --test network_queries --test ffmpeg_download
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery --test network_queries --test ffmpeg_download --test midi --test audio_pipeline
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
       - run: cargo build --workspace --all-targets

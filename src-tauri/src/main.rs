@@ -16,6 +16,7 @@ mod files;
 mod imports;
 mod media_copy;
 mod menu;
+mod midi;
 mod network_queries;
 mod network_snapshot;
 mod output;
@@ -52,6 +53,7 @@ struct AppState {
     scriptures: scriptures::NativeScriptures,
     media_copy: media_copy::NativeMediaCopy,
     audio: AudioService,
+    midi: midi::NativeMidi,
     files: files::NativeFiles,
     file_reads: file_reads::NativeFileReads,
     imports: imports::NativeImports,
@@ -182,6 +184,34 @@ fn ffmpeg_download_status(app: tauri::AppHandle) -> serde_json::Value {
 }
 
 #[tauri::command]
+fn midi_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().midi.status()
+}
+
+#[tauri::command]
+fn midi_delivery_complete(
+    window: tauri::WebviewWindow,
+    id: String,
+    accepted: bool,
+) -> Result<(), WireError> {
+    window
+        .app_handle()
+        .state::<AppState>()
+        .midi
+        .complete(window.label(), &id, accepted)
+}
+
+fn midi_event(publication: midi::NativeMidiPublication) -> Event {
+    let mut event = publication.event;
+    let mut metadata = json!({"hydration":publication.hydration});
+    if let Some(delivery) = publication.delivery {
+        metadata["delivery"] = json!({"id":delivery.id,"context":delivery.context,"run":delivery.run.to_string(),"listener":delivery.listener.to_string()});
+    }
+    event.native_midi = Some(metadata);
+    event
+}
+
+#[tauri::command]
 fn remote_delivery_complete(
     window: tauri::WebviewWindow,
     id: String,
@@ -283,6 +313,14 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if midi::COMMANDS.contains(&command) {
+            return app
+                .state::<AppState>()
+                .midi
+                .dispatch(request, window.label())
+                .await
+                .map(|publications| publications.into_iter().map(midi_event).collect());
+        }
         if ffmpeg_download::COMMANDS.contains(&command) {
             let result = app
                 .state::<AppState>()
@@ -561,6 +599,7 @@ async fn dispatch_native(
                     media_copy_result,
                     network_queries_result,
                     ffmpeg_downloads_result,
+                    midi_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -578,7 +617,8 @@ async fn dispatch_native(
                     state.scriptures.shutdown(),
                     state.media_copy.shutdown(),
                     state.network_queries.shutdown(),
-                    state.ffmpeg_downloads.shutdown()
+                    state.ffmpeg_downloads.shutdown(),
+                    state.midi.shutdown()
                 );
                 // Shared OS ownership outlives every consumer, including discovery
                 // when its remote owner is installed. Always attempt its real drain.
@@ -599,6 +639,7 @@ async fn dispatch_native(
                 network_queries_result?;
                 network_snapshots_result?;
                 ffmpeg_downloads_result?;
+                midi_result?;
                 // Accepted native effects may still need the ordered library owner.
                 // A timed-out owner retains write admission for its real drain retry.
                 let drained = state.library.finish_writes().await;
@@ -723,6 +764,19 @@ async fn dispatch_native(
                 "ALERT",
                 json!(format!(
                     "The library changed, but API restart failed: {}",
+                    error.message
+                )),
+                None,
+            );
+            alert.context = Some(context.clone());
+            events.push(alert);
+        }
+        if let Err(error) = app.state::<AppState>().midi.context_changed().await {
+            let mut alert = Event::reply(
+                "MAIN",
+                "ALERT",
+                json!(format!(
+                    "The library changed, but MIDI cleanup failed: {}",
                     error.message
                 )),
                 None,
@@ -1056,6 +1110,20 @@ fn main() {
                 })
             })
             .map_err(|error| std::io::Error::other(error.message))?;
+            let midi_app = app.handle().clone();
+            let midi = tauri::async_runtime::block_on(async {
+                midi::NativeMidi::new(
+                    library.clone(),
+                    midi::MidiHostConfig::default(),
+                    || Ok(Box::new(freeshow_midi_ports::NativeBackend)),
+                    move |publication| {
+                        midi_app
+                            .emit_to("main", "freeshow://ipc", midi_event(publication))
+                            .map_err(|error| error.to_string())
+                    },
+                )
+            })
+            .map_err(|error| std::io::Error::other(error.message))?;
             let mut remote_config = freeshow_remotes::RemoteConfig::default();
             if let Ok(ip) = std::env::var("FREESHOW_RUST_REMOTES_BIND_IP") {
                 remote_config.bind_ip = ip.parse()?;
@@ -1164,6 +1232,7 @@ fn main() {
                 scriptures,
                 media_copy,
                 audio,
+                midi,
                 files,
                 imports,
                 browse,
@@ -1219,6 +1288,8 @@ fn main() {
             remotes_status,
             network_queries_status,
             ffmpeg_download_status,
+            midi_status,
+            midi_delivery_complete,
             remote_delivery_complete,
             imports_status,
             assets_status,

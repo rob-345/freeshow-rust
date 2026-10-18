@@ -21,6 +21,11 @@ freeshow-media = { path = "../crates/freeshow-media" }
 freeshow-ffmpeg-download = { path = "../crates/freeshow-ffmpeg-download" }
 freeshow-network = { path = "../crates/freeshow-network" }
 freeshow-audio = { path = "../crates/freeshow-audio" }
+freeshow-audio-pipeline = { path = "../crates/freeshow-audio-pipeline" }
+freeshow-icecast = { path = "../crates/freeshow-icecast" }
+freeshow-opus = { path = "../crates/freeshow-opus" }
+freeshow-midi = { path = "../crates/freeshow-midi" }
+freeshow-midi-ports = { path = "../crates/freeshow-midi-ports" }
 freeshow-files = { path = "../crates/freeshow-files" }
 freeshow-system = { path = "../crates/freeshow-system" }
 freeshow-api = { path = "../crates/freeshow-api" }

@@ -99,10 +99,13 @@ async fn actual_live_ip_capture_finishes_while_the_ordered_library_owner_is_held
             .last(),
         Some(&json!("localhost"))
     );
-    assert_eq!(
-        snapshots.status()["nativeCaptures"].as_u64().unwrap(),
-        before + 1
-    );
+    // This counter records actual OS calls. Windows may resize its adapter
+    // buffer and retry within the same fresh logical capture.
+    let after = snapshots.status()["nativeCaptures"].as_u64().unwrap();
+    #[cfg(windows)]
+    assert!((before + 1..=before + 3).contains(&after));
+    #[cfg(not(windows))]
+    assert_eq!(after, before + 1);
     release.send(()).unwrap();
     held.await.unwrap().unwrap();
     native.shutdown().await.unwrap();

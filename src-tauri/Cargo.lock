@@ -33,6 +33,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "alsa"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3f93573e7ddb15145d27c58c0fa0a452faad9f5452ac17ed4554ea035ea9b71"
+dependencies = [
+ "alsa-sys",
+ "bitflags 2.13.2",
+ "cfg-if",
+ "libc",
+]
+
+[[package]]
+name = "alsa-sys"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0320138053ef93099f168102c37b46ac0b9c53affc56ef7696633ad5477e2be"
+dependencies = [
+ "cc",
+ "libc",
+ "pkg-config",
+]
+
+[[package]]
+name = "android-build"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9fc9904ad2ad097c3c1cfe2eacaaf0fc24710936fa9ed941cb310b7c6ed2ab7"
+dependencies = [
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -635,6 +667,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f8f80099a98041a3d1622845c271458a2d73e688351bf3cb999266764b81d48"
 
 [[package]]
+name = "coremidi"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a57ede822fdaf19280cf1320a5a5d3a522c75c910d01750af1e8122b6ad2595b"
+dependencies = [
+ "block2",
+ "core-foundation",
+ "core-foundation-sys",
+ "coremidi-sys",
+]
+
+[[package]]
+name = "coremidi-sys"
+version = "3.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a2b8c2cefa9a8f712213c5a1383ffe428efc8f1a1fd1e2f757be94daf7e256a"
+dependencies = [
+ "core-foundation-sys",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -922,6 +975,16 @@ dependencies = [
  "libc",
  "once_cell",
  "winapi",
+]
+
+[[package]]
+name = "dlopen2"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60768c353d76ba6dd1b6332a5dbbdd3bc2dddadc2935f4cc6a9d0f17ca8ecb6a"
+dependencies = [
+ "libc",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1296,6 +1359,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-audio-pipeline"
+version = "0.1.0"
+dependencies = [
+ "ryu-js",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-browse"
 version = "0.1.0"
 dependencies = [
@@ -1330,6 +1404,7 @@ dependencies = [
  "freeshow-asset-plans",
  "freeshow-assets",
  "freeshow-audio",
+ "freeshow-audio-pipeline",
  "freeshow-browse",
  "freeshow-core",
  "freeshow-discovery",
@@ -1338,12 +1413,16 @@ dependencies = [
  "freeshow-exif",
  "freeshow-ffmpeg-download",
  "freeshow-files",
+ "freeshow-icecast",
  "freeshow-import-effects",
  "freeshow-imports",
  "freeshow-media",
  "freeshow-media-copy",
  "freeshow-media-copy-effects",
+ "freeshow-midi",
+ "freeshow-midi-ports",
  "freeshow-network",
+ "freeshow-opus",
  "freeshow-remotes",
  "freeshow-scriptures",
  "freeshow-system",
@@ -1449,6 +1528,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-icecast"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "getrandom 0.3.4",
+ "ryu-js",
+ "serde",
+ "serde_json",
+ "socket2",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-import-effects"
 version = "0.1.0"
 dependencies = [
@@ -1513,12 +1606,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-midi"
+version = "0.1.0"
+dependencies = [
+ "ryu-js",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "freeshow-midi-ports"
+version = "0.1.0"
+dependencies = [
+ "freeshow-midi",
+ "midir",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-network"
 version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "freeshow-opus"
+version = "0.1.0"
+dependencies = [
+ "libloading",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -2322,6 +2447,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
+name = "java-locator"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09c46c1fe465c59b1474e665e85e1256c3893dd00927b8d55f63b09044c1e64f"
+dependencies = [
+ "glob",
+]
+
+[[package]]
 name = "javascriptcore-rs"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2407,11 +2541,28 @@ dependencies = [
  "cesu8",
  "cfg-if",
  "combine",
+ "java-locator",
  "jni-sys 0.3.1",
+ "libloading",
  "log",
  "thiserror 1.0.69",
  "walkdir",
  "windows-sys 0.45.0",
+]
+
+[[package]]
+name = "jni-min-helper"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "913370a00ba1851b0f3369b49d0f3e745da2d20d3f15ecc296a64234ccda45f7"
+dependencies = [
+ "android-build",
+ "dlopen2 0.9.0",
+ "jni",
+ "libc",
+ "log",
+ "ndk-context",
+ "process_path",
 ]
 
 [[package]]
@@ -2637,6 +2788,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "midir"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fea58b9250a667b032ff61fb1bf77aed74873152563f5cd613016dce4c821832"
+dependencies = [
+ "alsa",
+ "cc",
+ "coremidi",
+ "jni",
+ "jni-min-helper",
+ "js-sys",
+ "libc",
+ "log",
+ "ndk-context",
+ "parking_lot",
+ "wasm-bindgen",
+ "web-sys",
+ "windows",
 ]
 
 [[package]]
@@ -3318,6 +3490,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "process_path"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f676f11eb0b3e2ea0fbaee218fa6b806689e2297b8c8adc5bf73df465c4f6171"
+dependencies = [
+ "libc",
+ "winapi",
 ]
 
 [[package]]
@@ -4159,7 +4341,7 @@ dependencies = [
  "crossbeam-channel",
  "dbus",
  "dispatch2",
- "dlopen2",
+ "dlopen2 0.8.2",
  "dpi",
  "gdkwayland-sys",
  "gdkx11-sys",

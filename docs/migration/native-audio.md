@@ -216,3 +216,7 @@ Cross compilation checks build native code/tests without asserting that codec
 binaries are packaged or runnable on Windows/macOS. Real codec/host evidence here
 is Linux only; deployment library capability and raw AUDIO bridge remain host
 integration obligations.
+
+## Shared native verification integration
+
+The coordinator added the foundation path dependencies and this direct host target to native CI. Linux builds private original add-ons and requires real Opus and immutable-source/addon end-to-end evidence; other platforms retain truthful unavailable-capability checks without a packaged codec claim. The host remains prepared independently of the running desktop pending raw AUDIO/MessagePort/status and lifecycle integration. Fourteen direct integrated Linux host tests pass with both strict evidence flags; no source-success ACK or rendered playback claim is added.

@@ -5,6 +5,7 @@ import { installNativeDrop } from "./nativeDrop"
 import { createMediaUrlRegistry, type LocalAssetGrant } from "./mediaUrl"
 import { createCaptureBridge, type CaptureTransport } from "./captureBridge"
 import { hydrateExif, type ExifHydration } from "./exif"
+import { hydrateMidi, type MidiHydration } from "./midi"
 
 type Receiver = (data: any, listenerId?: string) => void
 export type RuntimeContext = {
@@ -20,6 +21,10 @@ export type RuntimeEvent = {
     nativeAssets?: LocalAssetGrant[]
     nativeCapture?: { id: string }
     nativeExif?: ExifHydration
+    nativeMidi?: {
+        hydration: MidiHydration
+        delivery?: { id: string; context: RuntimeContext; run: string; listener: string }
+    }
     nativeRemote?: {
         deliveryId: string
         run: string
@@ -34,9 +39,11 @@ const mutations = new Set(["SAVE", "UPDATE_DATA_PATH", "SET_STORE_VALUE", "SET_M
 const outputLifecycle = new Set(["CREATE", "REMOVE", "TOGGLE_OUTPUTS", "UPDATE_BOUNDS", "SET_VALUE", "FOCUS", "TO_FRONT", "MOVE"])
 const remoteChannels = new Set(["REMOTE", "STAGE", "CONTROLLER"])
 const remoteCommands = new Set(["START", "STOP", "SERVER_DATA"])
+const midiCommands = new Set(["GET_MIDI_INPUTS", "GET_MIDI_OUTPUTS", "SEND_MIDI", "RECEIVE_MIDI", "CLOSE_MIDI"])
 export type RemoteCompletion = (id: string, accepted: boolean) => Promise<unknown>
+export type MidiCompletion = (id: string, accepted: boolean) => Promise<unknown>
 
-export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext, captureTransport?: CaptureTransport, remoteCompletion?: RemoteCompletion) {
+export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext, captureTransport?: CaptureTransport, remoteCompletion?: RemoteCompletion, midiCompletion?: MidiCompletion) {
     const receivers = new Map<string, Set<Receiver>>()
     const named = new Map<string, { channel: string; receiver: Receiver }>()
     let context = initialContext ? { ...initialContext } : undefined
@@ -95,6 +102,32 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
     }
 
     function dispatch(event: RuntimeEvent, origin?: { channel: string; data?: any }) {
+        if (event.nativeMidi) {
+            const metadata = event.nativeMidi
+            const delivery = metadata.delivery
+            const same = (left: RuntimeContext | undefined, right: RuntimeContext | undefined) => !!left && !!right && left.runtimeId === right.runtimeId && left.libraryGeneration === right.libraryGeneration && left.dataPath === right.dataPath
+            const token = (value: string) => typeof value === "string" && /^[1-9][0-9]{0,15}$/.test(value) && BigInt(value) <= 9007199254740991n
+            let accepted = false
+            try {
+                if (event.channel !== "MAIN" || !same(context, event.context)) return
+                const callback = event.message?.channel === "RECEIVE_MIDI2"
+                if (callback ? !delivery || !/^native-midi-[0-9a-f]{32}$/.test(delivery.id) || !same(event.context, delivery.context) || !token(delivery.run) || !token(delivery.listener) || event.listenerId !== undefined : delivery !== undefined || !["GET_MIDI_INPUTS", "GET_MIDI_OUTPUTS"].includes(event.message?.channel)) throw new Error("Invalid native MIDI publication")
+                const data = hydrateMidi(event.message.channel, event.message.data, metadata.hydration)
+                deliver(event.channel, { ...event.message, data }, event.listenerId)
+                accepted = true
+            } catch (error) {
+                reportError({ code: "midi_publication", message: String(error) }, event)
+            } finally {
+                // This receipt bounds synchronous retained dispatch. MIDI send,
+                // listen and close retain their original void reply contract.
+                if (midiCompletion && delivery && /^native-midi-[0-9a-f]{32}$/.test(delivery.id))
+                    midiCompletion(delivery.id, accepted).catch((error) => {
+                        // Context retirement deliberately revokes pending nonces.
+                        if (same(context, event.context)) reportError(error, { channel: "native-midi-completion" })
+                    })
+            }
+            return
+        }
         if (event.nativeRemote) {
             let accepted = false
             try {
@@ -151,7 +184,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 const mediaCopy = channel === "MAIN" && ["BUNDLE_MEDIA_FILES", "MEDIA_FOLDER_COPY"].includes(data?.channel)
                 // Electron serializes at send time. Output updates often reuse
                 // mutable Svelte objects; queued cues must keep their snapshot.
-                if (mediaCopy || channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && remoteCommands.has(data?.channel))) data = structuredClone(data)
+                if (mediaCopy || channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && (remoteCommands.has(data?.channel) || midiCommands.has(data?.channel)))) data = structuredClone(data)
                 // SAVE snapshots its context before its deferred send. Other
                 // requests belong to the library visible when send is called.
                 const captured = channel === "MAIN" && data?.channel === "SAVE" ? data.data?.runtimeContext || context : context
@@ -236,7 +269,8 @@ export async function installRustBridge(target: Window = window) {
         },
         context,
         ({ id, buffer, failed }) => tauri.core.invoke("thumbnail_complete", buffer, { headers: { "x-freeshow-capture": id, "x-freeshow-capture-failed": failed ? "1" : "0" } }),
-        (id, accepted) => tauri.core.invoke("remote_delivery_complete", { id, accepted })
+        (id, accepted) => tauri.core.invoke("remote_delivery_complete", { id, accepted }),
+        (id, accepted) => tauri.core.invoke("midi_delivery_complete", { id, accepted })
     )
     await tauri.event.listen(
         "freeshow://ipc",

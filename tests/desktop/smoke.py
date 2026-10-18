@@ -799,6 +799,25 @@ def run():
                 return observed
             probe_network_queries("normal")
             steps.append("Retained MAIN.IP callbacks match actual pinned-source OS addresses and perform fresh native captures while ignoring spoofed payloads")
+            midi_receipts = {}
+            def probe_midi(phase):
+                observed = script((ROOT / "tests/desktop/midi_probe.js").read_text())
+                assert observed["context"] == observed["current"] == invoke("runtime_context"), observed
+                assert observed["closed"] == [] and observed["hardwareDeliveryVerified"] is False, observed
+                assert observed["status"]["admittedRequests"] == observed["status"]["pendingDeliveries"] == 0, observed
+                assert len(observed["results"]) == 2, observed
+                for result in observed["results"]:
+                    if "unavailable" in result:
+                        assert result["unavailable"]["code"] == "midi_backend_unavailable", result
+                    else:
+                        assert result["listenerId"] == result["expectedListenerId"], result
+                        assert result["message"]["channel"] == result["command"], result
+                        assert all(isinstance(device.get("name"),str) and list(device) == ["name"] for device in result["message"]["data"]), result
+                midi_receipts[phase] = observed
+                (ARTIFACTS / "midi.json").write_text(json.dumps(midi_receipts,ensure_ascii=False,indent=2))
+                return observed
+            probe_midi("normal")
+            steps.append("Retained MIDI getters preserve actual native names or explicit backend unavailability, while CLOSE remains void and host leases drain")
             encoder_check = invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":invoke("runtime_context"),"data":{"channel":"FFMPEG_CHECK"}}})[0]["message"]["data"]
             assert encoder_check["installed"] is True
             encoder_receipts = {}
@@ -1276,6 +1295,10 @@ def run():
                 network_backup_status = invoke("library_status")
                 assert network_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and network_backup_status["activeJob"]["phase"] == "backupCompression", network_backup_status
                 steps.append("Seven retained MAIN.IP callbacks preserve source addresses, fresh capture counts and current context during the same real ZIP compression")
+                probe_midi("backup")
+                midi_backup_status = invoke("library_status")
+                assert midi_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and midi_backup_status["activeJob"]["phase"] == "backupCompression", midi_backup_status
+                steps.append("Retained native MIDI getter/error callbacks and void close finish independently during the same real ZIP compression")
                 api_during_backup = probe_api("backup", "Second library lyric")
                 assert api_during_backup["elapsedMs"] < 2500, api_during_backup
                 api_backup_status = invoke("library_status")

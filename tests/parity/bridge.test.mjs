@@ -22,6 +22,8 @@ const captureBridge = ts.transpileModule(fs.readFileSync(path.join(root, "src/fr
 const captureBridgeModule = `data:text/javascript;base64,${Buffer.from(captureBridge).toString("base64")}`
 const exif = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/exif.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
 const exifModule = `data:text/javascript;base64,${Buffer.from(exif).toString("base64")}`
+const midi = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/midi.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+const midiModule = `data:text/javascript;base64,${Buffer.from(midi).toString("base64")}`
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -34,8 +36,92 @@ const javascript = ts
     .replace('from "./mediaUrl"', `from "${mediaUrlModule}"`)
     .replace('from "./captureBridge"', `from "${captureBridgeModule}"`)
     .replace('from "./exif"', `from "${exifModule}"`)
+    .replace('from "./midi"', `from "${midiModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("native MIDI dispatch restores source fields only after exact context/provenance acceptance and completes private receipts", async () => {
+    const context = { runtimeId: "midi", libraryGeneration: 1, dataPath: "/one" }
+    const deliveries = [],
+        errors = [],
+        receipts = []
+    const bridge = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context,
+        undefined,
+        undefined,
+        async (id, accepted) => receipts.push({ id, accepted })
+    )
+    bridge.api.receive("MAIN", (message, listenerId) => deliveries.push({ message, listenerId }))
+    let serial = 0
+    const publication = (changes = {}) => ({ channel: "MAIN", message: { channel: "RECEIVE_MIDI2", data: { values: { channel: 1 }, type: "noteon" } }, context, nativeMidi: { hydration: { undefinedPaths: ["/id", "/values/note", "/values/velocity"], numbers: [] }, delivery: { id: "native-midi-" + (++serial).toString(16).padStart(32, "0"), context, run: "1", listener: "1" } }, ...changes })
+    const event = publication()
+    bridge.dispatch(event)
+    assert.deepEqual(deliveries, [{ message: { channel: "RECEIVE_MIDI2", data: { id: undefined, values: { note: undefined, velocity: undefined, channel: 1 }, type: "noteon" } }, listenerId: undefined }])
+    assert.deepEqual(Object.keys(deliveries[0].message.data), ["id", "values", "type"])
+    assert.deepEqual(Object.keys(deliveries[0].message.data.values), ["note", "velocity", "channel"])
+    assert.equal(Object.hasOwn(event.message.data, "id"), false, "restoration does not mutate a rejected/reused wire envelope")
+    const wrongPath = { ...context, dataPath: "/wrong" },
+        future = { ...context, libraryGeneration: 2, dataPath: "/next" }
+    for (const frozen of [wrongPath, future, { ...context, runtimeId: "foreign" }]) bridge.dispatch(publication({ context: frozen }))
+    const malformed = publication()
+    malformed.nativeMidi.delivery.run = "0"
+    bridge.dispatch(malformed)
+    const invalid = publication()
+    invalid.nativeMidi.hydration.undefinedPaths.push("/values/__proto__")
+    bridge.dispatch(invalid)
+    const correlated = publication({ listenerId: "not-source-callback" })
+    bridge.dispatch(correlated)
+    assert.equal(deliveries.length, 1)
+    assert.deepEqual(bridge.api.getRuntimeContext(), context)
+    assert.equal(receipts.length, 7)
+    assert.equal(receipts[0].accepted, true)
+    assert.ok(receipts.slice(1).every((receipt) => receipt.accepted === false))
+    assert.equal(errors.length, 3)
+    assert.ok(errors.every((error) => error.code === "midi_publication"))
+    bridge.dispatch({ channel: "MAIN", message: { channel: "GET_MIDI_INPUTS", data: [{}] }, listenerId: "getter", context, nativeMidi: { hydration: { undefinedPaths: ["/0/name"], numbers: [] } } })
+    assert.deepEqual(deliveries.at(-1), { message: { channel: "GET_MIDI_INPUTS", data: [{ name: undefined }] }, listenerId: "getter" })
+    assert.equal(Object.hasOwn(deliveries.at(-1).message.data[0], "name"), true)
+    assert.equal(receipts.length, 7, "getters introduce no private/source ACK")
+    await tick()
+})
+
+test("MIDI sends retain send-time snapshots and source void replies without waiting for unrelated mutations", async () => {
+    const context = { runtimeId: "midi-send", libraryGeneration: 1, dataPath: "/one" },
+        sent = [],
+        errors = []
+    let release
+    const held = new Promise((resolve) => {
+        release = resolve
+    })
+    const bridge = createRustApi(
+        async (request) => {
+            sent.push(structuredClone(request))
+            if (request.data.channel === "SAVE") await held
+            return []
+        },
+        (error) => errors.push(error),
+        context
+    )
+    const replies = []
+    bridge.api.receive("MAIN", (message) => replies.push(message))
+    bridge.api.send("MAIN", { channel: "SAVE", data: {} })
+    const data = { channel: "SEND_MIDI", data: { output: "日本語", values: { note: 60, velocity: 127, channel: 1 } } }
+    bridge.api.send("MAIN", data, "void-id")
+    bridge.api.send("MAIN", { channel: "RECEIVE_MIDI", data: { id: "action", input: "日本語" } })
+    bridge.api.send("MAIN", { channel: "CLOSE_MIDI", data: { id: "action" } })
+    data.data.values.note = 99
+    await tick()
+    assert.equal(sent.length, 4)
+    assert.equal(sent[1].data.data.values.note, 60)
+    assert.equal(sent[1].listenerId, "void-id")
+    assert.deepEqual(sent[1].context, context)
+    assert.deepEqual(replies, [])
+    release()
+    await tick()
+    assert.deepEqual(errors, [])
+})
 
 test("remote native provenance preserves raw messages and fences exact owned disconnects across a library switch", async () => {
     const context = { runtimeId: "remote", libraryGeneration: 1, dataPath: "/old" },
