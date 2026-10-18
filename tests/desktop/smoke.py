@@ -41,8 +41,24 @@ def free_port():
         return sock.getsockname()[1]
 
 
+def free_api_port():
+    for _ in range(30):
+        with socket.socket() as first, socket.socket() as second, socket.socket(type=socket.SOCK_DGRAM) as udp:
+            first.bind(("127.0.0.1", 0))
+            candidate = first.getsockname()[1]
+            if candidate == 65535:
+                continue
+            try:
+                second.bind(("127.0.0.1", candidate + 1))
+                udp.bind(("127.0.0.1", candidate))
+                return candidate
+            except OSError:
+                pass
+    raise RuntimeError("Unable to reserve loopback API ports")
+
+
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -89,7 +105,7 @@ def run():
             if isinstance(value, list):
                 return [entry for index, child in enumerate(value) for entry in audio_key_order(child, [*path, index])]
             return []
-        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"), HOSTNAME="freeshow-spoofed-environment.local",
+        env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"), HOSTNAME="freeshow-spoofed-environment.local", FREESHOW_RUST_API_BIND_IP="127.0.0.1",
                    XDG_DATA_HOME=str(temp / "xdg-data"), XDG_CACHE_HOME=str(temp / "xdg-cache"),
                    XDG_CONFIG_HOME=str(temp / "xdg-config"), GSETTINGS_BACKEND="memory",
                    TAURI_WEBVIEW_AUTOMATION="true", WEBKIT_DISABLE_COMPOSITING_MODE="1",
@@ -417,6 +433,25 @@ def run():
             steps.append("Retained window.api media-folder set/query/reset observes ordered committed settings and lazy directories")
             click_text("Rust parity test")
             wait(lambda: script("return document.body.innerText.includes('Amazing grace') && document.body.innerText.includes('日本語')"), "Saved show loaded and rendered")
+            api_port, api_password = free_api_port(), os.urandom(24).hex()
+            api_receipts = {}
+
+            def probe_api(phase, expected_text):
+                context = script("return window.api.getRuntimeContext()")
+                payload = {"port":api_port,"password":api_password,"showId":saved[0],"expectedText":expected_text}
+                result = subprocess.run(["node", "tests/desktop/api_client.mjs"], input=json.dumps(payload), text=True, capture_output=True, cwd=ROOT, timeout=20)
+                assert result.returncode == 0, (result.stdout, result.stderr)
+                reply = json.loads(result.stdout)
+                assert len(reply["replies"]) == 4 and reply["unauthorizedStatus"] == 401
+                assert context == script("return window.api.getRuntimeContext()")
+                api_receipts[phase] = {"context":context,"binding":invoke("api_status")["binding"],"result":reply}
+                (ARTIFACTS / "api.json").write_text(json.dumps(api_receipts, indent=2))
+                return reply
+
+            script("window.api.send('MAIN',{channel:'WEBSOCKET_START',data:{port:arguments[0],password:arguments[1]}})", api_port, api_password)
+            initial_api = wait(lambda: invoke("api_status")["binding"], "Retained window.api starts native REST, Socket.IO and OSC listeners")
+            probe_api("initial", "Amazing grace")
+            steps.append("Real REST on both ports and Socket.IO polling/WebSocket reach retained show and dynamic-value handlers")
 
             # Exercise real native dialogs and the renderer's IPC bridge.
             script("window.__nativeEvents=[];window.api.receive('MAIN',m=>window.__nativeEvents.push(m),'native-desktop-test');window.api.send('MAIN',{channel:'OPEN_FILE',data:{id:'native-file',channel:'NATIVE_TEST',title:'Read FreeShow Test File',filter:{name:'FreeShow',extensions:['show']},multiple:false,read:true}})")
@@ -632,6 +667,11 @@ def run():
             wait(lambda: script("return document.body.innerText.includes('Second library')"), "Selected library show list refreshed")
             click_text("Second library")
             wait(lambda: script("return document.body.innerText.includes('Second library lyric') && !document.body.innerText.includes('Amazing grace')"), "Same-ID show cache cleared across libraries")
+            switched_api = invoke("api_status")["binding"]
+            assert switched_api["context"] == script("return window.api.getRuntimeContext()")
+            assert switched_api["endpoints"]["generation"]["run"] != initial_api["endpoints"]["generation"]["run"]
+            probe_api("switched", "Second library lyric")
+            steps.append("Native API automatically restarts for the selected library and returns its same-ID show")
             (ARTIFACTS / "library-switch.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
 
             # A delayed save from the previous library must become a recovery
@@ -765,6 +805,11 @@ def run():
                 steps.append("Native media-folder query reads its committed snapshot and resolves the default during ZIP compression")
                 steps.append("Native OS and device names match original kernel queries despite spoofed environment during ZIP compression")
                 steps.append("Native RAM and optimized-mode decision match original source on captured inputs during ZIP compression")
+                api_during_backup = probe_api("backup", "Second library lyric")
+                assert api_during_backup["elapsedMs"] < 2500, api_during_backup
+                api_backup_status = invoke("library_status")
+                assert api_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and api_backup_status["activeJob"]["phase"] == "backupCompression", api_backup_status
+                steps.append("Real REST and Socket.IO actions/dynamic values remain responsive during the same ZIP compression")
                 (ARTIFACTS / "media-locate.json").write_text(json.dumps({"context":media_result["context"],"replies":[reply for reply in media_result["replies"] if reply["command"] in ["LOCATE_MEDIA_FILE","GET_MEDIA_FOLDER_PATH"]]}, indent=2))
                 (ARTIFACTS / "system-info.json").write_text(json.dumps({"context":media_result["context"],"source":expected_system,"capturedSource":captured_system,"replies":[reply for reply in media_result["replies"] if reply["command"] in ["GET_OS","GET_DEVICE_NAME","CHECK_RAM_USAGE"]]}, indent=2))
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as receiver:
@@ -916,6 +961,13 @@ def run():
                 errors = script("return window.__testRuntimeErrors")
                 assert script("return window.__testErrors") == []
                 wait(lambda: not app_pids(), "Quit exited after pending backup and writes", seconds=90)
+                for api_tcp_port in [api_port, api_port + 1]:
+                    with socket.socket() as closed_api:
+                        closed_api.settimeout(1)
+                        assert closed_api.connect_ex(("127.0.0.1", api_tcp_port)) != 0
+                with socket.socket(type=socket.SOCK_DGRAM) as released_api_udp:
+                    released_api_udp.bind(("127.0.0.1", api_port))
+                steps.append("Native Quit closes both API TCP listeners and releases its UDP socket")
                 assert json.loads(config_path.read_text())["closeDrainSentinel"] is True
                 completed_backups = set(backup_folder.glob("*.zip")) - previous_backups
                 assert len(completed_backups) == 1, completed_backups

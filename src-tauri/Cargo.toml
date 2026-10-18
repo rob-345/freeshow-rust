@@ -21,6 +21,7 @@ freeshow-network = { path = "../crates/freeshow-network" }
 freeshow-audio = { path = "../crates/freeshow-audio" }
 freeshow-files = { path = "../crates/freeshow-files" }
 freeshow-system = { path = "../crates/freeshow-system" }
+freeshow-api = { path = "../crates/freeshow-api" }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tokio = { version = "1", features = ["sync", "macros"] }

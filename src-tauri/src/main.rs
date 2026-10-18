@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod api;
 mod drop;
 mod files;
 mod menu;
@@ -31,6 +32,7 @@ struct AppState {
     audio: AudioService,
     files: files::NativeFiles,
     system: SystemService,
+    api: api::NativeApi,
     osc: OscSender,
     app_data: PathBuf,
     error_log: PathBuf,
@@ -56,6 +58,11 @@ fn library_status(app: tauri::AppHandle) -> Result<LibraryStatus, WireError> {
 #[tauri::command]
 fn output_status(app: tauri::AppHandle) -> Result<serde_json::Value, WireError> {
     app.state::<AppState>().outputs.status()
+}
+
+#[tauri::command]
+fn api_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().api.status()
 }
 
 fn contextual_events(
@@ -103,6 +110,13 @@ async fn ipc_dispatch(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if api::COMMANDS.contains(&command) {
+            return app
+                .state::<AppState>()
+                .api
+                .dispatch(request, window.label())
+                .await;
+        }
         if system::COMMANDS.contains(&command) {
             let state = app.state::<AppState>();
             return system::dispatch(&state.library, &state.system, request).await;
@@ -243,16 +257,18 @@ async fn ipc_dispatch(
                 if !discard {
                     drained.map_err(WireError::from)?;
                 }
-                let (_, _, _, files_result, system_result) = tokio::join!(
+                let (_, _, _, files_result, system_result, api_result) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
                     state.osc.shutdown(),
                     state.files.shutdown(),
-                    state.system.shutdown()
+                    state.system.shutdown(),
+                    state.api.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
                     .map_err(|error| WireError::new("system_worker", error.to_string()))?;
+                api_result?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -340,6 +356,19 @@ async fn ipc_dispatch(
     if command == "UPDATE_DATA_PATH" {
         let context = library.context().map_err(WireError::from)?;
         app.state::<AppState>().files.context_changed(&context);
+        if let Err(error) = app.state::<AppState>().api.context_changed().await {
+            let mut alert = Event::reply(
+                "MAIN",
+                "ALERT",
+                json!(format!(
+                    "The library changed, but API restart failed: {}",
+                    error.message
+                )),
+                None,
+            );
+            alert.context = Some(context.clone());
+            events.push(alert);
+        }
         match app
             .state::<AppState>()
             .outputs
@@ -575,13 +604,28 @@ fn main() {
             let audio = AudioService::new(AudioConfig::default())?;
             let files = files::NativeFiles::new(FilesService::start(FilesLimits::default())?);
             let system = SystemService::start(SystemLimits::default())?;
+            let library = LibraryService::start(runtime)?;
+            let mut api_config = freeshow_api::ApiConfig::default();
+            if let Ok(ip) = std::env::var("FREESHOW_RUST_API_BIND_IP") {
+                api_config.bind_ip = ip.parse()?;
+            }
+            let api_app = app.handle().clone();
+            let api = tauri::async_runtime::block_on(async {
+                api::NativeApi::new(library.clone(), api_config, move |event| {
+                    api_app
+                        .emit_to("main", "freeshow://ipc", event)
+                        .map_err(|error| error.to_string())
+                })
+            })
+            .map_err(|error| std::io::Error::other(error.message))?;
             app.manage(AppState {
-                library: LibraryService::start(runtime)?,
+                library,
                 outputs,
                 media,
                 audio,
                 files,
                 system,
+                api,
                 osc,
                 app_data,
                 error_log,
@@ -617,7 +661,8 @@ fn main() {
             ipc_dispatch,
             runtime_context,
             library_status,
-            output_status
+            output_status,
+            api_status
         ])
         .build(tauri::generate_context!())
         .expect("FreeShow Rust could not start")

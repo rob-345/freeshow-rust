@@ -45,7 +45,7 @@
       "remaining": [
         "binary ArrayBuffer transport",
         "MessagePort audio/video transport",
-        "backend-initiated request correlation",
+        "backend-initiated request correlation outside the run-scoped inbound API",
         "all command payload variants",
         "mutable IPC payload snapshot semantics outside output and save",
         "multi-window context propagation for remaining window types; output recreation is covered",
@@ -189,16 +189,22 @@
         "tests/parity/osc.test.mjs",
         "crates/freeshow-network/src/osc_tests.rs",
         "crates/freeshow-network/tests/osc_loopback.rs",
-        "tests/desktop/smoke.py"
+        "tests/desktop/smoke.py",
+        "tests/parity/api.test.mjs",
+        "crates/freeshow-api/src/broker.rs",
+        "crates/freeshow-api/src/server.rs",
+        "src-tauri/tests/api.rs",
+        "tests/desktop/api_client.mjs"
       ],
       "remaining": [
         "remote, stage, controller and output-stream servers",
-        "Socket.IO, REST and WebSocket compatibility",
-        "OSC receiving/action APIs, MIDI, MTC and LTC",
+        "inbound API: complete binary/typed-array and nonfinite/rare native numeric fidelity, lone UTF-16, ancillary Socket.IO assets/legacy transports and malformed OSC cases",
+        "MIDI, MTC and LTC",
         "pending sends across library switches; one bounded OS DNS lookup cannot be interrupted",
-        "other protocol servers/providers and full cross-platform application workflows"
+        "other protocol servers/providers and full cross-platform application workflows",
+        "inbound API: listener-restart disconnects during library changes, later async renderer action effects and actual Windows/macOS application workflows"
       ],
-      "scope": "Outbound EMIT_OSC string-handler coercion/bytes compared with original TS/osc-js, bounded FIFO/DNS, cancellation/deadlines and real loopback; native window.api send runs independently of library compression"
+      "scope": "Outbound EMIT_OSC string-handler coercion/bytes compared with original TS/osc-js, bounded FIFO/DNS, cancellation/deadlines and real loopback; native window.api send runs independently of library compression; bounded inbound REST on both ports, genuine Socket.IO polling/WebSocket/upgrade and OSC receive/action API, private run-scoped replies, frozen native host contexts, bounded FIFO lifecycle/event routing and terminal cleanup"
     },
     {
       "id": "broadcast-hardware",
@@ -261,15 +267,18 @@
     },
     {
       "id": "distribution",
-      "status": "pending",
-      "tests": [],
+      "status": "partial",
+      "tests": [
+        ".github/workflows/rust-parity.yml"
+      ],
       "remaining": [
-        "Windows/macOS/Linux native build verification",
+        "native packaging and installation verification beyond cross-platform binary builds/host unit tests",
         "signed installers",
         "upgrade and rollback",
         "GPL notices and fork branding",
         "replacement of inherited upstream publishing destinations"
-      ]
+      ],
+      "scope": "Files/system milestone binary builds, all-target Clippy and host tests pass on Linux/Windows/macOS; real GUI workflow runs on Linux; installers, signatures and platform distribution remain pending"
     }
   ]
 }
