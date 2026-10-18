@@ -1,0 +1,892 @@
+{
+    "version": "7.14.0",
+    "maps": {
+        "id3": {
+            "TIT2": "title",
+            "TPE1": "artist",
+            "TXXX:ARTISTS": "artists",
+            "TPE2": "albumartist",
+            "TALB": "album",
+            "TDRV": "date",
+            "TORY": "originalyear",
+            "TPOS": "disk",
+            "TCON": "genre",
+            "APIC": "picture",
+            "TCOM": "composer",
+            "USLT:DESCRIPTION": "lyrics",
+            "TSOA": "albumsort",
+            "TSOT": "titlesort",
+            "TOAL": "originalalbum",
+            "TSOP": "artistsort",
+            "TSO2": "albumartistsort",
+            "TSOC": "composersort",
+            "TEXT": "lyricist",
+            "TXXX:WRITER": "writer",
+            "TPE3": "conductor",
+            "TPE4": "remixer",
+            "IPLS:ARRANGER": "arranger",
+            "IPLS:ENGINEER": "engineer",
+            "IPLS:PRODUCER": "producer",
+            "IPLS:DJ-MIX": "djmixer",
+            "IPLS:MIX": "mixer",
+            "TPUB": "label",
+            "TIT1": "grouping",
+            "TIT3": "subtitle",
+            "TRCK": "track",
+            "TCMP": "compilation",
+            "POPM": "rating",
+            "TBPM": "bpm",
+            "TMED": "media",
+            "TXXX:CATALOGNUMBER": "catalognumber",
+            "TXXX:MUSICBRAINZ ALBUM STATUS": "releasestatus",
+            "TXXX:MUSICBRAINZ ALBUM TYPE": "releasetype",
+            "TXXX:MUSICBRAINZ ALBUM RELEASE COUNTRY": "releasecountry",
+            "TXXX:RELEASECOUNTRY": "releasecountry",
+            "TXXX:SCRIPT": "script",
+            "TLAN": "language",
+            "TCOP": "copyright",
+            "WCOP": "license",
+            "TENC": "encodedby",
+            "TSSE": "encodersettings",
+            "TXXX:BARCODE": "barcode",
+            "TXXX:ISRC": "isrc",
+            "TSRC": "isrc",
+            "TXXX:ASIN": "asin",
+            "TXXX:ORIGINALYEAR": "originalyear",
+            "UFID:HTTP://MUSICBRAINZ.ORG": "musicbrainz_recordingid",
+            "TXXX:MUSICBRAINZ RELEASE TRACK ID": "musicbrainz_trackid",
+            "TXXX:MUSICBRAINZ ALBUM ID": "musicbrainz_albumid",
+            "TXXX:MUSICBRAINZ ARTIST ID": "musicbrainz_artistid",
+            "TXXX:MUSICBRAINZ ALBUM ARTIST ID": "musicbrainz_albumartistid",
+            "TXXX:MUSICBRAINZ RELEASE GROUP ID": "musicbrainz_releasegroupid",
+            "TXXX:MUSICBRAINZ WORK ID": "musicbrainz_workid",
+            "TXXX:MUSICBRAINZ TRM ID": "musicbrainz_trmid",
+            "TXXX:MUSICBRAINZ DISC ID": "musicbrainz_discid",
+            "TXXX:ACOUSTID_ID": "acoustid_id",
+            "TXXX:ACOUSTID ID": "acoustid_id",
+            "TXXX:ACOUSTID FINGERPRINT": "acoustid_fingerprint",
+            "TXXX:MUSICIP PUID": "musicip_puid",
+            "TXXX:MUSICMAGIC FINGERPRINT": "musicip_fingerprint",
+            "WOAR": "website",
+            "TDRC": "date",
+            "TYER": "year",
+            "TDOR": "originaldate",
+            "TIPL:ARRANGER": "arranger",
+            "TIPL:ENGINEER": "engineer",
+            "TIPL:PRODUCER": "producer",
+            "TIPL:DJ-MIX": "djmixer",
+            "TIPL:MIX": "mixer",
+            "TMOO": "mood",
+            "SYLT": "lyrics",
+            "TSST": "discsubtitle",
+            "TKEY": "key",
+            "COMM": "comment",
+            "TOPE": "originalartist",
+            "PRIV:AVERAGELEVEL": "averageLevel",
+            "PRIV:PEAKLEVEL": "peakLevel",
+            "TXXX:DISCOGS_ARTIST_ID": "discogs_artist_id",
+            "TXXX:DISCOGS_ARTISTS": "artists",
+            "TXXX:DISCOGS_ARTIST_NAME": "artists",
+            "TXXX:DISCOGS_ALBUM_ARTISTS": "albumartist",
+            "TXXX:DISCOGS_CATALOG": "catalognumber",
+            "TXXX:DISCOGS_COUNTRY": "releasecountry",
+            "TXXX:DISCOGS_DATE": "originaldate",
+            "TXXX:DISCOGS_LABEL": "label",
+            "TXXX:DISCOGS_LABEL_ID": "discogs_label_id",
+            "TXXX:DISCOGS_MASTER_RELEASE_ID": "discogs_master_release_id",
+            "TXXX:DISCOGS_RATING": "discogs_rating",
+            "TXXX:DISCOGS_RELEASED": "date",
+            "TXXX:DISCOGS_RELEASE_ID": "discogs_release_id",
+            "TXXX:DISCOGS_VOTES": "discogs_votes",
+            "TXXX:CATALOGID": "catalognumber",
+            "TXXX:STYLE": "genre",
+            "TXXX:REPLAYGAIN_TRACK_PEAK": "replaygain_track_peak",
+            "TXXX:REPLAYGAIN_TRACK_GAIN": "replaygain_track_gain",
+            "TXXX:REPLAYGAIN_ALBUM_PEAK": "replaygain_album_peak",
+            "TXXX:REPLAYGAIN_ALBUM_GAIN": "replaygain_album_gain",
+            "TXXX:MP3GAIN_MINMAX": "replaygain_track_minmax",
+            "TXXX:MP3GAIN_ALBUM_MINMAX": "replaygain_album_minmax",
+            "TXXX:MP3GAIN_UNDO": "replaygain_undo",
+            "MVNM": "movement",
+            "MVIN": "movementIndex",
+            "PCST": "podcast",
+            "TCAT": "category",
+            "TDES": "description",
+            "TDRL": "date",
+            "TGID": "podcastId",
+            "TKWD": "keywords",
+            "WFED": "podcasturl"
+        },
+        "vorbis": {
+            "TITLE": "title",
+            "ARTIST": "artist",
+            "ARTISTS": "artists",
+            "ALBUMARTIST": "albumartist",
+            "ALBUM ARTIST": "albumartist",
+            "ALBUM": "album",
+            "DATE": "date",
+            "ORIGINALDATE": "originaldate",
+            "ORIGINALYEAR": "originalyear",
+            "COMMENT": "comment",
+            "TRACKNUMBER": "track",
+            "DISCNUMBER": "disk",
+            "GENRE": "genre",
+            "METADATA_BLOCK_PICTURE": "picture",
+            "COMPOSER": "composer",
+            "LYRICS": "lyrics",
+            "ALBUMSORT": "albumsort",
+            "TITLESORT": "titlesort",
+            "WORK": "work",
+            "ARTISTSORT": "artistsort",
+            "ALBUMARTISTSORT": "albumartistsort",
+            "COMPOSERSORT": "composersort",
+            "LYRICIST": "lyricist",
+            "WRITER": "writer",
+            "CONDUCTOR": "conductor",
+            "REMIXER": "remixer",
+            "ARRANGER": "arranger",
+            "ENGINEER": "engineer",
+            "PRODUCER": "producer",
+            "DJMIXER": "djmixer",
+            "MIXER": "mixer",
+            "LABEL": "label",
+            "GROUPING": "grouping",
+            "SUBTITLE": "subtitle",
+            "DISCSUBTITLE": "discsubtitle",
+            "TRACKTOTAL": "totaltracks",
+            "DISCTOTAL": "totaldiscs",
+            "COMPILATION": "compilation",
+            "RATING": "rating",
+            "BPM": "bpm",
+            "KEY": "key",
+            "MOOD": "mood",
+            "MEDIA": "media",
+            "CATALOGNUMBER": "catalognumber",
+            "RELEASESTATUS": "releasestatus",
+            "RELEASETYPE": "releasetype",
+            "RELEASECOUNTRY": "releasecountry",
+            "SCRIPT": "script",
+            "LANGUAGE": "language",
+            "COPYRIGHT": "copyright",
+            "LICENSE": "license",
+            "ENCODEDBY": "encodedby",
+            "ENCODERSETTINGS": "encodersettings",
+            "BARCODE": "barcode",
+            "ISRC": "isrc",
+            "ASIN": "asin",
+            "MUSICBRAINZ_TRACKID": "musicbrainz_recordingid",
+            "MUSICBRAINZ_RELEASETRACKID": "musicbrainz_trackid",
+            "MUSICBRAINZ_ALBUMID": "musicbrainz_albumid",
+            "MUSICBRAINZ_ARTISTID": "musicbrainz_artistid",
+            "MUSICBRAINZ_ALBUMARTISTID": "musicbrainz_albumartistid",
+            "MUSICBRAINZ_RELEASEGROUPID": "musicbrainz_releasegroupid",
+            "MUSICBRAINZ_WORKID": "musicbrainz_workid",
+            "MUSICBRAINZ_TRMID": "musicbrainz_trmid",
+            "MUSICBRAINZ_DISCID": "musicbrainz_discid",
+            "ACOUSTID_ID": "acoustid_id",
+            "ACOUSTID_ID_FINGERPRINT": "acoustid_fingerprint",
+            "MUSICIP_PUID": "musicip_puid",
+            "WEBSITE": "website",
+            "NOTES": "notes",
+            "TOTALTRACKS": "totaltracks",
+            "TOTALDISCS": "totaldiscs",
+            "DISCOGS_ARTIST_ID": "discogs_artist_id",
+            "DISCOGS_ARTISTS": "artists",
+            "DISCOGS_ARTIST_NAME": "artists",
+            "DISCOGS_ALBUM_ARTISTS": "albumartist",
+            "DISCOGS_CATALOG": "catalognumber",
+            "DISCOGS_COUNTRY": "releasecountry",
+            "DISCOGS_DATE": "originaldate",
+            "DISCOGS_LABEL": "label",
+            "DISCOGS_LABEL_ID": "discogs_label_id",
+            "DISCOGS_MASTER_RELEASE_ID": "discogs_master_release_id",
+            "DISCOGS_RATING": "discogs_rating",
+            "DISCOGS_RELEASED": "date",
+            "DISCOGS_RELEASE_ID": "discogs_release_id",
+            "DISCOGS_VOTES": "discogs_votes",
+            "CATALOGID": "catalognumber",
+            "STYLE": "genre",
+            "REPLAYGAIN_TRACK_GAIN": "replaygain_track_gain",
+            "REPLAYGAIN_TRACK_PEAK": "replaygain_track_peak",
+            "REPLAYGAIN_ALBUM_GAIN": "replaygain_album_gain",
+            "REPLAYGAIN_ALBUM_PEAK": "replaygain_album_peak",
+            "REPLAYGAIN_MINMAX": "replaygain_track_minmax",
+            "REPLAYGAIN_ALBUM_MINMAX": "replaygain_album_minmax",
+            "REPLAYGAIN_UNDO": "replaygain_undo"
+        },
+        "mp4": {
+            "©NAM": "title",
+            "©ART": "artist",
+            "AART": "albumartist",
+            "----:COM.APPLE.ITUNES:BAND": "albumartist",
+            "©ALB": "album",
+            "©DAY": "date",
+            "©CMT": "comment",
+            "©COM": "comment",
+            "TRKN": "track",
+            "DISK": "disk",
+            "©GEN": "genre",
+            "COVR": "picture",
+            "©WRT": "composer",
+            "©LYR": "lyrics",
+            "SOAL": "albumsort",
+            "SONM": "titlesort",
+            "SOAR": "artistsort",
+            "SOAA": "albumartistsort",
+            "SOCO": "composersort",
+            "----:COM.APPLE.ITUNES:LYRICIST": "lyricist",
+            "----:COM.APPLE.ITUNES:CONDUCTOR": "conductor",
+            "----:COM.APPLE.ITUNES:REMIXER": "remixer",
+            "----:COM.APPLE.ITUNES:ENGINEER": "engineer",
+            "----:COM.APPLE.ITUNES:PRODUCER": "producer",
+            "----:COM.APPLE.ITUNES:DJMIXER": "djmixer",
+            "----:COM.APPLE.ITUNES:MIXER": "mixer",
+            "----:COM.APPLE.ITUNES:LABEL": "label",
+            "©GRP": "grouping",
+            "----:COM.APPLE.ITUNES:SUBTITLE": "subtitle",
+            "----:COM.APPLE.ITUNES:DISCSUBTITLE": "discsubtitle",
+            "CPIL": "compilation",
+            "TMPO": "bpm",
+            "----:COM.APPLE.ITUNES:MOOD": "mood",
+            "----:COM.APPLE.ITUNES:MEDIA": "media",
+            "----:COM.APPLE.ITUNES:CATALOGNUMBER": "catalognumber",
+            "TVSH": "tvShow",
+            "TVSN": "tvSeason",
+            "TVES": "tvEpisode",
+            "SOSN": "tvShowSort",
+            "TVEN": "tvEpisodeId",
+            "TVNN": "tvNetwork",
+            "PCST": "podcast",
+            "PURL": "podcasturl",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ ALBUM STATUS": "releasestatus",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ ALBUM TYPE": "releasetype",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ ALBUM RELEASE COUNTRY": "releasecountry",
+            "----:COM.APPLE.ITUNES:SCRIPT": "script",
+            "----:COM.APPLE.ITUNES:LANGUAGE": "language",
+            "CPRT": "copyright",
+            "©CPY": "copyright",
+            "----:COM.APPLE.ITUNES:LICENSE": "license",
+            "©TOO": "encodedby",
+            "PGAP": "gapless",
+            "----:COM.APPLE.ITUNES:BARCODE": "barcode",
+            "----:COM.APPLE.ITUNES:ISRC": "isrc",
+            "----:COM.APPLE.ITUNES:ASIN": "asin",
+            "----:COM.APPLE.ITUNES:NOTES": "comment",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ TRACK ID": "musicbrainz_recordingid",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ RELEASE TRACK ID": "musicbrainz_trackid",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ ALBUM ID": "musicbrainz_albumid",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ ARTIST ID": "musicbrainz_artistid",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ ALBUM ARTIST ID": "musicbrainz_albumartistid",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ RELEASE GROUP ID": "musicbrainz_releasegroupid",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ WORK ID": "musicbrainz_workid",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ TRM ID": "musicbrainz_trmid",
+            "----:COM.APPLE.ITUNES:MUSICBRAINZ DISC ID": "musicbrainz_discid",
+            "----:COM.APPLE.ITUNES:ACOUSTID ID": "acoustid_id",
+            "----:COM.APPLE.ITUNES:ACOUSTID FINGERPRINT": "acoustid_fingerprint",
+            "----:COM.APPLE.ITUNES:MUSICIP PUID": "musicip_puid",
+            "----:COM.APPLE.ITUNES:FINGERPRINT": "musicip_fingerprint",
+            "----:COM.APPLE.ITUNES:REPLAYGAIN_TRACK_GAIN": "replaygain_track_gain",
+            "----:COM.APPLE.ITUNES:REPLAYGAIN_TRACK_PEAK": "replaygain_track_peak",
+            "----:COM.APPLE.ITUNES:REPLAYGAIN_ALBUM_GAIN": "replaygain_album_gain",
+            "----:COM.APPLE.ITUNES:REPLAYGAIN_ALBUM_PEAK": "replaygain_album_peak",
+            "----:COM.APPLE.ITUNES:REPLAYGAIN_TRACK_MINMAX": "replaygain_track_minmax",
+            "----:COM.APPLE.ITUNES:REPLAYGAIN_ALBUM_MINMAX": "replaygain_album_minmax",
+            "----:COM.APPLE.ITUNES:REPLAYGAIN_UNDO": "replaygain_undo",
+            "GNRE": "genre",
+            "----:COM.APPLE.ITUNES:ALBUMARTISTSORT": "albumartistsort",
+            "----:COM.APPLE.ITUNES:ARTISTS": "artists",
+            "----:COM.APPLE.ITUNES:ORIGINALDATE": "originaldate",
+            "----:COM.APPLE.ITUNES:ORIGINALYEAR": "originalyear",
+            "DESC": "description",
+            "LDES": "longDescription",
+            "©MVN": "movement",
+            "©MVI": "movementIndex",
+            "©MVC": "movementTotal",
+            "©WRK": "work",
+            "CATG": "category",
+            "EGID": "podcastId",
+            "HDVD": "hdVideo",
+            "KEYW": "keywords",
+            "SHWM": "showMovement",
+            "STIK": "stik",
+            "RATE": "rating"
+        },
+        "riff": {
+            "IART": "artist",
+            "ICRD": "date",
+            "INAM": "title",
+            "TITL": "title",
+            "IPRD": "album",
+            "ITRK": "track",
+            "IPRT": "track",
+            "COMM": "comment",
+            "ICMT": "comment",
+            "ICNT": "releasecountry",
+            "GNRE": "genre",
+            "IWRI": "writer",
+            "RATE": "rating",
+            "YEAR": "year",
+            "ISFT": "encodedby",
+            "CODE": "encodedby",
+            "TURL": "website",
+            "IGNR": "genre",
+            "IENG": "engineer",
+            "ITCH": "technician",
+            "IMED": "media",
+            "IRPD": "album"
+        }
+    },
+    "common": {
+        "year": {
+            "multiple": false
+        },
+        "track": {
+            "multiple": false
+        },
+        "disk": {
+            "multiple": false
+        },
+        "title": {
+            "multiple": false
+        },
+        "artist": {
+            "multiple": false
+        },
+        "artists": {
+            "multiple": true,
+            "unique": true
+        },
+        "albumartist": {
+            "multiple": false
+        },
+        "album": {
+            "multiple": false
+        },
+        "date": {
+            "multiple": false
+        },
+        "originaldate": {
+            "multiple": false
+        },
+        "originalyear": {
+            "multiple": false
+        },
+        "comment": {
+            "multiple": true,
+            "unique": false
+        },
+        "genre": {
+            "multiple": true,
+            "unique": true
+        },
+        "picture": {
+            "multiple": true,
+            "unique": true
+        },
+        "composer": {
+            "multiple": true,
+            "unique": true
+        },
+        "lyrics": {
+            "multiple": true,
+            "unique": false
+        },
+        "albumsort": {
+            "multiple": false,
+            "unique": true
+        },
+        "titlesort": {
+            "multiple": false,
+            "unique": true
+        },
+        "work": {
+            "multiple": false,
+            "unique": true
+        },
+        "artistsort": {
+            "multiple": false,
+            "unique": true
+        },
+        "albumartistsort": {
+            "multiple": false,
+            "unique": true
+        },
+        "composersort": {
+            "multiple": false,
+            "unique": true
+        },
+        "lyricist": {
+            "multiple": true,
+            "unique": true
+        },
+        "writer": {
+            "multiple": true,
+            "unique": true
+        },
+        "conductor": {
+            "multiple": true,
+            "unique": true
+        },
+        "remixer": {
+            "multiple": true,
+            "unique": true
+        },
+        "arranger": {
+            "multiple": true,
+            "unique": true
+        },
+        "engineer": {
+            "multiple": true,
+            "unique": true
+        },
+        "producer": {
+            "multiple": true,
+            "unique": true
+        },
+        "technician": {
+            "multiple": true,
+            "unique": true
+        },
+        "djmixer": {
+            "multiple": true,
+            "unique": true
+        },
+        "mixer": {
+            "multiple": true,
+            "unique": true
+        },
+        "label": {
+            "multiple": true,
+            "unique": true
+        },
+        "grouping": {
+            "multiple": false
+        },
+        "subtitle": {
+            "multiple": true
+        },
+        "discsubtitle": {
+            "multiple": false
+        },
+        "totaltracks": {
+            "multiple": false
+        },
+        "totaldiscs": {
+            "multiple": false
+        },
+        "compilation": {
+            "multiple": false
+        },
+        "rating": {
+            "multiple": true
+        },
+        "bpm": {
+            "multiple": false
+        },
+        "mood": {
+            "multiple": false
+        },
+        "media": {
+            "multiple": false
+        },
+        "catalognumber": {
+            "multiple": true,
+            "unique": true
+        },
+        "tvShow": {
+            "multiple": false
+        },
+        "tvShowSort": {
+            "multiple": false
+        },
+        "tvSeason": {
+            "multiple": false
+        },
+        "tvEpisode": {
+            "multiple": false
+        },
+        "tvEpisodeId": {
+            "multiple": false
+        },
+        "tvNetwork": {
+            "multiple": false
+        },
+        "podcast": {
+            "multiple": false
+        },
+        "podcasturl": {
+            "multiple": false
+        },
+        "releasestatus": {
+            "multiple": false
+        },
+        "releasetype": {
+            "multiple": true
+        },
+        "releasecountry": {
+            "multiple": false
+        },
+        "script": {
+            "multiple": false
+        },
+        "language": {
+            "multiple": false
+        },
+        "copyright": {
+            "multiple": false
+        },
+        "license": {
+            "multiple": false
+        },
+        "encodedby": {
+            "multiple": false
+        },
+        "encodersettings": {
+            "multiple": false
+        },
+        "gapless": {
+            "multiple": false
+        },
+        "barcode": {
+            "multiple": false
+        },
+        "isrc": {
+            "multiple": true
+        },
+        "asin": {
+            "multiple": false
+        },
+        "musicbrainz_recordingid": {
+            "multiple": false
+        },
+        "musicbrainz_trackid": {
+            "multiple": false
+        },
+        "musicbrainz_albumid": {
+            "multiple": false
+        },
+        "musicbrainz_artistid": {
+            "multiple": true
+        },
+        "musicbrainz_albumartistid": {
+            "multiple": true
+        },
+        "musicbrainz_releasegroupid": {
+            "multiple": false
+        },
+        "musicbrainz_workid": {
+            "multiple": false
+        },
+        "musicbrainz_trmid": {
+            "multiple": false
+        },
+        "musicbrainz_discid": {
+            "multiple": false
+        },
+        "acoustid_id": {
+            "multiple": false
+        },
+        "acoustid_fingerprint": {
+            "multiple": false
+        },
+        "musicip_puid": {
+            "multiple": false
+        },
+        "musicip_fingerprint": {
+            "multiple": false
+        },
+        "website": {
+            "multiple": false
+        },
+        "performer:instrument": {
+            "multiple": true,
+            "unique": true
+        },
+        "averageLevel": {
+            "multiple": false
+        },
+        "peakLevel": {
+            "multiple": false
+        },
+        "notes": {
+            "multiple": true,
+            "unique": false
+        },
+        "key": {
+            "multiple": false
+        },
+        "originalalbum": {
+            "multiple": false
+        },
+        "originalartist": {
+            "multiple": false
+        },
+        "discogs_artist_id": {
+            "multiple": true,
+            "unique": true
+        },
+        "discogs_release_id": {
+            "multiple": false
+        },
+        "discogs_label_id": {
+            "multiple": false
+        },
+        "discogs_master_release_id": {
+            "multiple": false
+        },
+        "discogs_votes": {
+            "multiple": false
+        },
+        "discogs_rating": {
+            "multiple": false
+        },
+        "replaygain_track_peak": {
+            "multiple": false
+        },
+        "replaygain_track_gain": {
+            "multiple": false
+        },
+        "replaygain_album_peak": {
+            "multiple": false
+        },
+        "replaygain_album_gain": {
+            "multiple": false
+        },
+        "replaygain_track_minmax": {
+            "multiple": false
+        },
+        "replaygain_album_minmax": {
+            "multiple": false
+        },
+        "replaygain_undo": {
+            "multiple": false
+        },
+        "description": {
+            "multiple": true
+        },
+        "longDescription": {
+            "multiple": false
+        },
+        "category": {
+            "multiple": true
+        },
+        "hdVideo": {
+            "multiple": false
+        },
+        "keywords": {
+            "multiple": true
+        },
+        "movement": {
+            "multiple": false
+        },
+        "movementIndex": {
+            "multiple": false
+        },
+        "movementTotal": {
+            "multiple": false
+        },
+        "podcastId": {
+            "multiple": false
+        },
+        "showMovement": {
+            "multiple": false
+        },
+        "stik": {
+            "multiple": false
+        }
+    },
+    "genres": [
+        "Blues",
+        "Classic Rock",
+        "Country",
+        "Dance",
+        "Disco",
+        "Funk",
+        "Grunge",
+        "Hip-Hop",
+        "Jazz",
+        "Metal",
+        "New Age",
+        "Oldies",
+        "Other",
+        "Pop",
+        "R&B",
+        "Rap",
+        "Reggae",
+        "Rock",
+        "Techno",
+        "Industrial",
+        "Alternative",
+        "Ska",
+        "Death Metal",
+        "Pranks",
+        "Soundtrack",
+        "Euro-Techno",
+        "Ambient",
+        "Trip-Hop",
+        "Vocal",
+        "Jazz+Funk",
+        "Fusion",
+        "Trance",
+        "Classical",
+        "Instrumental",
+        "Acid",
+        "House",
+        "Game",
+        "Sound Clip",
+        "Gospel",
+        "Noise",
+        "Alt. Rock",
+        "Bass",
+        "Soul",
+        "Punk",
+        "Space",
+        "Meditative",
+        "Instrumental Pop",
+        "Instrumental Rock",
+        "Ethnic",
+        "Gothic",
+        "Darkwave",
+        "Techno-Industrial",
+        "Electronic",
+        "Pop-Folk",
+        "Eurodance",
+        "Dream",
+        "Southern Rock",
+        "Comedy",
+        "Cult",
+        "Gangsta Rap",
+        "Top 40",
+        "Christian Rap",
+        "Pop/Funk",
+        "Jungle",
+        "Native American",
+        "Cabaret",
+        "New Wave",
+        "Psychedelic",
+        "Rave",
+        "Showtunes",
+        "Trailer",
+        "Lo-Fi",
+        "Tribal",
+        "Acid Punk",
+        "Acid Jazz",
+        "Polka",
+        "Retro",
+        "Musical",
+        "Rock & Roll",
+        "Hard Rock",
+        "Folk",
+        "Folk/Rock",
+        "National Folk",
+        "Swing",
+        "Fast-Fusion",
+        "Bebob",
+        "Latin",
+        "Revival",
+        "Celtic",
+        "Bluegrass",
+        "Avantgarde",
+        "Gothic Rock",
+        "Progressive Rock",
+        "Psychedelic Rock",
+        "Symphonic Rock",
+        "Slow Rock",
+        "Big Band",
+        "Chorus",
+        "Easy Listening",
+        "Acoustic",
+        "Humour",
+        "Speech",
+        "Chanson",
+        "Opera",
+        "Chamber Music",
+        "Sonata",
+        "Symphony",
+        "Booty Bass",
+        "Primus",
+        "Porn Groove",
+        "Satire",
+        "Slow Jam",
+        "Club",
+        "Tango",
+        "Samba",
+        "Folklore",
+        "Ballad",
+        "Power Ballad",
+        "Rhythmic Soul",
+        "Freestyle",
+        "Duet",
+        "Punk Rock",
+        "Drum Solo",
+        "A Cappella",
+        "Euro-House",
+        "Dance Hall",
+        "Goa",
+        "Drum & Bass",
+        "Club-House",
+        "Hardcore",
+        "Terror",
+        "Indie",
+        "BritPop",
+        "Negerpunk",
+        "Polsk Punk",
+        "Beat",
+        "Christian Gangsta Rap",
+        "Heavy Metal",
+        "Black Metal",
+        "Crossover",
+        "Contemporary Christian",
+        "Christian Rock",
+        "Merengue",
+        "Salsa",
+        "Thrash Metal",
+        "Anime",
+        "JPop",
+        "Synthpop",
+        "Abstract",
+        "Art Rock",
+        "Baroque",
+        "Bhangra",
+        "Big Beat",
+        "Breakbeat",
+        "Chillout",
+        "Downtempo",
+        "Dub",
+        "EBM",
+        "Eclectic",
+        "Electro",
+        "Electroclash",
+        "Emo",
+        "Experimental",
+        "Garage",
+        "Global",
+        "IDM",
+        "Illbient",
+        "Industro-Goth",
+        "Jam Band",
+        "Krautrock",
+        "Leftfield",
+        "Lounge",
+        "Math Rock",
+        "New Romantic",
+        "Nu-Breakz",
+        "Post-Punk",
+        "Post-Rock",
+        "Psytrance",
+        "Shoegaze",
+        "Space Rock",
+        "Trop Rock",
+        "World Music",
+        "Neoclassical",
+        "Audiobook",
+        "Audio Theatre",
+        "Neue Deutsche Welle",
+        "Podcast",
+        "Indie Rock",
+        "G-Funk",
+        "Dubstep",
+        "Garage Rock",
+        "Psybient"
+    ]
+}
