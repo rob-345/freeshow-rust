@@ -60,6 +60,34 @@ def run():
         assert shutil.which("ffmpeg") and shutil.which("ffprobe"), "Native media integration requires ffmpeg and ffprobe"
         media_fixture = temp / "原音 native probe.m4a"
         subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=8000:duration=1", "-c:a", "aac", "-b:a", "32k", "-threads", "1", "-y", str(media_fixture)], check=True, timeout=15)
+        audio_fixture = temp / "音量 Native tags.flac"
+        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=8000:duration=1", "-c:a", "flac", "-threads", "1", "-metadata", "title=Native 敬拜 café", "-metadata", "artist=Artist Ελληνικά", "-metadata", "replaygain_album_gain=+9.0 dB", "-metadata", "replaygain_track_peak=0.8", "-y", str(audio_fixture)], check=True, timeout=15)
+        expected_audio = json.loads(subprocess.check_output(["node", "tests/desktop/audio_oracle.mjs", str(audio_fixture)], cwd=ROOT, text=True, timeout=15))
+        assert expected_audio["common"]["title"] == "Native 敬拜 café" and expected_audio["replayGainMultiplier"] == 1.25
+
+        def assert_audio_metadata(actual, expected):
+            if isinstance(expected, float):
+                assert isinstance(actual, (float, int)) and abs(actual - expected) <= 2e-14 * max(1, abs(expected)), (actual, expected)
+            elif isinstance(expected, dict):
+                # WebKitWebDriver may reorder returned JSON object members.
+                # Observe application-visible ordering as arrays in the WebView.
+                assert isinstance(actual, dict) and set(actual) == set(expected), (actual, expected)
+                for key in expected:
+                    assert_audio_metadata(actual[key], expected[key])
+            elif isinstance(expected, list):
+                assert isinstance(actual, list) and len(actual) == len(expected), (actual, expected)
+                for value, reference in zip(actual, expected):
+                    assert_audio_metadata(value, reference)
+            else:
+                assert actual == expected, (actual, expected)
+
+        def audio_key_order(value, path=None):
+            path = [] if path is None else path
+            if isinstance(value, dict):
+                return [[path, list(value)]] + [entry for key, child in value.items() for entry in audio_key_order(child, [*path, key])]
+            if isinstance(value, list):
+                return [entry for index, child in enumerate(value) for entry in audio_key_order(child, [*path, index])]
+            return []
         env = dict(os.environ, FREESHOW_RUST_APP_DATA=str(temp / "app"),
                    XDG_DATA_HOME=str(temp / "xdg-data"), XDG_CACHE_HOME=str(temp / "xdg-cache"),
                    XDG_CONFIG_HOME=str(temp / "xdg-config"), GSETTINGS_BACKEND="memory",
@@ -646,13 +674,20 @@ def run():
                 media_result = script("""
                     return (async()=>{
                         const started=performance.now(), context=window.api.getRuntimeContext(), replies=[];
-                        for(const command of ['FFMPEG_CHECK','MEDIA_CODEC','MEDIA_TRACKS']) {
-                            const events=await window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context,listenerId:'native-'+command,data:{channel:command,data:{path:arguments[0],future:{kept:true}}}}});
-                            replies.push({command,events});
+                        function keyOrder(value,path=[]) {
+                            if(Array.isArray(value))return value.flatMap((child,index)=>keyOrder(child,[...path,index]));
+                            if(!value||typeof value!=='object')return [];
+                            const keys=Object.keys(value);
+                            return [[path,keys],...keys.flatMap(key=>keyOrder(value[key],[...path,key]))];
+                        }
+                        for(const command of ['FFMPEG_CHECK','MEDIA_CODEC','MEDIA_TRACKS','READ_AUDIO_METADATA']) {
+                            const data=command==='READ_AUDIO_METADATA'?{filePath:arguments[1]}:{path:arguments[0],future:{kept:true}};
+                            const events=await window.__TAURI__.core.invoke('ipc_dispatch',{request:{channel:'MAIN',context,listenerId:'native-'+command,data:{channel:command,data}}});
+                            replies.push({command,events,...(command==='READ_AUDIO_METADATA'?{keyOrder:keyOrder(events[0].message.data)}:{})});
                         }
                         return {context,replies,elapsedMs:performance.now()-started};
                     })();
-                """, str(media_fixture))
+                """, str(media_fixture), str(audio_fixture))
                 for reply in media_result["replies"]:
                     assert len(reply["events"]) == 1, reply
                     event = reply["events"][0]
@@ -662,6 +697,10 @@ def run():
                     result = event["message"]["data"]
                     if reply["command"] == "FFMPEG_CHECK":
                         assert result["installed"] is True and result["path"]
+                    elif reply["command"] == "READ_AUDIO_METADATA":
+                        assert_audio_metadata(result, expected_audio)
+                        assert reply["keyOrder"] == audio_key_order(expected_audio), reply
+                        (ARTIFACTS / "audio-metadata.json").write_text(json.dumps({"reply":event,"keyOrder":reply["keyOrder"],"original":expected_audio}, indent=2))
                     else:
                         assert result["path"] == str(media_fixture) and result["future"] == {"kept": True}
                         if reply["command"] == "MEDIA_CODEC":
@@ -675,6 +714,7 @@ def run():
                 assert media_status["activeJob"]["listenerId"] == "backup-responsiveness" and media_status["activeJob"]["phase"] == "backupCompression", media_status
                 (ARTIFACTS / "media-probe.json").write_text(json.dumps(media_result, indent=2))
                 steps.append("Native FFmpeg/AAC metadata replies preserve payload, context and correlation during ZIP compression")
+                steps.append("Native FLAC tags and clamped ReplayGain match actual original music-metadata during ZIP compression")
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as receiver:
                     receiver.bind(("127.0.0.1", 0))
                     receiver.settimeout(2)

@@ -4,6 +4,7 @@ mod drop;
 mod menu;
 mod output;
 
+use freeshow_audio::{AudioConfig, AudioService};
 use freeshow_core::{
     protocol::{Event, Request, RuntimeContext},
     runtime::Runtime,
@@ -23,6 +24,7 @@ struct AppState {
     library: LibraryService,
     outputs: output::OutputService,
     media: MediaService,
+    audio: AudioService,
     osc: OscSender,
     app_data: PathBuf,
     error_log: PathBuf,
@@ -146,6 +148,39 @@ async fn ipc_dispatch(
                 )],
             );
         }
+        if freeshow_audio::COMMANDS.contains(&command) {
+            let state = app.state::<AppState>();
+            state
+                .library
+                .contextualize(&request, &mut [])
+                .map_err(WireError::from)?;
+            let result = state
+                .audio
+                .dispatch(command, request.data["data"].clone())
+                .await
+                .map_err(|error| WireError::new(error.code(), error.to_string()))?;
+            if !result.diagnostics.is_empty() {
+                return Err(WireError::new(
+                    "audio_capability_error",
+                    result
+                        .diagnostics
+                        .iter()
+                        .map(|diagnostic| format!("{}: {}", diagnostic.code, diagnostic.message))
+                        .collect::<Vec<_>>()
+                        .join("; "),
+                ));
+            }
+            return contextual_events(
+                app,
+                &request,
+                vec![Event::reply(
+                    "MAIN",
+                    command,
+                    result.data,
+                    request.listener_id.clone(),
+                )],
+            );
+        }
         let reply = |data| {
             vec![Event::reply(
                 "MAIN",
@@ -194,7 +229,11 @@ async fn ipc_dispatch(
                 if !discard {
                     drained.map_err(WireError::from)?;
                 }
-                tokio::join!(state.media.shutdown(), state.osc.shutdown());
+                tokio::join!(
+                    state.media.shutdown(),
+                    state.audio.shutdown(),
+                    state.osc.shutdown()
+                );
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -518,10 +557,12 @@ fn main() {
             let osc = tauri::async_runtime::block_on(async {
                 OscSender::start(OscSenderConfig::default())
             })?;
+            let audio = AudioService::new(AudioConfig::default())?;
             app.manage(AppState {
                 library: LibraryService::start(runtime)?,
                 outputs,
                 media,
+                audio,
                 osc,
                 app_data,
                 error_log,

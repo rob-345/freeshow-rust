@@ -22,7 +22,7 @@ audio.shutdown().await;
 
 Dependencies: `lofty = 0.24.0` with default features disabled, `serde` with derive, `serde_json` with preserve_order, `thiserror` 2, Tokio sync/rt/time/macros, and `tokio-util` 0.7 rt. Lofty 0.25.4's disabled-compression configuration failed to compile because its disabled branch references unimported error types; 0.24.0 supports that configuration. No Node sidecar, runtime FFmpeg dependency, downloaded executable, or per-request thread/spawn-blocking pattern is used. [Lofty API documentation](https://docs.rs/lofty/0.24.0/lofty/) describes its format parsers.
 
-The initial crate uses a temporary standalone `[workspace]` and lock. The coordinator removes those, adds root/native dependencies, routes the command, applies context checks before/after the reply, awaits shutdown, and updates the feature harness binary default from the worker-local target. The pure `project_metadata(Value)` helper is for compatibility tests/trusted parser output; the bounded production endpoint is `AudioService::dispatch`.
+The worker initially used a temporary standalone workspace/lock. Coordinator integration removes those, adds root/native dependencies, routes the command, checks context before/after replies, surfaces capability diagnostics and awaits audio shutdown alongside media/OSC. The feature harness now defaults to the root workspace target. Required desktop CI executes the real audio corpus with FFmpeg availability enforced; the core matrix explicitly marks unavailable fixture generators unexecuted. The pure `project_metadata(Value)` helper is for compatibility tests/trusted parser output; the bounded production endpoint is `AudioService::dispatch`.
 
 ## Compatibility behavior
 

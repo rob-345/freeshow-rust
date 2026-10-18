@@ -9,9 +9,10 @@ import { parseFile } from "music-metadata"
 import { root, upstreamFunctions, clean } from "./oracle.mjs"
 
 const require = createRequire(import.meta.url)
-const binary = process.env.FREESHOW_AUDIO_BIN || path.join(root, "crates/freeshow-audio/target/debug", process.platform === "win32" ? "freeshow-audio.exe" : "freeshow-audio")
+const binary = process.env.FREESHOW_AUDIO_BIN || path.join(root, "target/debug", process.platform === "win32" ? "freeshow-audio.exe" : "freeshow-audio")
 const ffmpeg = process.env.FREESHOW_TEST_FFMPEG || "ffmpeg"
 const available = spawnSync(ffmpeg, ["-version"], { encoding: "utf8", timeout: 10000 }).status === 0
+if (process.env.FREESHOW_REQUIRE_MEDIA_TOOLS === "1") assert.equal(available, true, "Required real audio parity needs FFmpeg")
 const { getAudioMetadata } = upstreamFunctions("src/electron/audio/audio.ts", ["getAudioMetadata"], { parseFile })
 const projectOracle = (metadata) => upstreamFunctions("src/electron/audio/audio.ts", ["getAudioMetadata"], { parseFile: async () => metadata }).getAudioMetadata("injected-parser-boundary")
 function rust(cases) {

@@ -152,7 +152,11 @@
         "crates/freeshow-media/src/lib.rs",
         "crates/freeshow-media/src/process.rs",
         "crates/freeshow-media/src/metadata.rs",
-        "tests/desktop/smoke.py"
+        "tests/desktop/smoke.py",
+        "tests/parity/audio-metadata.test.mjs",
+        "crates/freeshow-audio/src/tests.rs",
+        "crates/freeshow-audio/src/preflight.rs",
+        "tests/desktop/audio_oracle.mjs"
       ],
       "remaining": [
         "video codecs and seeking",
@@ -161,9 +165,11 @@
         "Spotify and now-playing",
         "exhaustive MP4Box edge cases, unsupported VP8/VP9/VVC/encrypted/stxt configurations and uncommon AAC descriptors",
         "binary packaging/downloads, whole-request discovery deadlines, descendant cleanup and blocked-filesystem cancellation",
-        "Windows/macOS subprocess and native media workflows"
+        "Windows/macOS subprocess and native media workflows",
+        "audio metadata: other formats, ID3v1/APEv2/mixed-container priority, flagged/complex tags, alternate encodings and uncommon common-field postprocessing",
+        "audio parsing: hard OS/CPU cancellation, final thread/TLS join bounds, broad parser fuzzing and whole-process memory budgets"
       ],
-      "scope": "FFMPEG_CHECK plus MP4Box-compatible MEDIA_CODEC/MEDIA_TRACKS corpus through bounded supervised ffprobe; diagnostics preserve unsupported capabilities; native replies retain payload/context/correlation independently of library compression"
+      "scope": "FFMPEG_CHECK plus MP4Box-compatible MEDIA_CODEC/MEDIA_TRACKS corpus through bounded supervised ffprobe; diagnostics preserve unsupported capabilities; native replies retain payload/context/correlation independently of library compression; READ_AUDIO_METADATA common tags/ReplayGain compared with original music-metadata on 220 handler cases and 19 real files through two fixed parser workers, capped reads/operations/tag sizes/counts/depth/output and explicit unsupported/resource diagnostics"
     },
     {
       "id": "network-and-control",

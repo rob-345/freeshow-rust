@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "state": "downloaded-and-verified-not-measured",
+  "platform": "linux-x86_64",
+  "release": "v1.6.7-beta.2",
+  "upstreamCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+  "upstreamTagVerified": true,
+  "asset": {
+    "browser_download_url": "https://github.com/ChurchApps/FreeShow/releases/download/v1.6.7-beta.2/FreeShow-1.6.7-beta.2-amd64.deb",
+    "digest": "sha256:1e50bb99dc2c30e09bf6210b7e169ec7025a8d5a6f04627bb5bbb4832cd219da",
+    "name": "FreeShow-1.6.7-beta.2-amd64.deb",
+    "size": 132008364
+  },
+  "sha256VerifiedAgainstPublishedDigest": true,
+  "packagedApplication": {
+    "name": "freeshow",
+    "version": "1.6.7-beta.2",
+    "main": "build/electron/index.js"
+  },
+  "localExtractedRoot": "/home/rob-admin/.local/share/freeshow-electron-baseline/v1.6.7-beta.2/extracted",
+  "systemInstallationPerformed": false,
+  "applicationLaunched": false,
+  "measurements": null,
+  "limitations": [
+    "No performance comparison yet",
+    "Release-mode Rust build and identical isolated profiles/workloads are still required",
+    "Software-rendered and physical hardware results must remain separate"
+  ]
+}
