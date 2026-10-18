@@ -12,7 +12,7 @@ const require = createRequire(import.meta.url)
 const yauzl = require("yauzl"),
     yazl = require("yazl"),
     upath = require("upath")
-const binary = process.env.FREESHOW_IMPORTS_BIN || path.join(root, "crates/freeshow-imports/target/debug", process.platform === "win32" ? "freeshow-imports.exe" : "freeshow-imports")
+const binary = process.env.FREESHOW_IMPORTS_BIN || path.join(root, "target/debug", process.platform === "win32" ? "freeshow-imports.exe" : "freeshow-imports")
 function variables(filename, names) {
     const ast = ts.createSourceFile(filename, fs.readFileSync(path.join(root, filename), "utf8"), ts.ScriptTarget.Latest, true)
     return names.map((name) => (ast.statements.find((node) => ts.isVariableStatement(node) && node.declarationList.declarations.some((item) => item.name.getText(ast) === name))?.getText(ast) || assert.fail(`Missing original variable ${name}`)).replace(/^export\s+/, "")).join("\n")

@@ -10,6 +10,8 @@ const nativeDrop = ts.transpileModule(fs.readFileSync(path.join(root, "src/front
     compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 }
 }).outputText
 const nativeDropUrl = `data:text/javascript;base64,${Buffer.from(nativeDrop).toString("base64")}`
+const fileStats = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/fileStats.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+const fileStatsUrl = `data:text/javascript;base64,${Buffer.from(fileStats).toString("base64")}`
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -18,8 +20,37 @@ const javascript = ts
         }
     })
     .outputText.replace('from "./nativeDrop"', `from "${nativeDropUrl}"`)
+    .replace('from "./fileStats"', `from "${fileStatsUrl}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("READ_FOLDER delivery restores own undefined fields only after its library context is accepted", () => {
+    const context = { runtimeId: "browse", libraryGeneration: 2, dataPath: "/library" }
+    const seen = []
+    const { api, dispatch } = createRustApi(
+        async () => [],
+        (error) => {
+            throw error
+        },
+        context
+    )
+    api.receive("MAIN", (message) => seen.push(message))
+    const data = () => ({ normal: { isFolder: true, noMedia: null, unknown: null }, stub: { isFolder: true }, file: { isFolder: false, noMedia: null }, missing: null })
+    const current = data()
+    dispatch({ channel: "MAIN", message: { channel: "READ_FOLDER", data: current }, context })
+    assert.equal(Object.hasOwn(current.normal, "noMedia"), true)
+    assert.equal(current.normal.noMedia, undefined)
+    assert.equal(current.normal.unknown, null)
+    assert.equal(Object.hasOwn(current.stub, "noMedia"), false)
+    assert.equal(current.file.noMedia, null)
+    const stale = data()
+    dispatch({ channel: "MAIN", message: { channel: "READ_FOLDER", data: stale }, context: { ...context, libraryGeneration: 1 } })
+    assert.equal(stale.normal.noMedia, null)
+    assert.equal(seen.length, 1)
+    const other = data()
+    dispatch({ channel: "MAIN", message: { channel: "FILE_INFO", data: other }, context })
+    assert.equal(other.normal.noMedia, null)
+})
 
 test("interleaved media setting writes and queries retain their send order", async () => {
     let releaseFirst,

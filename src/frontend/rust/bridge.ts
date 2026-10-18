@@ -1,5 +1,6 @@
 // Preserve the existing preload API while the runtime moves to Rust.
 // This module has no dependency on Electron or on the Svelte app.
+import { hydrateFileBrowse } from "./fileStats"
 import { installNativeDrop } from "./nativeDrop"
 
 type Receiver = (data: any, listenerId?: string) => void
@@ -36,6 +37,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
             if (context && event.context.libraryGeneration > context.libraryGeneration && !(rootSelection && event.channel === "MAIN" && event.message.channel === "DATA_PATH")) return
             context = { ...event.context }
         }
+        if (event.channel === "MAIN" && event.message.channel === "READ_FOLDER") hydrateFileBrowse("READ_FOLDER", event.message.data)
         // Snapshot listeners: handlers may unregister themselves during dispatch.
         for (const receiver of [...(receivers.get(event.channel) || [])]) {
             try {

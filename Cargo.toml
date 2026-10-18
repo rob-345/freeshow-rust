@@ -1,5 +1,16 @@
 [workspace]
-members = ["crates/freeshow-core", "crates/freeshow-media", "crates/freeshow-network", "crates/freeshow-audio", "crates/freeshow-files", "crates/freeshow-system", "crates/freeshow-api"]
+members = [
+    "crates/freeshow-core",
+    "crates/freeshow-media",
+    "crates/freeshow-network",
+    "crates/freeshow-audio",
+    "crates/freeshow-files",
+    "crates/freeshow-system",
+    "crates/freeshow-api",
+    "crates/freeshow-imports",
+    "crates/freeshow-browse",
+    "crates/freeshow-import-effects",
+]
 exclude = ["src-tauri", "vendor/socketioxide"]
 resolver = "2"
 

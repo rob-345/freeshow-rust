@@ -8,6 +8,7 @@ Every test run has fresh application, WebKit, data, and cache directories.
 import base64
 from http.client import RemoteDisconnected
 import itertools
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -58,7 +59,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["receipt.json", "editor.png", "saved.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
@@ -81,6 +82,17 @@ def run():
         expected_audio = json.loads(subprocess.check_output(["node", "tests/desktop/audio_oracle.mjs", str(audio_fixture)], cwd=ROOT, text=True, timeout=15))
         assert expected_audio["common"]["title"] == "Native 敬拜 café" and expected_audio["replayGainMultiplier"] == 1.25
         expected_system = json.loads(subprocess.check_output(["node", "tests/desktop/system_oracle.mjs"], cwd=ROOT, text=True, timeout=15))
+        browse_folder = temp / "browse-fixtures 敬拜"
+        (browse_folder / "Nested").mkdir(parents=True)
+        browse_file = browse_folder / "worship.txt"
+        browse_file.write_text("Native browse 敬拜", encoding="utf-8")
+        (browse_folder / "worship-copy.txt").write_text("similar", encoding="utf-8")
+        (browse_folder / "Nested" / "child.txt").write_text("nested", encoding="utf-8")
+        # Relatime must not change directory atime between the source and native
+        # listing; this preserves the exact captured stat comparison.
+        for directory in [browse_folder / "Nested", browse_folder]:
+            os.utime(directory, ns=(2051222400000000000, directory.stat().st_mtime_ns))
+        expected_browse = json.loads(subprocess.check_output(["node", "tests/desktop/browse_oracle.mjs", str(browse_folder), str(browse_file)], cwd=ROOT, text=True, timeout=15))
 
         def assert_audio_metadata(actual, expected):
             if isinstance(expected, float):
@@ -453,6 +465,62 @@ def run():
             probe_api("initial", "Amazing grace")
             steps.append("Real REST on both ports and Socket.IO polling/WebSocket reach retained show and dynamic-value handlers")
 
+            # Import raw native/text formats through the retained Svelte
+            # converters, then persist with the real keyboard shortcut.
+            import_dir = temp / "import-fixtures"
+            import_dir.mkdir()
+            text_import = import_dir / "Native text 敬拜.txt"
+            text_import.write_text("[Verse]\n[C]Imported lyric 敬拜 🙌\nSecond line\n", encoding="utf-8")
+            chord_import = import_dir / "Native chords.cho"
+            chord_import.write_text("{title: Native ChordPro}\n{artist: Native Artist}\n[C]Chord lyric 敬拜 [G]world\n", encoding="utf-8")
+            csv_import = import_dir / "Native CSV.csv"
+            csv_import.write_text('"Native CSV lyric",敬拜\n"Second verse",world\n', encoding="utf-8")
+            native_import = json.loads(json.dumps(saved))
+            native_import[0] = "native-import-show"
+            native_import[1]["name"] = "Native show import"
+            native_import[1]["nativeFutureField"] = {"preserved":[42,"敬拜 🙌"]}
+            native_import_path = import_dir / "native.show"
+            native_import_path.write_text(json.dumps(native_import, ensure_ascii=False))
+            bundle_show = json.loads(json.dumps(native_import[1]))
+            bundle_show["name"] = "Native bundle show"
+            bundle_show["nativeMediaPath"] = "/missing/original/imported-image.png"
+            bundle_data = {"project":{"id":"native-import-project","name":"Native Import Project","shows":[{"id":"native-bundle-show","type":"show","name":"Native bundle show"}],"created":1},
+                           "shows":{"native-bundle-show":bundle_show},"files":[bundle_show["nativeMediaPath"]],"media":{bundle_show["nativeMediaPath"]:{"volume":0.5}},"nativeFutureBundle":{"preserved":True}}
+            media_bytes = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
+            project_import = import_dir / "native.project"
+            with zipfile.ZipFile(project_import, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr("data.json", json.dumps(bundle_data, ensure_ascii=False))
+                archive.writestr("imported-image.png", media_bytes)
+            import_fixture = {"requests":[{"id":kind,"paths":[str(path)]} for kind,path in [
+                ("txt",text_import),("chordpro",chord_import),("csv",csv_import),("freeshow",native_import_path),("freeshow_project",project_import)]],
+                "shows":[{"name":"Native text 敬拜","text":"Imported lyric 敬拜 🙌"},{"name":"Native ChordPro","text":"Chord lyric 敬拜"},{"name":"Native CSV","text":"Native CSV lyric"},
+                         {"name":"Native show import","text":"Amazing grace","unknownKey":"nativeFutureField","unknownValue":native_import[1]["nativeFutureField"]},
+                         {"name":"Native bundle show","text":"Amazing grace","unknownKey":"nativeFutureField","unknownValue":native_import[1]["nativeFutureField"]}]}
+            script((ROOT / "tests/desktop/imports_probe.js").read_text(), import_fixture)
+            wait(lambda: script("return window.__importsProbe.error || window.__importsProbe.readyToSave"), "Native import transport reaches retained text, ChordPro, CSV, show and project converters")
+            assert not script("return window.__importsProbe.error"), script("return window.__importsProbe")
+            if script("return !!document.querySelector('.popup button')"):
+                click(".popup button")
+                wait(lambda: script("return !document.querySelector('.popup')"), "Imported project alert dismissed")
+            save_shortcut()
+            script("window.__importsProbe.saveRequested=true")
+            imported = wait(lambda: script("return window.__importsProbe.done ? window.__importsProbe : null"), "Converted native imports saved through real Ctrl+S")
+            assert "error" not in imported, imported
+            assert len(imported["saved"]) == 5
+            raw_bundle = json.loads(next(item for item in imported["requests"] if item["id"] == "freeshow_project")["raw"][0]["content"])
+            installed_media = Path(raw_bundle["files"][0])
+            assert installed_media.is_relative_to(data_dir / "Imports" / "Projects"), installed_media
+            assert hashlib.sha256(installed_media.read_bytes()).hexdigest() == hashlib.sha256(media_bytes).hexdigest()
+            saved_bundle = json.loads((data_dir / "Shows" / "Native bundle show.show").read_text())
+            assert saved_bundle[1]["nativeMediaPath"] == str(installed_media)
+            assert raw_bundle["nativeFutureBundle"] == {"preserved":True}
+            imported["media"] = {"path":str(installed_media),"sha256":hashlib.sha256(media_bytes).hexdigest(),"bytes":len(media_bytes)}
+            (ARTIFACTS / "imports.json").write_text(json.dumps(imported, ensure_ascii=False, indent=2))
+            steps.append("Retained Svelte text, ChordPro, CSV, native-show and project import converters persist Unicode lyrics and unknown fields")
+            steps.append("Native project ZIP installs identical media bytes before publishing remapped paths and saves those references")
+            click_text("Rust parity test")
+            wait(lambda: script("return document.body.innerText.includes('Amazing grace')"), "Original show reselected after import checks")
+
             # Exercise real native dialogs and the renderer's IPC bridge.
             script("window.__nativeEvents=[];window.api.receive('MAIN',m=>window.__nativeEvents.push(m),'native-desktop-test');window.api.send('MAIN',{channel:'OPEN_FILE',data:{id:'native-file',channel:'NATIVE_TEST',title:'Read FreeShow Test File',filter:{name:'FreeShow',extensions:['show']},multiple:false,read:true}})")
             choose_native_file("Read FreeShow Test File", show_path)
@@ -810,6 +878,36 @@ def run():
                 api_backup_status = invoke("library_status")
                 assert api_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and api_backup_status["activeJob"]["phase"] == "backupCompression", api_backup_status
                 steps.append("Real REST and Socket.IO actions/dynamic values remain responsive during the same ZIP compression")
+                browse_result = script("""
+                    return (async()=>{
+                        const started=performance.now(),context=window.api.getRuntimeContext(),replies=[];
+                        for(const item of arguments[0]) {
+                            const listener='native-browse-'+item.command;
+                            const data=await new Promise((resolve,reject)=>{
+                                const timer=setTimeout(()=>{window.api.removeListener('MAIN',listener);reject(new Error('Native browse timeout: '+item.command));},2500);
+                                window.api.receive('MAIN',(message,listenerId)=>{
+                                    if(listenerId!==listener)return;
+                                    clearTimeout(timer);window.api.removeListener('MAIN',listener);resolve(message.data);
+                                },listener);
+                                window.api.send('MAIN',{channel:item.command,data:item.data},listener);
+                            });
+                            const shape=item.command==='READ_FOLDER'?Object.fromEntries(Object.entries(data).filter(([,entry])=>entry.isFolder).map(([key,entry])=>[key,{ownNoMedia:Object.hasOwn(entry,'noMedia'),noMediaType:typeof entry.noMedia}])):null;
+                            // WebDriver clones own undefined as null. Keep the
+                            // direct property proof above and normalize only
+                            // this JSON comparison to the source oracle.
+                            replies.push({command:item.command,data:JSON.parse(JSON.stringify(data)),shape});
+                        }
+                        return {context,current:window.api.getRuntimeContext(),replies,elapsedMs:performance.now()-started};
+                    })();
+                """, expected_browse["cases"])
+                assert browse_result["context"] == browse_result["current"] and browse_result["elapsedMs"] < 2500, browse_result
+                for actual, expected in zip(browse_result["replies"], expected_browse["cases"]):
+                    assert actual["command"] == expected["command"] and actual["data"] == expected["result"], (actual,expected)
+                    assert actual["shape"] == expected["shape"], (actual,expected)
+                browse_status = invoke("library_status")
+                assert browse_status["activeJob"]["listenerId"] == "backup-responsiveness" and browse_status["activeJob"]["phase"] == "backupCompression", browse_status
+                (ARTIFACTS / "browse.json").write_text(json.dumps({"source":expected_browse,"native":browse_result}, ensure_ascii=False, indent=2))
+                steps.append("Native file info, folder listing and UTF-16 similar paths match original handlers during ZIP compression, including own undefined folder fields")
                 (ARTIFACTS / "media-locate.json").write_text(json.dumps({"context":media_result["context"],"replies":[reply for reply in media_result["replies"] if reply["command"] in ["LOCATE_MEDIA_FILE","GET_MEDIA_FOLDER_PATH"]]}, indent=2))
                 (ARTIFACTS / "system-info.json").write_text(json.dumps({"context":media_result["context"],"source":expected_system,"capturedSource":captured_system,"replies":[reply for reply in media_result["replies"] if reply["command"] in ["GET_OS","GET_DEVICE_NAME","CHECK_RAM_USAGE"]]}, indent=2))
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as receiver:

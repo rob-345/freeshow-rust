@@ -5,7 +5,6 @@ edition = "2021"
 license = "GPL-3.0-only"
 repository = "https://github.com/rob-345/freeshow-rust"
 
-[workspace]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

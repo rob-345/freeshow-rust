@@ -26,6 +26,9 @@ pub enum Error {
     Unsupported(String),
     #[error("invalid request: {0}")]
     Invalid(String),
+    /// A trusted native preparation/commit failure with a stable IPC code.
+    #[error("{message}")]
+    NativeOperation { code: &'static str, message: String },
     #[error("invalid JSON: {0}")]
     Json(#[from] serde_json::Error),
     #[error("file operation failed: {0}")]
@@ -64,6 +67,7 @@ impl From<Error> for WireError {
                 Error::StaleLibrary { .. } => "stale_library",
                 Error::Unsupported(_) => "unsupported_command",
                 Error::Invalid(_) => "invalid_request",
+                Error::NativeOperation { code, .. } => code,
                 Error::Json(_) => "invalid_json",
                 Error::Io(_) => "io_error",
                 Error::Archive(_) => "archive_error",

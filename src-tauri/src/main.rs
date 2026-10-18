@@ -1,8 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod api;
+mod browse;
 mod drop;
 mod files;
+mod imports;
 mod menu;
 mod output;
 mod system;
@@ -31,6 +33,8 @@ struct AppState {
     media: MediaService,
     audio: AudioService,
     files: files::NativeFiles,
+    imports: imports::NativeImports,
+    browse: browse::NativeBrowse,
     system: SystemService,
     api: api::NativeApi,
     osc: OscSender,
@@ -58,6 +62,11 @@ fn library_status(app: tauri::AppHandle) -> Result<LibraryStatus, WireError> {
 #[tauri::command]
 fn output_status(app: tauri::AppHandle) -> Result<serde_json::Value, WireError> {
     app.state::<AppState>().outputs.status()
+}
+
+#[tauri::command]
+fn imports_status(app: tauri::AppHandle) -> serde_json::Value {
+    app.state::<AppState>().imports.status()
 }
 
 #[tauri::command]
@@ -115,6 +124,23 @@ async fn ipc_dispatch(
                 .state::<AppState>()
                 .api
                 .dispatch(request, window.label())
+                .await;
+        }
+        if browse::COMMANDS.contains(&command) {
+            let state = app.state::<AppState>();
+            return state
+                .browse
+                .dispatch(&state.library, request, window.label())
+                .await;
+        }
+        if imports::COMMANDS.contains(&command) {
+            let state = app.state::<AppState>();
+            return state
+                .imports
+                .dispatch(&state.library, request, window.label(), |event| {
+                    app.emit_to("main", "freeshow://ipc", event)
+                        .map_err(|error| error.to_string())
+                })
                 .await;
         }
         if system::COMMANDS.contains(&command) {
@@ -257,18 +283,31 @@ async fn ipc_dispatch(
                 if !discard {
                     drained.map_err(WireError::from)?;
                 }
-                let (_, _, _, files_result, system_result, api_result) = tokio::join!(
+                let (
+                    _,
+                    _,
+                    _,
+                    files_result,
+                    system_result,
+                    api_result,
+                    imports_result,
+                    browse_result,
+                ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
                     state.osc.shutdown(),
                     state.files.shutdown(),
                     state.system.shutdown(),
-                    state.api.shutdown()
+                    state.api.shutdown(),
+                    state.imports.shutdown(),
+                    state.browse.shutdown()
                 );
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
                     .map_err(|error| WireError::new("system_worker", error.to_string()))?;
                 api_result?;
+                imports_result?;
+                browse_result?;
                 state.allow_exit.store(true, Ordering::Release);
                 app.exit(0);
                 return Ok(vec![]);
@@ -356,6 +395,8 @@ async fn ipc_dispatch(
     if command == "UPDATE_DATA_PATH" {
         let context = library.context().map_err(WireError::from)?;
         app.state::<AppState>().files.context_changed(&context);
+        app.state::<AppState>().imports.context_changed(&context);
+        app.state::<AppState>().browse.context_changed(&context);
         if let Err(error) = app.state::<AppState>().api.context_changed().await {
             let mut alert = Event::reply(
                 "MAIN",
@@ -604,6 +645,12 @@ fn main() {
             let audio = AudioService::new(AudioConfig::default())?;
             let files = files::NativeFiles::new(FilesService::start(FilesLimits::default())?);
             let system = SystemService::start(SystemLimits::default())?;
+            let imports = imports::NativeImports::new(freeshow_imports::ImportService::new(
+                freeshow_imports::ImportConfig::default(),
+            )?);
+            let browse = browse::NativeBrowse::new(freeshow_browse::BrowseService::new(
+                freeshow_browse::BrowseConfig::default(),
+            )?);
             let library = LibraryService::start(runtime)?;
             let mut api_config = freeshow_api::ApiConfig::default();
             if let Ok(ip) = std::env::var("FREESHOW_RUST_API_BIND_IP") {
@@ -624,6 +671,8 @@ fn main() {
                 media,
                 audio,
                 files,
+                imports,
+                browse,
                 system,
                 api,
                 osc,
@@ -662,7 +711,8 @@ fn main() {
             runtime_context,
             library_status,
             output_status,
-            api_status
+            api_status,
+            imports_status
         ])
         .build(tauri::generate_context!())
         .expect("FreeShow Rust could not start")

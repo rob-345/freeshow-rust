@@ -1267,6 +1267,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-browse"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-core"
 version = "0.1.0"
 dependencies = [
@@ -1286,8 +1298,11 @@ version = "0.1.0"
 dependencies = [
  "freeshow-api",
  "freeshow-audio",
+ "freeshow-browse",
  "freeshow-core",
  "freeshow-files",
+ "freeshow-import-effects",
+ "freeshow-imports",
  "freeshow-media",
  "freeshow-network",
  "freeshow-system",
@@ -1298,6 +1313,8 @@ dependencies = [
  "tauri-plugin-opener",
  "tempfile",
  "tokio",
+ "tokio-util",
+ "zip",
 ]
 
 [[package]]
@@ -1310,6 +1327,32 @@ dependencies = [
  "tokio",
  "unicode-normalization",
  "url",
+]
+
+[[package]]
+name = "freeshow-import-effects"
+version = "0.1.0"
+dependencies = [
+ "freeshow-imports",
+ "libc",
+ "serde",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
+name = "freeshow-imports"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-util",
+ "zip",
 ]
 
 [[package]]

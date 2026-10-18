@@ -328,6 +328,9 @@ test("genuine Socket.IO polling, WebSocket and transport upgrade match source ac
             await until(() => wrong.received.length === 1)
             rows.push({ received: wrong.received, errors: wrong.errors })
             wrong.disconnect()
+            // Socket delivery and the harness event stdout are independent.
+            // Observe every connection/action before comparing their counts.
+            await until(() => server.events.filter((event) => event.kind === "connected").length === 4 && normalizedEvents(server.events).length === 6)
             outputs.push({ rows, triggers: normalizedEvents(server.events), connected: server.events.filter((e) => e.kind === "connected").length })
             stopAuto()
             await server.stop()
@@ -713,9 +716,17 @@ test("per-client request, HTTP inflated-body and Socket.IO message limits fail e
             assert.equal(first.received[0].status, 503)
             second.emit("data", { action: "get_other" })
             await until(async () => (await service.request({ op: "stats" })).value.pending_replies === 2)
-            const events = service.events.filter((event) => event.kind === "trigger")
+            // A stats reply can precede the queued trigger's stdout record.
+            // Complete both observed requests, not a partial event snapshot.
+            const events = await until(() => {
+                const received = service.events.filter((event) => event.kind === "trigger")
+                return received.length === 2 ? received : undefined
+            })
+            assert.deepEqual(events.map((event) => event.data.action).sort(), ["get_first", "get_other"])
             for (const event of events) assert.equal((await service.complete({ ...event.data, data: true }, event.generation)).ok, true)
             await until(() => first.received.length === 2 && second.received.length === 1)
+            assert.equal(first.received[1].data, true)
+            assert.equal(second.received[0].data, true)
             first.emit("data", { action: "next", text: "x".repeat(2048) })
             await until(() => !first.connected)
             const bomb = gzipSync(JSON.stringify({ action: "next", text: "x".repeat(102400) }))
