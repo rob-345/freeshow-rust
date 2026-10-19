@@ -404,22 +404,40 @@ def run():
             if virtual_show:
                 materialized = script(r"""
                     return (async () => {
-                        const text=arguments[0], viewport=document.querySelector('.drawer svelte-virtual-list-viewport');
-                        if (!viewport || viewport.clientHeight<=0) return false;
+                        const text=arguments[0], rowSelector='button[class~="#drawer_show_button"]';
                         const normalize=value=>value.replace(/\s+/g,' ').trim();
-                        const found=()=>Array.from(viewport.querySelectorAll('*')).some(node=>
-                            normalize(node.textContent||'')===text &&
-                            !Array.from(node.children).some(child=>normalize(child.textContent||'')===text));
-                        for(let step=0;step<64;step++) {
-                            if(found()) return true;
-                            const end=Math.max(0,viewport.scrollHeight-viewport.clientHeight);
-                            const top=Math.min(step*Math.max(30,viewport.clientHeight*0.75),end);
-                            viewport.scrollTop=top;
-                            viewport.dispatchEvent(new Event('scroll'));
+                        const visible=viewport=>{
+                            if(!viewport.isConnected || viewport.clientHeight<=0) return false;
+                            const rect=viewport.getBoundingClientRect(), style=getComputedStyle(viewport);
+                            return rect.width>0 && rect.height>0 && style.display!=='none' && style.visibility!=='hidden';
+                        };
+                        // Navigation has its own Categories VirtualList. Only
+                        // the retained Content .main owns actual show buttons.
+                        let previous=null, step=0, scrolls=0;
+                        for(let attempt=0;attempt<128;attempt++) {
+                            const viewport=Array.from(document.querySelectorAll('.drawer > .content > .main svelte-virtual-list-viewport'))
+                                .find(node=>visible(node) && node.querySelector(rowSelector));
+                            if(viewport) {
+                                if(viewport!==previous) { previous=viewport;step=0; }
+                                const found=Array.from(viewport.querySelectorAll(rowSelector)).some(button=>
+                                    Array.from(button.querySelectorAll('*')).some(node=>normalize(node.textContent||'')===text &&
+                                        !Array.from(node.children).some(child=>normalize(child.textContent||'')===text)));
+                                if(found) return true;
+                                if(scrolls<64) {
+                                    const end=Math.max(0,viewport.scrollHeight-viewport.clientHeight);
+                                    const top=Math.min(step++*Math.max(30,viewport.clientHeight*0.75),end);
+                                    if(top!==viewport.scrollTop || step===1) {
+                                        viewport.scrollTop=top;
+                                        viewport.dispatchEvent(new Event('scroll'));
+                                        scrolls++;
+                                    }
+                                }
+                            }
+                            // Tab content/offsetHeight and keyed rows settle
+                            // asynchronously; requery the live DOM after paint.
                             await new Promise(resolve=>setTimeout(resolve,25));
-                            if(top>=Math.max(0,viewport.scrollHeight-viewport.clientHeight) && step>0) return found();
                         }
-                        return found();
+                        return false;
                     })()
                 """, text)
                 assert materialized, "Show not materialized within bounded ordinary viewport scan: " + text
