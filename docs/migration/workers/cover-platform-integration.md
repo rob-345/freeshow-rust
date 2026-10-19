@@ -42,8 +42,16 @@ pending-write/backup Quit. The editor retains 55 expected diagnostics. The
 portable JPEG/parser suite remains current because this integration changes
 only native modules, platform dependency features, tests and documentation.
 
-The dedicated 12 macOS fixtures and 12 Windows async fixtures/four Windows unit
-checks have only been cross-compiled locally. Native CI execution remains
+The first actual [platform CI run](https://github.com/rob-345/freeshow-rust/actions/runs/39247046026)
+passes five jobs: all three core jobs, native macOS and Linux desktop. Native
+macOS logs confirm all twelve dedicated filesystem cases, three Source cases,
+and the actual three-port TCP/STOP lifetime test. Windows passed fourteen of
+sixteen cases in its dedicated cover target; missing-Audio creation and a
+parent-rename fixture assumption failed, and subsequent native targets were
+not reached. The fixture now replaces the actual Audio namespace while retaining
+its genuine earlier folder failure. Diagnostic assertions expose actual mkdir
+NTSTATUS/Win32 evidence before selecting a production fix. No test is skipped
+and no unobserved status is relabeled Missing. A corrected complete run remains
 required. These checks do not establish foreign browser, physical delivery,
 immutable file snapshots, forced cancellation of synchronous OS calls, arbitrary
 network/reparse volumes, or complete Node path/error equivalence. Backend-specific

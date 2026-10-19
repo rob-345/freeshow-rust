@@ -15,9 +15,10 @@ captures only the selected library and an actual per-run emitter; the fixed
 `Audio/NowPlayingCover.png` path never comes from HTTP or renderer input. Two
 existing file workers retain preparation, pre-header validation, streaming and
 independent notification cleanup through actual body disposition and thread
-joins. Linux has actual runtime evidence. Reviewed macOS and Windows anchored
-backends are now integrated locally, with actual OS execution still required;
-other systems remain explicitly unsupported.
+joins. Linux and the tested Darwin subset have actual native runtime evidence.
+The Windows backend is integrated but its first native run exposed directory
+creation and fixture failures under correction. Other systems remain explicitly
+unsupported.
 [Native contract and gaps](native-remote-covers.md).
 
 The source-compared HTTP planner preserves tested GET/HEAD, ranges, conditional
@@ -102,8 +103,17 @@ receipt retains 54 expected diagnostics.
 The newer local platform-cover integration preserves the same
 owners and adds dedicated Darwin/Windows tests, actual Source/TCP host coverage
 on both platforms, and a Windows HTTP timestamp gate to the source-certified
-unsigned-seconds interval. Cross-compiled tests are not native filesystem
-verification. [Platform integration](workers/cover-platform-integration.md).
+unsigned-seconds interval. The first
+[platform CI run](https://github.com/rob-345/freeshow-rust/actions/runs/39247046026)
+passed all three core jobs, native macOS and the full Linux desktop job. Actual
+macOS logs confirm twelve dedicated filesystem cases, three Source cases and
+the real three-port TCP/STOP lifetime test. Windows passed fourteen of sixteen
+cases in its dedicated cover target, then failed missing-Audio creation and a
+parent-rename fixture assumption. Later native targets were not reached.
+The fixture now uses actual Audio namespace replacement, and diagnostic assertions
+retain the real mkdir NTSTATUS before choosing a production correction. No test
+is skipped and the Missing status set is unchanged.
+[Platform integration](workers/cover-platform-integration.md).
 
 Now-playing remains partial: broader image/metadata/resize fidelity, root
 common-picture insertion position, fixed-cover HTTP parser/date/error-rendering

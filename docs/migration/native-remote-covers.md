@@ -2,11 +2,11 @@
 
 The Rust desktop now configures a native fixed-cover source for each retained
 MAIN START run. REMOTE, STAGE and CONTROLLER use the same bounded source contract.
-The anchored filesystem backend has actual runtime evidence on Linux. The newer
-local integration also dispatches to reviewed Darwin and Windows backends with
-dedicated native tests; actual OS execution remains pending. Other systems return
-an explicit unsupported preparation. Compilation is not filesystem or GUI parity.
-Complete remote-cover parity remains unfinished.
+The anchored filesystem backend has actual runtime evidence on Linux and the
+tested Darwin subset. The new Windows backend's first native CI run exposed
+directory creation and fixture failures under correction. Other systems return
+an explicit unsupported preparation. Compilation is not filesystem or GUI
+parity. Complete remote-cover parity remains unfinished.
 
 `remote_cover.rs` captures the full native library context, the existing ordered
 library owner, fixed-file preparation and independent folder notifications. No
