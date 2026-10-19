@@ -34,10 +34,11 @@ async function compare(folder, name, bytes) {
     const metadata = await parseFile(file)
     const actual = native([{ op: "covers", path: file }])[0]
     assert.equal(actual.error, undefined, JSON.stringify(actual))
-    const expected = (metadata.common.picture || []).map(({ data, ...fields }) => {
+    const expected = (metadata.common.picture || []).map((picture) => {
+        const { data, ...fields } = picture
         const undefinedFields = Object.keys(fields).filter((k) => fields[k] === undefined)
         for (const k of undefinedFields) delete fields[k]
-        return { fields, undefinedFields, data: { base64: data.toString("base64"), length: data.length, sha256: hash(data) } }
+        return { fields, undefinedFields, fieldOrder: Object.keys(picture), data: { base64: data.toString("base64"), length: data.length, sha256: hash(data) } }
     })
     assert.deepEqual(actual.covers, expected, name)
     counts.sourceFiles++

@@ -82,7 +82,13 @@ fn fixed_mime(mime: &str, data: &[u8], id3: bool) -> Result<Option<String>> {
     }
     Ok(Some(mime))
 }
-fn append(out: &mut Vec<Picture>, fields: Value, data: &[u8], total: &mut usize) -> Result<()> {
+fn append(
+    out: &mut Vec<Picture>,
+    fields: Value,
+    data: &[u8],
+    total: &mut usize,
+    field_order: &'static [&'static str],
+) -> Result<()> {
     if out.len() >= 8 {
         return Err(resource("More than eight pictures"));
     }
@@ -116,6 +122,7 @@ fn append(out: &mut Vec<Picture>, fields: Value, data: &[u8], total: &mut usize)
         fields,
         data: data.to_vec(),
         undefined_fields,
+        field_order,
     });
     Ok(())
 }
@@ -200,7 +207,13 @@ fn apic(body: &[u8], out: &mut Vec<Picture>, total: &mut usize) -> Result<()> {
     let desc = description(&body[start..desc_end], encoding)?;
     let mut fields = json!({"format":mime,"description":desc});
     picture_type(&mut fields, kind);
-    append(out, fields, data, total)
+    append(
+        out,
+        fields,
+        data,
+        total,
+        &["format", "type", "description", "data"],
+    )
 }
 fn flac_picture(body: &[u8], out: &mut Vec<Picture>, total: &mut usize) -> Result<()> {
     let mut pos = 0;
@@ -246,7 +259,22 @@ fn flac_picture(body: &[u8], out: &mut Vec<Picture>, total: &mut usize) -> Resul
     };
     let mut fields = json!({"format":mime,"description":desc,"width":width,"height":height,"colour_depth":depth,"indexed_color":indexed});
     picture_type(&mut fields, kind);
-    append(out, fields, data, total)
+    append(
+        out,
+        fields,
+        data,
+        total,
+        &[
+            "type",
+            "format",
+            "description",
+            "width",
+            "height",
+            "colour_depth",
+            "indexed_color",
+            "data",
+        ],
+    )
 }
 pub(crate) fn read(trusted: TrustedMediaFile, check: &Check) -> Result<Vec<Picture>> {
     check.check()?;

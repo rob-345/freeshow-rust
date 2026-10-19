@@ -10,7 +10,7 @@ fn encode(data: &[u8]) -> Value {
 fn project(reply: &Reply) -> Value {
     match reply {
         Reply::Covers(pictures) => {
-            json!({"covers":pictures.iter().map(|p|json!({"fields":p.fields,"data":encode(&p.data),"undefinedFields":p.undefined_fields})).collect::<Vec<_>>()})
+            json!({"covers":pictures.iter().map(|p|json!({"fields":p.fields,"data":encode(&p.data),"undefinedFields":p.undefined_fields,"fieldOrder":p.field_order})).collect::<Vec<_>>()})
         }
         Reply::Image { width, height } => json!({"width":width,"height":height}),
         Reply::Bytes { data, diagnostics } => {

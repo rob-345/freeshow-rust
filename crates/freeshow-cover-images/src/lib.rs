@@ -147,6 +147,10 @@ pub struct Picture {
     pub fields: Value,
     pub data: Vec<u8>,
     pub undefined_fields: Vec<&'static str>,
+    /// Actual source own-key order, including undefined properties and data.
+    /// `fields` alone is a JSON projection and cannot retain that order.
+    #[serde(skip)]
+    pub field_order: &'static [&'static str],
 }
 #[derive(Debug, Serialize)]
 pub enum Reply {

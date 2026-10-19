@@ -3,7 +3,6 @@ name = "freeshow-cover-images"
 version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-only"
-[workspace]
 [dependencies]
 png = "=0.18.1"
 image = { version = "=0.25.10", default-features = false, features = ["jpeg"] }
@@ -17,6 +16,3 @@ flate2 = "1"
 [[bin]]
 name = "freeshow-cover-images-parity"
 path = "src/bin/parity.rs"
-[profile.dev]
-debug = 0
-incremental = false
