@@ -1113,3 +1113,128 @@ async fn settled_supervisor_panic_is_collected_once_and_remains_sticky_for_retry
     assert_eq!(first.message, second.message);
     assert_eq!(f.native.status()["terminal"]["code"], "timecode_worker");
 }
+
+async fn blocked_terminal_context_failure(publisher_failure: bool) {
+    let mut f = Fixture::new(
+        TimecodeHostConfig {
+            lifecycle_timeout: Duration::from_millis(200),
+            delivery_timeout: Duration::from_millis(20),
+            ports: freeshow_midi_ports::Config {
+                shutdown_timeout: Duration::from_secs(3),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        false,
+    );
+    f.start("receive", "MTC", 25.0).await;
+    wait(|| f.native.status()["router"]["ownedListeners"] == 1).await;
+    let control = f.controls()[0].clone();
+    control.block("close");
+    let gate = publisher_failure.then(|| f.native.test_hold_supervisor_exit());
+    struct ReleaseOnExit {
+        control: controlled::Controlled,
+        gate: Option<Arc<SupervisorExitGate>>,
+    }
+    impl Drop for ReleaseOnExit {
+        fn drop(&mut self) {
+            self.control.release();
+            if let Some(gate) = &self.gate {
+                gate.release.cancel();
+            }
+        }
+    }
+    let _release = ReleaseOnExit {
+        control: control.clone(),
+        gate: gate.clone(),
+    };
+    if publisher_failure {
+        f.events.close();
+    }
+    control.emit("in", &[250]);
+    if !publisher_failure {
+        let event = f.event().await;
+        assert_eq!(event.event.message.channel, "TIMECODE_VALUE");
+        // Intentionally leave the genuine private delivery completion missing.
+    }
+    wait(|| f.native.status()["closing"] == true && control.entered()).await;
+    let first = f.native.status()["terminal"].clone();
+    let expected = if publisher_failure {
+        "timecode_publisher"
+    } else {
+        "timecode_delivery_timeout"
+    };
+    assert_eq!(first["code"], expected);
+    assert_eq!(f.active.load(Ordering::Acquire), 1);
+    let native = f.native.clone();
+    let observer = tokio::spawn(async move { native.context_changed().await });
+    tokio::time::sleep(Duration::from_millis(10)).await;
+    assert!(
+        !observer.is_finished(),
+        "terminal failure cannot acknowledge a blocked real close"
+    );
+    observer.abort();
+    assert!(observer.await.unwrap_err().is_cancelled());
+    assert_eq!(
+        f.native.context_changed().await.unwrap_err().code,
+        "timecode_retirement_timeout"
+    );
+    assert_eq!(f.active.load(Ordering::Acquire), 1);
+    assert_eq!(f.native.status()["retiring"], true);
+    let native = f.native.clone();
+    let retry = tokio::spawn(async move { native.context_changed().await });
+    tokio::time::sleep(Duration::from_millis(10)).await;
+    assert!(!retry.is_finished());
+    control.release();
+    if let Some(gate) = gate {
+        wait(|| gate.entered.load(Ordering::Acquire)).await;
+        assert_eq!(f.active.load(Ordering::Acquire), 0);
+        assert!(
+            !retry.is_finished(),
+            "Progress.complete cannot replace the real supervisor join"
+        );
+        retry.abort();
+        assert!(retry.await.unwrap_err().is_cancelled());
+        assert_eq!(
+            f.native.context_changed().await.unwrap_err().code,
+            "timecode_retirement_timeout"
+        );
+        gate.release.cancel();
+    } else {
+        let result = retry.await.unwrap().unwrap_err();
+        assert_eq!(result.code, expected);
+        assert_eq!(result.message, first["message"].as_str().unwrap());
+    }
+    assert_eq!(f.active.load(Ordering::Acquire), 0);
+    assert_eq!(
+        f.native.status()["lastRetired"]["allPortOwnersJoined"],
+        true
+    );
+    for _ in 0..2 {
+        let result = f.native.context_changed().await.unwrap_err();
+        assert_eq!(result.code, expected);
+        assert_eq!(result.message, first["message"].as_str().unwrap());
+    }
+    assert_eq!(f.native.shutdown().await.unwrap_err().code, expected);
+}
+
+#[tokio::test]
+async fn missing_completion_context_observers_wait_for_real_close_and_retain_original_failure() {
+    blocked_terminal_context_failure(false).await;
+}
+
+#[tokio::test]
+async fn publisher_failure_context_observers_survive_abandonment_and_actual_supervisor_join() {
+    blocked_terminal_context_failure(true).await;
+}
+
+#[tokio::test]
+async fn context_change_after_clean_terminal_shutdown_is_closed_and_never_renews() {
+    let f = Fixture::new(TimecodeHostConfig::default(), false);
+    f.native.shutdown().await.unwrap();
+    for _ in 0..2 {
+        let result = f.native.context_changed().await.unwrap_err();
+        assert_eq!(result.code, "timecode_shutdown");
+    }
+    f.native.shutdown().await.unwrap();
+}

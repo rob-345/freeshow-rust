@@ -48,6 +48,18 @@ fn error(code: &'static str, text: impl ToString) -> WireError {
     }
     WireError::new(code, &text[..end])
 }
+fn closed_context_error() -> WireError {
+    error(
+        "timecode_shutdown",
+        "Terminal timecode cannot renew a context",
+    )
+}
+fn context_timeout_error() -> WireError {
+    error(
+        "timecode_retirement_timeout",
+        "Actual owners remain retained; retry retirement",
+    )
+}
 fn re(e: route::Error) -> WireError {
     error(e.code, e.message)
 }
@@ -443,32 +455,52 @@ impl NativeTimecode {
         state
     }
     pub async fn context_changed(&self) -> Result<()> {
-        let current = self
-            .inner
-            .shared
-            .library
-            .context()
-            .map_err(|e| error("timecode_context", e))?;
-        {
-            let mut p = lock(&self.inner.shared.pending);
-            if p.as_ref().is_some_and(|p| p.context != current) {
-                p.take();
+        tokio::time::timeout(self.inner.shared.config.lifecycle_timeout, async {
+            let complete = self.inner.done.borrow().complete;
+            if self.inner.shared.closing.load(Ordering::Acquire) && complete {
+                return self.terminal_context_change().await;
             }
-        }
-        let (reply, receive) = oneshot::channel();
-        self.inner
-            .control
-            .try_send(Change { reply })
-            .map_err(|_| error("timecode_busy", "Lifecycle slot is occupied"))?;
-        tokio::time::timeout(self.inner.shared.config.lifecycle_timeout, receive)
-            .await
-            .map_err(|_| {
-                error(
-                    "timecode_retirement_timeout",
-                    "Actual owners remain retained; retry retirement",
-                )
-            })?
-            .map_err(|_| error("timecode_worker", "Retirement owner ended"))?
+            let current = match self.inner.shared.library.context() {
+                Ok(current) => current,
+                Err(_) if self.inner.shared.closing.load(Ordering::Acquire) => {
+                    return self.terminal_context_change().await;
+                }
+                Err(e) => return Err(error("timecode_context", e)),
+            };
+            {
+                let mut p = lock(&self.inner.shared.pending);
+                if p.as_ref().is_some_and(|p| p.context != current) {
+                    p.take();
+                }
+            }
+            let (reply, receive) = oneshot::channel();
+            if self.inner.control.try_send(Change { reply }).is_err() {
+                if self.inner.shared.closing.load(Ordering::Acquire) {
+                    return self.terminal_context_change().await;
+                }
+                return Err(error("timecode_busy", "Lifecycle slot is occupied"));
+            }
+            let result = receive.await;
+            if self.inner.shared.closing.load(Ordering::Acquire) {
+                // A terminal reply is an actual drain observation, never a
+                // successful context renewal. Retain/join the real supervisor
+                // before returning its original sticky failure to this caller.
+                return self.terminal_context_change().await;
+            }
+            result.map_err(|_| error("timecode_worker", "Retirement owner ended"))?
+        })
+        .await
+        .map_err(|_| context_timeout_error())?
+    }
+    async fn terminal_context_change(&self) -> Result<()> {
+        self.shutdown().await.map_err(|e| {
+            if e.code == "timecode_shutdown_timeout" {
+                context_timeout_error()
+            } else {
+                e
+            }
+        })?;
+        Err(closed_context_error())
     }
     pub async fn shutdown(&self) -> Result<()> {
         self.inner.shared.closing.store(true, Ordering::Release);
@@ -1886,10 +1918,18 @@ async fn supervise(
                 progress.send_replace(Progress {
                     attempt,
                     complete: true,
-                    error: first.map(|e| (e.code, e.message)),
+                    error: first.as_ref().map(|e| (e.code, e.message.clone())),
                 });
+                let outcome = || {
+                    Err(first
+                        .as_ref()
+                        .map_or_else(closed_context_error, |e| error(e.code, &e.message)))
+                };
                 if let Some(change) = change.take() {
-                    let _ = change.reply.send(Ok(()));
+                    let _ = change.reply.send(outcome());
+                }
+                while let Ok(change) = changes.try_recv() {
+                    let _ = change.reply.send(outcome());
                 }
                 run.snapshot(&shared);
                 #[cfg(test)]
