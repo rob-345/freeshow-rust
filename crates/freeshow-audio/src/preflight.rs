@@ -35,7 +35,7 @@ fn block<R: Read>(
 pub(crate) fn prefix<R: Read + Seek>(
     reader: &mut R,
     config: &AudioConfig,
-) -> Result<(), AudioError> {
+) -> Result<crate::id3_text::Plan, AudioError> {
     let mut header = [0; 10];
     read(reader, &mut header)?;
     if header.starts_with(&[0x30, 0x26, 0xb2, 0x75, 0x8e, 0x66, 0xcf, 0x11])
@@ -45,13 +45,36 @@ pub(crate) fn prefix<R: Read + Seek>(
             "ASF/Matroska metadata".into(),
         ));
     }
+    let mut plan = crate::id3_text::Plan::default();
     if &header[..3] == b"ID3" {
         let size = sync(&header[6..10])?;
         let bytes = block(reader, size, config)?;
         id3(&header, &bytes, config)?;
+        plan = crate::id3_text::Plan::leading(&header, &bytes, config)?;
+        if plan.active() {
+            if header[3] == 4 && header[5] & 0x10 != 0 {
+                seek(reader, SeekFrom::Current(10))?;
+            }
+            let mut next = [0; 3];
+            let mut count = 0;
+            while count < next.len() {
+                let n = reader
+                    .read(&mut next[count..])
+                    .map_err(|_| AudioError::Input)?;
+                if n == 0 {
+                    break;
+                }
+                count += n;
+            }
+            if count == 3 && &next == b"ID3" {
+                return Err(AudioError::UnsupportedVariant(
+                    "multiple leading ID3 tags with timestamp text recovery".into(),
+                ));
+            }
+        }
     }
     seek(reader, SeekFrom::Start(0))?;
-    Ok(())
+    Ok(plan)
 }
 fn id3(header: &[u8], bytes: &[u8], config: &AudioConfig) -> Result<(), AudioError> {
     if !matches!(header[3], 3 | 4) || header[5] & 0xc0 != 0 {

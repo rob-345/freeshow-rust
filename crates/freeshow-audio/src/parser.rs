@@ -158,7 +158,9 @@ fn parse_reader_hint<R: Read + Seek>(
     config: &AudioConfig,
     expected: Option<AudioFormat>,
 ) -> Result<Js, AudioError> {
-    crate::preflight::prefix(reader, config)?;
+    let text_plan = crate::preflight::prefix(reader, config)?;
+    let mut view = text_plan.view(reader);
+    let reader = &mut view;
     let file_type = Probe::new(&mut *reader)
         .guess_file_type()
         .map_err(parser_error)?
@@ -195,13 +197,13 @@ fn parse_reader_hint<R: Read + Seek>(
                 ));
             }
             if let Some(tag) = file.id3v2() {
-                id3(&mut collector, tag)?;
+                id3(&mut collector, tag, &text_plan)?;
             }
         }
         FileType::Flac => {
             let file = lofty::flac::FlacFile::read_from(reader, options).map_err(parser_error)?;
             if let Some(tag) = file.id3v2() {
-                id3(&mut collector, tag)?;
+                id3(&mut collector, tag, &text_plan)?;
             }
             if let Some(tag) = file.vorbis_comments() {
                 for (key, value) in tag.items() {
@@ -288,7 +290,7 @@ fn parse_reader_hint<R: Read + Seek>(
                 }
             }
             if let Some(tag) = file.id3v2() {
-                id3(&mut collector, tag)?;
+                id3(&mut collector, tag, &text_plan)?;
             }
         }
         _ => {
@@ -312,12 +314,18 @@ fn parser_error(error: impl std::fmt::Display) -> AudioError {
         AudioError::Input
     }
 }
-fn id3(collector: &mut Collector, tag: &Id3v2Tag) -> Result<(), AudioError> {
+fn id3(
+    collector: &mut Collector,
+    tag: &Id3v2Tag,
+    text_plan: &crate::id3_text::Plan,
+) -> Result<(), AudioError> {
     if tag.original_version() == Id3v2Version::V2 {
         return Err(AudioError::UnsupportedVariant("ID3v2.2".into()));
     }
     for frame in tag {
-        let mut id = frame.id_str().to_owned();
+        let restored = text_plan.original(frame.id_str());
+        let recovered = restored != frame.id_str();
+        let mut id = restored.to_owned();
         if id == "PCST" {
             return Err(AudioError::UnsupportedVariant(
                 "ID3 podcast flag frame semantics".into(),
@@ -326,7 +334,9 @@ fn id3(collector: &mut Collector, tag: &Id3v2Tag) -> Result<(), AudioError> {
         let values = match frame {
             Frame::Text(text) => {
                 let text = text.value.trim_end_matches('\0');
-                let split = if matches!(id.as_str(), "TRCK" | "TPOS") {
+                let split = if matches!(id.as_str(), "TRCK" | "TPOS")
+                    || (recovered && tag.original_version() == Id3v2Version::V3)
+                {
                     vec![text]
                 } else if tag.original_version() == Id3v2Version::V3
                     && matches!(
@@ -342,7 +352,11 @@ fn id3(collector: &mut Collector, tag: &Id3v2Tag) -> Result<(), AudioError> {
                 split
                     .into_iter()
                     .flat_map(|value| {
-                        let value = value.trim_matches(js::whitespace);
+                        let value = if recovered && tag.original_version() == Id3v2Version::V3 {
+                            value
+                        } else {
+                            value.trim_matches(js::whitespace)
+                        };
                         if id == "TCON" {
                             common::genre(value)
                         } else {

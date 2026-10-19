@@ -1,5 +1,6 @@
 //! Native, bounded audio tag parsing and compatibility projection for READ_AUDIO_METADATA.
 mod common;
+mod id3_text;
 mod js;
 mod opened;
 mod parser;
