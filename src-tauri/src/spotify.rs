@@ -198,11 +198,8 @@ impl NativeSpotify {
             }
         }
         state.commands.retain(|(_, control)| !control.settled());
-        for (context, control) in &state.commands {
-            if context != current {
-                control.cancel();
-            }
-        }
+        // Accepted playback controls target the process-global player. Library
+        // selection retires state observers, not the original command intent.
     }
     pub async fn shutdown(&self) -> Result<(), WireError> {
         self.seal();
@@ -331,14 +328,11 @@ impl NativeSpotify {
             let mut events = vec![event];
             #[cfg(test)]
             Self::hold_test_gate(&self.before_context, &CancellationToken::new()).await;
-            let current = library
-                .contextualize(&request, &mut events)
-                .map_err(WireError::from);
+            // Source replies certify global scheduling at admission. Preserve
+            // their original origin even when selection changes before delivery;
+            // a later library cannot cancel or retag the accepted player effect.
+            events[0].context = request.context.clone();
             let closed = self.state.lock().unwrap_or_else(|e| e.into_inner()).closed;
-            if let Err(e) = current {
-                control.cancel();
-                return Err(e);
-            }
             if closed || Instant::now() >= deadline {
                 control.cancel();
                 return Err(WireError::new(

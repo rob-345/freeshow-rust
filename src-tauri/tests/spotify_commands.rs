@@ -241,6 +241,7 @@ mod linux {
         release: Vec<tokio::sync::oneshot::Sender<()>>,
         specs: Vec<Value>,
         events: Vec<Value>,
+        switches: Vec<Value>,
     }
     impl Rig {
         fn new() -> Self {
@@ -254,6 +255,7 @@ mod linux {
                 release: vec![],
                 specs: vec![],
                 events: vec![],
+                switches: vec![],
             }
         }
         async fn send(
@@ -281,13 +283,18 @@ mod linux {
             self.specs.push(spec);
             events
         }
-        async fn switch(&self) -> RuntimeContext {
+        async fn switch(&mut self) -> RuntimeContext {
             let old = self.library.context().unwrap();
             let next = self.temp.path().join("next");
             fs::create_dir(&next).unwrap();
             let change=serde_json::from_value(json!({"channel":"MAIN","data":{"channel":"UPDATE_DATA_PATH","data":{"oldPath":old.data_path,"newPath":next}},"context":old})).unwrap();
             self.library.dispatch(change, "main").await.unwrap();
-            self.library.context().unwrap()
+            let current = self.library.context().unwrap();
+            assert_eq!(current.runtime_id, old.runtime_id);
+            assert_ne!(current.data_path, old.data_path);
+            assert!(current.library_generation > old.library_generation);
+            self.switches.push(json!({"before":old,"after":current}));
+            current
         }
         fn query(&mut self) {
             let library = self.library.clone();
@@ -343,13 +350,16 @@ mod linux {
         }
     }
     fn event(events: &[Event], library: &LibraryService) -> Value {
+        event_at(events, &library.context().unwrap())
+    }
+    fn event_at(events: &[Event], context: &RuntimeContext) -> Value {
         assert_eq!(events.len(), 1);
         let event = &events[0];
         assert_eq!(event.channel, "MAIN");
         assert_eq!(event.message.channel, "SPOTIFY_COMMAND");
         assert_eq!(event.message.data, Some(json!(true)));
         assert_eq!(event.listener_id.as_deref(), Some("command-音楽"));
-        assert_eq!(event.context.as_ref(), Some(&library.context().unwrap()));
+        assert_eq!(event.context.as_ref(), Some(context));
         assert!(event.native_lifetime.is_some());
         assert!(event.native_spotify.is_none());
         let value = serde_json::to_value(event).unwrap();
@@ -452,6 +462,8 @@ mod linux {
                 rig.query();
                 entered.await.unwrap();
                 let pid = held(rig).await;
+                let current = rig.switch().await;
+                rig.spotify.context_changed(&current);
                 let task = rig.observer.take().unwrap();
                 task.abort();
                 assert!(task.await.unwrap_err().is_cancelled());
@@ -463,25 +475,39 @@ mod linux {
                 settled(rig, 1).await;
                 assert_eq!(rig.spotify.status().unwrap().retained, 0);
             }
-            "stale" => {
-                drop(rig.send("seek", Some(json!(3.0000005)), None).await);
+            "switchAccepted" => {
+                let stale_request = request(&rig.library, "seek", Some(json!(3.0000005)));
+                let origin = stale_request.context.clone().unwrap();
+                let events = rig.send("seek", Some(json!(3.0000005)), None).await;
                 let pid = held(rig).await;
                 let process_owner = rig.spotify.status().unwrap().context;
                 let current = rig.switch().await;
                 rig.spotify.context_changed(&current);
-                println!("HOST_RELEASE");
-                settled(rig, 1).await;
+                assert_eq!(rig.spotify.test_registered_commands(), 1);
+                assert!(Path::new(&format!("/proc/{pid}")).exists());
+                assert_eq!(
+                    count("SetPosition"),
+                    0,
+                    "held source callback has not run yet"
+                );
+                assert_eq!(event_at(&events, &origin)["context"], json!(origin));
+                drop(events);
+                assert_eq!(rig.spotify.status().unwrap().retained, 1);
+                let before = rig.spotify.status().unwrap().spawned;
                 assert_eq!(
                     rig.spotify
-                        .status()
-                        .unwrap()
-                        .last_command_error
-                        .unwrap()
+                        .dispatch(&rig.library, stale_request, "main")
+                        .await
+                        .unwrap_err()
                         .code,
-                    "spotify_cancelled"
+                    "stale_library"
                 );
+                assert_eq!(rig.spotify.status().unwrap().spawned, before);
+                println!("HOST_RELEASE");
+                observed(|| count("SetPosition") == 1).await;
+                settled(rig, 1).await;
+                assert_eq!(rig.spotify.status().unwrap().command_failures, 0);
                 assert!(!Path::new(&format!("/proc/{pid}")).exists());
-                assert_eq!(count("SetPosition"), 0);
                 rig.spotify.context_changed(&current);
                 assert_eq!(rig.spotify.test_registered_commands(), 0);
                 drop(rig.send("pause", None, None).await);
@@ -490,35 +516,39 @@ mod linux {
                 let status = rig.spotify.status().unwrap();
                 assert_eq!(
                     status.context, process_owner,
-                    "request context does not replace process owner identity"
+                    "selection keeps the actual process owner"
                 );
                 assert_eq!(
-                    status.spawned, 3,
-                    "same owner: help, canceled Metadata, new-context Pause"
+                    status.spawned, 4,
+                    "same owner: help, Metadata, SetPosition, new-context Pause"
                 );
             }
-            "finalContext" => {
+            "publicationAfterSwitch" => {
+                let origin = rig.library.context().unwrap();
                 let (entered, release) = rig.spotify.test_hold_before_context();
                 rig.release.push(release);
                 rig.query();
                 entered.await.unwrap();
                 let pid = held(rig).await;
-                rig.switch().await;
+                let current = rig.switch().await;
+                rig.spotify.context_changed(&current);
                 rig.release.pop().unwrap().send(()).unwrap();
-                assert_eq!(rig.take().await.unwrap_err().code, "stale_library");
-                println!("HOST_RELEASE");
-                settled(rig, 1).await;
-                assert_eq!(
-                    rig.spotify
-                        .status()
-                        .unwrap()
-                        .last_command_error
-                        .unwrap()
-                        .code,
-                    "spotify_cancelled"
+                let events = rig.take().await.unwrap();
+                let value = event_at(&events, &origin);
+                assert_ne!(
+                    value["context"],
+                    json!(current),
+                    "accepted reply never adopts the new library"
                 );
+                rig.events.push(value);
+                rig.specs.push(json!({"command":"seek","value":3.0000005}));
+                drop(events);
+                assert_eq!(rig.spotify.status().unwrap().retained, 1);
+                println!("HOST_RELEASE");
+                observed(|| count("SetPosition") == 1).await;
+                settled(rig, 1).await;
+                assert_eq!(rig.spotify.status().unwrap().command_failures, 0);
                 assert!(!Path::new(&format!("/proc/{pid}")).exists());
-                assert_eq!(count("SetPosition"), 0);
             }
             "closeActive" => {
                 let events = rig.send("seek", Some(json!(3.0000005)), None).await;
@@ -623,12 +653,20 @@ mod linux {
                 let current = rig.switch().await;
                 rig.spotify.context_changed(&current);
                 println!("HOST_RELEASE");
+                // No-reply D-Bus child exit is not delivery proof: observe all
+                // actual peer continuations before checking their settled owner.
+                observed(|| count("SetPosition") == 4).await;
                 settled(rig, 4).await;
                 let status = rig.spotify.status().unwrap();
-                assert_eq!(status.command_failures, 4);
-                assert_eq!(status.last_command_error.unwrap().code, "spotify_cancelled");
+                assert_eq!(status.command_failures, 0);
                 assert_eq!(status.retained, 0);
-                assert_eq!(count("SetPosition"), 0);
+                assert_eq!(
+                    count("SetPosition"),
+                    4,
+                    "all four accepted global continuations survive selection"
+                );
+                rig.spotify.context_changed(&current);
+                assert_eq!(rig.spotify.test_registered_commands(), 0);
                 for pid in pids {
                     assert!(!Path::new(&format!("/proc/{pid}")).exists());
                 }
@@ -690,7 +728,7 @@ mod linux {
         if let Err(panic) = result {
             std::panic::resume_unwind(panic);
         }
-        let receipt = json!({"case":case,"events":rig.events,"specs":rig.specs,"status":rig.spotify.status(),"registeredCommands":rig.spotify.test_registered_commands()});
+        let receipt = json!({"case":case,"events":rig.events,"specs":rig.specs,"status":rig.spotify.status(),"registeredCommands":rig.spotify.test_registered_commands(),"switches":rig.switches});
         let bytes = serde_json::to_vec(&receipt).unwrap();
         assert!(bytes.len() <= 65536);
         fs::write(
@@ -700,22 +738,29 @@ mod linux {
         .unwrap();
     }
     pub const SUPERVISOR: &str = r#"
-import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import{spawn}from'node:child_process';import{pathToFileURL}from'node:url';
+import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import{spawn,execFileSync}from'node:child_process';import{createHash}from'node:crypto';import{createRequire}from'node:module';import{pathToFileURL}from'node:url';
 const[exe,root]=process.argv.slice(1);assert.equal(process.versions.node,'22.21.1');
 const{commandBus}=await import(pathToFileURL(path.join(root,'tests/parity/spotify-command-oracle.mjs')));
 const{Lines,cleanup}=await import(pathToFileURL(path.join(root,'tests/parity/spotify-oracle.mjs')));
-const cases=process.env.FREESHOW_SPOTIFY_COMMAND_ONLY?[process.env.FREESHOW_SPOTIFY_COMMAND_ONLY]:['concurrent','callerDrop','stale','finalContext','closeActive','quotaClose','saturation','numeric'];const evidence=[];
+const ts=createRequire(path.join(root,'package.json'))('typescript');
+const source=execFileSync('git',['show','2d94defcf98175e4f5c9504e7f4fd1d33c35c975:src/electron/IPC/responsesMain.ts'],{cwd:root,encoding:'utf8',timeout:5000,maxBuffer:1024*1024}).replaceAll('\r\n','\n');
+assert.equal(createHash('sha256').update(source).digest('hex'),'70372b48b698f74f239b82f92e48dde69880a7c4d78af1a9f0e1723313fb57a3');
+const parsed=ts.createSourceFile('responsesMain.ts',source,ts.ScriptTarget.Latest,true);let updateHandler;
+function visit(n){if(ts.isPropertyAssignment(n)&&n.name.getText(parsed)==='[Main.UPDATE_DATA_PATH]')updateHandler=n.initializer.getText(parsed);ts.forEachChild(n,visit);}visit(parsed);assert.ok(updateHandler);
+const globalCases=['callerDrop','switchAccepted','publicationAfterSwitch','saturation'];
+
+const cases=process.env.FREESHOW_SPOTIFY_COMMAND_ONLY?[process.env.FREESHOW_SPOTIFY_COMMAND_ONLY]:['concurrent','callerDrop','switchAccepted','publicationAfterSwitch','closeActive','quotaClose','saturation','numeric'];const evidence=[];
 for(const name of cases){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'freeshow-spotify-command-host-'));const receipt=path.join(dir,'receipt.json'),witness=path.join(dir,'peer.json');let bus,child,timer,release;
  try{
   bus=await commandBus(name==='numeric'||name==='quotaClose'?'ordinary':'hold');
   bus.peer.child.stdout.on('data',()=>fs.writeFileSync(witness,JSON.stringify(bus.events())));
   child=new Lines(spawn(exe,['--exact','command_validation_precedes_lazy_admission','--nocapture','--test-threads=1'],{env:{...bus.env,FREESHOW_SPOTIFY_COMMAND_HOST_CASE:name,FREESHOW_SPOTIFY_COMMAND_HOST_CHILD:'private-v1',FREESHOW_SPOTIFY_COMMAND_HOST_RECEIPT:receipt,FREESHOW_SPOTIFY_COMMAND_PEER:witness},stdio:['ignore','pipe','pipe']}));
-  if(['concurrent','callerDrop','stale','finalContext','saturation'].includes(name)){release=child.wait(line=>line.endsWith('HOST_RELEASE')).then(()=>bus.peer.child.stdin.write('release\n'));release.catch(()=>{});}
+  if(['concurrent','callerDrop','switchAccepted','publicationAfterSwitch','saturation'].includes(name)){release=child.wait(line=>line.endsWith('HOST_RELEASE')).then(()=>bus.peer.child.stdin.write('release\n'));release.catch(()=>{});}
   const exit=await Promise.race([child.exit,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('actual native command host timeout '+name)),20000)})]);
   assert.equal(exit.code,0,name+'\n'+child.lines.join('\n')+'\n'+child.stderr);if(release)await release;
   const actual=JSON.parse(fs.readFileSync(receipt,'utf8'));assert.equal(actual.case,name);assert.equal(actual.status.joined,true);assert.equal(actual.status.drained,true);assert.equal(actual.status.retained,0);assert.equal(actual.registeredCommands,0);assert.equal(actual.status.spawned,actual.status.reaped);assert.deepEqual(actual.status.commandPids,[]);
-  const nativeEffects=bus.events();if(['finalContext','closeActive'].includes(name))assert.deepEqual(nativeEffects.map(e=>e.name),['Get']);if(name==='stale')assert.deepEqual(nativeEffects.map(e=>e.name),['Get','Pause']);if(name==='saturation')assert.deepEqual(nativeEffects.map(e=>e.name),['Get','Get','Get','Get']);if(name==='callerDrop')assert.deepEqual(nativeEffects.at(-1),{name:'SetPosition',args:['/fixture/track_01',Math.round(3.0000005*1e6)]});
+  const nativeEffects=bus.events();if(name==='closeActive')assert.deepEqual(nativeEffects.map(e=>e.name),['Get']);if(name==='switchAccepted')assert.deepEqual(nativeEffects.map(e=>e.name),['Get','SetPosition','Pause']);if(name==='publicationAfterSwitch')assert.deepEqual(nativeEffects.map(e=>e.name),['Get','SetPosition']);if(name==='saturation'){assert.deepEqual(nativeEffects.slice(0,4).map(e=>e.name),['Get','Get','Get','Get']);assert.deepEqual(nativeEffects.slice(4).map(e=>e.name),['SetPosition','SetPosition','SetPosition','SetPosition']);}if(name==='callerDrop')assert.deepEqual(nativeEffects.at(-1),{name:'SetPosition',args:['/fixture/track_01',Math.round(3.0000005*1e6)]});
   for(const e of actual.events){assert.deepEqual(e.message,{channel:'SPOTIFY_COMMAND',data:true});assert.equal(e.listenerId,'command-音楽');assert.equal(e.channel,'MAIN');assert.ok(e.context.runtimeId&&Number.isInteger(e.context.libraryGeneration)&&e.context.dataPath);assert.equal(Object.hasOwn(e,'nativeLifetime'),false);assert.equal(Object.hasOwn(e,'nativeSpotify'),false);}
   await bus.close();bus=undefined;
   if(['concurrent','numeric'].includes(name)){
@@ -728,7 +773,21 @@ for(const name of cases){
    assert.deepEqual(nativeEffects,bus.events(),name+' actual peer effects must match actual immutable source');
    assert.equal(actual.status.commandFailures,bus.original.calls.errors,'source tool failures remain native diagnostics, not peer effects');
   }
-  evidence.push({case:name,nativePeerEffects:nativeEffects.length,sourceCompared:['concurrent','numeric'].includes(name),spawned:actual.status.spawned,reaped:actual.status.reaped});
+  let selectionCalls=[];
+  if(globalCases.includes(name)){
+   assert.equal(actual.switches.length,1);const switched=actual.switches[0];assert.equal(switched.before.runtimeId,switched.after.runtimeId);assert.notEqual(switched.before.dataPath,switched.after.dataPath);assert.ok(switched.after.libraryGeneration>switched.before.libraryGeneration);
+   if(name==='publicationAfterSwitch')assert.deepEqual(actual.events[0].context,switched.before);
+   bus=await commandBus('hold');
+   const specs=actual.specs.length?actual.specs:[{command:'seek',value:3.0000005}],seeks=specs.filter(s=>s.command==='seek');
+   for(const spec of seeks){const payload={command:spec.command,value:spec.value};assert.equal(await bus.original.send(payload,'command-音楽'),undefined);assert.deepEqual(bus.original.calls.replies.at(-1),['MAIN',{channel:'SPOTIFY_COMMAND',data:true},'command-音楽']);payload.command='unknown';payload.value=99;}
+   await bus.peer.wait(()=>bus.events().filter(e=>e.name==='Get').length===seeks.length);assert.equal(bus.events().some(e=>e.name==='SetPosition'),false);
+   const update=new Function('config','createStores','return ('+updateHandler+')')({set:(...args)=>selectionCalls.push(['config.set',...args])},(...args)=>selectionCalls.push(['createStores',...args]));
+   assert.equal(update({oldPath:switched.before.dataPath,newPath:switched.after.dataPath}),undefined);assert.deepEqual(selectionCalls,[['config.set','dataPath',switched.after.dataPath],['createStores',switched.before.dataPath]]);assert.equal(bus.events().some(e=>e.name==='SetPosition'),false);
+   bus.peer.child.stdin.write('release\n');await bus.peer.wait(()=>bus.events().filter(e=>e.name==='SetPosition').length===seeks.length);await bus.settle();
+   for(const spec of specs.filter(s=>s.command!=='seek')){const before=bus.events().length;assert.equal(await bus.original.send({command:spec.command,value:spec.value},'command-音楽'),undefined);await bus.peer.wait(()=>bus.events().length>before);await bus.settle();assert.deepEqual(bus.original.calls.replies.at(-1),['MAIN',{channel:'SPOTIFY_COMMAND',data:true},'command-音楽']);}
+   assert.deepEqual(nativeEffects,bus.events(),'accepted global intent and continuation match actual pinned source across selection');assert.equal(actual.status.commandFailures,0);assert.equal(bus.original.calls.errors,0);
+  }
+  evidence.push({case:name,nativePeerEffects:nativeEffects.length,sourceCompared:['concurrent','numeric',...globalCases].includes(name),sourceSelectionCalls:selectionCalls,spawned:actual.status.spawned,reaped:actual.status.reaped});
  }finally{clearTimeout(timer);await cleanup(child?child.stop():Promise.resolve(),bus?bus.close():Promise.resolve());fs.rmSync(dir,{recursive:true,force:true});}
 }
 console.log(JSON.stringify({cases:evidence,ownedFixtureProcessesRemaining:0}));
