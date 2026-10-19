@@ -63,6 +63,7 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness,freeshow-opus/test-harness -- -D warnings
       - run: npm run rust:test
+      - run: cargo test -p freeshow-ai-status --features test-harness --locked
       - run: npm run rust:parity:report
       - name: Validate archived idle ablation arithmetic
         run: node tests/desktop/audio_context_ablation/validate.mjs --self-test
@@ -138,7 +139,13 @@ jobs:
           echo "FREESHOW_NATIVE_AUDIO_NODE=$(command -v node)" >> "$GITHUB_ENV"
       - run: npm run rust:frontend:build
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
-      - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol
+      - run: python3 tests/desktop/freeze_binary_test.py
+      - name: Build and freeze the normal GUI binary before test builds
+        run: |
+          mkdir -p test-output-rust/normal-binary
+          cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --message-format=json > test-output-rust/normal-binary/build.jsonl
+          python3 scripts/migration/freeze-desktop-binary.py --build-log test-output-rust/normal-binary/build.jsonl --binary target/debug/freeshow-desktop --resources dist-rust/remotes --destination test-output-rust/normal-binary-runtime/target/debug --receipt test-output-rust/normal-binary/receipt.json
+          echo "FREESHOW_DESKTOP_BIN=$GITHUB_WORKSPACE/test-output-rust/normal-binary-runtime/target/debug/freeshow-desktop" >> "$GITHUB_ENV"
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets -- -D warnings
@@ -164,3 +171,4 @@ jobs:
             test-output-rust/desktop
             test-output-rust/native-menu
             test-output-rust/native-drop
+            test-output-rust/normal-binary
