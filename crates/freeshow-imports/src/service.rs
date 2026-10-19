@@ -1,3 +1,4 @@
+pub(crate) use crate::cleanup::CleanupSender;
 use crate::*;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
@@ -5,46 +6,6 @@ use tokio::sync::{oneshot, Semaphore};
 
 pub struct ImportService {
     pub(crate) inner: Arc<Inner>,
-}
-#[derive(Clone)]
-pub(crate) struct CleanupSender {
-    sender: mpsc::SyncSender<Cleanup>,
-    failed: Arc<std::sync::atomic::AtomicBool>,
-}
-enum Cleanup {
-    Remove(TempDir, Option<OwnedSemaphorePermit>),
-    Fence(oneshot::Sender<()>),
-}
-impl CleanupSender {
-    pub fn remove(&self, stage: TempDir, lease: Option<OwnedSemaphorePermit>) {
-        // Each remove owns a prepared lease, plus one queue slot is reserved for
-        // the serialized shutdown fence. Drop never blocks or touches the disk.
-        if let Err(error) = self.sender.try_send(Cleanup::Remove(stage, lease)) {
-            self.failed
-                .store(true, std::sync::atomic::Ordering::Release);
-            let (mpsc::TrySendError::Full(message) | mpsc::TrySendError::Disconnected(message)) =
-                error;
-            if let Cleanup::Remove(stage, _lease) = message {
-                let _ = stage.keep();
-            }
-        }
-    }
-    pub(crate) async fn fence(&self) -> Result<()> {
-        let (send, receive) = oneshot::channel();
-        self.sender.try_send(Cleanup::Fence(send)).map_err(|_| {
-            ImportError::new("cleanup_failure", "Import cleanup worker unavailable")
-        })?;
-        receive
-            .await
-            .map_err(|_| ImportError::new("cleanup_failure", "Import cleanup worker exited"))?;
-        if self.failed.load(std::sync::atomic::Ordering::Acquire) {
-            return Err(ImportError::new(
-                "cleanup_failure",
-                "Import private staging cleanup failed",
-            ));
-        }
-        Ok(())
-    }
 }
 pub(crate) struct Inner {
     pub(crate) config: ImportConfig,
@@ -55,6 +16,8 @@ pub(crate) struct Inner {
     threads: Mutex<Vec<JoinHandle<()>>>,
     pub(crate) cleanup: CleanupSender,
     shutdown: tokio::sync::Mutex<()>,
+    observers: Arc<Semaphore>,
+    worker_failed: std::sync::atomic::AtomicBool,
     #[cfg(test)]
     pub(crate) before_admission: Mutex<Option<Box<dyn FnOnce() + Send>>>,
     #[cfg(test)]
@@ -74,6 +37,14 @@ impl Drop for CancelOnDrop {
     }
 }
 impl ImportService {
+    #[cfg(test)]
+    pub(crate) fn retained_available(&self) -> usize {
+        self.inner.leases.available_permits()
+    }
+    #[cfg(test)]
+    pub(crate) fn observers_available(&self) -> usize {
+        self.inner.observers.available_permits()
+    }
     pub fn new(config: ImportConfig) -> Result<Self> {
         if !(1..=8).contains(&config.workers)
             || !(1..=16).contains(&config.max_prepared)
@@ -102,30 +73,7 @@ impl ImportService {
                 "Invalid import resource limits",
             ));
         }
-        let (cleanup_sender, cleanup_receiver) = mpsc::sync_channel(config.max_prepared + 1);
-        let cleanup_failed = Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let reaper_failed = cleanup_failed.clone();
-        std::thread::Builder::new()
-            .name("freeshow-import-cleanup".into())
-            .spawn(move || {
-                while let Ok(message) = cleanup_receiver.recv() {
-                    match message {
-                        Cleanup::Remove(stage, _lease) => {
-                            if stage.close().is_err() {
-                                reaper_failed.store(true, std::sync::atomic::Ordering::Release);
-                            }
-                        }
-                        Cleanup::Fence(reply) => {
-                            let _ = reply.send(());
-                        }
-                    }
-                }
-            })
-            .map_err(ImportError::io)?;
-        let cleanup = CleanupSender {
-            sender: cleanup_sender,
-            failed: cleanup_failed,
-        };
+        let cleanup = CleanupSender::new(config.max_prepared)?;
         let (sender, receiver) = mpsc::sync_channel::<Work>(config.workers);
         let receiver = Arc::new(Mutex::new(receiver));
         let cancel = CancellationToken::new();
@@ -143,9 +91,17 @@ impl ImportService {
                     let result = prepare::prepare(input, config.clone(), cleanup.clone());
                     drop(_job);
                     let _ = reply.send(result);
-                })
-                .map_err(ImportError::io)?;
-            threads.push(thread);
+                });
+            match thread {
+                Ok(thread) => threads.push(thread),
+                Err(error) => {
+                    drop(sender);
+                    for thread in threads {
+                        let _ = thread.join();
+                    }
+                    return Err(ImportError::io(error));
+                }
+            }
         }
         Ok(Self {
             inner: Arc::new(Inner {
@@ -157,6 +113,8 @@ impl ImportService {
                 threads: Mutex::new(threads),
                 cleanup,
                 shutdown: tokio::sync::Mutex::new(()),
+                observers: Arc::new(Semaphore::new(4)),
+                worker_failed: std::sync::atomic::AtomicBool::new(false),
                 #[cfg(test)]
                 before_admission: Mutex::new(None),
                 #[cfg(test)]
@@ -166,14 +124,12 @@ impl ImportService {
     }
     /// True after failed cleanup; admission fails closed to bound retained disk.
     pub fn cleanup_failed(&self) -> bool {
-        self.inner
-            .cleanup
-            .failed
-            .load(std::sync::atomic::Ordering::Acquire)
+        self.inner.cleanup.failed()
     }
     /// Wait for already released private staging. Live plans retain their leases
     /// and do not delay this barrier; ordinary admission limits still apply.
     pub async fn finish_cleanup(&self) -> Result<()> {
+        let _observer = self.observer()?;
         let _serial = self.inner.shutdown.lock().await;
         self.inner.cleanup.fence().await
     }
@@ -343,51 +299,99 @@ impl ImportService {
         }
         result
     }
-    pub async fn shutdown(&self) -> Result<()> {
+    fn observer(&self) -> Result<OwnedSemaphorePermit> {
+        self.inner
+            .observers
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| {
+                ImportError::new(
+                    "lifecycle_busy",
+                    "Import lifecycle observers are at capacity",
+                )
+            })
+    }
+    /// Stop preparation, join actual parser workers and fence already released
+    /// stages. Live plans remain owned and may enqueue cleanup when released.
+    pub async fn close_preparation(&self) -> Result<()> {
+        let _observer = self.observer()?;
         let _serial = self.inner.shutdown.lock().await;
+        self.join_preparation().await?;
+        self.inner.cleanup.fence().await
+    }
+    /// Terminal proof: all parser workers and the cleanup worker actually joined.
+    /// Live staged plans must first be released by their native host. Dropping or
+    /// timing out this observer retains the same handles and cleanup ownership.
+    pub async fn shutdown(&self) -> Result<()> {
+        let _observer = self.observer()?;
+        let _serial = self.inner.shutdown.lock().await;
+        let preparation = self.join_preparation().await;
+        // A pending parser might still create a stage: never close its sender.
+        if !self
+            .inner
+            .threads
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_empty()
+        {
+            return preparation;
+        }
+        let cleanup = self.inner.cleanup.join().await;
+        preparation.and(cleanup)
+    }
+    async fn join_preparation(&self) -> Result<()> {
         self.inner.cancel.cancel();
         self.inner
             .sender
             .lock()
-            .expect("import sender poisoned")
+            .unwrap_or_else(|e| e.into_inner())
             .take();
-        let _all = self
-            .inner
-            .jobs
-            .clone()
-            .acquire_many_owned(self.inner.config.workers as u32)
-            .await
-            .map_err(|_| ImportError::new("shutdown", "Import job semaphore closed"))?;
+        let permits = self.inner.config.workers as u32;
+        let _all = match self.inner.jobs.clone().try_acquire_many_owned(permits) {
+            Ok(all) => all,
+            Err(_) => {
+                crate::cleanup::require_runtime()?;
+                self.inner
+                    .jobs
+                    .clone()
+                    .acquire_many_owned(permits)
+                    .await
+                    .map_err(|_| ImportError::new("shutdown", "Import job semaphore closed"))?
+            }
+        };
         loop {
             if self
                 .inner
                 .threads
                 .lock()
-                .expect("import threads poisoned")
+                .unwrap_or_else(|e| e.into_inner())
                 .iter()
                 .all(JoinHandle::is_finished)
             {
                 break;
             }
-            if tokio::runtime::Handle::try_current().is_err() {
-                return Err(ImportError::new(
-                    "runtime_required",
-                    "Pending import worker shutdown requires a Tokio runtime",
-                ));
+            crate::cleanup::pause().await?;
+        }
+        let mut threads = self.inner.threads.lock().unwrap_or_else(|e| e.into_inner());
+        for thread in threads.drain(..) {
+            if thread.join().is_err() {
+                self.inner
+                    .worker_failed
+                    .store(true, std::sync::atomic::Ordering::Release);
             }
-            tokio::time::sleep(Duration::from_millis(1)).await;
         }
-        for thread in self
+        if self
             .inner
-            .threads
-            .lock()
-            .expect("import threads poisoned")
-            .drain(..)
+            .worker_failed
+            .load(std::sync::atomic::Ordering::Acquire)
         {
-            let _ = thread.join();
+            Err(ImportError::new(
+                "worker_failure",
+                "Import preparation worker failed",
+            ))
+        } else {
+            Ok(())
         }
-        self.inner.cleanup.fence().await?;
-        Ok(())
     }
 }
 impl Drop for Inner {
@@ -395,7 +399,17 @@ impl Drop for Inner {
         self.cancel.cancel();
         self.sender
             .get_mut()
-            .expect("import sender poisoned")
+            .unwrap_or_else(|e| e.into_inner())
             .take();
+        // Emergency disposal retains actual native joins. Hosts should use the
+        // async lifecycle while ownership is retained; Drop can wait for OS IO.
+        for thread in self
+            .threads
+            .get_mut()
+            .unwrap_or_else(|e| e.into_inner())
+            .drain(..)
+        {
+            let _ = thread.join();
+        }
     }
 }

@@ -1,6 +1,7 @@
 //! Source-compatible native import transport. All filesystem writes remain private
 //! staging; only the host's ordered/context-validated owner may install media.
 mod archive;
+mod cleanup;
 mod prepare;
 mod service;
 pub use service::ImportService;
@@ -221,7 +222,7 @@ pub struct MediaCommitPlan {
     pub installs: Vec<MediaInstall>,
     pub existing: Vec<ExistingMediaGuard>,
     pub unresolved: Vec<ImportRelativePath>,
-    pub(crate) stage: Option<TempDir>,
+    pub(crate) stage: Option<cleanup::StagedDirectory>,
     pub(crate) cancel: CancellationToken,
     pub(crate) request_cancel: CancellationToken,
     pub(crate) lease: Option<OwnedSemaphorePermit>,
@@ -236,7 +237,7 @@ impl MediaCommitPlan {
         }
     }
     pub fn staging_directory(&self) -> Option<&Path> {
-        self.stage.as_ref().map(TempDir::path)
+        self.stage.as_ref().map(cleanup::StagedDirectory::path)
     }
     pub fn manifest(&self) -> Value {
         json!({"importsRoot":self.imports_root,"directories":self.directories,"installs":self.installs,"existing":self.existing,"unresolved":self.unresolved,"cancelled":self.ensure_current().is_err()})
@@ -370,6 +371,8 @@ impl IoGuard {
     }
 }
 
+#[cfg(test)]
+mod cleanup_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

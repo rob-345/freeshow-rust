@@ -35,7 +35,7 @@ async fn error(service: &ImportService, payload: &Value, dir: &TempDir) -> Impor
     }
 }
 #[tokio::test]
-async fn lease_limits_retained_staging_and_shutdown_never_waits_for_plan() {
+async fn lease_limits_and_terminal_shutdown_allow_retained_no_stage_plan() {
     let dir = tempfile::tempdir().unwrap();
     let service = ImportService::new(ImportConfig {
         max_prepared: 1,
@@ -51,6 +51,7 @@ async fn lease_limits_retained_staging_and_shutdown_never_waits_for_plan() {
         "busy"
     );
     service.shutdown().await.unwrap();
+    assert_eq!(service.retained_available(), 0);
     assert_eq!(
         retained.plan.ensure_current().unwrap_err().code,
         "cancelled"
@@ -59,6 +60,8 @@ async fn lease_limits_retained_staging_and_shutdown_never_waits_for_plan() {
         error(&service, &payload("txt", vec![]), &dir).await.code,
         "shutdown"
     );
+    drop(retained);
+    assert_eq!(service.retained_available(), 1);
 }
 #[tokio::test]
 async fn cancellation_deadline_limits_and_missing_defaults() {
@@ -270,13 +273,14 @@ async fn staging_identity_hash_unresolved_and_no_final_writes() {
         .unwrap()
         .starts_with("{ \"files\""));
     let private = prepared.plan.staging_directory().unwrap().to_owned();
-    service.shutdown().await.unwrap();
+    service.close_preparation().await.unwrap();
     assert!(private.exists());
     assert!(prepared.plan.ensure_current().is_err());
     drop(prepared);
     service.inner.cleanup.fence().await.unwrap();
     assert!(!private.exists());
     assert_eq!(std::fs::read_dir(staging).unwrap().count(), 0);
+    service.shutdown().await.unwrap();
 }
 #[tokio::test]
 async fn entry_count_depth_ratio_and_aggregate_bytes_are_bounded() {
@@ -378,6 +382,8 @@ async fn destination_symlink_and_overlapping_bundles_never_clobber() {
             "import_invalid_path"
         );
     }
+    #[cfg(not(unix))]
+    drop(prepared);
     service.shutdown().await.unwrap();
 }
 // Deterministically pause request admission on an independent runtime thread;
@@ -480,7 +486,7 @@ async fn buffered_result_drop_and_full_reaper_queue_release_staging_leases() {
     }
     assert_eq!(error(&service, &data, &dir).await.code, "busy");
     // All retained plans may close concurrently with shutdown, bounded by their
-    // own leases rather than parser permits. Shutdown also has a reserved slot.
+    // own leases rather than parser permits. Observers consume no queue slots.
     let thread = std::thread::spawn(move || drop(plans));
     service.shutdown().await.unwrap();
     thread.join().unwrap();

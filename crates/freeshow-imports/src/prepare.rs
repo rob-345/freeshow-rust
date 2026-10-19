@@ -377,15 +377,17 @@ fn bundle(
         if let Some(relative) = mappings.get(name) {
             if plan.stage.is_none() {
                 plan.stage = Some(
-                    match &budget.config.staging_root {
-                        Some(root) => tempfile::Builder::new()
-                            .prefix("freeshow-import-")
-                            .tempdir_in(root),
-                        None => tempfile::Builder::new()
-                            .prefix("freeshow-import-")
-                            .tempdir(),
-                    }
-                    .map_err(ImportError::io)?,
+                    plan.cleanup.stage(
+                        match &budget.config.staging_root {
+                            Some(root) => tempfile::Builder::new()
+                                .prefix("freeshow-import-")
+                                .tempdir_in(root),
+                            None => tempfile::Builder::new()
+                                .prefix("freeshow-import-")
+                                .tempdir(),
+                        }
+                        .map_err(ImportError::io)?,
+                    ),
                 );
             }
             let staged_path = plan.stage.as_ref().unwrap().path().join(format!(
