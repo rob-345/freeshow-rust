@@ -146,6 +146,21 @@ impl PreparationControl {
     }
 }
 
+/// Failed preparation retains its actual cover Session until the fixed host
+/// explicitly awaits CoverImageService::retire. Not a parser-null receipt.
+pub struct PreparationFailure {
+    pub error: PrepareError,
+    session: Option<Session>,
+}
+impl PreparationFailure {
+    pub fn session(&self) -> Option<&Session> {
+        self.session.as_ref()
+    }
+    pub fn into_parts(self) -> (PrepareError, Option<Session>) {
+        (self.error, self.session)
+    }
+}
+
 /// No Deserialize or renderer constructor: only genuine complete dependency
 /// results can produce this value. Retain it through later cover/image effects,
 /// then drop it before shutting down assets or the cover service.
@@ -283,102 +298,128 @@ impl<'a> PreparationServices<'a> {
         registered_source_key: &str,
         control: &PreparationControl,
     ) -> Result<Prepared, PrepareError> {
-        control.check()?;
-        current(self.library, captured)?;
-        if captured.runtime_id != cover_context.runtime
-            || captured.library_generation != cover_context.generation
-            || captured.data_path.to_str() != Some(cover_context.data_path.as_str())
-        {
-            return Err(PrepareError::new(
-                FailureKind::Context,
-                "cover_context",
-                "Cover run does not match the complete native library context",
-            ));
-        }
-        // Preserve the caller's seal; reconstructing Context would create a
-        // different opaque run. Session Drop closes admission and actual queued
-        // cleanup even on an early failure below.
-        let session = self
-            .covers
-            .begin_session(cover_context)
-            .map_err(PrepareError::cover)?;
-        let read = self
-            .assets
-            .open_registered_media(
-                self.library,
-                captured,
-                registered_source_key,
-                control.assets(),
-            )
+        self.prepare_retained(captured, cover_context, registered_source_key, control)
             .await
-            .map_err(PrepareError::wire)?;
-        let (file, authority) = read.into_parts();
-        #[cfg(test)]
-        self.pause(TestStage::Opened).await;
-        validate(self.library, captured, &authority, control).await?;
-        let ticket = self
-            .audio
-            .reserve_opened()
-            .map_err(PrepareError::audio)?
-            .submit(
-                file,
-                authority.source_path(),
-                FormatHint::FromSourceName,
-                control.cancel.clone(),
-            )
-            .map_err(PrepareError::audio)?;
-        #[cfg(test)]
-        self.pause(TestStage::AudioAccepted).await;
-        let read = ticket.finish().await.map_err(PrepareError::audio)?;
-        let (common, file, observations) = read.into_parts();
-        #[cfg(test)]
-        self.pause(TestStage::Common).await;
-        // Authorization/context/cancellation wins over a parser-null policy;
-        // never reinterpret stale or changed media as a harmless parse failure.
-        validate(self.library, captured, &authority, control).await?;
-        let common = common.map_err(PrepareError::audio)?;
-        validate(self.library, captured, &authority, control).await?;
-        let trusted =
-            TrustedMediaFile::from_opened_host(cover_context, authority.canonical_path(), file)
-                .map_err(PrepareError::cover)?;
-        let ticket = self
-            .covers
-            .covers(&session, trusted, control.cover_cancel.clone())
-            .map_err(PrepareError::cover)?;
-        #[cfg(test)]
-        self.pause(TestStage::CoverAccepted).await;
-        let covers = ticket.finish().await.map_err(PrepareError::cover)?;
-        #[cfg(test)]
-        self.pause(TestStage::Covers).await;
-        validate(self.library, captured, &authority, control).await?;
-        // The extractor bounds eight pictures/4MiB aggregate data plus bounded
-        // fields. Clone only this certified result, preserving source ordering
-        // and own-undefined metadata. Drop the observation before later image
-        // commands, which require this Session to be idle.
-        let all_pictures = covers
-            .inspect(|reply| match reply {
-                Reply::Covers(pictures) => Some(pictures.clone()),
-                _ => None,
-            })
-            .map_err(PrepareError::cover)?
-            .ok_or_else(|| {
-                PrepareError::new(
-                    FailureKind::Dependency,
-                    "now_playing_cover_reply",
-                    "Cover owner returned a different operation result",
+            .map_err(|failure| failure.error)
+    }
+    /// Caller retains this future through all accepted dependency work and then
+    /// retains either Prepared or PreparationFailure through actual retirement.
+    pub async fn prepare_retained(
+        &self,
+        captured: &RuntimeContext,
+        cover_context: &CoverContext,
+        registered_source_key: &str,
+        control: &PreparationControl,
+    ) -> Result<Prepared, PreparationFailure> {
+        let mut retained_session = None;
+        let result: Result<Prepared, PrepareError> = async {
+            control.check()?;
+            current(self.library, captured)?;
+            if captured.runtime_id != cover_context.runtime
+                || captured.library_generation != cover_context.generation
+                || captured.data_path.to_str() != Some(cover_context.data_path.as_str())
+            {
+                return Err(PrepareError::new(
+                    FailureKind::Context,
+                    "cover_context",
+                    "Cover run does not match the complete native library context",
+                ));
+            }
+            // Preserve the caller's seal; reconstructing Context would create a
+            // different opaque run. Session Drop closes admission and actual queued
+            // cleanup even on an early failure below.
+            retained_session = Some(
+                self.covers
+                    .begin_session(cover_context)
+                    .map_err(PrepareError::cover)?,
+            );
+            let read = self
+                .assets
+                .open_registered_media(
+                    self.library,
+                    captured,
+                    registered_source_key,
+                    control.assets(),
                 )
-            })?;
-        drop(covers);
-        #[cfg(test)]
-        self.pause(TestStage::Ready).await;
-        validate(self.library, captured, &authority, control).await?;
-        Ok(Prepared {
-            captured: captured.clone(),
-            common,
-            all_pictures,
-            authority,
-            session,
-            observations,
+                .await
+                .map_err(PrepareError::wire)?;
+            let (file, authority) = read.into_parts();
+            #[cfg(test)]
+            self.pause(TestStage::Opened).await;
+            validate(self.library, captured, &authority, control).await?;
+            let ticket = self
+                .audio
+                .reserve_opened()
+                .map_err(PrepareError::audio)?
+                .submit(
+                    file,
+                    authority.source_path(),
+                    FormatHint::FromSourceName,
+                    control.cancel.clone(),
+                )
+                .map_err(PrepareError::audio)?;
+            #[cfg(test)]
+            self.pause(TestStage::AudioAccepted).await;
+            let read = ticket.finish().await.map_err(PrepareError::audio)?;
+            let (common, file, observations) = read.into_parts();
+            #[cfg(test)]
+            self.pause(TestStage::Common).await;
+            // Authorization/context/cancellation wins over a parser-null policy;
+            // never reinterpret stale or changed media as a harmless parse failure.
+            validate(self.library, captured, &authority, control).await?;
+            let common = common.map_err(PrepareError::audio)?;
+            validate(self.library, captured, &authority, control).await?;
+            let trusted =
+                TrustedMediaFile::from_opened_host(cover_context, authority.canonical_path(), file)
+                    .map_err(PrepareError::cover)?;
+            let ticket = self
+                .covers
+                .covers(
+                    retained_session.as_ref().unwrap(),
+                    trusted,
+                    control.cover_cancel.clone(),
+                )
+                .map_err(PrepareError::cover)?;
+            #[cfg(test)]
+            self.pause(TestStage::CoverAccepted).await;
+            let covers = ticket.finish().await.map_err(PrepareError::cover)?;
+            #[cfg(test)]
+            self.pause(TestStage::Covers).await;
+            validate(self.library, captured, &authority, control).await?;
+            // The extractor bounds eight pictures/4MiB aggregate data plus bounded
+            // fields. Clone only this certified result, preserving source ordering
+            // and own-undefined metadata. Drop the observation before later image
+            // commands, which require this Session to be idle.
+            let all_pictures = covers
+                .inspect(|reply| match reply {
+                    Reply::Covers(pictures) => Some(pictures.clone()),
+                    _ => None,
+                })
+                .map_err(PrepareError::cover)?
+                .ok_or_else(|| {
+                    PrepareError::new(
+                        FailureKind::Dependency,
+                        "now_playing_cover_reply",
+                        "Cover owner returned a different operation result",
+                    )
+                })?;
+            drop(covers);
+            #[cfg(test)]
+            self.pause(TestStage::Ready).await;
+            validate(self.library, captured, &authority, control).await?;
+            Ok(Prepared {
+                captured: captured.clone(),
+                common,
+                all_pictures,
+                authority,
+                session: retained_session.take().unwrap(),
+                observations,
+            })
+        }
+        .await;
+        result.map_err(|error| PreparationFailure {
+            error,
+            session: retained_session,
         })
     }
 

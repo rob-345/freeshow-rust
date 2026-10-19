@@ -227,3 +227,37 @@ fn compatibility_json_path_has_no_raw_parser_observation() {
     assert_eq!(json["common"], json!({"year":0}));
     assert_eq!(json["json_projection_only"], false);
 }
+
+#[test]
+fn sealed_source_phases_follow_actual_text_await_and_cleanup_boundaries() {
+    let mut router = router();
+    let start = started(&mut router);
+    let issued = start.effect.unwrap();
+    assert_eq!(issued.source_phase(), SourcePhase::Preparation);
+    let issued = next(
+        &mut router,
+        issued,
+        Receipt::Metadata(Some(
+            Metadata::from_host(json!({}), Covers::Complete(vec![])).unwrap(),
+        )),
+    )
+    .unwrap();
+    assert_eq!(issued.source_phase(), SourcePhase::PublishMetadata);
+    let mut issued = next(&mut router, issued, Receipt::Done { success: true }).unwrap();
+    let mut saw_text = false;
+    loop {
+        if matches!(issued.effect, Effect::WriteText { .. }) {
+            assert_eq!(issued.source_phase(), SourcePhase::Text);
+            saw_text = true;
+        }
+        let receipt = match &issued.effect {
+            Effect::Exists { .. } => Receipt::Exists(false),
+            _ => Receipt::Done { success: true },
+        };
+        match next(&mut router, issued, receipt) {
+            Some(i) => issued = i,
+            None => break,
+        }
+    }
+    assert!(saw_text);
+}

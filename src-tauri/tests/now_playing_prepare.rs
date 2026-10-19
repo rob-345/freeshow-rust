@@ -778,3 +778,52 @@ try {
     }
     f.shutdown().await;
 }
+
+#[tokio::test]
+async fn failed_preparation_retains_real_session_until_explicit_retirement() {
+    let fixture = Fixture::new().await;
+    let path = fixture.source("broken.wav", b"not a wave").await;
+    let failure = fixture
+        .services()
+        .prepare_retained(
+            &fixture.current,
+            &fixture.cover_context,
+            path.to_str().unwrap(),
+            &PreparationControl::default(),
+        )
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(failure.error.code, "audio_input_rejected");
+    assert!(failure.session().is_some());
+    assert_eq!(fixture.covers.status().sessions, 1);
+    let (error, session) = failure.into_parts();
+    assert_eq!(error.kind, FailureKind::Input);
+    let session = session.unwrap();
+    fixture
+        .covers
+        .retire(&session, Duration::from_secs(2))
+        .await
+        .unwrap();
+    drop(session);
+    assert_eq!(fixture.covers.status().sessions, 0);
+    let failure = fixture
+        .services()
+        .prepare_retained(
+            &fixture.current,
+            &fixture.cover_context,
+            "/unregistered.wav",
+            &PreparationControl::default(),
+        )
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(failure.error.kind, FailureKind::Authorization);
+    fixture
+        .covers
+        .retire(failure.session().unwrap(), Duration::from_secs(2))
+        .await
+        .unwrap();
+    drop(failure);
+    fixture.shutdown().await;
+}

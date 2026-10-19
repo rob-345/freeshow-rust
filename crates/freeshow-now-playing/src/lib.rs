@@ -512,9 +512,43 @@ pub struct Token {
 pub struct Accepted {
     token: Token,
 }
+/// Actual source await region. Read-only, derived from the private stage;
+/// this does not grant acceptance or fabricate completion authority.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SourcePhase {
+    Preparation,
+    PublishMetadata,
+    PostMetadata,
+    Text,
+    Unset,
+    Open,
+    Cleanup,
+}
 pub struct Issued {
+    source_phase: SourcePhase,
     pub effect: Effect,
     pub token: Token,
+}
+impl Issued {
+    pub fn source_phase(&self) -> SourcePhase {
+        self.source_phase
+    }
+}
+fn source_phase(stage: Stage) -> SourcePhase {
+    match stage {
+        Stage::Parse | Stage::Covers => SourcePhase::Preparation,
+        Stage::Publish => SourcePhase::PublishMetadata,
+        Stage::TextFolder | Stage::WriteText => SourcePhase::Text,
+        Stage::UnsetIcecast
+        | Stage::UnsetTextFolder
+        | Stage::UnsetWriteText
+        | Stage::UnsetCoverFolder
+        | Stage::UnsetExists
+        | Stage::UnsetDelete => SourcePhase::Unset,
+        Stage::OpenFolder | Stage::OpenExists | Stage::Reveal | Stage::Alert => SourcePhase::Open,
+        Stage::ReleaseImage => SourcePhase::Cleanup,
+        _ => SourcePhase::PostMetadata,
+    }
 }
 pub struct Started {
     pub operation: u64,
@@ -704,6 +738,7 @@ impl Router {
                 .ok_or_else(|| error("now_playing_limit"))?;
             o.pending = Some(self.next);
             return Ok(Some(Issued {
+                source_phase: source_phase(o.stage),
                 effect,
                 token: Token {
                     seal: self.seal.clone(),
