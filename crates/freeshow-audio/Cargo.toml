@@ -12,3 +12,10 @@ serde_json = { version = "1", features = ["preserve_order"] }
 thiserror = "2"
 tokio = { version = "1", features = ["sync", "rt", "time", "macros"] }
 tokio-util = { version = "0.7", features = ["rt"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem"] }
+
+[[bin]]
+name = "freeshow-audio-opened-parity"
+path = "src/bin/opened-parity.rs"

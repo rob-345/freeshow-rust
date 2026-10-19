@@ -3,7 +3,7 @@
 use serde_json::Value;
 
 #[derive(Clone, Debug)]
-pub(crate) enum Js {
+pub enum Js {
     Undefined,
     Null,
     Bool(bool),

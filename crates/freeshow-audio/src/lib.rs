@@ -1,8 +1,15 @@
 //! Native, bounded audio tag parsing and compatibility projection for READ_AUDIO_METADATA.
 mod common;
 mod js;
+mod opened;
 mod parser;
 mod preflight;
+
+pub use js::Js as CommonValue;
+pub use opened::{
+    AudioFormat, CoverKnowledge, FileIdentity, FileObservations, FileVersion, FormatHint,
+    NativeCommon, NativeFileTime, OpenedAdmission, OpenedRead, OpenedTicket,
+};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -55,6 +62,8 @@ pub enum AudioError {
     Shutdown,
     #[error("audio input missing, malformed or unreadable")]
     Input,
+    #[error("audio input changed during parsing")]
+    Changed,
     #[error("audio resource limit: {0}")]
     Resource(String),
     #[error("unsupported audio variant: {0}")]
@@ -71,6 +80,7 @@ impl AudioError {
             Self::Cancelled => "cancelled",
             Self::Shutdown => "audio_shutdown",
             Self::Input => "audio_input_rejected",
+            Self::Changed => "audio_input_changed",
             Self::Resource(_) => "audio_resource_limit",
             Self::UnsupportedVariant(_) => "audio_unsupported_variant",
             Self::Worker(_) => "audio_worker_error",
@@ -114,7 +124,11 @@ pub fn project_metadata(metadata: Value) -> Value {
     js::project(&js::Js::from(metadata)).json()
 }
 
-struct Work {
+enum Work {
+    Public(PublicWork),
+    Opened(opened::Work),
+}
+struct PublicWork {
     path: String,
     cancel: CancellationToken,
     response: oneshot::Sender<Result<AudioReply, AudioError>>,
@@ -127,6 +141,7 @@ struct Inner {
     sender: Mutex<Option<mpsc::SyncSender<Work>>>,
     workers: Mutex<Vec<JoinHandle<()>>>,
     completion: Arc<Completion>,
+    shutdown_gate: tokio::sync::Mutex<()>,
 }
 #[derive(Clone)]
 pub struct AudioService {
@@ -164,6 +179,13 @@ impl AudioService {
                         let work = receiver.lock().expect("audio queue poisoned").recv();
                         let Ok(work) = work else {
                             break;
+                        };
+                        let work = match work {
+                            Work::Opened(work) => {
+                                opened::execute(work, &config);
+                                continue;
+                            }
+                            Work::Public(work) => work,
                         };
                         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                             parser::parse(&work.path, &config, work.cancel.clone()).map(|common| {
@@ -212,6 +234,7 @@ impl AudioService {
                 sender: Mutex::new(Some(sender)),
                 workers: Mutex::new(workers),
                 completion,
+                shutdown_gate: tokio::sync::Mutex::new(()),
             }),
         })
     }
@@ -241,12 +264,12 @@ impl AudioService {
         let cancel = self.inner.cancel.child_token();
         let _guard = CancelOnDrop(cancel.clone());
         let (tx, rx) = oneshot::channel();
-        let work = Work {
+        let work = Work::Public(PublicWork {
             path: path.into(),
             cancel,
             response: tx,
             _permit: permit,
-        };
+        });
         {
             let sender = self
                 .inner
@@ -269,6 +292,8 @@ impl AudioService {
             .lock()
             .expect("audio queue lock poisoned")
             .take();
+        // Concurrent shutdown callers all observe completion of the real joins.
+        let _join_owner = self.inner.shutdown_gate.lock().await;
         let _ = self
             .inner
             .permits
@@ -276,6 +301,8 @@ impl AudioService {
             .await;
         loop {
             let finished = self.inner.completion.done.notified();
+            tokio::pin!(finished);
+            finished.as_mut().enable();
             if self.inner.completion.remaining.load(Ordering::Acquire) == 0 {
                 break;
             }
@@ -294,6 +321,14 @@ impl AudioService {
         for worker in workers {
             let _ = worker.join();
         }
+    }
+    /// Reserve shared parser/result capacity before constructing native input buffers.
+    /// This does not authorize a path or perform filesystem IO.
+    pub fn reserve_opened(&self) -> Result<OpenedAdmission, AudioError> {
+        Ok(OpenedAdmission::new(
+            self.inner.clone(),
+            self.inner.acquire_job()?,
+        ))
     }
 }
 impl Inner {

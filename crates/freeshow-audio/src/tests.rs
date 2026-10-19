@@ -76,12 +76,12 @@ fn publishing_a_completed_audio_reply_already_releases_its_admission_slot() {
         .unwrap()
         .as_ref()
         .unwrap()
-        .try_send(Work {
+        .try_send(Work::Public(PublicWork {
             path: missing_path.to_str().unwrap().into(),
             cancel: service.inner.cancel.child_token(),
             response,
             _permit: permit,
-        })
+        }))
         .unwrap();
     let capacity_at_publication = observation.recv_timeout(Duration::from_secs(3)).unwrap();
     let reply = block_on(receive).unwrap().unwrap();

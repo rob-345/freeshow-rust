@@ -1,7 +1,7 @@
 use crate::{
     common::{self, Collector},
     js::{self, Js},
-    AudioConfig, AudioError,
+    AudioConfig, AudioError, AudioFormat, FormatHint,
 };
 use lofty::{
     config::{apply_global_options, GlobalOptions, ParseOptions},
@@ -27,6 +27,7 @@ pub(crate) struct Budget<R> {
     ops_limit: usize,
     deadline: Instant,
     cancel: CancellationToken,
+    external_cancel: Option<CancellationToken>,
 }
 impl<R> Budget<R> {
     pub fn new(reader: R, config: &AudioConfig, cancel: CancellationToken) -> Self {
@@ -40,10 +41,11 @@ impl<R> Budget<R> {
             ops_limit: config.operation_limit,
             deadline: Instant::now() + config.parse_timeout,
             cancel,
+            external_cancel: None,
         }
     }
     fn check(&mut self) -> io::Result<()> {
-        if self.cancel.is_cancelled() {
+        if self.is_cancelled() {
             self.cancelled = true;
             return Err(io::Error::other("audio cancelled"));
         }
@@ -53,6 +55,13 @@ impl<R> Budget<R> {
             return Err(io::Error::other("audio operation/deadline limit"));
         }
         Ok(())
+    }
+    fn is_cancelled(&self) -> bool {
+        self.cancel.is_cancelled()
+            || self
+                .external_cancel
+                .as_ref()
+                .is_some_and(CancellationToken::is_cancelled)
     }
 }
 impl<R: Read> Read for Budget<R> {
@@ -98,7 +107,36 @@ pub(crate) fn parse(
     }
     let mut reader = Budget::new(file, config, cancel);
     let result = parse_reader(&mut reader, config);
-    if reader.cancelled || reader.cancel.is_cancelled() {
+    finish_parse(reader, result, config)
+}
+pub(crate) fn parse_opened(
+    file: &mut File,
+    source_name: &str,
+    hint: FormatHint,
+    config: &AudioConfig,
+    shutdown: CancellationToken,
+    cancel: CancellationToken,
+) -> Result<Js, AudioError> {
+    apply_global_options(
+        GlobalOptions::new()
+            .allocation_limit(config.allocation_limit)
+            .use_custom_resolvers(false),
+    );
+    let expected = hint.expected(source_name)?;
+    let mut reader = Budget::new(file, config, shutdown);
+    reader.external_cancel = Some(cancel);
+    let result = reader
+        .seek(SeekFrom::Start(0))
+        .map_err(|_| AudioError::Input)
+        .and_then(|_| parse_reader_hint(&mut reader, config, expected));
+    finish_parse(reader, result, config)
+}
+fn finish_parse<R>(
+    reader: Budget<R>,
+    result: Result<Js, AudioError>,
+    config: &AudioConfig,
+) -> Result<Js, AudioError> {
+    if reader.cancelled || reader.is_cancelled() {
         return Err(AudioError::Cancelled);
     }
     if reader.exceeded || Instant::now() >= reader.deadline {
@@ -113,12 +151,32 @@ pub(crate) fn parse(
     Ok(common)
 }
 fn parse_reader<R: Read + Seek>(reader: &mut R, config: &AudioConfig) -> Result<Js, AudioError> {
+    parse_reader_hint(reader, config, None)
+}
+fn parse_reader_hint<R: Read + Seek>(
+    reader: &mut R,
+    config: &AudioConfig,
+    expected: Option<AudioFormat>,
+) -> Result<Js, AudioError> {
     crate::preflight::prefix(reader, config)?;
     let file_type = Probe::new(&mut *reader)
         .guess_file_type()
         .map_err(parser_error)?
         .file_type()
         .ok_or(AudioError::Input)?;
+    let actual = match file_type {
+        FileType::Mpeg => Some(AudioFormat::Mpeg),
+        FileType::Flac => Some(AudioFormat::Flac),
+        FileType::Vorbis | FileType::Opus => Some(AudioFormat::Ogg),
+        FileType::Mp4 => Some(AudioFormat::Mp4),
+        FileType::Wav => Some(AudioFormat::Wav),
+        _ => None,
+    };
+    if expected.is_some() && expected != actual {
+        return Err(AudioError::UnsupportedVariant(
+            "source format hint/content mismatch".into(),
+        ));
+    }
     reader
         .seek(SeekFrom::Start(0))
         .map_err(|_| AudioError::Input)?;
