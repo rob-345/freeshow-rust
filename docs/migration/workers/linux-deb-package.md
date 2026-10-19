@@ -155,6 +155,18 @@ Static Python/JavaScript/shell syntax and configured Prettier checks passed.
 There was no system package installation, binary download, upload, signing,
 performance sample or root/shared-source modification.
 
+## Later fixture review
+
+The archived two passing GUI runs constrain TCP bindings but do not record or
+explicitly set the separate UDP discovery target. Their native binding contains
+a real discovery run. Those receipts therefore do not establish discovery
+network isolation; the actual UDP destination cannot be inferred retrospectively.
+They remain unchanged. The future runner now owns a loopback UDP peer before
+application launch, explicitly sets the native discovery target, observes bounded
+real packets and closes the peer after fixture process joins. This subsequent
+fixture change has static syntax validation; the historical package receipts
+are not relabeled as execution evidence for the revised runner.
+
 ## External release gaps
 
 The pinned `libltc-wrapper` tree identifies the exact installed binary but does

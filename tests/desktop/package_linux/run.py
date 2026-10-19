@@ -128,7 +128,7 @@ def main():
     launcher = Path(f'/proc/{os.getppid()}/cmdline').read_bytes().replace(b'\0', b' ').decode()
     assert 'dbus-run-session' in launcher and os.environ.get('DBUS_SESSION_BUS_ADDRESS'), 'Run under a private dbus-run-session'
     result = {'ok': False, 'sourceHead': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT).decode().strip(), 'packageSha256': verified['packageSha256'], 'binary': str(binary), 'binarySha256': sha(binary), 'normalProductionRelease': True, 'diagnosticBundle': False, 'systemInstallationPerformed': False, 'performanceSample': False, 'physicalMidiOrAudioVerified': False}
-    process = pulse = server = None
+    process = pulse = server = discovery_peer = None
     session = None
     result['privateBusLauncher'] = launcher
     # Keep native Unix socket paths short, independently of artifact/cache paths.
@@ -150,6 +150,11 @@ def main():
         pulse_log = (artifacts / 'pulse.log').open('w')
         display_log = (artifacts / 'xvfb.log').open('w')
         try:
+            discovery_peer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            discovery_peer.bind(('127.0.0.1', 0))
+            discovery_target = '127.0.0.1:' + str(discovery_peer.getsockname()[1])
+            environment['FREESHOW_RUST_DISCOVERY_LOOPBACK_TARGET'] = discovery_target
+            result['discoveryFixture'] = {'explicitTarget': discovery_target, 'peerBoundBeforeApp': True, 'packets': [], 'peerClosed': False}
             read_fd, write_fd = os.pipe()
             try:
                 server = subprocess.Popen(['Xvfb', '-displayfd', str(write_fd), '-screen', '0', '1600x1000x24', '-nolisten', 'tcp'], pass_fds=(write_fd,), stdout=display_log, stderr=subprocess.STDOUT, start_new_session=True)
@@ -227,6 +232,17 @@ def main():
             binding = wait(lambda: script("return window.__TAURI__.core.invoke('remotes_status').then(s=>s.binding?.bound?.endpoints && Object.keys(s.binding.bound.endpoints).length===3 ? s.binding:null)"), 'all packaged remote resources served from actual native bindings')
             assert binding['context'] == result['editor']['context']
             result['remoteBinding'] = binding
+            # Observe bounded real discovery traffic, without any multicast
+            # transport or ambient target selection in this private fixture.
+            assert select.select([discovery_peer], [], [], 5)[0], 'Loopback discovery packet deadline'
+            for _ in range(32):
+                if not select.select([discovery_peer], [], [], 0)[0]:
+                    break
+                payload, address = discovery_peer.recvfrom(65507)
+                assert address[0] == '127.0.0.1'
+                result['discoveryFixture']['packets'].append({'sourceIp': address[0], 'bytes': len(payload), 'sha256': hashlib.sha256(payload).hexdigest()})
+            assert result['discoveryFixture']['packets']
+
             remote_http = []
             for kind in ['REMOTE', 'STAGE', 'CONTROLLER']:
                 endpoint = binding['bound']['endpoints'][kind]
@@ -282,6 +298,10 @@ def main():
             terminate(process)
             terminate(pulse)
             terminate(server)
+            if discovery_peer is not None:
+                discovery_peer.close()
+                result['discoveryFixture']['peerClosed'] = discovery_peer.fileno() == -1
+
             log.close()
             pulse_log.close()
             display_log.close()
