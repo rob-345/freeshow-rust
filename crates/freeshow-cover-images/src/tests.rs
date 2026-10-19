@@ -158,7 +158,9 @@ async fn accepted_jpeg_loader_survives_caller_drop_and_cancel_until_real_close_a
         )
         .unwrap();
     // Held after an actual Gdk JPEG write, with its native loader still live.
-    gate.started().await;
+    tokio::time::timeout(Duration::from_secs(5), gate.started())
+        .await
+        .expect("Verified native JPEG must reach its accepted-write gate");
     cancel.cancel();
     drop(ticket);
     assert_eq!(

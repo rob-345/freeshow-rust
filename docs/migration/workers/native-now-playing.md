@@ -126,9 +126,10 @@ write diagnostics; pre-operation failures stop explicitly. File helper false
 results continue according to source. Source writes preserve ordinary truncate,
 equal-text skipping, fixed filenames, and source partial effects; no rollback or
 batch atomicity is claimed. Images use VerifiedPngPixels, real create/png/size/
-jpeg/release receipts, then explicit Session retirement. JPEG input, unsupported
-PNG/color/alpha/chunks and uncertified native resize remain explicit capability
-gaps; no alternate resize opt-in occurs. PNG pixels/dimensions have foundation
+jpeg/release receipts, then explicit Session retirement. The narrow verified
+[Linux JPEG subset](cover-jpeg.md) now uses the same image owners. Broader JPEG,
+unsupported PNG/color/alpha/chunks and uncertified native resize remain explicit
+capability gaps; no alternate resize opt-in occurs. PNG pixels/dimensions have foundation
 source evidence; compressed PNG byte identity with Electron is not claimed.
 Original common.picture insertion position relative to other tags is still
 unverified; native field order and own values remain exact observations.

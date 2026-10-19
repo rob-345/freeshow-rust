@@ -278,7 +278,7 @@ test("JPEG profile/component/scan/resource violations reject explicitly before n
     assert.equal(result.status.finished_workers, 2)
     assert.equal(result.status.reserved_bytes, 0)
 })
-test("real tagged MP3/FLAC parsing retains original JPEG bytes independently of unsupported image decoding", async (t) => {
+test("real tagged MP3/FLAC parsing retains original JPEG bytes through the same bounded image session", async (t) => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-cover-jpeg-"))
     t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
     const covers = ["texture-17x11-no-icc", "native-encoded-gray"].map((name) => Buffer.from(receipt.fixtures.find((f) => f.name === name).input.base64, "base64"))
