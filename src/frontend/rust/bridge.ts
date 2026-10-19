@@ -312,7 +312,8 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 const mediaCopy = channel === "MAIN" && ["BUNDLE_MEDIA_FILES", "MEDIA_FOLDER_COPY"].includes(data?.channel)
                 // Electron serializes at send time. Output updates often reuse
                 // mutable Svelte objects; queued cues must keep their snapshot.
-                if (mediaCopy || channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && (remoteCommands.has(data?.channel) || midiCommands.has(data?.channel)))) data = structuredClone(data)
+                // Spotify also validates this origin after its native wait.
+                if (mediaCopy || channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && (data?.channel === "SPOTIFY_GET_STATE" || remoteCommands.has(data?.channel) || midiCommands.has(data?.channel)))) data = structuredClone(data)
                 // SAVE snapshots its context before its deferred send. Other
                 // requests belong to the library visible when send is called.
                 const captured = channel === "MAIN" && data?.channel === "SAVE" ? data.data?.runtimeContext || context : context

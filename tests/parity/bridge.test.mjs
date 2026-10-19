@@ -131,6 +131,47 @@ test("ordinary Spotify send/receive preserves immutable source and native WireSt
     }
 })
 
+test("Spotify snapshots the original command before transport entry and retains that origin while its reply is pending", async () => {
+    const context = { runtimeId: "spotify-snapshot", libraryGeneration: 2, dataPath: "/library" }
+    for (const phase of ["before-transport", "after-transport"]) {
+        const payload = { channel: "SPOTIFY_GET_STATE", data: { ignored: { value: "sent" } } },
+            sent = structuredClone(payload),
+            messages = [],
+            errors = [],
+            requests = []
+        let finish
+        const bridge = createRustApi(
+            async (request) => {
+                requests.push({ request, serialized: JSON.parse(JSON.stringify(request)) })
+                return new Promise((resolve) => {
+                    finish = resolve
+                })
+            },
+            (...error) => errors.push(error),
+            context
+        )
+        bridge.api.receive("MAIN", (message, listenerId) => messages.push({ message, listenerId }))
+        assert.equal(bridge.api.send("MAIN", payload, phase), undefined)
+        if (phase === "after-transport") {
+            await tick()
+            assert.equal(requests.length, 1, "real asynchronous transport entered before caller reuse")
+        }
+        payload.channel = "GET_OS"
+        payload.data.ignored.value = "reused"
+        if (phase === "before-transport") await tick()
+        assert.equal(requests.length, 1)
+        const { request, serialized } = requests[0]
+        assert.notEqual(request.data, payload)
+        assert.deepEqual(serialized, { channel: "MAIN", data: sent, listenerId: phase, context })
+        assert.deepEqual(request.data, sent, "origin remains frozen after actual transport serialization")
+        finish([spotifyEvent(request.context, phase, nullSpotifyWire())])
+        await tick()
+        assert.deepEqual(messages, [{ message: { channel: "SPOTIFY_GET_STATE", data: null }, listenerId: phase }])
+        assert.deepEqual(errors, [])
+        assert.deepEqual(bridge.api.getRuntimeContext(), context)
+    }
+})
+
 test("Spotify pending transport replies are discarded before malformed hydration after a real retained library switch", async () => {
     const old = { runtimeId: "spotify-library", libraryGeneration: 3, dataPath: "/old/音楽" },
         next = { ...old, libraryGeneration: 4, dataPath: "/next/音楽" },
