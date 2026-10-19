@@ -571,6 +571,10 @@ impl NativeAudioPipeline {
         })
         .await
     }
+    #[allow(
+        dead_code,
+        reason = "Tested host operation awaiting the separately prepared NOW_PLAYING integration"
+    )]
     pub async fn metadata(
         &self,
         context: &RuntimeContext,

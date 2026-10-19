@@ -24,6 +24,10 @@ const exif = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/ru
 const exifModule = `data:text/javascript;base64,${Buffer.from(exif).toString("base64")}`
 const midi = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/midi.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
 const midiModule = `data:text/javascript;base64,${Buffer.from(midi).toString("base64")}`
+const audioPort = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/audioPortBridge.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+const audioPortModule = `data:text/javascript;base64,${Buffer.from(audioPort).toString("base64")}`
+const audioRaw = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/audioRaw.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+const audioRawModule = `data:text/javascript;base64,${Buffer.from(audioRaw).toString("base64")}`
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -37,8 +41,269 @@ const javascript = ts
     .replace('from "./captureBridge"', `from "${captureBridgeModule}"`)
     .replace('from "./exif"', `from "${exifModule}"`)
     .replace('from "./midi"', `from "${midiModule}"`)
+    .replace('from "./audioPortBridge"', `from "${audioPortModule}"`)
+    .replace('from "./audioRaw"', `from "${audioRawModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("native AUDIO status retains the original fields and owns a private completion through rejection and listener errors", async () => {
+    const context = { runtimeId: "audio", libraryGeneration: 1, dataPath: "/one" },
+        delivered = [],
+        errors = [],
+        completed = []
+    const bridge = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context,
+        undefined,
+        undefined,
+        undefined,
+        {
+            postPort() {},
+            transport: async () => {},
+            disconnect: async () => {},
+            closeContext: async () => {},
+            completeStatus: async (frozen, id, accepted) => completed.push({ frozen, id, accepted })
+        }
+    )
+    bridge.api.receive("MAIN", (message, id) => delivered.push({ message, id }))
+    bridge.api.receive("MAIN", () => {
+        throw new Error("retained listener failure")
+    })
+    let serial = 0
+    const event = (changes = {}) => ({ channel: "MAIN", context, message: { channel: "ICECAST_STATUS", data: { connecting: true, connected: false } }, nativeAudio: { id: "native-audio-00000000-0000-0000-0000-" + String(++serial).padStart(12, "0"), run: "18446744073709551615", ownUndefinedError: true }, ...changes })
+    const first = event()
+    bridge.dispatch(first)
+    assert.deepEqual(delivered, [{ message: { channel: "ICECAST_STATUS", data: { connected: false, connecting: true, error: undefined } }, id: undefined }])
+    assert.deepEqual(Object.keys(delivered[0].message.data), ["connected", "connecting", "error"])
+    assert.equal(Object.hasOwn(first.message.data, "error"), false, "hydration preserves the wire envelope")
+    const failed = event({ message: { channel: "ICECAST_STATUS", data: { connected: false, connecting: false, error: "connection refused" } } })
+    failed.nativeAudio.ownUndefinedError = false
+    bridge.dispatch(failed)
+    assert.equal(delivered.at(-1).message.data.error, "connection refused")
+    const malformed = event({ message: { channel: "ICECAST_STATUS", data: { connected: true } } })
+    bridge.dispatch(malformed)
+    const overflow = event()
+    overflow.nativeAudio.run = "18446744073709551616"
+    bridge.dispatch(overflow)
+    bridge.dispatch(event({ context: { ...context, dataPath: "/wrong" } }))
+    bridge.dispatch(event({ context: { ...context, libraryGeneration: 2, dataPath: "/future" } }))
+    bridge.dispatch(event({ listenerId: "fabricated-source-ack" }))
+    await tick()
+    assert.equal(delivered.length, 2)
+    assert.deepEqual(
+        completed.map((item) => item.accepted),
+        [true, true, false, false, false, false, false]
+    )
+    assert.deepEqual(completed[4].frozen, { ...context, dataPath: "/wrong" })
+    assert.equal(errors.filter((error) => error.code === "audio_publication").length, 3)
+    assert.equal(errors.filter((error) => error.message === "retained listener failure").length, 2)
+    assert.deepEqual(bridge.api.getRuntimeContext(), context)
+})
+
+test("the installed AUDIO bridge transfers a real port and sends bounded binary snapshots before native close", async (t) => {
+    const context = { runtimeId: "audio-installed", libraryGeneration: 1, dataPath: "/音楽" },
+        calls = [],
+        errors = []
+    const channel = new MessageChannel()
+    let receivedPort, releaseFrame, releaseClose
+    const firstFrame = new Promise((resolve) => {
+            releaseFrame = resolve
+        }),
+        close = new Promise((resolve) => {
+            releaseClose = resolve
+        })
+    t.after(() => {
+        receivedPort?.close()
+        channel.port1.close()
+        channel.port2.close()
+        releaseFrame()
+        releaseClose()
+    })
+    const transferred = new Promise((resolve) => {
+        channel.port2.onmessage = (event) => {
+            assert.deepEqual(event.data, { type: "AUDIO_PORT_RESPONSE", targetId: "icecast" })
+            assert.equal(event.ports.length, 1)
+            receivedPort = event.ports[0]
+            resolve(receivedPort)
+        }
+    })
+    const target = {
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent: (event) => errors.push(event.detail),
+        postMessage: (message, origin, ports) => {
+            assert.equal(origin, "*")
+            channel.port1.postMessage(message, ports)
+        },
+        __TAURI__: {
+            core: {
+                invoke: async (name, args) => {
+                    calls.push({ name, args })
+                    if (name === "runtime_context") return context
+                    if (name === "audio_pcm" && calls.filter((call) => call.name === name).length === 1) return firstFrame
+                    if (name === "audio_close_context") return close
+                    return []
+                }
+            },
+            webviewWindow: { getCurrentWebviewWindow: () => ({ label: "main" }) },
+            event: { listen: async () => () => {} }
+        }
+    }
+    await installRustBridge(target)
+    const sourceAcks = []
+    target.api.receive("AUDIO", (message) => sourceAcks.push(message))
+    target.api.send("AUDIO", { channel: "INIT_PORT", data: { id: "icecast" } }, "ignored")
+    const port = await Promise.race([
+        transferred,
+        new Promise((_, reject) => {
+            const timer = setTimeout(() => reject(new Error("actual transferred port deadline")), 3000)
+            t.after(() => clearTimeout(timer))
+        })
+    ])
+    const storage = new Uint8Array([99, 1, 2, 3, 4, 98])
+    const config = Object.defineProperty({ enabled: false }, "__proto__", { value: { "~/": -0 }, enumerable: true })
+    port.postMessage({ channel: "AUDIO", payload: { buffer: new DataView(storage.buffer, 1, 4), sampleRate: -0, id: "icecast", icecast: config } })
+    storage.fill(88)
+    const wait = async (predicate) => {
+        const deadline = Date.now() + 3000
+        while (!predicate()) {
+            assert.ok(Date.now() < deadline, "bounded AUDIO bridge wait")
+            await new Promise((resolve) => setTimeout(resolve, 2))
+        }
+    }
+    await wait(() => calls.some((call) => call.name === "audio_pcm"))
+    const frame = calls.find((call) => call.name === "audio_pcm").args
+    assert.ok(frame instanceof Uint8Array, "actual invoke receives raw binary rather than a numeric JSON array")
+    const length = new DataView(frame.buffer, frame.byteOffset, frame.byteLength).getUint32(0, true),
+        prefix = JSON.parse(new TextDecoder().decode(frame.subarray(4, 4 + length)))
+    assert.deepEqual([...frame.subarray(4 + length)], [1, 2, 3, 4])
+    assert.deepEqual(prefix.context, context)
+    assert.equal(prefix.origin, "port")
+    assert.deepEqual(prefix.negativeZeroPaths, ["/sampleRate", "/icecast/__proto__/~0~1"])
+    assert.equal(Object.hasOwn(prefix.metadata.icecast, "__proto__"), true)
+    const fallback = new Uint8Array([77, 5, 6, 66])
+    target.api.send("AUDIO", { channel: "PCM", data: { buffer: fallback.subarray(1, 3), sampleRate: 48000, id: "icecast" } })
+    fallback.fill(55)
+    target.api.send("MAIN", { channel: "VERSION" })
+    await tick()
+    assert.equal(calls.filter((call) => call.name === "audio_pcm").length, 1, "the fixed adapter pump owns entered PCM until actual native completion")
+    assert.ok(calls.some((call) => call.name === "ipc_dispatch" && call.args.request.data.channel === "VERSION"))
+    releaseFrame()
+    await wait(() => calls.filter((call) => call.name === "audio_pcm").length === 2)
+    const second = calls.filter((call) => call.name === "audio_pcm")[1].args,
+        secondLength = new DataView(second.buffer, second.byteOffset, second.byteLength).getUint32(0, true)
+    assert.deepEqual([...second.subarray(4 + secondLength)], [5, 6])
+    target.api.send("MAIN", { channel: "CLOSE" })
+    await wait(() => calls.some((call) => call.name === "audio_close_context"))
+    assert.ok(!calls.some((call) => call.name === "ipc_dispatch" && call.args.request.data.channel === "CLOSE"))
+    releaseClose()
+    await wait(() => calls.some((call) => call.name === "ipc_dispatch" && call.args.request.data.channel === "CLOSE"))
+    assert.deepEqual(calls.find((call) => call.name === "audio_close_context").args, { context })
+    assert.deepEqual(sourceAcks, [])
+    assert.deepEqual(errors, [])
+})
+
+test("accepted library selection retires AUDIO outside the stalled PCM pump and preserves the next full context", async () => {
+    const old = { runtimeId: "audio-context", libraryGeneration: 1, dataPath: "/old" },
+        next = { ...old, libraryGeneration: 2, dataPath: "/next" },
+        frames = [],
+        controls = [],
+        errors = []
+    let releaseFrame, releaseRetirement
+    const entered = new Promise((resolve) => {
+            releaseFrame = resolve
+        }),
+        retirement = new Promise((resolve) => {
+            releaseRetirement = resolve
+        })
+    const bridge = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        old,
+        undefined,
+        undefined,
+        undefined,
+        {
+            postPort() {},
+            disconnect: async () => {},
+            completeStatus: async () => {},
+            transport: async (bytes, metadata, context) => {
+                frames.push({ bytes: [...bytes], context })
+                if (context.libraryGeneration === 1) await entered
+            },
+            closeContext: async (context) => {
+                controls.push(context)
+                if (context.libraryGeneration === 1) await retirement
+            }
+        }
+    )
+    const packet = (channel, byte) => bridge.api.send("AUDIO", { channel, data: { buffer: new Uint8Array([byte]), sampleRate: 48000 } })
+    packet("PCM", 1)
+    packet("CAPTURE", 2)
+    await tick()
+    assert.equal(frames.length, 1)
+    bridge.dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: next.dataPath }, context: next }, { channel: "MAIN", data: { channel: "UPDATE_DATA_PATH" } })
+    await tick()
+    assert.deepEqual(controls, [old], "reserved context cleanup enters while actual PCM is still held")
+    assert.deepEqual(bridge.api.getRuntimeContext(), next)
+    packet("PCM", 3)
+    assert.equal(frames.length, 1)
+    releaseFrame()
+    releaseRetirement()
+    await tick()
+    await tick()
+    packet("PCM", 4)
+    await tick()
+    assert.deepEqual(frames, [
+        { bytes: [1], context: old },
+        { bytes: [4], context: next }
+    ])
+    assert.ok(
+        errors.some((error) => error.code === "audio_context_closed"),
+        "queued obsolete packet is explicitly canceled"
+    )
+    assert.ok(
+        errors.some((error) => error.code === "audio_closed"),
+        "new input waits for real old cleanup"
+    )
+    bridge.api.send("MAIN", { channel: "CLOSE" })
+    await tick()
+    await tick()
+    assert.deepEqual(controls, [old, next])
+})
+
+test("native CLOSE still attempts independent owners after a frontend audio drain fails", async () => {
+    const calls = [],
+        errors = [],
+        context = { runtimeId: "audio-close", libraryGeneration: 1, dataPath: "/one" }
+    const bridge = createRustApi(
+        async (request) => {
+            calls.push(request)
+            return []
+        },
+        (error) => errors.push(error),
+        context,
+        undefined,
+        undefined,
+        undefined,
+        {
+            postPort() {},
+            transport: async () => {},
+            disconnect: async () => {},
+            completeStatus: async () => {},
+            closeContext: async () => {
+                throw { code: "audio_ingress_drain_timeout", message: "native accepted work remains owned" }
+            }
+        }
+    )
+    bridge.api.send("MAIN", { channel: "CLOSE" })
+    for (let count = 0; count < 5; count++) await tick()
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0].data.channel, "CLOSE")
+    assert.deepEqual(calls[0].context, context)
+    assert.ok(errors.some((error) => error.code === "audio_cleanup"), "failed frontend drain remains explicit while native cleanup proceeds")
+})
 
 test("native MIDI dispatch restores source fields only after exact context/provenance acceptance and completes private receipts", async () => {
     const context = { runtimeId: "midi", libraryGeneration: 1, dataPath: "/one" }

@@ -8,7 +8,7 @@ use std::{
     collections::VecDeque,
     future::Future,
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         Arc, Mutex, Weak,
     },
     time::Duration,
@@ -152,11 +152,14 @@ struct Shared {
     audio: NativeAudioPipeline,
     state: Mutex<State>,
     slots: Arc<Semaphore>,
+    controls: Arc<Semaphore>,
     wake: Notify,
     joined: AtomicBool,
     changed: Notify,
     supervisor: Mutex<Option<JoinHandle<()>>>,
     timeout: Duration,
+    accepted_packets: AtomicU64,
+    completed_packets: AtomicU64,
     #[cfg(test)]
     panic: CancellationToken,
 }
@@ -220,17 +223,35 @@ impl Shared {
             .cloned();
         let group = match existing {
             Some(g) => g,
-            None if state.group.is_none() => {
-                self.current(context)?;
-                let g = Group::new(context.clone());
-                state.group = Some(g.clone());
-                g
-            }
             None => {
-                return Err(IngressError::new(
-                    "stale_library",
-                    "Unknown AUDIO ingress context",
-                ))
+                let current = self
+                    .library
+                    .context()
+                    .map_err(|e| IngressError::new("audio_ingress_context", e.to_string()))?;
+                if context.runtime_id != current.runtime_id
+                    || context.library_generation > current.library_generation
+                    || (context.library_generation == current.library_generation
+                        && *context != current)
+                {
+                    return Err(IngressError::new(
+                        "stale_library",
+                        "Foreign AUDIO ingress cleanup context",
+                    ));
+                }
+                let g = Group::new(context.clone());
+                if *context == current {
+                    if state.group.is_some() {
+                        return Err(IngressError::new(
+                            "audio_ingress_context_drain",
+                            "The previous AUDIO context still needs retirement",
+                        ));
+                    }
+                    state.group = Some(g.clone());
+                }
+                // An older context absent from both retained groups cannot own
+                // queued/active/ready data: replacement required its actual
+                // guard count to reach zero. Retain no synthetic history entry.
+                g
             }
         };
         group.close();
@@ -292,6 +313,8 @@ pub struct Ticket {
     armed: bool,
 }
 impl Ticket {
+    #[cfg(test)]
+    #[allow(dead_code)] // Explicit cancellation is exercised by the separate ingress integration test.
     pub fn cancel(&self) {
         if let Some(shared) = self.cell.shared.upgrade() {
             shared.cancel_ticket(&self.cell, false);
@@ -372,6 +395,9 @@ pub struct IngressStatus {
     pub group_outstanding: usize,
     pub pump_joined: bool,
     pub terminal: Option<IngressError>,
+    pub accepted_packets: u64,
+    pub completed_packets: u64,
+    pub retained_controls: usize,
 }
 impl AudioIngress {
     pub fn new(library: LibraryService, audio: NativeAudioPipeline) -> Result<Self> {
@@ -415,11 +441,14 @@ impl AudioIngress {
                 failure: None,
             }),
             slots: Arc::new(Semaphore::new(CAPACITY)),
+            controls: Arc::new(Semaphore::new(CAPACITY)),
             wake: Notify::new(),
             joined: AtomicBool::new(false),
             changed: Notify::new(),
             supervisor: Mutex::new(None),
             timeout,
+            accepted_packets: AtomicU64::new(0),
+            completed_packets: AtomicU64::new(0),
             #[cfg(test)]
             panic: CancellationToken::new(),
         });
@@ -527,12 +556,20 @@ impl AudioIngress {
         // Reserve quota and group authority before copying PCM/metadata/sinks.
         group.guards.fetch_add(1, Ordering::AcqRel);
         let guard = GroupGuard(group.clone());
+        let input = input();
+        if matches!(&input, Input::Pcm { .. }) {
+            let _ = shared
+                .accepted_packets
+                .try_update(Ordering::AcqRel, Ordering::Acquire, |n| {
+                    Some(n.saturating_add(1))
+                });
+        }
         let cell = Arc::new(Cell {
             group,
             shared: Arc::downgrade(shared),
             state: Mutex::new(CellState {
                 phase: Phase::Queued,
-                input: Some(input()),
+                input: Some(input),
                 outcome: None,
                 guard: Some(guard),
                 lease: Some(lease),
@@ -560,7 +597,43 @@ impl AudioIngress {
     ) -> impl Future<Output = Result<()>> + Send + 'static {
         let group = self.handle.shared.close_group(context);
         let owner = self.clone();
-        async move { owner.wait_group(&group?).await }
+        let lease = self.control_lease();
+        async move {
+            let _lease = lease?;
+            owner.wait_group(&group?).await
+        }
+    }
+    /// Retire only the actually obsolete native group, including a late hook.
+    pub fn context_changed(&self) -> impl Future<Output = Result<()>> + Send + 'static {
+        let group = self
+            .handle
+            .shared
+            .library
+            .context()
+            .map_err(|e| IngressError::new("audio_ingress_context", e.to_string()))
+            .and_then(|current| {
+                let old = lock(&self.handle.shared.state)
+                    .group
+                    .as_ref()
+                    .filter(|group| group.context != current)
+                    .map(|group| group.context.clone());
+                old.map(|old| self.handle.shared.close_group(&old))
+                    .transpose()
+            });
+        let lease = self.control_lease();
+        let owner = self.clone();
+        async move {
+            let _lease = lease?;
+            if let Some(group) = group? {
+                owner.wait_group(&group).await?;
+            }
+            Ok(())
+        }
+    }
+    fn control_lease(&self) -> Result<OwnedSemaphorePermit> {
+        self.handle.shared.controls.clone().try_acquire_owned().map_err(|_| {
+            IngressError::new("audio_ingress_control_busy", "At most four AUDIO drain callers may be retained; synchronous retirement still applies")
+        })
     }
     async fn wait_group(&self, group: &Arc<Group>) -> Result<()> {
         let wait = async {
@@ -602,14 +675,19 @@ impl AudioIngress {
                 .map_or(0, |g| g.guards.load(Ordering::Acquire)),
             pump_joined: shared.joined.load(Ordering::Acquire),
             terminal: state.failure.clone(),
+            accepted_packets: shared.accepted_packets.load(Ordering::Acquire),
+            completed_packets: shared.completed_packets.load(Ordering::Acquire),
+            retained_controls: CAPACITY - shared.controls.available_permits(),
         }
     }
     /// Stops/drains only this ingress. The host separately shuts down the real
     /// pipeline and attempts every other owner even if one returns an error.
     pub fn shutdown(&self) -> impl Future<Output = Result<()>> + Send + 'static {
         self.handle.shared.close_all();
+        let lease = self.control_lease();
         let owner = self.clone();
         async move {
+            let _lease = lease?;
             let shared = &owner.handle.shared;
             tokio::time::timeout(shared.timeout, async {
                 loop {
@@ -675,7 +753,7 @@ async fn pump(shared: Arc<Shared>) {
             let call = async {
                 match input.expect("an active AUDIO cell owns exactly one input") {
                     Input::Pcm { bytes, meta, sinks } => {
-                        shared
+                        let result = shared
                             .audio
                             .pcm(
                                 &cell.group.context,
@@ -685,7 +763,13 @@ async fn pump(shared: Arc<Shared>) {
                                 &sinks,
                                 cancel.clone(),
                             )
-                            .await
+                            .await;
+                        let _ = shared.completed_packets.try_update(
+                            Ordering::AcqRel,
+                            Ordering::Acquire,
+                            |n| Some(n.saturating_add(1)),
+                        );
+                        result
                     }
                     Input::Disconnect => {
                         shared

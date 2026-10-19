@@ -1,10 +1,11 @@
 # Native AUDIO composition
 
 `src-tauri/src/audio_pipeline.rs` composes the separately tested audio pipeline,
-actual native Opus encoder and actual Icecast TCP owner. This commit contains the
-host and focused headless tests. It does **not** connect an AUDIO IPC command,
-MessagePort, capture device or renderer binary bridge. No hardware, server
-acceptance, playback or performance result is implied.
+actual native Opus encoder and actual Icecast TCP owner. The desktop now connects
+the retained AUDIO API and real transferred MessagePorts to a bounded raw binary
+command. Controlled Linux WebKit PCM, Opus and actual TCP/Ogg bytes match the
+original TypeScript and original native addon. Physical capture, server
+authorization, playback and application performance remain unverified.
 
 ## Integration API and order
 
@@ -219,4 +220,65 @@ integration obligations.
 
 ## Shared native verification integration
 
-The coordinator added the foundation path dependencies and this direct host target to native CI. Linux builds private original add-ons and requires real Opus and immutable-source/addon end-to-end evidence; other platforms retain truthful unavailable-capability checks without a packaged codec claim. The host remains prepared independently of the running desktop pending raw AUDIO/MessagePort/status and lifecycle integration. Fourteen direct integrated Linux host tests pass with both strict evidence flags; no source-success ACK or rendered playback claim is added.
+The coordinator added the foundation path dependencies and this direct host target to native CI. Linux builds private original add-ons and requires real Opus and immutable-source/addon end-to-end evidence; other platforms retain truthful unavailable-capability checks without a packaged codec claim. The initial host was prepared independently; the subsequent raw AUDIO/MessagePort/status integration is described below. Fourteen direct integrated Linux host tests pass with both strict evidence flags; no source-success ACK or rendered playback claim is added.
+
+
+## Desktop raw input and retained bridge (2026-10-19)
+
+The main window installs `createAudioPortBridge` in the shared Rust compatibility
+bridge. INIT_PORT transfers a real MessagePort using the original response shape;
+port packets and PCM/CAPTURE fallback copy their exact typed-view range before
+reuse. Seven ordinary whole jobs plus one cleanup job, sixteen ports and one
+fixed FIFO pump bound adapter-owned input. CLOSE_PORT preserves the source's
+ordinary disconnect effects; it does not reset DSP/codec. Source void commands
+receive no fabricated success callback. Browser-owned MessagePort queues before
+dispatch cannot be strictly bounded without changing the original worklet's
+protocol; this is not a whole-browser memory bound.
+
+The actual Tauri `audio_pcm` command accepts only a main-window raw body. A
+four-byte little-endian length prefixes at most49,152bytes of JSON followed by
+at most32,768PCM bytes. The exact schema carries version1, full native context,
+origin and at most8192bytes/depth8/256nodes of finite metadata. Missing and null
+remain distinct; bounded escaped JSON pointers restore negative zero, including
+nested own prototype-named data. The native parser borrows the PCM suffix and
+performs exact binary64 conversion without changing global serde behavior. The
+frontend encoder and native parser run together in an actual cross-language test.
+Renderer input cannot select an executable codec library or a hardware registry.
+
+One `AudioIngress` adds four whole packet/result leases, one fixed Tokio pump and
+one join supervisor. An entered native PCM future remains owned after its IPC
+caller drops. Explicit context closure cancels synchronously, bypasses a blocked
+ordinary FIFO and retains its group until actual native return/disposal. Old
+ready receipts are disposed before their group guard or quota is released.
+Unknown older contexts with no owned work cannot close the current group; foreign
+runtime/path identities are rejected. At most four lifecycle callers may retain
+drain futures, including unpolled futures. Busy rejection still applies
+synchronous closing/cancellation. Private accepted/completed packet counters
+prove actual native admission/return for tests; they are not source ACKs and do
+not imply successful encoding or delivery by themselves.
+
+The native status handoff carries a private UUID/run and own-undefined marker.
+After exact context and envelope validation, the frontend restores original
+`connected,connecting,error` order and `error: undefined`, invokes unchanged
+MAIN listeners, then completes the private delivery even if a listener throws.
+Obsolete events cannot retag the current library. MAIN.CLOSE attempts native
+shutdown even after frontend audio retirement fails, so independent native
+owners still receive real drain/join attempts before final library shutdown.
+
+The local153-step Linux editor, four native menu checks and both actual file-drop
+scales passed. Three controlled audio phases ran in one application process:
+normal use, after library selection and while the same real64MiB ZIP compression
+remained active. Twelve actual encoded inputs used one continuous original addon
+encoder. Native/source HTTP, tags, lacing and real Opus payloads matched after the
+explicit serial/idle-page normalization documented in
+[the desktop helper contract](workers/audio-desktop.md). All original CRCs,
+sequences and granules were checked before normalization, every stream ended
+with EOS and every TCP peer thread joined. Observed status ownership/order and
+zero source ACKs are retained in `test-output-rust/desktop/audio-stream.json`.
+The probe reports controlled PCM and browser worklet availability separately;
+it does not claim an actual AudioWorklet/device recording or decoded playback.
+
+Connected-idle context retirement is being strengthened separately: packet/group
+drain alone does not prove an already connected socket closed. The full parity
+gate remains incomplete while that actual native lifecycle proof and the wider
+capture/output/backend cases remain open.

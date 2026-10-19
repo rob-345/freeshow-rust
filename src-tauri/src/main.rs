@@ -2,6 +2,9 @@
 
 mod api;
 mod assets;
+mod audio_ingress;
+mod audio_input;
+mod audio_pipeline;
 mod browse;
 mod context_changes;
 mod discovery;
@@ -53,6 +56,9 @@ struct AppState {
     scriptures: scriptures::NativeScriptures,
     media_copy: media_copy::NativeMediaCopy,
     audio: AudioService,
+    audio_pipeline: audio_pipeline::NativeAudioPipeline,
+    audio_ingress: audio_ingress::AudioIngress,
+    audio_last_receipt: std::sync::Mutex<serde_json::Value>,
     midi: midi::NativeMidi,
     files: files::NativeFiles,
     file_reads: file_reads::NativeFileReads,
@@ -186,6 +192,120 @@ fn ffmpeg_download_status(app: tauri::AppHandle) -> serde_json::Value {
 #[tauri::command]
 fn midi_status(app: tauri::AppHandle) -> serde_json::Value {
     app.state::<AppState>().midi.status()
+}
+
+fn audio_window(window: &tauri::WebviewWindow) -> Result<(), WireError> {
+    if window.label() != "main" {
+        return Err(WireError::new(
+            "window_error",
+            "AUDIO input requires the main capture owner",
+        ));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn audio_pcm(
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    let (ticket, origin) = {
+        let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+            return Err(WireError::new(
+                "audio_raw_body",
+                "AUDIO requires its bounded raw frame",
+            ));
+        };
+        let input = audio_input::parse(bytes).map_err(|e| WireError::new(e.code, e.message))?;
+        // Framing provenance is private evidence, never hardware/codec authority.
+        let ticket = window
+            .app_handle()
+            .state::<AppState>()
+            .audio_ingress
+            .submit(
+                &input.context,
+                input.pcm,
+                &input.metadata,
+                &audio_pipeline::SinkAvailability::default(),
+                tokio_util::sync::CancellationToken::new(),
+            )
+            .map_err(WireError::from)?;
+        (ticket, input.origin)
+    };
+    let observation = ticket.finish().await.map_err(WireError::from)?;
+    let evidence = observation.inspect(|receipt| json!({"origin":origin,"context":receipt.context(),"sequence":receipt.sequence(),"effects":receipt.effects(),"diagnostics":receipt.diagnostics(),"failure":receipt.failure()})).map_err(WireError::from)?;
+    *window
+        .app_handle()
+        .state::<AppState>()
+        .audio_last_receipt
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = evidence;
+    observation.into_void().map_err(WireError::from)
+}
+
+#[tauri::command]
+async fn audio_disconnect(
+    window: tauri::WebviewWindow,
+    context: RuntimeContext,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    let ticket = window
+        .app_handle()
+        .state::<AppState>()
+        .audio_ingress
+        .disconnect_icecast(&context, tokio_util::sync::CancellationToken::new())
+        .map_err(WireError::from)?;
+    ticket
+        .finish()
+        .await
+        .map_err(WireError::from)?
+        .into_void()
+        .map_err(WireError::from)
+}
+
+#[tauri::command]
+async fn audio_close_context(
+    window: tauri::WebviewWindow,
+    context: RuntimeContext,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    let drain = window
+        .app_handle()
+        .state::<AppState>()
+        .audio_ingress
+        .close_context(&context);
+    drain.await.map_err(WireError::from)
+}
+
+#[tauri::command]
+async fn audio_capability(app: tauri::AppHandle) -> Result<freeshow_opus::Capability, WireError> {
+    app.state::<AppState>()
+        .audio_pipeline
+        .capability()
+        .await
+        .map_err(WireError::from)
+}
+
+#[tauri::command]
+fn audio_status(app: tauri::AppHandle) -> serde_json::Value {
+    let state = app.state::<AppState>();
+    json!({"host":state.audio_pipeline.status(),"ingress":state.audio_ingress.status(),"lastReceipt":*state.audio_last_receipt.lock().unwrap_or_else(|e|e.into_inner())})
+}
+
+#[tauri::command]
+fn audio_status_complete(
+    window: tauri::WebviewWindow,
+    context: RuntimeContext,
+    id: String,
+    accepted: bool,
+) -> Result<(), WireError> {
+    window
+        .app_handle()
+        .state::<AppState>()
+        .audio_pipeline
+        .complete_status(window.label(), &context, &id, accepted)
+        .map_err(WireError::from)
 }
 
 #[tauri::command]
@@ -600,6 +720,7 @@ async fn dispatch_native(
                     network_queries_result,
                     ffmpeg_downloads_result,
                     midi_result,
+                    audio_runtime_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
                     state.audio.shutdown(),
@@ -618,7 +739,19 @@ async fn dispatch_native(
                     state.media_copy.shutdown(),
                     state.network_queries.shutdown(),
                     state.ffmpeg_downloads.shutdown(),
-                    state.midi.shutdown()
+                    state.midi.shutdown(),
+                    async {
+                        let ingress = state.audio_ingress.shutdown().await;
+                        let pipeline = state.audio_pipeline.shutdown().await;
+                        // A failed pump retains its active guard until the real
+                        // native owner joins. Always attempt both independent drains.
+                        let retry = if ingress.is_err() {
+                            state.audio_ingress.shutdown().await
+                        } else {
+                            Ok(())
+                        };
+                        (ingress, pipeline, retry)
+                    }
                 );
                 // Shared OS ownership outlives every consumer, including discovery
                 // when its remote owner is installed. Always attempt its real drain.
@@ -640,6 +773,9 @@ async fn dispatch_native(
                 network_snapshots_result?;
                 ffmpeg_downloads_result?;
                 midi_result?;
+                audio_runtime_result.0.map_err(WireError::from)?;
+                audio_runtime_result.1.map_err(WireError::from)?;
+                audio_runtime_result.2.map_err(WireError::from)?;
                 // Accepted native effects may still need the ordered library owner.
                 // A timed-out owner retains write admission for its real drain retry.
                 let drained = state.library.finish_writes().await;
@@ -732,6 +868,33 @@ async fn dispatch_native(
     };
     if command == "UPDATE_DATA_PATH" {
         let context = library.context().map_err(WireError::from)?;
+        let state = app.state::<AppState>();
+        if let Err(error) = state.audio_pipeline.context_changed() {
+            let mut alert = Event::reply(
+                "MAIN",
+                "ALERT",
+                json!(format!(
+                    "The library changed, but audio status cleanup failed: {}",
+                    error.message
+                )),
+                None,
+            );
+            alert.context = Some(context.clone());
+            events.push(alert);
+        }
+        if let Err(error) = state.audio_ingress.context_changed().await {
+            let mut alert = Event::reply(
+                "MAIN",
+                "ALERT",
+                json!(format!(
+                    "The library changed, but audio input cleanup failed: {}",
+                    error.message
+                )),
+                None,
+            );
+            alert.context = Some(context.clone());
+            events.push(alert);
+        }
         app.state::<AppState>().files.context_changed(&context);
         app.state::<AppState>().imports.context_changed(&context);
         app.state::<AppState>().browse.context_changed(&context);
@@ -1110,6 +1273,19 @@ fn main() {
                 })
             })
             .map_err(|error| std::io::Error::other(error.message))?;
+            let audio_app = app.handle().clone();
+            let audio_pipeline = audio_pipeline::NativeAudioPipeline::start(
+                library.clone(), freeshow_opus::LibrarySource::system(), audio_pipeline::AudioLimits::default(),
+                move |delivery| {
+                    let mut event = delivery.event().clone();
+                    event.native_audio = Some(json!({"id":delivery.id(),"run":delivery.run().to_string(),"ownUndefinedError":delivery.own_undefined_error()}));
+                    if let Some(error) = delivery.diagnostic() { eprintln!("Icecast: {}: {}", error.code, error.message); }
+                    audio_app.emit_to("main", "freeshow://ipc", event).map_err(|e| e.to_string())
+                },
+            ).map_err(std::io::Error::other)?;
+            let audio_ingress = tauri::async_runtime::block_on(async {
+                audio_ingress::AudioIngress::new(library.clone(), audio_pipeline.clone())
+            }).map_err(std::io::Error::other)?;
             let midi_app = app.handle().clone();
             let midi = tauri::async_runtime::block_on(async {
                 midi::NativeMidi::new(
@@ -1232,6 +1408,9 @@ fn main() {
                 scriptures,
                 media_copy,
                 audio,
+                audio_pipeline,
+                audio_ingress,
+                audio_last_receipt: std::sync::Mutex::new(serde_json::Value::Null),
                 midi,
                 files,
                 imports,
@@ -1290,6 +1469,12 @@ fn main() {
             ffmpeg_download_status,
             midi_status,
             midi_delivery_complete,
+            audio_pcm,
+            audio_disconnect,
+            audio_close_context,
+            audio_capability,
+            audio_status,
+            audio_status_complete,
             remote_delivery_complete,
             imports_status,
             assets_status,

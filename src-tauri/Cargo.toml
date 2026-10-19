@@ -15,7 +15,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 serde = "1"
-serde_json = { version = "1", features = ["preserve_order"] }
+serde_json = { version = "1", features = ["preserve_order", "raw_value"] }
 freeshow-core = { path = "../crates/freeshow-core" }
 freeshow-media = { path = "../crates/freeshow-media" }
 freeshow-ffmpeg-download = { path = "../crates/freeshow-ffmpeg-download" }

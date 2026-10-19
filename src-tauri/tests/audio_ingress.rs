@@ -132,6 +132,49 @@ fn code<T>(result: std::result::Result<T, IngressError>) -> &'static str {
     }
 }
 #[tokio::test]
+async fn unused_library_retirement_and_late_cleanup_do_not_close_the_current_audio_group() {
+    let _serial = SERIAL.lock().await;
+    let setup = setup(false, Duration::from_secs(2));
+    let old = setup.library.context().unwrap();
+    let current = switch(&setup, &old).await;
+    setup.ingress.context_changed().await.unwrap();
+    setup.ingress.close_context(&old).await.unwrap();
+    submit(&setup, &current)
+        .finish()
+        .await
+        .unwrap()
+        .into_void()
+        .unwrap();
+    assert_eq!(setup.ingress.status().accepted_packets, 1);
+    assert_eq!(setup.ingress.status().completed_packets, 1);
+    setup.ingress.context_changed().await.unwrap();
+    setup.ingress.close_context(&old).await.unwrap();
+    let mut foreign = current.clone();
+    foreign.data_path = setup._temp.path().join("not-the-current-library");
+    assert_eq!(
+        code(setup.ingress.close_context(&foreign).await),
+        "stale_library"
+    );
+    submit(&setup, &current)
+        .finish()
+        .await
+        .unwrap()
+        .into_void()
+        .unwrap();
+    let next = switch(&setup, &current).await;
+    setup.ingress.context_changed().await.unwrap();
+    submit(&setup, &next)
+        .finish()
+        .await
+        .unwrap()
+        .into_void()
+        .unwrap();
+    setup.ingress.close_context(&old).await.unwrap();
+    assert!(!setup.ingress.status().group_closed);
+    assert_eq!(setup.ingress.status().completed_packets, 3);
+    done(setup).await;
+}
+#[tokio::test]
 async fn whole_raw_job_and_ready_observation_quota_and_actual_disposal_are_four() {
     let _serial = SERIAL.lock().await;
     let setup = setup(false, Duration::from_secs(2));
@@ -663,4 +706,44 @@ async fn sticky_pump_failure_never_releases_actual_accepted_guard_until_native_j
     assert_eq!(code(setup.ingress.shutdown().await), "audio_ingress_pump");
     setup.deliveries.await.unwrap();
     setup.library.finish_writes().await.unwrap();
+}
+
+#[tokio::test]
+async fn lifecycle_waiters_are_bounded_and_cancel_before_busy_rejection() {
+    let _serial = SERIAL.lock().await;
+    let setup = setup(false, Duration::from_secs(2));
+    setup.native.capability().await.unwrap();
+    let ctx = setup.library.context().unwrap();
+    let (entered, release) = gate(&setup, true);
+    let active = submit(&setup, &ctx);
+    entered.await.unwrap();
+    let drains: Vec<_> = (0..4).map(|_| setup.ingress.close_context(&ctx)).collect();
+    assert_eq!(setup.ingress.status().retained_controls, 4);
+    assert_eq!(
+        code(setup.ingress.close_context(&ctx).await),
+        "audio_ingress_control_busy"
+    );
+    assert_eq!(
+        code(setup.ingress.shutdown().await),
+        "audio_ingress_control_busy"
+    );
+    assert!(
+        setup.ingress.status().closed,
+        "terminal admission closes even when drain waiter capacity is full"
+    );
+    assert!(setup.ingress.status().group_closed);
+    assert_eq!(
+        setup.ingress.status().group_outstanding,
+        1,
+        "entered native work remains actually retained"
+    );
+    drop(drains);
+    assert_eq!(setup.ingress.status().retained_controls, 0);
+    assert_eq!(setup.ingress.status().group_outstanding, 1);
+    release.send(()).unwrap();
+    assert_eq!(
+        code(active.finish().await.unwrap().into_void()),
+        "audio_ingress_cancelled"
+    );
+    done(setup).await;
 }

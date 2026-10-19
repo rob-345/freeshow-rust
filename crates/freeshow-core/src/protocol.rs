@@ -57,6 +57,9 @@ pub struct Event {
     /// Ordinary MIDI restoration and private synchronous-delivery provenance.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub native_midi: Option<Value>,
+    /// Private native audio status restoration and synchronous delivery receipt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_audio: Option<Value>,
 }
 
 impl Event {
@@ -75,6 +78,7 @@ impl Event {
             native_exif: None,
             native_remote: None,
             native_midi: None,
+            native_audio: None,
         }
     }
 }

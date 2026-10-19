@@ -33,6 +33,7 @@ gi.require_version("Atspi", "2.0")
 from gi.repository import Atspi
 from menu import native_menu, find as find_native_menu
 from script_receipts import wrap_script
+from audio_peer import AudioPeer
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "test-output-rust" / "desktop"
@@ -63,7 +64,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["audio-stream.json", "midi.json", "network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     (ARTIFACTS / "ffmpeg-download.json").unlink(missing_ok=True)
@@ -818,6 +819,25 @@ def run():
                 return observed
             probe_midi("normal")
             steps.append("Retained MIDI getters preserve actual native names or explicit backend unavailability, while CLOSE remains void and host leases drain")
+            audio_phases, audio_receipts = [], {}
+            def probe_audio_stream(phase):
+                with AudioPeer(timeout=20) as peer:
+                    observed = script((ROOT / "tests/desktop/audio_probe.js").read_text(), {"phase":phase,"seed":12345 + len(audio_phases) * 100,"config":peer.config})
+                    wire = peer.receipt(timeout=10)
+                assert observed["context"] == observed["current"] == invoke("runtime_context"), observed
+                assert observed["sourceAcks"] == observed["errors"] == [], observed
+                assert wire["eos"] is True, wire
+                audio_phases.append({"script":observed["script"],"wire":wire,"capability":observed["capability"],"statuses":observed["statuses"]})
+                source = subprocess.run([os.environ.get("FREESHOW_TEST_NODE", "node"),"tests/desktop/audio_stream_oracle.mjs"],input=json.dumps({"phases":audio_phases}),text=True,capture_output=True,cwd=ROOT,timeout=15)
+                assert source.returncode == 0, source.stderr
+                oracle = json.loads(source.stdout)
+                assert len(oracle["phases"]) == len(audio_phases) and all(item["nativeCompared"] for item in oracle["phases"]), oracle
+                assert oracle["globalEncodedPackets"] == 4 * len(audio_phases) and len(oracle["constructors"]) == 1, oracle
+                audio_receipts[phase] = {"observed":observed,"wire":wire}
+                (ARTIFACTS / "audio-stream.json").write_text(json.dumps({"phases":audio_receipts,"oracle":oracle},ensure_ascii=False,indent=2))
+                return observed
+            probe_audio_stream("normal")
+            steps.append("Real transferred AUDIO port and raw PCM/CAPTURE preserve exact source Opus/Ogg bytes, own undefined statuses and void commands over a joined loopback stream")
             encoder_check = invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":invoke("runtime_context"),"data":{"channel":"FFMPEG_CHECK"}}})[0]["message"]["data"]
             assert encoder_check["installed"] is True
             encoder_receipts = {}
@@ -1150,6 +1170,8 @@ def run():
             probe_api("switched", "Second library lyric")
             steps.append("Native API automatically restarts for the selected library and returns its same-ID show")
             probe_remotes('switched','Second library lyric')
+            probe_audio_stream("switched")
+            steps.append("Library selection retains the process Opus encoder while new-context AUDIO bytes match one continuous original source encoder")
             probe_download("switched")
             steps.append("FFmpeg download after library selection keeps native userData authority and ignores renderer URL/path overrides")
             assert remote_receipts['switched']['bound']['generation']['run'] != initial_remote['bound']['generation']['run']
@@ -1299,6 +1321,10 @@ def run():
                 midi_backup_status = invoke("library_status")
                 assert midi_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and midi_backup_status["activeJob"]["phase"] == "backupCompression", midi_backup_status
                 steps.append("Retained native MIDI getter/error callbacks and void close finish independently during the same real ZIP compression")
+                probe_audio_stream("backup")
+                audio_backup_status = invoke("library_status")
+                assert audio_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and audio_backup_status["activeJob"]["phase"] == "backupCompression", audio_backup_status
+                steps.append("Real port, PCM/CAPTURE, native Opus and joined TCP/Ogg stream remain independent during the same actual ZIP compression with continuous source codec state")
                 api_during_backup = probe_api("backup", "Second library lyric")
                 assert api_during_backup["elapsedMs"] < 2500, api_during_backup
                 api_backup_status = invoke("library_status")

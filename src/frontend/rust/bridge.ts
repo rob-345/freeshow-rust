@@ -6,6 +6,8 @@ import { createMediaUrlRegistry, type LocalAssetGrant } from "./mediaUrl"
 import { createCaptureBridge, type CaptureTransport } from "./captureBridge"
 import { hydrateExif, type ExifHydration } from "./exif"
 import { hydrateMidi, type MidiHydration } from "./midi"
+import { createAudioPortBridge, type AudioPortOptions } from "./audioPortBridge"
+import { encodeAudioFrame } from "./audioRaw"
 
 type Receiver = (data: any, listenerId?: string) => void
 export type RuntimeContext = {
@@ -25,6 +27,7 @@ export type RuntimeEvent = {
         hydration: MidiHydration
         delivery?: { id: string; context: RuntimeContext; run: string; listener: string }
     }
+    nativeAudio?: { id: string; run: string; ownUndefinedError: boolean }
     nativeRemote?: {
         deliveryId: string
         run: string
@@ -42,11 +45,15 @@ const remoteCommands = new Set(["START", "STOP", "SERVER_DATA"])
 const midiCommands = new Set(["GET_MIDI_INPUTS", "GET_MIDI_OUTPUTS", "SEND_MIDI", "RECEIVE_MIDI", "CLOSE_MIDI"])
 export type RemoteCompletion = (id: string, accepted: boolean) => Promise<unknown>
 export type MidiCompletion = (id: string, accepted: boolean) => Promise<unknown>
+export type AudioTransport = Pick<AudioPortOptions, "postPort" | "transport" | "disconnect" | "closeContext"> & {
+    completeStatus: (context: RuntimeContext, id: string, accepted: boolean) => Promise<unknown>
+}
 
-export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext, captureTransport?: CaptureTransport, remoteCompletion?: RemoteCompletion, midiCompletion?: MidiCompletion) {
+export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext, captureTransport?: CaptureTransport, remoteCompletion?: RemoteCompletion, midiCompletion?: MidiCompletion, audioTransport?: AudioTransport) {
     const receivers = new Map<string, Set<Receiver>>()
     const named = new Map<string, { channel: string; receiver: Receiver }>()
     let context = initialContext ? { ...initialContext } : undefined
+    const audio = audioTransport ? createAudioPortBridge({ ...audioTransport, getContext: () => context, report: (error) => reportError(error, { channel: "AUDIO" }) }) : undefined
     const mediaUrls = createMediaUrlRegistry(
         () => context,
         (error) => reportError(error, { channel: "native-assets" })
@@ -102,6 +109,46 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
     }
 
     function dispatch(event: RuntimeEvent, origin?: { channel: string; data?: any }) {
+        if (event.nativeAudio) {
+            const metadata = event.nativeAudio
+            const equal = (a: RuntimeContext | undefined, b: RuntimeContext | undefined) => !!a && !!b && a.runtimeId === b.runtimeId && a.libraryGeneration === b.libraryGeneration && a.dataPath === b.dataPath
+            const id = typeof metadata.id === "string" && /^native-audio-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(metadata.id)
+            let accepted = false
+            try {
+                if (!equal(context, event.context)) return
+                const data = event.message?.data
+                if (
+                    !id ||
+                    typeof metadata.run !== "string" ||
+                    !/^[1-9][0-9]{0,19}$/.test(metadata.run) ||
+                    BigInt(metadata.run) > 18446744073709551615n ||
+                    typeof metadata.ownUndefinedError !== "boolean" ||
+                    event.channel !== "MAIN" ||
+                    event.message?.channel !== "ICECAST_STATUS" ||
+                    event.listenerId !== undefined ||
+                    !data ||
+                    typeof data !== "object" ||
+                    Array.isArray(data) ||
+                    !Object.hasOwn(data, "connected") ||
+                    typeof data.connected !== "boolean" ||
+                    !Object.hasOwn(data, "connecting") ||
+                    typeof data.connecting !== "boolean" ||
+                    Object.keys(data).some((key) => !["connected", "connecting", "error"].includes(key)) ||
+                    (metadata.ownUndefinedError ? Object.hasOwn(data, "error") : !Object.hasOwn(data, "error") || typeof data.error !== "string")
+                )
+                    throw new Error("Invalid native audio status")
+                deliver("MAIN", { ...event.message, data: { connected: data.connected, connecting: data.connecting, error: metadata.ownUndefinedError ? undefined : data.error } })
+                accepted = true
+            } catch (error) {
+                reportError({ code: "audio_publication", message: String(error) }, event)
+            } finally {
+                if (id && event.context && audioTransport)
+                    audioTransport.completeStatus(event.context, metadata.id, accepted).catch((error) => {
+                        if (equal(context, event.context)) reportError(error, { channel: "native-audio-completion" })
+                    })
+            }
+            return
+        }
         if (event.nativeMidi) {
             const metadata = event.nativeMidi
             const delivery = metadata.delivery
@@ -147,7 +194,9 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
             // A path query can finish earlier and must not retag old UI data.
             const rootSelection = origin?.channel === "MAIN" && origin.data?.channel === "UPDATE_DATA_PATH"
             if (context && event.context.libraryGeneration > context.libraryGeneration && !(rootSelection && event.channel === "MAIN" && event.message.channel === "DATA_PATH")) return
+            const changed = context && (context.libraryGeneration !== event.context.libraryGeneration || context.dataPath !== event.context.dataPath)
             context = { ...event.context }
+            if (changed && audio) audio.contextChanged().catch((error) => reportError(error, { channel: "native-audio-retirement" }))
         }
         if (event.nativeAssets && (!event.context || !mediaUrls.publish(event.context, event.nativeAssets))) {
             reportError({ code: "assets_publication", message: "Native media grants could not be published" }, event)
@@ -180,6 +229,11 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
         publishAssets: mediaUrls.publish,
         api: {
             send(channel: string, data?: any, listenerId?: string) {
+                if (channel === "AUDIO") {
+                    if (audio) audio.handle(data)
+                    else reportError({ code: "audio_unavailable", message: "Native AUDIO input is unavailable in this window" }, { channel })
+                    return
+                }
                 if (channel === "MAIN" && data?.channel === "SAVE_IMAGE" && captures.complete(data.data)) return
                 const mediaCopy = channel === "MAIN" && ["BUNDLE_MEDIA_FILES", "MEDIA_FOLDER_COPY"].includes(data?.channel)
                 // Electron serializes at send time. Output updates often reuse
@@ -209,7 +263,16 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 // not delay reads of already committed media configuration.
                 const ready = mediaSettingsRead || mediaSettingsWrite ? Promise.all([queue, mediaSettingsQueue]) : queue
                 const complete = ready
-                    .then(() => {
+                    .then(async () => {
+                        if (channel === "MAIN" && data?.channel === "CLOSE" && audio) {
+                            try {
+                                await audio.close()
+                            } catch (error) {
+                                reportError(error, { channel: "native-audio-retirement" })
+                            }
+                            // Native CLOSE still attempts every independent owner
+                            // after a frontend drain error, retaining actual retry.
+                        }
                         // A library switch cancels obsolete output work. It
                         // must never replay the old snapshot into new windows.
                         if ((channel === "OUTPUT" || remoteChannels.has(channel)) && request.context && context && (request.context.runtimeId !== context.runtimeId || request.context.libraryGeneration !== context.libraryGeneration)) return []
@@ -270,7 +333,16 @@ export async function installRustBridge(target: Window = window) {
         context,
         ({ id, buffer, failed }) => tauri.core.invoke("thumbnail_complete", buffer, { headers: { "x-freeshow-capture": id, "x-freeshow-capture-failed": failed ? "1" : "0" } }),
         (id, accepted) => tauri.core.invoke("remote_delivery_complete", { id, accepted }),
-        (id, accepted) => tauri.core.invoke("midi_delivery_complete", { id, accepted })
+        (id, accepted) => tauri.core.invoke("midi_delivery_complete", { id, accepted }),
+        nativeWindow.label === "main"
+            ? {
+                  postPort: (message, origin, ports) => target.postMessage(message, origin, ports),
+                  transport: (bytes, metadata, frozen, origin) => tauri.core.invoke("audio_pcm", encodeAudioFrame(bytes, metadata, frozen, origin)),
+                  disconnect: (frozen) => tauri.core.invoke("audio_disconnect", { context: frozen }),
+                  closeContext: (frozen) => tauri.core.invoke("audio_close_context", { context: frozen }),
+                  completeStatus: (frozen, id, accepted) => tauri.core.invoke("audio_status_complete", { context: frozen, id, accepted })
+              }
+            : undefined
     )
     await tauri.event.listen(
         "freeshow://ipc",
