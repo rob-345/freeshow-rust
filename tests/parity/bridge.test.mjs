@@ -8,6 +8,7 @@ import { spawnSync } from "node:child_process"
 import ts from "typescript"
 import { root, upstreamFunctions } from "./oracle.mjs"
 import { corpus, generatedCorpus } from "../../crates/freeshow-exif/tools/fixtures.mjs"
+import { Driver as SpotifyDriver, sourceOracle as spotifyOracle } from "./spotify-oracle.mjs"
 
 const source = fs.readFileSync(path.join(root, "src/frontend/rust/bridge.ts"), "utf8")
 const nativeDrop = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/nativeDrop.ts"), "utf8"), {
@@ -39,6 +40,7 @@ function inlineModule(name, imports = {}) {
 }
 const nowPlayingBridgeModule = inlineModule("nowPlayingBridge", { metadata: inlineModule("metadata"), nowPlayingWire: inlineModule("nowPlayingWire") })
 const coverBridgeModule = inlineModule("coverBridge")
+const spotifyModule = inlineModule("spotify")
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -58,8 +60,205 @@ const javascript = ts
     .replace('from "./timecodeWire"', `from "${timecodeWireModule}"`)
     .replace('from "./nowPlayingBridge"', `from "${nowPlayingBridgeModule}"`)
     .replace('from "./coverBridge"', `from "${coverBridgeModule}"`)
+    .replace('from "./spotify"', `from "${spotifyModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+function spotifyEvent(context, listenerId, wire, extra = {}) {
+    return {
+        channel: "MAIN",
+        context,
+        listenerId,
+        message: { channel: "SPOTIFY_GET_STATE", data: wire.data, autoProfile: false },
+        nativeSpotify: { undefinedFields: wire.undefinedFields, specialNumbers: wire.specialNumbers },
+        ...extra
+    }
+}
+const emptySpotifyRestoration = () => ({ undefinedFields: [], specialNumbers: [] })
+const nullSpotifyWire = () => ({ data: null, ...emptySpotifyRestoration() })
+function compareSpotifyReply(message, expected) {
+    assert.deepEqual(Object.keys(message), ["channel", "data"])
+    assert.equal(message.channel, "SPOTIFY_GET_STATE")
+    if (expected === null) return assert.equal(message.data, null)
+    assert.deepEqual(Object.keys(message.data), Object.keys(expected))
+    for (const key of Object.keys(expected)) {
+        assert.ok(Object.hasOwn(message.data, key), key)
+        assert.ok(Object.is(message.data[key], expected[key]), key)
+    }
+}
+
+test("ordinary Spotify send/receive preserves immutable source and native WireState replies without exposing restoration or returning a source ACK", async () => {
+    const context = { runtimeId: "spotify-wire", libraryGeneration: 3, dataPath: "/library/音楽" },
+        driver = new SpotifyDriver(),
+        common = 'string "xesam:title" variant string "音楽 🎵"\nstring "xesam:artist" variant array [ string "Artist" ]\nstring "mpris:length" variant uint64 120000000\n'
+    try {
+        for (const [index, output] of ["", common + 'variant string "Playing"\nint64 3000000\ndouble 0.5', common + 'string "mpris:artUrl" variant string "https://example.invalid/cover"\nint64 9007199254740993\ndouble 0.00000000000000001', common.replace("120000000", "9".repeat(512)) + `int64 ${"9".repeat(512)}\ndouble .`].entries()) {
+            const expected = await spotifyOracle((_, callback) => callback(null, output)).get(),
+                { wire } = await driver.value({ op: "parse", text: output }),
+                before = structuredClone(wire),
+                requests = [],
+                messages = [],
+                errors = [],
+                listenerId = `spotify-${index}-音楽`,
+                bridge = createRustApi(
+                    async (request) => {
+                        requests.push(request)
+                        return [spotifyEvent(request.context, request.listenerId, wire)]
+                    },
+                    (...error) => errors.push(error),
+                    context
+                ),
+                payload = { channel: "SPOTIFY_GET_STATE", data: { ignored: "not provider authority" } }
+            assert.equal(bridge.api.send("MAIN", payload, listenerId), undefined)
+            assert.deepEqual(requests, [], "the retained receiver may register after source send")
+            bridge.api.receive("MAIN", (message, id) => messages.push({ message, id }))
+            await tick()
+            assert.deepEqual(requests, [{ channel: "MAIN", data: payload, listenerId, context }])
+            assert.equal(messages.length, 1)
+            assert.equal(messages[0].id, listenerId)
+            compareSpotifyReply(messages[0].message, expected)
+            assert.deepEqual(wire, before, "native placeholders and private metadata remain unchanged")
+            if (expected !== null) {
+                assert.notEqual(messages[0].message.data, wire.data)
+                assert.deepEqual(Object.keys(messages[0].message.data), ["isPlaying", "title", "artist", "positionSec", "durationSec", "albumArt", "volume", "platform"])
+                assert.equal(Object.hasOwn(messages[0].message.data, "albumArt"), true)
+            } else assert.deepEqual({ undefinedFields: wire.undefinedFields, specialNumbers: wire.specialNumbers }, emptySpotifyRestoration())
+            assert.deepEqual(errors, [])
+            assert.deepEqual(bridge.api.getRuntimeContext(), context)
+        }
+    } finally {
+        await driver.finish()
+    }
+})
+
+test("Spotify pending transport replies are discarded before malformed hydration after a real retained library switch", async () => {
+    const old = { runtimeId: "spotify-library", libraryGeneration: 3, dataPath: "/old/音楽" },
+        next = { ...old, libraryGeneration: 4, dataPath: "/next/音楽" },
+        requests = [],
+        messages = [],
+        errors = [],
+        pending = [],
+        malformed = { undefinedFields: ["title"], specialNumbers: [] },
+        bridge = createRustApi(
+            async (request) => {
+                requests.push(request)
+                if (request.data.channel === "UPDATE_DATA_PATH") return [{ channel: "MAIN", context: next, message: { channel: "DATA_PATH", data: next.dataPath } }]
+                return new Promise((resolve) => pending.push({ request, resolve }))
+            },
+            (...error) => errors.push(error),
+            old
+        )
+    bridge.api.receive("MAIN", (message, listenerId) => messages.push({ message, listenerId }))
+    assert.equal(bridge.api.send("MAIN", { channel: "SPOTIFY_GET_STATE" }, "old-request"), undefined)
+    await tick()
+    assert.equal(pending.length, 1)
+    assert.equal(bridge.api.send("MAIN", { channel: "UPDATE_DATA_PATH", data: next.dataPath }), undefined)
+    await tick()
+    assert.deepEqual(bridge.api.getRuntimeContext(), next)
+    const obsolete = spotifyEvent(pending[0].request.context, "old-request", nullSpotifyWire(), { nativeSpotify: malformed }),
+        before = structuredClone(obsolete)
+    pending.shift().resolve([obsolete])
+    await tick()
+    assert.deepEqual(obsolete, before)
+    assert.deepEqual(messages, [{ message: { channel: "DATA_PATH", data: next.dataPath }, listenerId: undefined }])
+    assert.deepEqual(errors, [], "obsolete malformed restoration must never enter hydration")
+    assert.equal(bridge.api.send("MAIN", { channel: "SPOTIFY_GET_STATE" }, "current-request"), undefined)
+    await tick()
+    const current = pending.shift()
+    assert.deepEqual(current.request.context, next)
+    current.resolve([spotifyEvent(current.request.context, "current-request", nullSpotifyWire(), { nativeSpotify: malformed })])
+    await tick()
+    assert.equal(messages.length, 1, "the same malformed restoration is rejected in the current context")
+    assert.equal(errors.length, 1)
+    assert.equal(errors[0][0].code, "spotify_publication")
+    assert.deepEqual(bridge.api.getRuntimeContext(), next)
+    assert.equal(requests.length, 3)
+})
+
+test("Spotify runtime, generation and exact dataPath guards precede hydration and future replies never select a context", async () => {
+    const context = { runtimeId: "spotify-context", libraryGeneration: 8, dataPath: "/selected/音楽" }
+    for (const frozen of [undefined, { ...context, runtimeId: "another-runtime" }, { ...context, libraryGeneration: 7 }, { ...context, libraryGeneration: 9 }, { ...context, dataPath: "/other/音楽" }]) {
+        const errors = [],
+            messages = [],
+            malformed = { undefinedFields: [], specialNumbers: [{ field: "volume", kind: "not-a-kind" }] },
+            event = spotifyEvent(frozen, "context-request", nullSpotifyWire(), { nativeSpotify: malformed }),
+            before = structuredClone(event),
+            bridge = createRustApi(
+                async () => [event],
+                (...error) => errors.push(error),
+                context
+            )
+        bridge.api.receive("MAIN", (...message) => messages.push(message))
+        assert.equal(bridge.api.send("MAIN", { channel: "SPOTIFY_GET_STATE" }, "context-request"), undefined)
+        await tick()
+        assert.deepEqual(messages, [])
+        assert.deepEqual(errors, [], "foreign-context malformed restoration must be discarded first")
+        assert.deepEqual(event, before)
+        assert.deepEqual(bridge.api.getRuntimeContext(), context)
+    }
+    const future = { ...context, libraryGeneration: 9, dataPath: "/future" },
+        messages = [],
+        errors = [],
+        bridge = createRustApi(
+            async () => [spotifyEvent(future, "future-request", nullSpotifyWire())],
+            (...error) => errors.push(error),
+            context
+        )
+    bridge.api.receive("MAIN", (...message) => messages.push(message))
+    bridge.api.send("MAIN", { channel: "SPOTIFY_GET_STATE" }, "future-request")
+    await tick()
+    assert.deepEqual(messages, [], "even a valid source-null reply cannot advance the selected context")
+    assert.deepEqual(errors, [])
+    assert.deepEqual(bridge.api.getRuntimeContext(), context)
+})
+
+test("ordinary Spotify transport rejects wrong request origins, listener pairing, reply routes and missing restoration", async () => {
+    const context = { runtimeId: "spotify-pairing", libraryGeneration: 2, dataPath: "/library" },
+        cases = [{ outer: "REMOTE", command: "SPOTIFY_GET_STATE" }, { outer: "MAIN", command: "GET_OS" }, { event: { channel: "OUTPUT" } }, { event: { message: { channel: "GET_OS", data: null } } }, { event: { listenerId: "another-listener" } }, { event: { listenerId: undefined } }, { event: { nativeSpotify: undefined } }, { event: { nativeSpotify: null } }]
+    for (const invalid of cases) {
+        const messages = [],
+            errors = [],
+            bridge = createRustApi(
+                async () => [spotifyEvent(context, "actual-listener", nullSpotifyWire(), invalid.event)],
+                (...error) => errors.push(error),
+                context
+            )
+        for (const channel of ["MAIN", "OUTPUT", "REMOTE"]) bridge.api.receive(channel, (...message) => messages.push(message))
+        assert.equal(bridge.api.send(invalid.outer || "MAIN", { channel: invalid.command || "SPOTIFY_GET_STATE" }, "actual-listener"), undefined)
+        await tick()
+        assert.deepEqual(messages, [], JSON.stringify(invalid))
+        assert.equal(errors.length, 1, JSON.stringify(invalid))
+        assert.equal(errors[0][0].code, "spotify_publication")
+        assert.deepEqual(bridge.api.getRuntimeContext(), context)
+    }
+})
+
+test("Spotify asynchronous events cannot impersonate a request or initialize an unknown selected context", async () => {
+    const context = { runtimeId: "spotify-unsolicited", libraryGeneration: 1, dataPath: "/library" },
+        errors = [],
+        messages = [],
+        bridge = createRustApi(
+            async () => [],
+            (...error) => errors.push(error),
+            context
+        )
+    bridge.api.receive("MAIN", (...message) => messages.push(message))
+    bridge.dispatch(spotifyEvent(context, undefined, nullSpotifyWire()))
+    assert.deepEqual(messages, [])
+    assert.equal(errors.length, 1)
+    assert.equal(errors[0][0].code, "spotify_publication")
+    const unknownErrors = [],
+        unknown = createRustApi(
+            async () => [spotifyEvent(context, "no-context", nullSpotifyWire())],
+            (...error) => unknownErrors.push(error)
+        )
+    unknown.api.receive("MAIN", (...message) => messages.push(message))
+    unknown.api.send("MAIN", { channel: "SPOTIFY_GET_STATE" }, "no-context")
+    await tick()
+    assert.deepEqual(messages, [])
+    assert.deepEqual(unknownErrors, [])
+    assert.equal(unknown.api.getRuntimeContext(), undefined)
+})
 
 test("installed now-playing retains send-time numeric identity and source void replies through private raw IPC", async () => {
     const context = { runtimeId: "now-playing-raw", libraryGeneration: 3, dataPath: "/library" },
