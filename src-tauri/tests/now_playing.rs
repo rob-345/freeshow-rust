@@ -97,9 +97,10 @@ impl Fixture {
                 );
             }
         });
-        let (send, events) = mpsc::channel(4);
+        let (send, events) = mpsc::channel(20);
         let publish_mode = Arc::new(std::sync::atomic::AtomicU8::new(0));
         let mode = publish_mode.clone();
+        let publish_count = Arc::new(std::sync::atomic::AtomicU64::new(0));
         let revealed = Arc::new(Mutex::new(vec![]));
         let saved = revealed.clone();
         let budget = OperationBudget::default();
@@ -114,6 +115,15 @@ impl Fixture {
             config,
             Callbacks {
                 publish: Arc::new(move |event| {
+                    let n = publish_count.fetch_add(1, std::sync::atomic::Ordering::AcqRel) + 1;
+                    if mode.load(std::sync::atomic::Ordering::Acquire) == 3 && n == 2 {
+                        return Box::pin(async {
+                            Err(HostError::new(
+                                "test_publish",
+                                "Second actual publication enqueue rejected",
+                            ))
+                        });
+                    }
                     match mode.load(std::sync::atomic::Ordering::Acquire) {
                         1 => {
                             return Box::pin(async {
@@ -971,5 +981,406 @@ async fn shared_sealed_budget_keeps_completed_uncollected_results_charged_across
     drop(receipt);
     drop(receipts);
     next.shutdown().await.unwrap();
+    f.close().await;
+}
+
+fn obstruct_audio(f: &Fixture) {
+    fs::write(
+        f.ctx.data_path.join("Audio"),
+        b"regular file blocks source mkdir",
+    )
+    .unwrap();
+}
+fn check_folder(f: &Fixture, event: &Publication) {
+    let Publication::Alert(alert) = event else {
+        panic!("Expected source folder ALERT")
+    };
+    assert_eq!(alert.kind().as_str(), "folderCreationFailed");
+    assert_eq!(
+        serde_json::to_value(alert.kind()).unwrap(),
+        json!("folderCreationFailed")
+    );
+    assert_eq!(
+        alert.folder_path(),
+        Some(f.ctx.data_path.join("Audio").as_path())
+    );
+    assert_eq!(event.event().message.channel, "ALERT");
+    assert_eq!(
+        event.event().message.data,
+        Some(json!(format!(
+            "Error: Could not create folder at: {}!",
+            f.ctx.data_path.join("Audio").display()
+        )))
+    );
+    assert_eq!(event.event().context.as_ref(), Some(&f.ctx));
+}
+fn original_payload(path: &std::path::Path) -> serde_json::Value {
+    json!({"filePath":path,"name":"Café 🎵","unknownLang":["Artist","Title","Album"],"format":"plain","duration":65.9})
+}
+fn source_events(events: &[Publication]) -> serde_json::Value {
+    json!(events
+        .iter()
+        .map(|e| json!({"channel":e.event().message.channel,"data":e.event().message.data}))
+        .collect::<Vec<_>>())
+}
+
+#[tokio::test]
+async fn real_folder_obstruction_matches_pinned_set_unset_open_alerts_and_independent_ack() {
+    let _serial = SERIAL.lock().await;
+    let mut f = Fixture::new(Config::default()).await;
+    obstruct_audio(&f);
+    let path = f.source("folder-source.wav", &wav()).await;
+    let payload = original_payload(&path);
+    let set = f
+        .host
+        .submit(
+            &f.ctx,
+            Command::Set {
+                payload: payload.clone(),
+                duration_number: None,
+            },
+            CancellationToken::new(),
+        )
+        .unwrap();
+    let mut set_events = vec![f.event().await];
+    assert!(matches!(set_events[0], Publication::Metadata(_)));
+    for _ in 0..4 {
+        let event = f.event().await;
+        check_folder(&f, &event);
+        set_events.push(event);
+    }
+    // All four folder events enqueue while the metadata delivery remains live.
+    wait(|| f.covers.status().sessions == 0).await;
+    assert_eq!(f.host.status()["publications"], 5);
+    f.ack(&set_events[1], false);
+    for event in &set_events[2..] {
+        f.ack(event, true);
+    }
+    let mut finished = Box::pin(set.finish());
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), &mut finished)
+            .await
+            .is_err()
+    );
+    assert!(f.host.complete(set_events[1].id(), &f.ctx, true).is_err());
+    f.ack(&set_events[0], true);
+    let receipt = finished.await.unwrap();
+    assert!(receipt.failure().is_none());
+    assert_eq!(
+        receipt
+            .diagnostics()
+            .iter()
+            .filter(|e| e.code == "now_playing_delivery_rejected")
+            .count(),
+        1
+    );
+    drop(receipt);
+    let unset = f
+        .host
+        .submit(&f.ctx, Command::Unset, CancellationToken::new())
+        .unwrap();
+    let mut unset_events = vec![];
+    for _ in 0..2 {
+        let event = f.event().await;
+        check_folder(&f, &event);
+        f.ack(&event, true);
+        unset_events.push(event);
+    }
+    let receipt = unset.finish().await.unwrap();
+    assert!(receipt.failure().is_none());
+    drop(receipt);
+    let open = f
+        .host
+        .submit(&f.ctx, Command::Open, CancellationToken::new())
+        .unwrap();
+    let folder = f.event().await;
+    check_folder(&f, &folder);
+    let missing = f.event().await;
+    let Publication::Alert(ref alert) = missing else {
+        panic!("Missing text ALERT")
+    };
+    assert_eq!(alert.kind(), &AlertKind::MissingText);
+    assert_eq!(alert.folder_path(), None);
+    assert_eq!(
+        serde_json::to_value(alert.kind()).unwrap(),
+        json!("missingText")
+    );
+    assert_eq!(
+        missing.event().message.data,
+        Some(json!("This does not exist!"))
+    );
+    f.ack(&folder, true);
+    f.ack(&missing, true);
+    let receipt = open.finish().await.unwrap();
+    assert!(receipt.failure().is_none());
+    drop(receipt);
+    let open_events = vec![folder, missing];
+    assert_eq!(
+        fs::read(f.ctx.data_path.join("Audio")).unwrap(),
+        b"regular file blocks source mkdir"
+    );
+    assert_eq!(f.host.status()["admitted"], "3");
+    assert_eq!(f.host.status()["completed"], "3");
+    assert_eq!(f.host.status()["publications"], 0);
+    // Execute actual immutable source declarations in one realm over the same
+    // real WAV and the same real obstructing Audio file. No network/hardware.
+    let root = std::env::var_os("FREESHOW_NOW_PLAYING_ORACLE_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .parent()
+                .unwrap()
+                .to_path_buf()
+        });
+    let output=std::process::Command::new("node").current_dir(root).args(["--input-type=module","-e",r#"
+import ts from 'typescript';import path from 'node:path';import fs from 'node:fs';import {execFileSync} from 'node:child_process';import {parseFile} from 'music-metadata';
+const ref='2d94defcf98175e4f5c9504e7f4fd1d33c35c975';
+function declarations(file,names,variables=false){const source=execFileSync('git',['show',`${ref}:${file}`],{encoding:'utf8',timeout:10000,maxBuffer:4*1024*1024});const ast=ts.createSourceFile(file,source,ts.ScriptTarget.Latest,true);return variables?ast.statements.filter(n=>ts.isVariableStatement(n)&&n.declarationList.declarations.some(d=>names.includes(d.name.getText(ast)))).map(n=>n.getText(ast).replace(/^export\s+/,'')):names.map(name=>ast.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name?.text===name).getText(ast).replace(/^export\s+/,''));}
+const f='src/electron/utils/files.ts',n='src/electron/audio/nowPlaying.ts';
+const source=[...declarations(f,['getDataFolderRoot','getDataFolderPath','createFolder','makeDir','doesPathExist','writeFile','fileContentMatches','actionComplete','openInSystem']),...declarations(f,['dataFolderNames'],true),...declarations(n,['getNowPlayingTextPath','getNowPlayingMediaPath','setPlayingState','convertDynamicValues','getArtist','getAudioMetadata','unsetPlayingAudio','openNowPlaying']),...declarations(n,['fileNameText','fileNameImage','dynamicValues'],true)].join('\n');
+const js=ts.transpileModule(source+';return {setPlayingState,unsetPlayingAudio,openNowPlaying}',{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+const events=[],titles=[];const values={fs,path,join:path.join,config:{get:()=>process.argv[2]},getDefaultDataFolderRoot(){throw Error('unexpected fallback')},sendToMain:(channel,data)=>events.push({channel,data}),ToMain:{ALERT:'ALERT',AUDIO_METADATA:'AUDIO_METADATA'},parseFile,nativeImage:{createFromBuffer(){throw Error('unexpected WAV image')}},IcecastSender:{updateMetadata:title=>titles.push(title)},readFile:p=>fs.readFileSync(p,'utf8'),shell:{showItemInFolder(){throw Error('unexpected reveal')}},console:{error(){}}};
+const api=new Function(...Object.keys(values),js)(...Object.values(values));const data=JSON.parse(process.argv[1]);const result={};
+result.setVoid=(await api.setPlayingState(data))===undefined;result.set=events.splice(0);result.unsetVoid=api.unsetPlayingAudio()===undefined;result.unset=events.splice(0);result.openVoid=api.openNowPlaying()===undefined;result.open=events.splice(0);result.titles=titles;process.stdout.write(JSON.stringify(result));
+"#]).arg(payload.to_string()).arg(&f.ctx.data_path).output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let source: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(source["setVoid"], true);
+    assert_eq!(source["unsetVoid"], true);
+    assert_eq!(source["openVoid"], true);
+    assert_eq!(source["set"], source_events(&set_events));
+    assert_eq!(source["unset"], source_events(&unset_events));
+    assert_eq!(source["open"], source_events(&open_events));
+    assert_eq!(source["titles"], json!(["Artist - Café 🎵", ""]));
+    f.close().await;
+}
+
+#[tokio::test]
+async fn rejecting_later_folder_callback_keeps_original_metadata_completion_owned() {
+    let _serial = SERIAL.lock().await;
+    let mut f = Fixture::new(Config::default()).await;
+    obstruct_audio(&f);
+    let path = f.source("second-publication.wav", &wav()).await;
+    f.publish_mode
+        .store(3, std::sync::atomic::Ordering::Release);
+    let ticket = f.submit(path.to_str().unwrap(), "plain");
+    let metadata = f.event().await;
+    assert!(matches!(metadata, Publication::Metadata(_)));
+    wait(|| f.covers.status().sessions == 0).await;
+    assert_eq!(f.host.status()["publications"], 2);
+    let mut done = Box::pin(ticket.finish());
+    assert!(tokio::time::timeout(Duration::from_millis(20), &mut done)
+        .await
+        .is_err());
+    f.ack(&metadata, true);
+    let receipt = done.await.unwrap();
+    assert_eq!(receipt.failure().unwrap().code, "test_publish");
+    assert!(
+        receipt
+            .diagnostics()
+            .iter()
+            .any(|e| e.code == "now_playing_file_caught"),
+        "Actual mkdir failure diagnostics survive callback rejection"
+    );
+    assert_eq!(
+        receipt
+            .diagnostics()
+            .iter()
+            .filter(|e| e.code == "now_playing_delivery_rejected")
+            .count(),
+        1
+    );
+    assert_eq!(f.host.status()["publications"], 0);
+    drop(receipt);
+    f.close().await;
+}
+
+#[tokio::test]
+async fn four_whole_operations_bound_twenty_actual_publications_until_every_completion() {
+    let _serial = SERIAL.lock().await;
+    let mut f = Fixture::new(Config::default()).await;
+    obstruct_audio(&f);
+    let path = f.source("twenty.wav", &wav()).await;
+    let mut tickets = vec![];
+    let mut events = vec![];
+    for _ in 0..4 {
+        tickets.push(f.submit(path.to_str().unwrap(), "plain"));
+        for index in 0..5 {
+            let e = f.event().await;
+            if index == 0 {
+                assert!(matches!(e, Publication::Metadata(_)))
+            } else {
+                check_folder(&f, &e)
+            }
+            events.push(e);
+        }
+        wait(|| f.covers.status().sessions == 0).await;
+    }
+    assert_eq!(f.host.status()["publications"], 20);
+    assert_eq!(f.host.status()["retained"], 4);
+    assert_eq!(f.host.status()["completed"], "0");
+    assert_eq!(
+        f.host
+            .submit(&f.ctx, Command::Open, CancellationToken::new())
+            .err()
+            .unwrap()
+            .code,
+        "now_playing_busy"
+    );
+    assert_eq!(
+        events
+            .iter()
+            .map(|e| e.id())
+            .collect::<std::collections::BTreeSet<_>>()
+            .len(),
+        20
+    );
+    assert!(
+        events
+            .windows(2)
+            .all(|e| e[0].sequence().parse::<u64>().unwrap()
+                < e[1].sequence().parse::<u64>().unwrap())
+    );
+    for event in &events {
+        f.ack(event, true);
+    }
+    let mut receipts = vec![];
+    for ticket in tickets {
+        let receipt = ticket.finish().await.unwrap();
+        assert!(receipt.failure().is_none());
+        receipts.push(receipt);
+    }
+    assert_eq!(f.host.status()["publications"], 0);
+    assert_eq!(f.host.status()["completed"], "4");
+    assert_eq!(f.host.status()["retained"], 4);
+    drop(receipts);
+    f.close().await;
+}
+
+#[tokio::test]
+async fn dropped_multinotification_caller_and_context_retirement_wait_for_actual_phase_cleanup() {
+    let _serial = SERIAL.lock().await;
+    let mut f = Fixture::new(Config {
+        shutdown_timeout: Duration::from_millis(40),
+        ..Config::default()
+    })
+    .await;
+    obstruct_audio(&f);
+    let path = f.source("retire-many.wav", &wav()).await;
+    let gate = f
+        .host
+        .test_hooks()
+        .hold(TestStage::Phase(now_playing_schedule::PhaseKind::Text));
+    let ticket = f.submit(path.to_str().unwrap(), "plain");
+    let mut events = vec![];
+    for _ in 0..4 {
+        events.push(f.event().await);
+    }
+    gate.entered.notified().await;
+    drop(ticket);
+    assert_eq!(f.host.status()["retained"], 1);
+    assert_eq!(f.host.status()["publications"], 4);
+    assert_eq!(f.covers.status().sessions, 1);
+    assert_eq!(
+        f.host.context_changed().await.unwrap_err().code,
+        "now_playing_drain_timeout"
+    );
+    assert_eq!(f.host.status()["drained"], false);
+    assert_eq!(f.host.status()["publications"], 4);
+    for event in &events {
+        assert!(f.host.complete(event.id(), &f.ctx, true).is_err());
+    }
+    gate.resume.notify_one();
+    f.host.shutdown().await.unwrap();
+    assert_eq!(f.covers.status().sessions, 0);
+    assert_eq!(f.host.status()["publications"], 0);
+    assert_eq!(f.host.status()["retained"], 0);
+    assert_eq!(f.host.status()["completed"], "1");
+    f.close().await;
+}
+
+#[tokio::test]
+async fn acknowledged_metadata_does_not_hide_a_later_folder_delivery_timeout() {
+    let _serial = SERIAL.lock().await;
+    let mut f = Fixture::new(Config {
+        operation_timeout: Duration::from_millis(500),
+        ..Config::default()
+    })
+    .await;
+    obstruct_audio(&f);
+    let path = f.source("timeout-many.wav", &wav()).await;
+    let ticket = f.submit(path.to_str().unwrap(), "plain");
+    let mut events = vec![];
+    for _ in 0..5 {
+        events.push(f.event().await);
+    }
+    for event in &events[..4] {
+        f.ack(event, true);
+    }
+    let mut done = Box::pin(ticket.finish());
+    assert!(tokio::time::timeout(Duration::from_millis(20), &mut done)
+        .await
+        .is_err());
+    let receipt = done.await.unwrap();
+    assert_eq!(
+        receipt.failure().unwrap().code,
+        "now_playing_delivery_timeout"
+    );
+    assert_eq!(
+        receipt
+            .diagnostics()
+            .iter()
+            .filter(|e| e.code == "now_playing_delivery_retired")
+            .count(),
+        1
+    );
+    assert_eq!(f.covers.status().sessions, 0);
+    assert_eq!(f.host.status()["publications"], 0);
+    drop(receipt);
+    assert_eq!(
+        f.host.shutdown().await.unwrap_err().code,
+        "now_playing_delivery_timeout"
+    );
+    assert_eq!(f.host.status()["drained"], true);
+    assert!(f.host.complete(events[4].id(), &f.ctx, true).is_err());
+    f.pipeline.shutdown().await.unwrap();
+    f.audio.shutdown().await;
+    f.covers.shutdown(Duration::from_secs(2)).await.unwrap();
+    f.assets.shutdown().await.unwrap();
+    f.library.finish_writes().await.unwrap();
+}
+
+#[tokio::test]
+async fn retirement_during_publication_registration_cannot_insert_a_late_live_pending() {
+    let _serial = SERIAL.lock().await;
+    let mut f = Fixture::new(Config {
+        shutdown_timeout: Duration::from_millis(40),
+        ..Config::default()
+    })
+    .await;
+    let path = f.source("admission-race.wav", &wav()).await;
+    let gate = f.host.test_hooks().hold(TestStage::PublicationAdmission);
+    let ticket = f.submit(path.to_str().unwrap(), "never-written");
+    gate.entered.notified().await;
+    assert_eq!(f.host.status()["publications"], 0);
+    assert_eq!(f.covers.status().sessions, 1);
+    assert_eq!(
+        f.host.context_changed().await.unwrap_err().code,
+        "now_playing_drain_timeout"
+    );
+    gate.resume.notify_one();
+    let receipt = ticket.finish().await.unwrap();
+    assert_eq!(receipt.failure().unwrap().code, "now_playing_shutdown");
+    assert_eq!(f.host.status()["publications"], 0);
+    assert_eq!(f.covers.status().sessions, 0);
+    assert!(!f.text().exists());
+    assert!(f.events.try_recv().is_err());
+    drop(receipt);
+    f.host.shutdown().await.unwrap();
+    assert_eq!(f.host.status()["drained"], true);
     f.close().await;
 }

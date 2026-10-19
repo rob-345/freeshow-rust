@@ -31,21 +31,33 @@ with actual parser/image cancellation and awaits their real receipts.
 
 `Callbacks::publish` accepts owned `Publication::{Metadata,Alert}` and returns
 CallbackFuture. MetadataDelivery has `event`, `hydration`, `id`, `sequence`, and
-`context` getters; AlertDelivery omits hydration. Both have original MAIN source
+`context` getters; AlertDelivery omits hydration and adds `kind()` and
+`folder_path()`. Native `AlertKind::{MissingText, FolderCreationFailed { folder:
+PathBuf }}` has no Deserialize; kind.as_str()/Serialize emits `missingText` or
+`folderCreationFailed`, and folder_path returns Some only for the latter. That
+path comes solely from the actual typed EnsureFolder file observation and must
+match the captured data_path/Audio leaf. Both have original MAIN source
 events and frozen outer context. Metadata is AUDIO_METADATA `{filePath,metadata}`;
 ALERT is exactly the original string. IDs are
 `native-now-playing-{Uuid.simple()}`; sequence is a decimal process-wide u64 that
 never resets across host/context replacement. Native-only completion is
 `complete(id, &full_context, accepted: bool)` and is one-use. No private fields
-belong inside source data. The coordinator adds `{id,sequence,hydration?}` to its
-private event envelope, applies main/full-context/monotonic replay checks, and
-then sends completion. A false completion records rejection without rollback.
+belong inside source data. The coordinator adds `{id,sequence,hydration?}` for metadata or
+`{id,sequence,alertKind,alertFolder?}` for alerts to its private event envelope, applies main/full-context/monotonic replay checks, and
+then sends completion. Metadata forbids alert fields; all alerts forbid
+hydration; MissingText forbids alertFolder. A false completion records rejection
+for that one private ID without rollback or settling a still-live sibling.
 
 Publisher queue acceptance precedes post-metadata effects. Renderer completion
 **does not block title/file continuation**. It retains the whole operation until
 ACK, explicit rejection, or authoritative host retirement. A missing ACK causes
 bounded terminal timeout/retirement, never verified delivery. Callback rejection
-or panic closes that private publication and settles actual session cleanup.
+or panic rejects only that private publication and settles actual session
+cleanup; any earlier pending metadata or folder notification remains retained.
+Up to five independent private notifications belong to each source operation.
+Every ID must settle or be authoritatively retired before the whole-operation
+result/lease can be released; acknowledged metadata cannot hide a later folder
+notification's timeout.
 Reveal is a trusted callback receiving only the fixed existing text path plus
 context; the actual ordered Exists observation precedes it.
 
@@ -65,8 +77,8 @@ uncollected results keep their actual permits charged against the new host.
 
 Four whole leases include queued/active/finished/uncollected operations/results.
 There are at most four preparation futures, one active phase future, four total
-cleanup futures/operation records, four private publications, and four immediate
-lifecycle observers; these categories share the same four operation records.
+cleanup futures/operation records, twenty private publications (at most five per
+operation), and four immediate lifecycle observers; these categories share the same four operation records.
 Dependencies retain their own independently bounded worker/byte quotas, so a
 burst can explicitly fail smaller dependency admission. There is no waiting
 admission queue beyond the fixed four-work channel. Diagnostics are capped at
@@ -92,6 +104,22 @@ field_order; undefined_fields alone supplies own undefined values. No null
 inference is used. Full context and actual source authority are revalidated at
 publication and later effect boundaries. Source input parser failure continues
 with fallback title/files, but invalid authority cannot silently become null.
+
+Actual EnsureFolder failure observations enqueue the original folder ALERT before
+that source effect advances. The exact string is `Error: Could not create folder
+at: ${observed.paths.folder}!`; the trusted native Unicode folder path is capped
+at32774 bytes (captured context path32768 plus fixed Audio leaf), without NUL.
+No alert is inferred from generic false, diagnostics, missing files, writes or
+renderer message data. For a regular-file obstruction named Audio, valid SET
+emits metadata then four folder ALERTs (three PostMetadata, one Text), UNSET emits
+two, and OPEN emits one plus the original missing-text ALERT. Folder failures
+continue the source path/false-helper behavior; they are not fatal errors or
+successful file writes. A valid format without artwork placeholders still
+executes both eager artwork-path lookups. Private completion does not block
+these continuations. Main/bridge must attach kind/folder privately, validate the
+exact source string, and keep a process-wide bound of twenty entered completion
+promises across context replacements/reentrancy until actual settlement; source
+command admission remains four.
 
 Actual pipeline metadata Applied observations continue despite caught header
 write diagnostics; pre-operation failures stop explicitly. File helper false
@@ -146,7 +174,7 @@ version parity, GUI, or performance gain is asserted by this slice.
 
 ## Evidence and checks
 
-16 focused Linux native tests pass with strict actual Opus required, including:
+22 focused Linux native tests pass with strict actual Opus required, including:
 real opened WAV and tagged MP3/PNG; source NaN/undefined picture restoration;
 actual PNG output/truncation/release; empty/parser-null/authority distinction;
 real TCP title pages with raw on-wire CRC validation; private ACK independence;
@@ -169,7 +197,7 @@ loopback codec check mandatory; otherwise an unavailable capability reports an
 explicit omission rather than native packet parity. Use one Cargo job,
 CARGO_INCREMENTAL=0 and dev/test debug=0. No root/GUI build or downloads required.
 
-Final local checks: all16 host tests, strict Linux headless lib+integration-test
+Final local checks: all22 host tests, strict Linux headless lib+integration-test
 Clippy with warnings denied, rustfmt, Prettier and git diff --check. Final tests
 ran after all API/counter/budget changes, with Node22 and strict real Opus enabled.
 No cross-target host build, GUI, root workspace/native build, or package install
@@ -177,3 +205,28 @@ was run. The separate prerequisite commit a0d16ad0 supplies retained preparation
 failure Sessions and the sealed source-phase accessor; coordinator imported it
 as c0af37f5. Scheduler426659ac and metadata-wire c512e6d0 are independent worker
 prerequisites, not duplicated host changes.
+
+Folder-alert refinement verification retained all16 prior tests and adds six:
+real regular-file Audio source SET/UNSET/OPEN comparison in one pinned Node22
+realm over the actual real WAV, including false ACK of one folder event with
+metadata still pending; second-callback rejection retaining metadata authority; four whole
+operations retaining twenty distinct sequence-ordered publications; dropped
+caller/context retirement held behind the real phase and Session cleanup; and
+metadata acknowledged while a later folder publication times out. The shared
+OperationBudget replacement test remains green. Source helper prerequisite is
+8910f62e; its typed Observation.folder_creation_failed is true only for an actual
+EnsureFolder mkdir failure. No helper/main/bridge/canonical-doc edit belongs to
+this refinement. Strict Linux focused Clippy, rustfmt, Prettier and diff checks
+run after final owned changes. Cargo uses the coordinator-authorized canonical
+cache after its verified move, jobs1/debug0/incremental0; no GUI build or network
+app was started. Windows/macOS execution remains integration-CI evidence.
+
+Registration and retirement share the publication-map lock. After constructing
+bounded event data, registration rechecks closing under that lock before
+inserting a live Pending. Thus a concurrent close cannot finish its retirement
+scan and then miss a late insertion that no completion could acknowledge. A
+held actual metadata-registration boundary regression proves no event/Pending
+escapes after retirement, while real Session cleanup and supervisor join remain
+required. Earlier filesystem diagnostics are collected before awaiting a later
+source-alert callback, so callback rejection cannot erase the actual mkdir
+failure evidence.

@@ -25,7 +25,7 @@ use std::{
     collections::HashMap,
     future::Future,
     panic::AssertUnwindSafe,
-    path::PathBuf,
+    path::{Path, PathBuf},
     pin::Pin,
     sync::{
         atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
@@ -124,13 +124,63 @@ impl MetadataDelivery {
         &self.context
     }
 }
+/// Native-only source reason. Delivery construction is private; no renderer
+/// message/path can manufacture a folder-failure observation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AlertKind {
+    MissingText,
+    FolderCreationFailed { folder: PathBuf },
+}
+impl AlertKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::MissingText => "missingText",
+            Self::FolderCreationFailed { .. } => "folderCreationFailed",
+        }
+    }
+    fn message(&self) -> Result<String> {
+        match self {
+            Self::MissingText => Ok("This does not exist!".into()),
+            Self::FolderCreationFailed { folder } => {
+                let path = folder.to_str().ok_or_else(|| {
+                    HostError::new("now_playing_unsupported", "NonUnicode folder-failure path")
+                })?;
+                if path.len() > 32774 || path.contains('\0') {
+                    return Err(HostError::new(
+                        "now_playing_limit",
+                        "Invalid folder-failure path",
+                    ));
+                }
+                Ok(format!("Error: Could not create folder at: {path}!"))
+            }
+        }
+    }
+}
+impl Serialize for AlertKind {
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
 pub struct AlertDelivery {
+    kind: AlertKind,
     event: Event,
     id: String,
     sequence: String,
     context: RuntimeContext,
 }
 impl AlertDelivery {
+    pub fn kind(&self) -> &AlertKind {
+        &self.kind
+    }
+    pub fn folder_path(&self) -> Option<&Path> {
+        match &self.kind {
+            AlertKind::FolderCreationFailed { folder } => Some(folder),
+            AlertKind::MissingText => None,
+        }
+    }
     pub fn event(&self) -> &Event {
         &self.event
     }
@@ -663,7 +713,7 @@ struct Operation {
     cancel: CancellationToken,
     authority: Option<MediaAuthority>,
     session: Option<Session>,
-    publication: Option<(String, Arc<Pending>)>,
+    publications: Vec<(String, Arc<Pending>)>,
     reply: Option<oneshot::Sender<Result<Receipt>>>,
     lease: Arc<Lease>,
     diagnostics: Vec<HostError>,
@@ -756,7 +806,7 @@ fn make_operation(
         cancel: work.cancel,
         authority: None,
         session: None,
-        publication: None,
+        publications: Vec::new(),
         reply: Some(work.reply),
         lease: work.lease,
         diagnostics: vec![],
@@ -911,14 +961,17 @@ async fn prepare(shared: Arc<Shared>, mut op: Operation) -> Operation {
     }
     op
 }
-fn register_publication(
+async fn register_publication(
     shared: &Shared,
     op: &mut Operation,
     metadata: Option<&planner::NativeMetadataPublication>,
-    alert: Option<&str>,
+    alert: Option<AlertKind>,
 ) -> Result<Publication> {
-    if op.publication.is_some() {
-        return Err(dependency("One operation attempted multiple publications"));
+    if op.publications.len() == 5 {
+        return Err(HostError::new(
+            "now_playing_publication_limit",
+            "Five whole source publications are retained for this operation",
+        ));
     }
     shared.current(op.id.context())?;
     let sequence = PUBLICATION_SEQUENCE
@@ -954,9 +1007,11 @@ fn register_publication(
             context: context.clone(),
         })
     } else {
-        let mut event = Event::reply("MAIN", "ALERT", Value::String(alert.unwrap().into()), None);
+        let kind = alert.ok_or_else(|| dependency("Missing typed native alert reason"))?;
+        let mut event = Event::reply("MAIN", "ALERT", Value::String(kind.message()?), None);
         event.context = Some(context.clone());
         Publication::Alert(AlertDelivery {
+            kind,
             event,
             id: id.clone(),
             sequence,
@@ -967,15 +1022,27 @@ fn register_publication(
         context,
         state: AtomicU8::new(0),
     });
+    #[cfg(test)]
+    shared.hooks.pause(TestStage::PublicationAdmission).await;
     let mut map = shared
         .publications
         .lock()
         .unwrap_or_else(|e| e.into_inner());
-    if map.len() >= 4 {
+    // The same map lock fences close's retirement scan. Never install a new
+    // unackable live Pending after close already retired the earlier entries.
+    if shared.closing.load(Ordering::Acquire) {
+        return Err(shared.error().unwrap_or_else(|| {
+            HostError::new(
+                "now_playing_shutdown",
+                "Publication admission retired before registration",
+            )
+        }));
+    }
+    if map.len() >= 20 {
         return Err(busy());
     }
     map.insert(id.clone(), pending.clone());
-    op.publication = Some((id, pending));
+    op.publications.push((id, pending));
     Ok(publication)
 }
 async fn image(
@@ -1034,6 +1101,7 @@ async fn image(
         .map_err(|e| HostError::new(e.code, e.message))?
 }
 async fn publish(callbacks: &Callbacks, op: &Operation, delivery: Publication) -> Result<()> {
+    let id = delivery.id().to_owned();
     let result = AssertUnwindSafe(async { (callbacks.publish)(delivery).await })
         .catch_unwind()
         .await
@@ -1045,7 +1113,7 @@ async fn publish(callbacks: &Callbacks, op: &Operation, delivery: Publication) -
         })
         .and_then(|r| r);
     if result.is_err() {
-        if let Some((_, pending)) = &op.publication {
+        if let Some((_, pending)) = op.publications.iter().find(|(saved, _)| saved == &id) {
             let _ = pending
                 .state
                 .compare_exchange(0, 2, Ordering::AcqRel, Ordering::Acquire);
@@ -1086,8 +1154,27 @@ async fn execute(
         .finish()
         .await
         .map_err(dependency)?;
-        for e in observed.diagnostics {
-            op.diagnostic(HostError::new("now_playing_file_caught", e));
+        for error in &observed.diagnostics {
+            op.diagnostic(HostError::new("now_playing_file_caught", error));
+        }
+        if observed.folder_creation_failed {
+            if !matches!(effect, E::EnsureAudioFolder { .. })
+                || observed.paths.folder != op.id.context().data_path.join("Audio")
+            {
+                return Err(dependency(
+                    "Folder-failure observation is not the captured fixed Audio path",
+                ));
+            }
+            let delivery = register_publication(
+                shared,
+                op,
+                None,
+                Some(AlertKind::FolderCreationFailed {
+                    folder: observed.paths.folder.clone(),
+                }),
+            )
+            .await?;
+            publish(callbacks, op, delivery).await?;
         }
         return Ok(if matches!(effect, E::Exists { .. }) {
             planner::Receipt::Exists(observed.success.unwrap_or(false))
@@ -1102,12 +1189,16 @@ async fn execute(
             let metadata = effect
                 .native_metadata()
                 .ok_or_else(|| dependency("JSON projection cannot publish native metadata"))?;
-            let delivery = register_publication(shared, op, Some(metadata), None)?;
+            let delivery = register_publication(shared, op, Some(metadata), None).await?;
             publish(callbacks, op, delivery).await?;
             Ok(planner::Receipt::Done { success: true })
         }
         E::Alert { message } => {
-            let delivery = register_publication(shared, op, None, Some(message))?;
+            if message != "This does not exist!" {
+                return Err(dependency("Unexpected sealed planner alert"));
+            }
+            let delivery =
+                register_publication(shared, op, None, Some(AlertKind::MissingText)).await?;
             publish(callbacks, op, delivery).await?;
             Ok(planner::Receipt::Done { success: true })
         }
@@ -1274,41 +1365,47 @@ async fn cleanup(shared: Arc<Shared>, mut op: Operation) -> Operation {
     }
     op
 }
-fn publication_done(op: &mut Operation) -> bool {
-    match op
-        .publication
-        .as_ref()
-        .map(|(_, p)| p.state.load(Ordering::Acquire))
+fn publications_done(op: &mut Operation) -> bool {
+    // Inspect all first: a settled sibling never disposes a still-live metadata
+    // or folder notification, and repeated polls do not duplicate diagnostics.
+    if op
+        .publications
+        .iter()
+        .any(|(_, p)| p.state.load(Ordering::Acquire) == 0)
     {
-        Some(0) => false,
-        Some(2) => {
-            op.diagnostic(HostError::new(
+        return false;
+    }
+    let states = op
+        .publications
+        .iter()
+        .map(|(_, p)| p.state.load(Ordering::Acquire))
+        .collect::<Vec<_>>();
+    for state in states {
+        match state {
+            2 => op.diagnostic(HostError::new(
                 "now_playing_delivery_rejected",
                 "Renderer rejected actual private publication",
-            ));
-            true
-        }
-        Some(3) => {
-            op.diagnostic(HostError::new(
+            )),
+            3 => op.diagnostic(HostError::new(
                 "now_playing_delivery_retired",
                 "Publication authority retired; renderer delivery is unconfirmed",
-            ));
-            true
+            )),
+            _ => {}
         }
-        _ => true,
     }
+    true
 }
 fn finish(shared: &Shared, mut op: Operation, schedule: &mut Schedule) {
     if op
-        .publication
-        .as_ref()
-        .is_some_and(|(_, pending)| pending.state.load(Ordering::Acquire) == 3)
+        .publications
+        .iter()
+        .any(|(_, pending)| pending.state.load(Ordering::Acquire) == 3)
     {
         if let Some(error) = shared.error() {
             op.fail(error);
         }
     }
-    if let Some((id, _)) = op.publication.take() {
+    for (id, _) in op.publications.drain(..) {
         shared
             .publications
             .lock()
@@ -1381,7 +1478,7 @@ async fn supervise(
             let mut op = ready.remove(&id).unwrap();
             if !op.cleaned {
                 cleanups.push(Box::pin(cleanup(shared.clone(), op)));
-            } else if publication_done(&mut op) {
+            } else if publications_done(&mut op) {
                 finish(&shared, op, &mut schedule);
             } else {
                 ready.insert(id, op);
@@ -1426,9 +1523,9 @@ async fn supervise(
         let deadline = ready
             .values()
             .filter(|op| {
-                op.publication
-                    .as_ref()
-                    .is_some_and(|(_, p)| p.state.load(Ordering::Acquire) == 0)
+                op.publications
+                    .iter()
+                    .any(|(_, p)| p.state.load(Ordering::Acquire) == 0)
             })
             .map(|op| op.deadline)
             .min();
@@ -1532,6 +1629,7 @@ fn prepared(
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TestStage {
     Preparation,
+    PublicationAdmission,
     Phase(PhaseKind),
     SupervisorExit,
 }
