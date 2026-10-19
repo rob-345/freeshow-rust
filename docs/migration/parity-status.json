@@ -74,7 +74,11 @@
         "tests/parity/system-info.test.mjs",
         "crates/freeshow-system/src/tests.rs",
         "src-tauri/tests/system.rs",
-        "tests/desktop/system_oracle.mjs"
+        "tests/desktop/system_oracle.mjs",
+        "src-tauri/tests/device_id.rs",
+        "tests/parity/device-id.test.mjs",
+        "tests/desktop/device_provider_probe.js",
+        "docs/migration/baselines/device-provider-linux-local.json"
       ],
       "remaining": [
         "native drop: Windows/macOS GUI, virtual/non-file URI payloads, arbitrary File/Blob byte readers, hover feedback and original asynchronous handler context propagation",
@@ -85,9 +89,10 @@
         "spellcheck",
         "updates and crash reporting",
         "folder dialogs and library switching on Windows/macOS",
-        "system information: actual cross-platform hostname-provider and RAM backend behavior beyond the source/native test corpus"
+        "system information: actual cross-platform hostname-provider and RAM backend behavior beyond the source/native test corpus",
+        "Device ID corrupt-profile normalization, external writer races, nonfinite legacy JSON and foreign native provider runtime validation"
       ],
-      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation; localized native menus compared across all bundled locales/platform conditions; actual Linux menu commands and Quit confirmation/final-save/drain workflows; native absolute-path file drops preserve ordered Unicode project/import dispatch through retained Svelte handlers, bounded metadata work and stale gesture/library rejection; actual GTK targeting at scale 1 and 2; GET_OS, GET_DEVICE_NAME and CHECK_RAM_USAGE use one bounded native OS worker, source-compatible aliases/hostname/RAM decisions and tagged readonly replies"
+      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation; localized native menus compared across all bundled locales/platform conditions; actual Linux menu commands and Quit confirmation/final-save/drain workflows; native absolute-path file drops preserve ordered Unicode project/import dispatch through retained Svelte handlers, bounded metadata work and stale gesture/library rejection; actual GTK targeting at scale 1 and 2; GET_OS, GET_DEVICE_NAME and CHECK_RAM_USAGE use one bounded native OS worker, source-compatible aliases/hostname/RAM decisions and tagged readonly replies; native global DEVICE_ID preparation/persistence now runs within the existing ordered configuration owner with four complete leases, actual legacy hash/UUID/write-fallback source policy, strict bounded identity Number parsing, actual pretty-output size validation and explicit cancellation/deadline/resource failures; eight actual host tests cover persistence, global-library isolation, permission failure and accepted lifecycle; actual normal Linux editor callbacks preserve one persisted global identity and empty stored-provider replies before restart, after restart and after a real library switch; this newer milestone awaits its own foreign/native CI"
     },
     {
       "id": "editor",
@@ -412,15 +417,24 @@
     },
     {
       "id": "cloud-and-providers",
-      "status": "pending",
-      "tests": [],
+      "status": "partial",
+      "tests": [
+        "tests/parity/provider-connections.test.mjs",
+        "crates/freeshow-system/tests/provider_connections.rs",
+        "src-tauri/tests/provider_connections.rs",
+        "tests/desktop/device_provider_probe.js",
+        "docs/migration/baselines/device-provider-linux-local.json"
+      ],
       "remaining": [
         "ChurchApps and Google Drive sync",
         "Planning Center",
         "OnStage",
         "content licensing and downloads",
-        "lyric providers"
-      ]
+        "lyric providers",
+        "provider authentication, refresh, OAuth listeners and real backend lifecycle",
+        "Conf nonobject root normalization, concurrent external store replacement and native foreign-platform provider workflows"
+      ],
+      "scope": "Native MAIN.PROVIDER_CONNECTIONS reads actual bounded global app-data ACCESS on the existing ordered owner, preserves the pinned registry stored-scope truthiness/order and original listener/full context, and never exposes credentials or authenticates providers. Six actual host tests and eight immutable-source Node suites cover actual files, failure/missing distinctions, secret omission and accepted cancellation/deadline/seal ownership. Full provider workflows remain incomplete. Three actual normal Linux editor phases preserve empty-provider callbacks and listener/full context before restart, after restart and after a real library switch; no account/backend is authenticated."
     },
     {
       "id": "ai",
@@ -464,16 +478,21 @@
       "id": "distribution",
       "status": "partial",
       "tests": [
-        ".github/workflows/rust-parity.yml"
+        ".github/workflows/rust-parity.yml",
+        "tests/desktop/package_linux/receipt.json",
+        "tests/desktop/package_linux/run.py",
+        "tests/desktop/package_linux/verify.py"
       ],
       "remaining": [
         "native packaging and installation verification beyond cross-platform binary builds/host unit tests",
         "signed installers",
         "upgrade and rollback",
         "GPL notices and fork branding",
-        "replacement of inherited upstream publishing destinations"
+        "replacement of inherited upstream publishing destinations",
+        "packaged LTC complete corresponding-source/relink provenance, wrapper MIT text, font redistribution authorization and complete dependency license audit",
+        "older distribution glibc compatibility and actual signed/installed release workflows"
       ],
-      "scope": "Remotes, encoder, local scripture, Linux media-copy and audio/discovery foundation milestones each passed their corrected complete six-job CI run. Audio/discovery corrections at84b9833a passed all three OS core jobs, Windows/macOS native OS snapshots and the142-step Linux editor/menu/drop workflow (39168290852). Later MIDI/Icecast/live-IP/remote-discovery/FFmpeg-download integrations pass expanded local source/native checks and the148-step editor but await their own complete CI run. Installers, signatures, actual Windows/macOS browser/hardware and unsupported platform-specific features remain pending."
+      "scope": "Remotes, encoder, local scripture, Linux media-copy and audio/discovery foundation milestones each passed their corrected complete six-job CI run. Audio/discovery corrections at84b9833a passed all three OS core jobs, Windows/macOS native OS snapshots and the142-step Linux editor/menu/drop workflow (39168290852). Later MIDI/Icecast/live-IP/remote-discovery/FFmpeg-download integrations pass expanded local source/native checks and the148-step editor but await their own complete CI run. Installers, signatures, actual Windows/macOS browser/hardware and unsupported platform-specific features remain pending. An unsigned Ubuntu24.04 x86_64 .deb from834e9da3 now has exact archive/resource/ELF/notice inventory and two extracted normal-editor/runtime receipts, actual sealed packaged-LTC mappings and normal CLOSE/process cleanup. This is a private local review artifact, not an installed/signed/published release. Historical GUI receipts do not establish UDP discovery isolation; the later runner explicitly owns a loopback peer and remains unexecuted in those receipts."
     }
   ]
 }

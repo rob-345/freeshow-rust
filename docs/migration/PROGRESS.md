@@ -2,6 +2,48 @@
 
 Status: **active, incomplete**. Full feature parity and application performance improvement have not been demonstrated. The complete parity gate intentionally fails.
 
+`MAIN.DEVICE_ID` now preserves the global configuration identity through the
+existing ordered owner, actual legacy/UUID preparation and real setter return.
+Four complete leases survive accepted observer Drop/deadlines and CLOSE sealing.
+Truthy JSON Number identities retain source binary64 bits. Actual pretty-output
+size and valid JSON parser-depth limits are rejected before a misleading fallback
+or oversized rewrite. Eight real host tests and four immutable-source/Conf suites
+cover these boundaries. The existing system-information owner now retains and
+actually joins its std thread across shutdown timeouts, abandoned observers and
+teardown panic; this is separate from the library configuration fence.
+[Identity host](workers/device-id-host.md), [native preparation](workers/device-id.md)
+and [system joins](workers/system-owner-join.md).
+
+`MAIN.PROVIDER_CONNECTIONS` now reads actual bounded global app-data ACCESS on
+that ordered owner. The pinned registry's stored-scope truthiness/order, original
+listener and full context are preserved; credentials never enter the reply.
+Six real host tests and eight source suites cover files, secret omission,
+failure/missing distinctions and retained accepted work. Cloud/provider status
+moves to partial for this indication only. Authentication, refresh, real backend
+availability and service imports remain incomplete.
+[Host](workers/provider-connections-host.md) and [source contract](workers/provider-connections.md).
+
+The latest normal root-workspace binary passes all **190 Linux editor steps**,
+four GTK menus and both drop scales. Retained Device ID/provider callbacks pass
+before restart, after actual restart and after a real library switch; the same
+global identity remains persisted, raw identity bytes are absent from the saved
+text artifacts, and neither command has a runtime error. Independent validation
+also preserves 141 cover HTTP responses, both exact source JPEG RGBA hashes,
+original folder alerts/blocker/sentinel bytes and actual normal Quit process exit.
+The complete editor retains 56 other diagnostics, including intentional failure/
+stale controls and unsupported or unavailable capabilities. This is a local
+milestone; the published six-job CI below precedes these new bindings.
+[Current local receipt](baselines/device-provider-linux-local.json).
+
+An unsigned Ubuntu24.04 x86_64 Debian preview from `834e9da3` now has independent
+archive/resource/ELF/notice verification and two actual extracted-release editor,
+remote-resource, packaged-LTC mapping and normal CLOSE/process-cleanup receipts.
+It was not installed, signed or externally released. Corresponding LTC source/
+relink provenance, wrapper/font licensing, complete dependency auditing and older
+distribution compatibility remain open. Historical package receipts do not prove
+UDP discovery isolation; the later fixture explicitly owns a loopback peer.
+[Artifact, reproduction and limits](workers/linux-deb-package.md).
+
 Native now-playing now runs through the retained Svelte bridge, one lazy Rust
 supervisor, four overlapping metadata preparations and ordered source phases.
 Actual registered descriptors, parser/cover/image owners, library file jobs and
@@ -35,13 +77,15 @@ survives actual consumer destruction; its Windows CI fixture waits for real
 reply-frame disposal. Controlled negative tests detect the old behavior.
 No whole-application CPU improvement is claimed.
 
-The current integration passes **501 Rust + 598 pinned-Node + 20 frontend
-checks** (1,119), plus **355 native executions** (342 host integration and thirteen
+The current integration passes **520 Rust + 610 pinned-Node + 20 frontend
+checks** (1,150), plus **369 native executions** (356 host integration and thirteen
 desktop binary unit cases, including shared cases repeated by importing targets).
 Five ignored Rust subprocess entry fixtures are driven by supervisor tests;
 four source suites retain existing platform/capability skips. Strict workspace
 and native all-target Clippy, focused TypeScript, formatting and immutable-source
-snapshot checks pass. The full parity gate intentionally remains incomplete.
+snapshot checks pass. The full parity gate intentionally remains incomplete. The source parity CLI now
+uses production queued browse admission; the original API fixture waits actual
+listener completion. [Harness corrections](workers/source-harness-readiness.md).
 
 Published `e53b7a25` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39266756301).
 Actual Windows core passes all 43 browsing cases, including complete source
@@ -60,7 +104,7 @@ jobs also pass the portable historical-ablation replay and corruption controls;
 CI collects no new performance samples.
 [Current CI receipt](baselines/queued-browse-lazy-native-ci.json).
 
-The rebuilt **187-step Linux editor**, four GTK menus and both native drop scales
+The rebuilt **190-step Linux editor**, four GTK menus and both native drop scales
 pass. Fourteen actual cover phases make **141 HTTP requests** across all three
 ports, comparing current file bytes/hash/MIME/length, HEAD, range and conditional
 responses. OPTIONS precedes the actual Audio-folder effects. An independently
@@ -70,7 +114,7 @@ return missing rather than the unchanged old-library cover sentinel. All phases
 preserve full context, source void behavior and zero observed retained cover
 owners. These idle observations are not IO-thread-join or peer-receipt proof;
 a separate actual TCP STOP/Weak test proves the per-run source/emitter lifetime.
-The complete editor receipt retains **55 expected other-feature/capability
+The complete editor receipt retains **56 expected other-feature/capability
 diagnostics**, not a global zero-error result. Real backup/pending writes and
 final process exit still pass.
 
