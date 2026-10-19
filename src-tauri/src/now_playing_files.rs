@@ -44,6 +44,10 @@ pub struct Observation {
     pub paths: AudioPaths,
     /// The original helper's boolean. None for the path-only observation.
     pub success: Option<bool>,
+    /// Only a genuinely attempted EnsureFolder mkdir failure. The native host
+    /// may derive the source ALERT from this flag plus the trusted paths.folder;
+    /// other false/error observations never imply a folder-creation ALERT.
+    pub folder_creation_failed: bool,
     pub skipped_equal_text: bool,
     /// At most two caught filesystem failures, each at most1024 UTF8 bytes.
     pub diagnostics: Vec<String>,
@@ -225,6 +229,7 @@ pub fn submit(phase: &LibraryPhase, intent: Intent) -> Result<FileTicket> {
         let mut observation = Observation {
             paths,
             success: None,
+            folder_creation_failed: false,
             skipped_equal_text: false,
             diagnostics: Vec::new(),
         };
@@ -235,6 +240,7 @@ pub fn submit(phase: &LibraryPhase, intent: Intent) -> Result<FileTicket> {
             Intent::EnsureFolder => Some(match fs::create_dir_all(&paths.folder) {
                 Ok(()) => true,
                 Err(error) => {
+                    observation.folder_creation_failed = true;
                     diagnostic(errors, error);
                     false
                 }

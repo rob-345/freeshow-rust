@@ -134,10 +134,12 @@ async fn caught_folder_write_delete_errors_and_existing_directory_empty_read_con
     fs::write(&paths.folder, b"a file blocking the Audio folder").unwrap();
     let folder = effect(&phase, Intent::EnsureFolder).await;
     assert_eq!(folder.success, Some(false));
+    assert!(folder.folder_creation_failed);
     assert!(!folder.diagnostics.is_empty());
     assert_eq!(folder.paths, paths);
     let write = effect(&phase, Intent::WriteCover(vec![1])).await;
     assert_eq!(write.success, Some(false));
+    assert!(!write.folder_creation_failed);
     assert!(!write.diagnostics.is_empty());
     fs::remove_file(&paths.folder).unwrap();
     fs::create_dir(&paths.folder).unwrap();
@@ -147,13 +149,64 @@ async fn caught_folder_write_delete_errors_and_existing_directory_empty_read_con
     assert!(empty.skipped_equal_text);
     let nonempty = effect(&phase, Intent::WriteText("A".into())).await;
     assert_eq!(nonempty.success, Some(false));
+    assert!(!nonempty.folder_creation_failed);
     assert!(!nonempty.skipped_equal_text);
     assert!(!nonempty.diagnostics.is_empty());
     fs::create_dir(&paths.cover).unwrap();
     let deleted = effect(&phase, Intent::DeleteCover).await;
     assert_eq!(deleted.success, Some(false));
+    assert!(!deleted.folder_creation_failed);
     assert!(paths.cover.is_dir());
     phase.finish().await.unwrap();
+}
+
+#[tokio::test]
+async fn only_actual_folder_mkdir_failures_mark_alert_observations_and_each_attempt_is_preserved() {
+    let f = Fixture::new();
+    let phase = f.phase().await;
+    let initial = effect(&phase, Intent::Paths).await;
+    assert_eq!(initial.success, None);
+    assert!(!initial.folder_creation_failed);
+    assert!(initial.diagnostics.is_empty());
+    assert!(!initial.paths.folder.exists(), "Paths performs no mkdir");
+    let paths = initial.paths;
+    let bytes = b"a regular file obstructing the actual Audio directory";
+    fs::write(&paths.folder, bytes).unwrap();
+    for _ in 0..4 {
+        let failed = effect(&phase, Intent::EnsureFolder).await;
+        assert!(failed.folder_creation_failed);
+        assert_eq!(failed.success, Some(false));
+        assert_eq!(failed.paths, paths);
+        assert_eq!(failed.diagnostics.len(), 1);
+        assert!(failed.diagnostics[0].len() <= 1024);
+        assert!(!failed.skipped_equal_text);
+        assert_eq!(fs::read(&paths.folder).unwrap(), bytes);
+    }
+    for intent in [
+        Intent::Paths,
+        Intent::Exists(Leaf::Text),
+        Intent::Exists(Leaf::Cover),
+        Intent::DeleteCover,
+        Intent::WriteText("cannot write below a regular file".into()),
+        Intent::WriteCover(vec![1, 2, 3]),
+    ] {
+        let observed = effect(&phase, intent).await;
+        assert!(!observed.folder_creation_failed);
+        assert_eq!(observed.paths, paths);
+        assert!(observed.success.is_none() || observed.success == Some(false));
+        assert_eq!(fs::read(&paths.folder).unwrap(), bytes);
+    }
+    fs::remove_file(&paths.folder).unwrap();
+    for _ in 0..2 {
+        let created = effect(&phase, Intent::EnsureFolder).await;
+        assert!(!created.folder_creation_failed);
+        assert_eq!(created.success, Some(true));
+        assert_eq!(created.paths, paths);
+        assert!(created.diagnostics.is_empty());
+        assert!(created.paths.folder.is_dir());
+    }
+    phase.finish().await.unwrap();
+    f.library.finish_writes().await.unwrap();
 }
 
 #[tokio::test]
