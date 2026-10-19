@@ -53,12 +53,36 @@ function original(c) {
     const result = exports.ChurchAppsShowBuilder[method](...c.args)
     return c.method === "parse" ? { value: JSON.parse(JSON.stringify(result)), uidCalls, nowCalls, dateCalls } : { typed: typed(result), json: JSON.parse(JSON.stringify(result)), uidCalls, nowCalls, dateCalls, result }
 }
+const nativeTimeoutMs = 15000,
+    nativeMaxBufferBytes = 32 * 1024 * 1024
+let nativeBatch = 0
+function subprocessDiagnostic(result, input, cases, batch, elapsedMs) {
+    const bytes = (value) => (Buffer.isBuffer(value) ? value.length : Buffer.byteLength(value || ""))
+    return {
+        batch,
+        cases: cases.length,
+        methods: [...new Set(cases.map((c) => c.method))],
+        status: result.status,
+        signal: result.signal,
+        error: result.error ? { name: result.error.name, code: result.error.code, errno: result.error.errno, syscall: result.error.syscall, message: result.error.message.slice(0, 1024) } : null,
+        elapsedMs,
+        timeoutMs: nativeTimeoutMs,
+        maxBufferBytes: nativeMaxBufferBytes,
+        inputBytes: bytes(input),
+        inputSha256: createHash("sha256").update(input).digest("hex"),
+        stdoutBytes: bytes(result.stdout),
+        stderrBytes: bytes(result.stderr),
+        stderrTail: (result.stderr?.toString() || "").slice(-2048)
+    }
+}
 function native(cases) {
-    const input = cases.map((c) => ({ ...c, args: c.args.map(typed), clock: c.clock.map(bits) }))
-    const r = spawnSync(binary, [], { input: JSON.stringify(input), encoding: "utf8", timeout: 15000, maxBuffer: 32 * 1024 * 1024 })
-    assert.equal(r.status, 0, r.stderr)
-    const result = JSON.parse(r.stdout)
-    assert.ok(Array.isArray(result), r.stdout.slice(0, 1024))
+    const input = JSON.stringify(cases.map((c) => ({ ...c, args: c.args.map(typed), clock: c.clock.map(bits) }))),
+        batch = ++nativeBatch,
+        started = performance.now(),
+        r = spawnSync(binary, [], { input, timeout: nativeTimeoutMs, maxBuffer: nativeMaxBufferBytes })
+    if (r.error || r.status !== 0 || r.signal !== null) assert.fail("Native provider fixture subprocess failed: " + JSON.stringify(subprocessDiagnostic(r, input, cases, batch, performance.now() - started)))
+    const result = JSON.parse(r.stdout.toString("utf8"))
+    assert.ok(Array.isArray(result), r.stdout.subarray(0, 1024).toString("utf8"))
     assert.equal(result.length, cases.length)
     return result
 }
@@ -92,6 +116,32 @@ const song = (lyrics, overrides = {}) =>
         ].map((v, i) => ({ ...v, ...overrides[i] }))
     )
 test.after(() => console.log("Provider show source coverage:", JSON.stringify(counts)))
+
+test("subprocess failure diagnostics distinguish timeout, signal and output-limit evidence without dumping inputs", () => {
+    const input = "secret-fixture-content".repeat(1000),
+        cases = [{ method: "song" }]
+    for (const [code, signal] of [
+        ["ETIMEDOUT", "SIGTERM"],
+        ["ENOBUFS", "SIGTERM"],
+        [undefined, "SIGKILL"]
+    ]) {
+        const error = code ? Object.assign(new Error("diagnostic " + code), { code, errno: -1, syscall: "spawnSync fixture" }) : undefined
+        const result = subprocessDiagnostic({ status: null, signal, error, stdout: Buffer.from("敬拜"), stderr: "x".repeat(8192) }, input, cases, 7, 15001.25)
+        assert.equal(result.status, null)
+        assert.equal(result.signal, signal)
+        assert.equal(result.error?.code, code)
+        assert.equal(result.inputBytes, Buffer.byteLength(input))
+        assert.equal(result.stdoutBytes, 6)
+        assert.equal(result.stderrBytes, 8192)
+        assert.equal(result.stderrTail.length, 2048)
+        assert.equal(result.inputSha256, createHash("sha256").update(input).digest("hex"))
+        assert.equal(result.timeoutMs, 15000)
+        assert.equal(result.maxBufferBytes, 32 * 1024 * 1024)
+        assert.equal(result.elapsedMs, 15001.25)
+        assert.equal(JSON.stringify(result).includes("secret-fixture-content"), false)
+        assert.ok(Buffer.byteLength(JSON.stringify(result)) < 4096)
+    }
+})
 
 test("parseLyrics executes immutable branches, whitespace and empty-buffer quirks", () => {
     const values = [undefined, null, false, 0, -0, NaN, "", " \n\n ", "one\nline\n\nsecond\n\n\nthird", "[Verse 1]\nfirst\nline\n\nnext\n[Chorus2]\nlast", "[A]\n\n\n\n", "[A]\n[A]\n", "[A]\n\n", "[a]\r\nfirst\r\n[B]\nsecond", "[not a header\ntext", "[ 12 ]\n\n \n", "[A １２]\nline", "[A\u00a012]\nline", "[A]\n\u0085\n\uFEFF\nX", "[a]\n\n[a]\n\n[a]\n\n"]

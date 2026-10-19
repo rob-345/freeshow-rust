@@ -156,14 +156,58 @@ test("real deeper-than-budget filesystem is a truthful native resource gap, not 
     })
 })
 
-test("POSIX undecodable entry spelling is an explicit capability error alongside actual source result", { skip: process.platform === "win32" }, async () => {
+function unrepresentableByteName(error, platform) {
+    // Actual Darwin CI rejects this raw byte name before source/native inventory
+    // can run. Do not turn other fixture/permission failures into this result.
+    if (platform !== "darwin" || error?.code !== "EILSEQ" || error?.syscall !== "open") throw error
+    return { platform, code: error.code, syscall: error.syscall, invalidByteCreated: false, invalidByteCompared: false }
+}
+
+test("byte-name fixture classification rejects unrelated OS, IO and syscall failures", () => {
+    const failure = { code: "EILSEQ", syscall: "open" }
+    assert.deepEqual(unrepresentableByteName(failure, "darwin"), { platform: "darwin", code: "EILSEQ", syscall: "open", invalidByteCreated: false, invalidByteCompared: false })
+    for (const [error, platform] of [
+        [failure, "linux"],
+        [failure, "win32"],
+        [{ code: "EACCES", syscall: "open" }, "darwin"],
+        [{ code: "ENOENT", syscall: "open" }, "darwin"],
+        [{ code: "EILSEQ", syscall: "stat" }, "darwin"]
+    ])
+        assert.throws(
+            () => unrepresentableByteName(error, platform),
+            (observed) => observed === error
+        )
+})
+
+test("POSIX undecodable spelling preserves source/native evidence or actual filesystem rejection", { skip: process.platform === "win32" }, async (t) => {
     await fixture(async ({ userData, engine }) => {
         fs.mkdirSync(engine, { recursive: true })
-        fs.writeFileSync(Buffer.concat([Buffer.from(engine + "/"), Buffer.from([0xff])]), "bytes")
+        const bytePath = Buffer.concat([Buffer.from(engine + "/"), Buffer.from([0xff])])
+        let unavailable
+        try {
+            fs.writeFileSync(bytePath, "bytes")
+        } catch (error) {
+            unavailable = unrepresentableByteName(error, process.platform)
+            assert.deepEqual(fs.readdirSync(engine, { encoding: "buffer" }), [], "Rejected raw name must not leave a file behind")
+        }
         fs.writeFileSync(path.join(engine, "valid"), "x")
+        if (unavailable) {
+            // This is real supported-file parity after an observed OS fixture
+            // rejection, not undecodable-name parity or a fabricated zero row.
+            assert.equal((await compare(userData))[0].size, 1)
+            assert.deepEqual(fs.readdirSync(engine, { encoding: "buffer" }), [Buffer.from("valid")])
+            t.diagnostic("Undecodable filename fixture unavailable: " + JSON.stringify(unavailable))
+            return
+        }
+        assert.deepEqual(fs.readFileSync(bytePath), Buffer.from("bytes"))
+        assert.ok(
+            fs.readdirSync(engine, { encoding: "buffer" }).some((entry) => entry.equals(Buffer.from([0xff]))),
+            "Actual invalid entry spelling must survive on this filesystem"
+        )
         assert.equal((await oracle(userData).inventory())[0].size, 1, "Node replaces the entry spelling, then that stat fails")
         const result = native(userData)
         assert.equal(result.ok, false)
         assert.equal(result.error.code, "ai_local_unsupported")
+        t.diagnostic("Actual undecodable filename source/native comparison: " + JSON.stringify({ platform: process.platform, invalidByteCreated: true, sourceBytes: 1, nativeError: result.error.code }))
     })
 })
