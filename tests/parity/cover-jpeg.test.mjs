@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url"
 import { test } from "node:test"
 import ts from "typescript"
 import { parseFile } from "music-metadata"
-import { apic, mp3, flac, picture } from "../../crates/freeshow-cover-images/tools/fixtures.mjs"
+import { apic, mp3, flac, picture, crc, png } from "../../crates/freeshow-cover-images/tools/fixtures.mjs"
 
 const root = fileURLToPath(new URL("../../", import.meta.url))
 const receipt = JSON.parse(fs.readFileSync(path.join(root, "crates/freeshow-cover-images/fixtures/jpeg/electron-linux.json")))
@@ -48,6 +48,81 @@ function sourcePixels(f) {
     assert.equal(hash(bytes), f.source.png.rgbaSha256)
     return bytes
 }
+function decodedPng(bytes) {
+    assert.ok(bytes.length <= 4 * 1024 * 1024)
+    assert.deepEqual(bytes.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+    const chunks = []
+    let offset = 8,
+        width,
+        height,
+        ended = false,
+        count = 0
+    while (offset < bytes.length) {
+        assert.ok(++count <= 256 && offset + 12 <= bytes.length)
+        const length = bytes.readUInt32BE(offset),
+            end = offset + length + 12
+        assert.ok(end <= bytes.length)
+        const type = bytes.subarray(offset + 4, offset + 8),
+            data = bytes.subarray(offset + 8, end - 4)
+        assert.equal(crc(bytes.subarray(offset + 4, end - 4)), bytes.readUInt32BE(end - 4), "PNG CRC")
+        if (type.toString() === "IHDR") {
+            assert.equal(offset, 8)
+            assert.equal(length, 13)
+            width = data.readUInt32BE(0)
+            height = data.readUInt32BE(4)
+            assert.ok(width > 0 && width <= 4096 && height > 0 && height <= 4096 && width * height <= 4 * 1024 * 1024)
+            assert.deepEqual(data.subarray(8), Buffer.from([8, 6, 0, 0, 0]))
+        } else if (type.toString() === "IDAT") {
+            assert.ok(width)
+            chunks.push(data)
+        } else if (type.toString() === "IEND") {
+            assert.equal(length, 0)
+            ended = true
+        } else assert.fail(`Unexpected candidate PNG chunk ${type}`)
+        offset = end
+        if (ended) break
+    }
+    assert.ok(ended && offset === bytes.length && chunks.length > 0)
+    const compressed = Buffer.concat(chunks),
+        stride = width * 4,
+        expected = (stride + 1) * height
+    const inflated = inflateSync(compressed, { maxOutputLength: expected + 1, info: true })
+    assert.equal(inflated.engine.bytesWritten, compressed.length, "PNG trailing compressed bytes")
+    assert.equal(inflated.buffer.length, expected)
+    const rgba = Buffer.alloc(width * height * 4)
+    for (let y = 0; y < height; y++) {
+        const filter = inflated.buffer[y * (stride + 1)]
+        assert.ok(filter <= 4)
+        for (let x = 0; x < stride; x++) {
+            const p = y * stride + x,
+                left = x < 4 ? 0 : rgba[p - 4],
+                above = y === 0 ? 0 : rgba[p - stride],
+                corner = x < 4 || y === 0 ? 0 : rgba[p - stride - 4]
+            let prediction = 0
+            if (filter === 1) prediction = left
+            if (filter === 2) prediction = above
+            if (filter === 3) prediction = Math.floor((left + above) / 2)
+            if (filter === 4) {
+                const sum = left + above - corner,
+                    a = Math.abs(sum - left),
+                    b = Math.abs(sum - above),
+                    c = Math.abs(sum - corner)
+                prediction = a <= b && a <= c ? left : b <= c ? above : corner
+            }
+            rgba[p] = (inflated.buffer[y * (stride + 1) + x + 1] + prediction) & 255
+        }
+    }
+    return { width, height, rgba }
+}
+test("independent candidate PNG check enforces CRC, complete framing and exact raster", () => {
+    const bytes = png(2, 1)
+    assert.deepEqual(decodedPng(bytes), { width: 2, height: 1, rgba: Buffer.from([0, 0, 0, 255, 17, 3, 7, 255]) })
+    const corrupt = Buffer.from(bytes)
+    corrupt[corrupt.length - 1] ^= 1
+    assert.throws(() => decodedPng(corrupt), /PNG CRC/)
+    assert.throws(() => decodedPng(bytes.subarray(0, bytes.length - 1)))
+    assert.throws(() => decodedPng(Buffer.concat([bytes, Buffer.from([0])])))
+})
 test("JPEG evidence pins immutable actual source declarations, actual packaged versions and measurement source", () => {
     assert.equal(receipt.schema, 1)
     assert.equal(receipt.sourceCommit, "2d94defcf98175e4f5c9504e7f4fd1d33c35c975")
@@ -125,8 +200,10 @@ test("pinned real Rust JPEG candidate has measured pixel mismatches without rela
         if (process.platform === "linux" && process.arch === "x64") {
             assert.equal(hash(actual), f.candidate.rgbaSha256, f.name)
             assert.deepEqual(delta, f.candidate.delta, f.name)
-            assert.equal(hash(Buffer.from(result.png, "base64")), f.candidate.pngSha256)
         }
+        const decoded = decodedPng(Buffer.from(result.png, "base64"))
+        assert.deepEqual({ width: decoded.width, height: decoded.height }, f.source.size)
+        assert.deepEqual(decoded.rgba, actual, "candidate PNG must preserve its actual decoded JPEG raster")
         assert.notEqual(hash(Buffer.from(result.png, "base64")), f.source.png.sha256, "compressed PNG equality is separate from decoded pixels")
     }
     assert.ok(mismatching >= 1, "ordinary JPEG candidate pixel mismatch remains observable")
