@@ -1,0 +1,22 @@
+[package]
+name = "freeshow-cover-images"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+[workspace]
+[dependencies]
+png = "=0.18.1"
+image = { version = "=0.25.10", default-features = false, features = ["jpeg"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+tokio = { version = "1", features = ["sync", "rt", "macros", "time"] }
+base64 = "0.22"
+sha2 = "0.10"
+libc = "0.2"
+flate2 = "1"
+[[bin]]
+name = "freeshow-cover-images-parity"
+path = "src/bin/parity.rs"
+[profile.dev]
+debug = 0
+incremental = false
