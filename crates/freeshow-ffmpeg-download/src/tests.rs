@@ -63,6 +63,227 @@ async fn until(mut condition: impl FnMut() -> bool) {
         tokio::time::sleep(Duration::from_millis(1)).await;
     }
 }
+
+async fn scheduled_until(
+    state: &mut tokio::sync::watch::Receiver<service::TestScheduling>,
+    condition: impl Fn(&service::TestScheduling) -> bool,
+) -> service::TestScheduling {
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let snapshot = state.borrow_and_update().clone();
+            if condition(&snapshot) {
+                return snapshot;
+            }
+            state.changed().await.unwrap();
+        }
+    })
+    .await
+    .expect("fixed network owners did not reach the observed wait state")
+}
+
+async fn cleaned(mut state: tokio::sync::watch::Receiver<Option<Result<()>>>) {
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let snapshot = state.borrow_and_update().clone();
+            if let Some(result) = snapshot {
+                result.unwrap();
+                return;
+            }
+            state.changed().await.unwrap();
+        }
+    })
+    .await
+    .expect("actual filesystem cleanup did not complete");
+}
+
+#[tokio::test(start_paused = true)]
+async fn genuinely_idle_owners_do_not_poll() {
+    let service = DownloadService::start(Config::default()).unwrap();
+    let mut scheduling = service.scheduling();
+    let idle = scheduled_until(&mut scheduling, |state| {
+        state.cycles.iter().all(|cycles| *cycles > 0)
+    })
+    .await;
+    assert_eq!(idle.prepared, [0, 0]);
+    // Advance a controlled runtime clock across fifty old 20ms poll periods.
+    // Compare real owner loop counters rather than inferring idleness by sleep.
+    tokio::time::advance(Duration::from_secs(1)).await;
+    tokio::task::yield_now().await;
+    assert_eq!(scheduling.borrow().cycles, idle.cycles);
+    tokio::time::resume();
+    service.shutdown().await.unwrap();
+    assert_eq!(service.status().workers, 0);
+}
+
+#[tokio::test]
+async fn first_job_after_witnessed_idle_wakes_real_transfer() {
+    // Keep real job/deadline checks on the ordinary std/Tokio clock. The paused
+    // clock test above admits no jobs and makes no claim about std deadline TTL.
+    let root = tempfile::tempdir().unwrap();
+    let bytes = b"first real job after idle";
+    let server = server(gzip(bytes), 200, true, false).await;
+    let service = DownloadService::start(config(&server.url)).unwrap();
+    let mut scheduling = service.scheduling();
+    scheduled_until(&mut scheduling, |state| state.cycles.iter().all(|n| *n > 0)).await;
+    let prepared = service
+        .begin(
+            plan(root.path()),
+            CancellationToken::new(),
+            Instant::now() + Duration::from_secs(10),
+        )
+        .unwrap()
+        .finish()
+        .await
+        .unwrap();
+    let accepted = prepared.accept(&owner()).unwrap();
+    assert_eq!(
+        std::fs::read(accepted.verify_for_install(&owner()).unwrap().staged_path).unwrap(),
+        bytes
+    );
+    scheduled_until(&mut scheduling, |state| state.prepared == [0, 0]).await;
+    accepted.finish().await.unwrap();
+    assert_eq!(service.status().admitted, 0);
+    assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+    service.shutdown().await.unwrap();
+    assert_eq!(service.status().workers, 0);
+    server.close().await;
+}
+
+#[tokio::test]
+async fn shutdown_timeout_and_abandoned_retry_retain_the_real_remaining_join_and_sticky_fault() {
+    use std::future::Future;
+
+    for panic in [false, true] {
+        let service = DownloadService::start(Config {
+            shutdown_timeout: Duration::from_millis(20),
+            ..Config::default()
+        })
+        .unwrap();
+        let (entered, release) = service.hold_network_exit(1);
+        let shutdown = service.shutdown();
+        tokio::pin!(shutdown);
+        tokio::select! {
+            result = &mut shutdown => panic!("shutdown completed before actual owner exit: {result:?}"),
+            result = entered => result.unwrap(),
+        }
+        assert_eq!(
+            shutdown.await.err().unwrap().code,
+            "download_shutdown_timeout"
+        );
+        assert_eq!(
+            service.retained_network_joins().await,
+            1,
+            "the first joined owner must be removed, the held owner retained"
+        );
+        {
+            let retry = service.shutdown();
+            tokio::pin!(retry);
+            let mut context = std::task::Context::from_waker(std::task::Waker::noop());
+            assert!(retry.as_mut().poll(&mut context).is_pending());
+            // Dropping this observer must not drop the actual pending JoinHandle.
+        }
+        assert_eq!(service.retained_network_joins().await, 1);
+        assert_eq!(
+            service.status().workers,
+            2,
+            "FS owners stay alive until network drain"
+        );
+        release.send(panic).unwrap();
+        let result = service.shutdown().await;
+        if panic {
+            let error = result.unwrap_err();
+            assert_eq!(error.code, "download_worker");
+            assert_eq!(service.status().failure.unwrap().message, error.message);
+            assert_eq!(service.shutdown().await.unwrap_err().message, error.message);
+        } else {
+            result.unwrap();
+            service.shutdown().await.unwrap();
+        }
+        assert_eq!(service.retained_network_joins().await, 0);
+        assert_eq!(service.status().workers, 0);
+    }
+}
+
+#[tokio::test]
+async fn held_prepared_output_expires_and_cleans_without_a_second_request() {
+    let root = tempfile::tempdir().unwrap();
+    let server = server(gzip(b"held until real deadline"), 200, true, false).await;
+    let service = DownloadService::start(config(&server.url)).unwrap();
+    let prepared = service
+        .begin(
+            plan(root.path()),
+            CancellationToken::new(),
+            Instant::now() + Duration::from_secs(2),
+        )
+        .unwrap()
+        .finish()
+        .await
+        .unwrap();
+    let private = prepared.job.private.clone();
+    let cleanup = prepared.job.cleanup_observer();
+    assert!(private.join("artifact").is_file());
+    let mut scheduling = service.scheduling();
+    scheduled_until(&mut scheduling, |state| state.prepared == [1, 1]).await;
+    cleaned(cleanup).await;
+    assert!(!private.exists());
+    assert_eq!(service.status().admitted, 0);
+    assert_eq!(
+        prepared.accept(&owner()).err().unwrap().code,
+        "download_deadline"
+    );
+    scheduled_until(&mut scheduling, |state| state.prepared == [0, 0]).await;
+    service.shutdown().await.unwrap();
+    assert_eq!(service.status().workers, 0);
+    server.close().await;
+}
+
+#[tokio::test]
+async fn prepared_cancellation_and_abandonment_wake_cleanup_without_another_job() {
+    for variant in 0..3 {
+        let root = tempfile::tempdir().unwrap();
+        let server = server(gzip(b"cancelled or abandoned"), 200, true, false).await;
+        let service = DownloadService::start(config(&server.url)).unwrap();
+        let caller = CancellationToken::new();
+        let deadline = Instant::now() + Duration::from_secs(30);
+        let ticket = service
+            .begin(plan(root.path()), caller.clone(), deadline)
+            .unwrap();
+        let private = ticket.job.private.clone();
+        let cleanup = ticket.job.cleanup_observer();
+        let mut scheduling = service.scheduling();
+        let mut retained = None;
+        if variant == 1 {
+            // The network owner already accepted and prepared the real transfer;
+            // its successful result is still inside the uncollected ticket.
+            scheduled_until(&mut scheduling, |state| state.prepared == [1, 1]).await;
+            drop(ticket);
+        } else {
+            let prepared = ticket.finish().await.unwrap();
+            scheduled_until(&mut scheduling, |state| state.prepared == [1, 1]).await;
+            if variant == 0 {
+                caller.cancel();
+                retained = Some(prepared);
+            } else {
+                // Neither idle owner's wait snapshot may retain this Job Arc.
+                drop(prepared);
+            }
+        }
+        cleaned(cleanup).await;
+        assert!(Instant::now() < deadline, "cleanup must not rely on expiry");
+        assert!(!private.exists());
+        assert_eq!(service.status().admitted, 0);
+        if let Some(prepared) = retained {
+            assert_eq!(
+                prepared.accept(&owner()).err().unwrap().code,
+                "download_cancelled"
+            );
+        }
+        scheduled_until(&mut scheduling, |state| state.prepared == [0, 0]).await;
+        service.shutdown().await.unwrap();
+        assert_eq!(service.status().workers, 0);
+        server.close().await;
+    }
+}
 #[tokio::test]
 async fn actual_http_gzip_prepares_exact_bytes_without_touching_final_destination() {
     let root = tempfile::tempdir().unwrap();

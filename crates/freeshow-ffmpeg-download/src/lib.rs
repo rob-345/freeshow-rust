@@ -364,6 +364,7 @@ impl PreparedDownload {
         }
         *phase = service::Phase::Accepted;
         drop(phase);
+        self.job.shared.changed.notify_waiters();
         Ok(())
     }
     pub fn accept(self, current: &DownloadOwner) -> Result<AcceptedInstall> {

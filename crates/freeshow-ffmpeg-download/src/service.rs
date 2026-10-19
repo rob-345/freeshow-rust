@@ -6,7 +6,7 @@ use std::{
     },
     thread::JoinHandle,
 };
-use tokio::sync::{oneshot, watch, OwnedSemaphorePermit, Semaphore};
+use tokio::sync::{oneshot, watch, Notify, OwnedSemaphorePermit, Semaphore};
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Phase {
     Queued,
@@ -21,6 +21,22 @@ pub(crate) struct Shared {
     pub active: AtomicUsize,
     pub slots: Arc<Semaphore>,
     pub jobs: Mutex<Vec<std::sync::Weak<Job>>>,
+    pub changed: Notify,
+    #[cfg(test)]
+    scheduling: watch::Sender<TestScheduling>,
+    #[cfg(test)]
+    exit_gates: Mutex<[Option<TestExitGate>; 2]>,
+}
+#[cfg(test)]
+#[derive(Clone, Debug, Default)]
+pub(crate) struct TestScheduling {
+    pub cycles: [u64; 2],
+    pub prepared: [usize; 2],
+}
+#[cfg(test)]
+struct TestExitGate {
+    entered: oneshot::Sender<()>,
+    release: oneshot::Receiver<bool>,
 }
 pub(crate) struct Job {
     pub plan: HostDownloadPlan,
@@ -51,11 +67,16 @@ impl Job {
                 .map_err(|_| Error::new("download_cleanup", "Cleanup worker stopped"))?;
         }
     }
+    #[cfg(test)]
+    pub(crate) fn cleanup_observer(&self) -> watch::Receiver<Option<Result<()>>> {
+        self.cleanup_done.subscribe()
+    }
     fn queue_cleanup(&self) -> Result<()> {
         let Some(permit) = locked(&self.permit).take() else {
             return Ok(());
         };
         *locked(&self.phase) = Phase::Closed;
+        self.shared.changed.notify_waiters();
         let result = locked(&self.io)
             .take()
             .ok_or_else(|| Error::new("download_cleanup", "Private cleanup sender unavailable"))?
@@ -225,6 +246,11 @@ impl DownloadService {
             active: AtomicUsize::new(0),
             slots: Arc::new(Semaphore::new(MAX_JOBS)),
             jobs: Mutex::new(Vec::with_capacity(MAX_JOBS)),
+            changed: Notify::new(),
+            #[cfg(test)]
+            scheduling: watch::channel(TestScheduling::default()).0,
+            #[cfg(test)]
+            exit_gates: Mutex::new([None, None]),
         });
         let (send_io, receive_io) = mpsc::sync_channel(4);
         let receive_io = Arc::new(Mutex::new(receive_io));
@@ -257,29 +283,82 @@ impl DownloadService {
         let (sender, receiver) = tokio::sync::mpsc::channel::<NetWork>(MAX_JOBS);
         let receiver = Arc::new(tokio::sync::Mutex::new(receiver));
         let mut network = Vec::new();
-        for _ in 0..2 {
+        for _index in 0..2 {
             let receiver = receiver.clone();
             let shared = shared.clone();
             let tls = tls.clone();
             network.push(tokio::spawn(async move {
                 loop {
-                    let work=if shared.cancel.is_cancelled(){
-                        if reap(&shared,true).await{continue;}
-                        let mut receiver=receiver.lock().await;receiver.close();receiver.try_recv().ok()
-                    }else{
+                    let work = if shared.cancel.is_cancelled() {
+                        if reap(&shared, true).await {
+                            continue;
+                        }
+                        let mut receiver = receiver.lock().await;
+                        receiver.close();
+                        receiver.try_recv().ok()
+                    } else {
+                        // Register before inspecting phases, so a newly prepared,
+                        // accepted or closed job cannot change behind this snapshot
+                        // without waking both fixed owners. No Job Arc is retained
+                        // across the wait: its Drop must still queue abandoned cleanup.
+                        let changed = shared.changed.notified();
+                        tokio::pin!(changed);
+                        changed.as_mut().enable();
+                        let prepared = prepared_controls(&shared);
+                        #[cfg(test)]
+                        shared.scheduling.send_modify(|state| {
+                            state.cycles[_index] += 1;
+                            state.prepared[_index] = prepared.iter().flatten().count();
+                        });
                         tokio::select! {biased;
-                            _=shared.cancel.cancelled()=>continue,
-                            _=tokio::time::sleep(Duration::from_millis(20))=>{reap(&shared,false).await;continue;},
-                            work=async{receiver.lock().await.recv().await}=>work,
+                            _ = shared.cancel.cancelled() => continue,
+                            _ = changed => continue,
+                            _ = prepared_changed(&prepared) => {
+                                reap(&shared, false).await;
+                                continue;
+                            },
+                            work = async { receiver.lock().await.recv().await } => work,
                         }
                     };
-                    let Some(work)=work else{break;};shared.active.fetch_add(1,Ordering::AcqRel);
-                    let result=http::transfer(&work.job,tls.clone()).await;
-                    let result=match result {
-                        Ok(stats)=>if let Err(error)=work.job.control.check(){match work.job.cleanup().await{Ok(())=>Err(error),Err(cleanup)=>Err(cleanup)}}else{*locked(&work.job.phase)=Phase::Prepared;Ok(PreparedDownload{job:work.job.clone(),stats})},
-                        Err(error)=>match work.job.cleanup().await{Ok(())=>Err(error),Err(cleanup)=>Err(cleanup)},
+                    let Some(work) = work else {
+                        #[cfg(test)]
+                        {
+                            let gate = locked(&shared.exit_gates)[_index].take();
+                            if let Some(gate) = gate {
+                                let _ = gate.entered.send(());
+                                assert!(
+                                    !gate.release.await.unwrap_or(false),
+                                    "controlled network owner fault"
+                                );
+                            }
+                        }
+                        break;
                     };
-                    shared.active.fetch_sub(1,Ordering::AcqRel);let _=work.reply.send(result);
+                    shared.active.fetch_add(1, Ordering::AcqRel);
+                    let result = http::transfer(&work.job, tls.clone()).await;
+                    let result = match result {
+                        Ok(stats) => {
+                            if let Err(error) = work.job.control.check() {
+                                match work.job.cleanup().await {
+                                    Ok(()) => Err(error),
+                                    Err(cleanup) => Err(cleanup),
+                                }
+                            } else {
+                                *locked(&work.job.phase) = Phase::Prepared;
+                                shared.changed.notify_waiters();
+                                Ok(PreparedDownload {
+                                    job: work.job.clone(),
+                                    stats,
+                                })
+                            }
+                        }
+                        Err(error) => match work.job.cleanup().await {
+                            Ok(()) => Err(error),
+                            Err(cleanup) => Err(cleanup),
+                        },
+                    };
+                    shared.active.fetch_sub(1, Ordering::AcqRel);
+                    let _ = work.reply.send(result);
                 }
             }));
         }
@@ -392,6 +471,29 @@ impl DownloadService {
             failure: locked(&self.inner.shared.failure).clone(),
         }
     }
+    #[cfg(test)]
+    pub(crate) fn scheduling(&self) -> watch::Receiver<TestScheduling> {
+        self.inner.shared.scheduling.subscribe()
+    }
+    #[cfg(test)]
+    pub(crate) fn hold_network_exit(
+        &self,
+        index: usize,
+    ) -> (oneshot::Receiver<()>, oneshot::Sender<bool>) {
+        let (entered, observed) = oneshot::channel();
+        let (release, held) = oneshot::channel();
+        assert!(locked(&self.inner.shared.exit_gates)[index]
+            .replace(TestExitGate {
+                entered,
+                release: held
+            })
+            .is_none());
+        (observed, release)
+    }
+    #[cfg(test)]
+    pub(crate) async fn retained_network_joins(&self) -> usize {
+        self.inner.network.lock().await.len()
+    }
     pub async fn shutdown(&self) -> Result<()> {
         self.inner.shared.cancel.cancel();
         locked(&self.inner.sender).take();
@@ -399,11 +501,18 @@ impl DownloadService {
         let wait = async {
             let _serial = self.inner.shutdown.lock().await;
             let mut network = self.inner.network.lock().await;
-            for pump in network.iter_mut() {
-                pump.await
-                    .map_err(|_| Error::new("download_worker", "Download network pump panicked"))?;
+            while let Some(pump) = network.first_mut() {
+                // Borrow the actual handle through await, so a dropped/timed-out
+                // observer retains it. Remove a joined handle before any next
+                // await: retry must never repoll an already-completed JoinHandle.
+                let result = pump.await;
+                network.remove(0);
+                if result.is_err() {
+                    locked(&self.inner.shared.failure).get_or_insert_with(|| {
+                        Error::new("download_worker", "Download network pump panicked")
+                    });
+                }
             }
-            network.clear();
             drop(network);
             while self.inner.shared.slots.available_permits() != MAX_JOBS {
                 tokio::time::sleep(Duration::from_millis(1)).await;
@@ -416,9 +525,11 @@ impl DownloadService {
                 tokio::time::sleep(Duration::from_millis(1)).await;
             }
             for thread in locked(&self.inner.threads).drain(..) {
-                thread
-                    .join()
-                    .map_err(|_| Error::new("download_worker", "Download file worker panicked"))?;
+                if thread.join().is_err() {
+                    locked(&self.inner.shared.failure).get_or_insert_with(|| {
+                        Error::new("download_worker", "Download file worker panicked")
+                    });
+                }
             }
             if let Some(error) = locked(&self.inner.shared.failure).clone() {
                 return Err(error);
@@ -467,4 +578,45 @@ async fn reap(shared: &Shared, terminal: bool) -> bool {
         }
     }
     false
+}
+
+// Fixed-size cancellation/deadline snapshots only. Retaining Job Arcs here would
+// prevent Job::drop from cleaning a prepared value abandoned while owners idle.
+fn prepared_controls(shared: &Shared) -> [Option<Control>; MAX_JOBS] {
+    let mut controls = std::array::from_fn(|_| None);
+    let mut next = 0;
+    for job in locked(&shared.jobs)
+        .iter()
+        .filter_map(std::sync::Weak::upgrade)
+    {
+        if *locked(&job.phase) == Phase::Prepared {
+            controls[next] = Some(job.control.clone());
+            next += 1;
+        }
+    }
+    controls
+}
+
+async fn prepared_changed(controls: &[Option<Control>; MAX_JOBS]) {
+    let deadline = controls.iter().flatten().map(|c| c.deadline).min();
+    tokio::select! {
+        _ = prepared_cancelled(controls[0].as_ref()) => {},
+        _ = prepared_cancelled(controls[1].as_ref()) => {},
+        _ = async {
+            match deadline {
+                Some(deadline) => tokio::time::sleep_until(deadline.into()).await,
+                None => std::future::pending().await,
+            }
+        } => {},
+    }
+}
+
+async fn prepared_cancelled(control: Option<&Control>) {
+    match control {
+        Some(control) => tokio::select! {
+            _ = control.caller.cancelled() => {},
+            _ = control.cancel.cancelled() => {},
+        },
+        None => std::future::pending().await,
+    }
 }
