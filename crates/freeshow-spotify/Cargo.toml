@@ -1,0 +1,20 @@
+[package]
+name = "freeshow-spotify"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Bounded native Linux Spotify desktop state queries"
+
+[workspace]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+regex = "1"
+futures-util = "0.3"
+tokio = { version = "1", features = ["rt", "process", "io-util", "sync", "time", "macros"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+
+[[bin]]
+name = "freeshow-spotify-parity"
+path = "src/bin/parity.rs"
