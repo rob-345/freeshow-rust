@@ -1,0 +1,43 @@
+{
+    "node": "22.21.1",
+    "digestBoundary": "INJECTED pinned expected digests on genuine tiny temporary files; not real assets or usable-model proof",
+    "stampBody": "{\n    \"revision\": \"cba1c96ca5ef0e8393b50584ae153a79145dc492\",\n    \"files\": {\n        \"encoder.int8.onnx\": {\n            \"sha256\": \"2fff2166acaa535bd969fb223c1f0783d71029f143cb298bc54c2afe85abf772\",\n            \"size\": 17,\n            \"mtimeMs\": 1700000000500\n        },\n        \"decoder.int8.onnx\": {\n            \"sha256\": \"19f9c98fc6d0a2c33a65a43b36fdb2e914c26c0aa9764be3aebc502a1e982fb0\",\n            \"size\": 17,\n            \"mtimeMs\": 1700000000500\n        },\n        \"joiner.int8.onnx\": {\n            \"sha256\": \"4101c7c679a0bc30483794b27a059e34e79232aa2068d78d51231a22c8b0d7ce\",\n            \"size\": 16,\n            \"mtimeMs\": 1700000000500\n        },\n        \"tokens.txt\": {\n            \"sha256\": \"729cc103155bafa785f9cd45746cd41cabe97eab7182fc04d594129587958f8a\",\n            \"size\": 10,\n            \"mtimeMs\": 1700000000500\n        },\n        \"silero_vad.onnx\": {\n            \"sha256\": \"9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6\",\n            \"size\": 15,\n            \"mtimeMs\": 1700000000500\n        }\n    }\n}",
+    "msFromTimeSpecSha256": "dad25b34fdfa6d35cae1a5b9b4c91e82f0214d00e49a06b7138b6bd35755b944",
+    "posixCases": [
+        {
+            "seconds": 1700000000,
+            "nanos": 499841,
+            "bits": "4278bcfe568007ff"
+        },
+        {
+            "seconds": 0,
+            "nanos": 0,
+            "bits": "0000000000000000"
+        },
+        {
+            "seconds": 0,
+            "nanos": 999999999,
+            "bits": "408f3fffff79c843"
+        },
+        {
+            "seconds": -1,
+            "nanos": 999999999,
+            "bits": "beb0c6f7a0000000"
+        },
+        {
+            "seconds": -1,
+            "nanos": 0,
+            "bits": "c08f400000000000"
+        },
+        {
+            "seconds": -1000000000,
+            "nanos": 500001,
+            "bits": "c26d1a94a1fff000"
+        },
+        {
+            "seconds": 4294967295,
+            "nanos": 999999900,
+            "bits": "428f400000000000"
+        }
+    ]
+}
