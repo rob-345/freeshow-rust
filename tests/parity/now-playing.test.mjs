@@ -283,3 +283,66 @@ test("actual source write-file comparison distinguishes UTF8 strings from Buffer
     const absent = factory.runInNewContext({ doesPathExist: () => false, readFile: () => assert.fail("absent read") })
     assert.equal(absent("", "native-path"), false)
 })
+test("actual source file helpers preserve malformed UTF8 skips, truncation and caught filesystem failures", (t) => {
+    const folder = fs.mkdtempSync(path.join(os.tmpdir(), "now-playing-files-source-"))
+    t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
+    const names = ["doesPathExist", "readFile", "safeBufferToString", "fileContentMatches", "writeFile", "deleteFile"]
+    const declarations = names
+        .map((name) =>
+            fileAst.statements
+                .find((node) => ts.isFunctionDeclaration(node) && node.name.text === name)
+                .getText(fileAst)
+                .replace(/^export\s+/, "")
+        )
+        .join("\n")
+    const code = ts.transpileModule(`const MAX_NODE_STRING_LENGTH=0x1fffffe8;\n${declarations}\nreturn {readFile,writeFile,deleteFile};`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
+    let writes = 0
+    const errors = [],
+        nativeFs = {
+            ...fs,
+            writeFileSync(...args) {
+                writes++
+                return fs.writeFileSync(...args)
+            }
+        }
+    const helper = new Function("fs", "actionComplete", "Buffer", "console", code)(nativeFs, (...args) => errors.push(args), Buffer, {
+        error(...args) {
+            errors.push(args)
+        }
+    })
+    const file = path.join(folder, "NowPlaying.txt")
+    const corpus = [
+        [[0xef, 0xbb, 0xbf, 65], "\uFEFFA"],
+        [[0xff, 0xfe, 65], "\uFFFD\uFFFDA"],
+        [[0xe2, 0x82], "\uFFFD"],
+        [[0xed, 0xa0, 0x80], "\uFFFD\uFFFD\uFFFD"],
+        [[0xf0, 0x9f, 0x92, 65], "\uFFFDA"],
+        [[0xc0, 0xaf], "\uFFFD\uFFFD"],
+        [[65, 0, 66], "A\0B"]
+    ]
+    for (const [bytes, text] of corpus) {
+        fs.writeFileSync(file, Buffer.from(bytes))
+        assert.equal(helper.readFile(file), text)
+        assert.equal(helper.writeFile(file, text), false)
+        assert.deepEqual([...fs.readFileSync(file)], bytes)
+    }
+    assert.equal(writes, 0)
+    const cover = path.join(folder, "NowPlayingCover.png")
+    assert.equal(helper.writeFile(cover, Buffer.from([1, 2, 3, 4])), true)
+    const descriptor = fs.openSync(cover, "r")
+    try {
+        assert.equal(helper.writeFile(cover, Buffer.from([8, 9])), true)
+        assert.deepEqual([...fs.readFileSync(descriptor)], [8, 9])
+        assert.equal(helper.writeFile(cover, Buffer.from([8, 9])), true)
+    } finally {
+        fs.closeSync(descriptor)
+    }
+    assert.equal(writes, 3)
+    const directory = path.join(folder, "directory")
+    fs.mkdirSync(directory)
+    assert.equal(helper.writeFile(directory, ""), false)
+    assert.equal(writes, 3, "existing directory read is empty, so empty text skips")
+    assert.equal(helper.writeFile(directory, "nonempty"), false)
+    assert.equal(helper.deleteFile(directory), false)
+    assert.ok(errors.length >= 2)
+})

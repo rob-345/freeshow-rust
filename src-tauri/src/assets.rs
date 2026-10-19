@@ -430,6 +430,10 @@ impl NativeAssets {
 
     /// Native consumer of an EXISTING grant only. Renderer NOW_PLAYING text is
     /// never native selection/drop/committed-library provenance.
+    #[allow(
+        dead_code,
+        reason = "Verified native descriptor API awaiting the separate NOW_PLAYING host composition; never a renderer grant route"
+    )]
     pub async fn open_registered_media(
         &self,
         library: &LibraryService,
