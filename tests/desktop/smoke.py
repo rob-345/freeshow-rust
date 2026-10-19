@@ -35,6 +35,7 @@ from menu import native_menu, find as find_native_menu
 from script_receipts import wrap_script
 from audio_peer import AudioPeer
 from remote_cover_http import probe_cover_http
+from spotify_command_peer import SpotifyCommandPeer, validate_callback, commands_settled
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "test-output-rust" / "desktop"
@@ -72,6 +73,7 @@ def run():
     (ARTIFACTS / "ffmpeg-download.json").unlink(missing_ok=True)
     (ARTIFACTS / "now-playing-folder-alerts.json").unlink(missing_ok=True)
     (ARTIFACTS / "ai-spotify.json").unlink(missing_ok=True)
+    (ARTIFACTS / "spotify-commands.json").unlink(missing_ok=True)
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
     native = os.environ.get("WEBKIT_WEBDRIVER") or shutil.which("WebKitWebDriver")
     xdotool = os.environ.get("XDOTOOL") or shutil.which("xdotool")
@@ -332,6 +334,117 @@ def run():
             archive()
             steps.append("Retained AI inventory, explicit Nemotron missing status and genuine Linux Spotify service-null match immutable source callbacks, native global root, void send and current context: " + phase)
 
+        spotify_command_receipts = {}
+        spotify_command_peer = None
+        def archive_spotify_commands():
+            (ARTIFACTS / "spotify-commands.json").write_text(json.dumps({"phases":spotify_command_receipts,"scope":"actual private Linux GIO peer, no account or physical playback","nativeCommandDeadlineMs":2000},ensure_ascii=False,indent=2))
+
+        def spotify_source(phase):
+            return json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE","node"),"tests/desktop/spotify_command_oracle.mjs",phase],cwd=ROOT,env=env,text=True,timeout=15))
+
+        def begin_spotify_commands(phase):
+            nonlocal spotify_command_peer
+            assert spotify_command_peer is None
+            source = spotify_source(phase)
+            before = invoke("spotify_status")
+            assert commands_settled(before,before,0), before
+            spotify_command_receipts[phase] = {"sourceBefore":source,"before":before,"context":invoke("runtime_context"),"callbacks":[],"pending":True,"runtimeStart":script("return (window.__testRuntimeErrors || []).length"),"browserStart":script("return (window.__testErrors || []).length")}
+            archive_spotify_commands()
+            spotify_command_peer = SpotifyCommandPeer(ROOT,env)
+            return spotify_command_receipts[phase]
+
+        def spotify_command(phase,index):
+            receipt = spotify_command_receipts[phase]
+            source = receipt["sourceBefore"]
+            observed = script((ROOT / "tests/desktop/spotify_command_probe.js").read_text(),{"phase":phase,**source["commands"][index]})
+            validate_callback(observed,source["replies"][index],receipt["context"])
+            assert observed["sent"] == source["commands"][index]
+            receipt["callbacks"].append(observed)
+            archive_spotify_commands()
+
+        def wait_spotify_settlement(phase,count):
+            receipt = spotify_command_receipts[phase]
+            deadline = time.monotonic() + 3
+            while time.monotonic() < deadline:
+                spotify_command_peer.pump(0)
+                status = invoke("spotify_status")
+                if commands_settled(status,receipt["before"],count):
+                    return status
+                time.sleep(0.02)
+            raise AssertionError("Actual Spotify command children/results did not settle: " + json.dumps(status))
+
+        def finish_spotify_commands(phase):
+            nonlocal spotify_command_peer
+            receipt = spotify_command_receipts[phase]
+            receipt["after"] = wait_spotify_settlement(phase,len(receipt["sourceBefore"]["commands"]))
+            spotify_command_peer.wait(lambda: len(spotify_command_peer.events) >= len(receipt["sourceBefore"]["effects"]))
+            receipt["effects"] = list(spotify_command_peer.events)
+            assert receipt["effects"] == receipt["sourceBefore"]["effects"], receipt
+            receipt["peerExit"] = spotify_command_peer.close()
+            spotify_command_peer = None
+            assert receipt["peerExit"]["returncode"] == 0 and receipt["peerExit"]["waited"]
+            receipt["sourceAfter"] = spotify_source(phase)
+            assert receipt["sourceBefore"] == receipt["sourceAfter"], "Original source changed around actual GUI commands"
+            errors = script("return (window.__testRuntimeErrors || []).slice(arguments[0]).filter(e=>e.request?.data?.channel==='SPOTIFY_COMMAND' || e.request?.message?.channel==='SPOTIFY_COMMAND')",receipt["runtimeStart"])
+            assert errors == [], errors
+            assert script("return (window.__testErrors || []).slice(arguments[0])",receipt["browserStart"]) == []
+            receipt["commandRuntimeErrors"] = 0
+            receipt["browserErrors"] = 0
+            receipt["pending"] = False
+            archive_spotify_commands()
+
+        def probe_spotify_commands():
+            receipt = begin_spotify_commands("ordinary")
+            receipt["rejectedRoutes"] = script((ROOT / "tests/desktop/spotify_command_probe.js").read_text(),{"phase":"ordinary","action":"routes"})
+            assert receipt["rejectedRoutes"]["rejections"] == [{"route":route,"code":"spotify_raw_body"} for route in ["ipc_dispatch","spotify_command"]]
+            assert receipt["rejectedRoutes"]["callbacks"] == []
+            assert commands_settled(invoke("spotify_status"),receipt["before"],0)
+            spotify_command_peer.pump(0)
+            assert spotify_command_peer.events == [], "Rejected routes reached the actual peer"
+            for index,item in enumerate(receipt["sourceBefore"]["commands"]):
+                before = len(spotify_command_peer.events)
+                spotify_command(phase="ordinary",index=index)
+                spotify_command_peer.wait(lambda:len(spotify_command_peer.events) >= before+1)
+                if item["command"] == "seek":
+                    assert spotify_command_peer.events[-1]["name"] == "Get" and not any(e["name"]=="SetPosition" for e in spotify_command_peer.events)
+                    receipt["earlyBeforeSeekEffect"] = True
+                    spotify_command_peer.release()
+                wait_spotify_settlement("ordinary",index+1)
+            finish_spotify_commands("ordinary")
+            steps.append("Six retained Spotify commands preserve original early true/listener/void callbacks and exact private peer effects; both nonraw routes reject without effects")
+
+        def start_switch_spotify_seek():
+            receipt = spotify_command_receipts["held-switch"]
+            receipt["startedMonotonic"] = time.monotonic()
+            spotify_command("held-switch",0)
+            spotify_command_peer.wait(lambda: len(spotify_command_peer.events) == 1,seconds=1)
+            assert spotify_command_peer.events == [{"name":"Get","args":["org.mpris.MediaPlayer2.Player","Metadata"]}]
+            receipt["heldStatus"] = invoke("spotify_status")
+            assert len(receipt["heldStatus"]["commandPids"]) == 1 and receipt["heldStatus"]["commandsCompleted"] == receipt["before"]["commandsCompleted"]
+            archive_spotify_commands()
+
+        def finish_switch_spotify_seek():
+            receipt = spotify_command_receipts["held-switch"]
+            # A committed config file can precede delivery of the new renderer
+            # context. Observe that real delivery within the same accepted 2s;
+            # never resubmit the command or renew its deadline.
+            while True:
+                context = invoke("runtime_context")
+                if context != receipt["context"] and context == script("return window.api.getRuntimeContext()"):
+                    break
+                assert time.monotonic() - receipt["startedMonotonic"] < 2, "Selected full context was not delivered within the accepted command deadline"
+                time.sleep(0.01)
+            assert context["runtimeId"] == receipt["context"]["runtimeId"] and context["libraryGeneration"] > receipt["context"]["libraryGeneration"]
+            receipt["selectedContext"] = context
+            receipt["releaseAfterSeconds"] = time.monotonic() - receipt["startedMonotonic"]
+            assert receipt["releaseAfterSeconds"] < 2, "GTK switch missed the unchanged native 2s command budget; no retry"
+            spotify_command_peer.pump(0)
+            assert [e["name"] for e in spotify_command_peer.events] == ["Get"], "Seek followup was not held across actual library selection"
+            spotify_command_peer.release()
+            receipt["earlyBeforeSeekEffect"] = True
+            finish_spotify_commands("held-switch")
+            steps.append("Accepted held Spotify seek survives actual GTK library selection with original origin callback, then reaches the real peer and settles within the unchanged native deadline")
+
         def output_handle(output_id):
             registry = invoke("output_status")
             label = next(item["label"] for item in registry["outputs"] if item["id"] == output_id)
@@ -498,7 +611,7 @@ def run():
                         queue.extend(node.get_child_at_index(child) for child in range(node.get_child_count()))
             return None
 
-        def choose_native_file(title, file):
+        def choose_native_file(title, file, before_accept=None):
             window_id = wait(lambda: native_dialog(title), title)
             # A mapped GTK toplevel can precede realization of its entry widgets
             # (observed on CI). Give it a rendering interval before sending input;
@@ -508,6 +621,9 @@ def run():
             native_keys("key", "--clearmodifiers", "ctrl+l")
             time.sleep(0.2)
             native_keys("type", "--clearmodifiers", "--delay", "3", str(file))
+            if before_accept is not None:
+                before_accept()
+                native_keys("windowfocus", "--sync", window_id)
             native_keys("key", "--clearmodifiers", "Return")
             # GTK can use Enter to resolve a path completion first. Activate the
             # actual enabled Open button; completion popups can eat mnemonics.
@@ -612,6 +728,7 @@ def run():
             attach_errors()
             probe_device_providers("restarted")
             probe_ai_spotify("restarted")
+            probe_spotify_commands()
             configured_media_folder = data_dir.parent / "Native media folder 敬拜"
             media_folder_reset = script("""
                 return (async()=>{
@@ -1450,13 +1567,15 @@ def run():
             click('[data-testid="create.show.popup.new.show"]')
             wait(lambda: script("return !document.querySelector('#name')"), "Unsaved show created")
             assert not (data_dir / "Shows" / "Pending before switch.show").exists()
+            begin_spotify_commands("held-switch")
             settings_button = '.top button[data-title^="Settings"]'
             wait(lambda: script("const e=document.querySelector(arguments[0]);if(!e)return false;const r=e.getBoundingClientRect();return r.width>0 && e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))", settings_button), "Settings navigation ready after closing the editor")
             click(settings_button)
             click_text("Files")
             click('[data-testid="folder-picker-DATA_LOCATION_SETTINGS"] .button-trigger')
-            choose_native_file("Data location", other)
+            choose_native_file("Data location", other, before_accept=start_switch_spotify_seek)
             wait(lambda: json.loads(config_path.read_text()).get("dataPath") == str(other), "Existing library selected after confirmed save")
+            finish_switch_spotify_seek()
             wait(lambda: {output_window, secondary_window}.isdisjoint(command("GET", "/window/handles")), "Both previous-library projection windows closed")
             pending_show = json.loads((data_dir / "Shows" / "Pending before switch.show").read_text())
             pending_lyrics = json.dumps(pending_show)
@@ -1889,6 +2008,15 @@ def run():
                     pass
             raise
         finally:
+            peer_cleanup_error = None
+            if spotify_command_peer is not None:
+                try:
+                    exit = spotify_command_peer.close()
+                    spotify_command_receipts.setdefault("failureCleanup",{})["peerExit"] = exit
+                    archive_spotify_commands()
+                except Exception as error:
+                    peer_cleanup_error = error
+                    print("Spotify fixture cleanup failed:",repr(error),flush=True)
             if session:
                 try:
                     http("DELETE", f"/session/{session}")
@@ -1905,6 +2033,8 @@ def run():
             download_server.server_close()
             download_thread.join(timeout=5)
             assert not download_thread.is_alive()
+            if peer_cleanup_error is not None:
+                raise peer_cleanup_error
 
 
 if __name__ == "__main__":
