@@ -46,3 +46,12 @@ performance remain unverified. Existing explicit unsupported path/format/volume
 and thumbnail errors remain unchanged.
 
 [Service queue contracts and tests](browse-queued-admission.md).
+
+The standalone source-parity CLI now uses the same queued admission entrypoint
+as the native host. A completed response can become visible before its actual
+filesystem worker drops its execution permit. Repeated sequential CLI requests
+could therefore observe a transient `browse_busy` through the older try-only
+entrypoint. The normal host already waits on bounded admission; the test driver
+now follows it, retaining the same deadline and queue limits. The genuine
+GET_SIMILAR source corpus and complete required Node suite pass after this
+one-line driver correction. Try-only overload behavior remains separately tested.

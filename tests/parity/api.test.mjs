@@ -24,7 +24,7 @@ async function until(get, ms = 2000) {
     throw new Error("condition timed out")
 }
 const usedPortPairs = new Set()
-async function freePort() {
+async function freePort({ wildcard = false } = {}) {
     let lastError
     for (let attempt = 0; attempt < 64; attempt++) {
         // An OS-selected ephemeral port may repeatedly land beside a busy or
@@ -38,11 +38,13 @@ async function freePort() {
         try {
             await new Promise((resolve, reject) => {
                 first.once("error", reject)
-                first.listen(port, "127.0.0.1", resolve)
+                if (wildcard) first.listen(port, resolve)
+                else first.listen(port, "127.0.0.1", resolve)
             })
             await new Promise((resolve, reject) => {
                 second.once("error", reject)
-                second.listen(port + 1, "127.0.0.1", resolve)
+                if (wildcard) second.listen(port + 1, resolve)
+                else second.listen(port + 1, "127.0.0.1", resolve)
             })
             await new Promise((resolve, reject) => {
                 udp.once("error", reject)
@@ -970,7 +972,7 @@ test("authorized production wildcard binding accepts local IPv4 and IPv6 like or
         for (const server of [original, service]) {
             let port
             do {
-                port = await freePort()
+                port = await freePort({ wildcard: true })
             } while (port < 32768)
             const bound = await server.start({ port, password })
             if (server === service && ipv6) assert.match(bound.websocket, /^\[::\]:/)

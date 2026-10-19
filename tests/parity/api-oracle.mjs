@@ -147,8 +147,40 @@ export function apiOracle({ replyMs = 120, dynamicMs = 150, wildcard = false } =
             return () => observers.delete(callback)
         },
         async start(data) {
+            const first = servers.length
             exports.startWebSocketAndRest(data)
-            await new Promise((resolve) => setTimeout(resolve, 20))
+            // Observe the actual two listen completions. A fixed delay can
+            // return only one bound server under load; no request is retried.
+            const started = servers.slice(first)
+            assert.equal(started.length, 2)
+            await Promise.all(
+                started.map(
+                    (server) =>
+                        new Promise((resolve, reject) => {
+                            let timer
+                            const cleanup = () => {
+                                clearTimeout(timer)
+                                server.off("listening", ready)
+                                server.off("error", failed)
+                                server.off("close", closed)
+                            }
+                            const ready = () => {
+                                cleanup()
+                                resolve()
+                            }
+                            const failed = (error) => {
+                                cleanup()
+                                reject(error)
+                            }
+                            const closed = () => failed(new Error("Original API listener closed before binding"))
+                            server.once("listening", ready)
+                            server.once("error", failed)
+                            server.once("close", closed)
+                            timer = setTimeout(() => failed(new Error("Original API listener did not bind before deadline")), 2000)
+                            if (server.listening) ready()
+                        })
+                )
+            )
             return { websocket: { port: data?.port || 5505 }, rest: { port: data?.port ? data.port + 1 : 5506 }, osc: { port: data?.port || 5505 }, tcpAddresses: servers.filter((server) => server.listening).map((server) => server.address()) }
         },
         complete(data) {

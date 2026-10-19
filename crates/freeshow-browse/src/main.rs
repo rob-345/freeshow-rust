@@ -39,7 +39,7 @@ fn main() {
             continue;
         }
         let result = runtime.block_on(
-            service.dispatch(request["command"].as_str().unwrap_or(""), &request["data"]),
+            service.dispatch_queued(request["command"].as_str().unwrap_or(""), &request["data"]),
         );
         let reply = match result {
             Ok(reply) => {
