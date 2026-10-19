@@ -220,6 +220,38 @@ async fn stale_role_resource_and_real_config_read_failures_are_distinct() {
     library.finish_writes().await.unwrap();
 }
 
+#[tokio::test]
+async fn pretty_persistence_limit_rejects_before_write_and_preserves_near_cap_input() {
+    let (temp, library, device) = fixture();
+    let path = temp.path().join("app/config.json");
+    let mut nested = json!(0);
+    for _ in 0..120 {
+        nested = json!([nested]);
+    }
+    let mut value = json!({"nested":nested,"pad":"x".repeat(8 * 1024 * 1024 - 2048)});
+    let original = serde_json::to_vec(&value).unwrap();
+    assert!(original.len() < 8 * 1024 * 1024);
+    value["machineId"] = json!("synthetic-size-witness".repeat(4));
+    assert!(serde_json::to_vec(&value).unwrap().len() < 8 * 1024 * 1024);
+    assert!(serde_json::to_vec_pretty(&value).unwrap().len() > 8 * 1024 * 1024);
+    fs::write(&path, &original).unwrap();
+    assert_eq!(
+        device
+            .dispatch(&library, request(&library), "main")
+            .await
+            .take_error()
+            .code,
+        "device_id_resource_limit"
+    );
+    assert!(
+        fs::read(&path).unwrap() == original,
+        "Over-cap persistence changed input bytes"
+    );
+    assert_eq!(device.retained(), 0);
+    device.seal();
+    library.finish_writes().await.unwrap();
+}
+
 #[cfg(unix)]
 #[tokio::test]
 async fn actual_readonly_config_write_failure_returns_original_outer_fallback_and_preserves_bytes()

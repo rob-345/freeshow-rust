@@ -1516,10 +1516,13 @@ mod tests {
             .enqueue_operation(
                 request("LOCATE_MEDIA_FILE", Value::Null, &context),
                 "main",
-                Some(Box::new(move |_| {
-                    attempted.store(true, Ordering::Release);
-                    panic!("stale native effects must not run");
-                })),
+                Some(OrderedCommit {
+                    operation: Box::new(move |_| {
+                        attempted.store(true, Ordering::Release);
+                        panic!("stale native effects must not run");
+                    }),
+                    refresh_media_settings: true,
+                }),
             )
             .await
             .unwrap();

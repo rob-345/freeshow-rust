@@ -384,7 +384,7 @@ impl DeviceIdentity {
                     .as_object_mut()
                     .unwrap()
                     .insert(intent.key().into(), Value::String(intent.value().into()));
-                serde_json::to_writer(&mut Count(0), value).map_err(|_| resource())?;
+                serde_json::to_writer_pretty(&mut Count(0), value).map_err(|_| resource())?;
                 check(&control)?;
                 let write = runtime.stores.set("config", value.clone());
                 check(&control)?;

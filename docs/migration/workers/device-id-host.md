@@ -40,7 +40,9 @@ storage numeric or external-edit case.
 
 Missing/falsy IDs use the separately tested native legacy provider/UUID policy.
 The actual setter preserves the complete captured global object and existing
-atomic-write behavior. A genuine read/parser failure or setter failure follows
+atomic-write behavior. The encoded output bound uses the same pretty JSON as
+the actual setter, preventing a rewrite beyond the next query's 8MiB read cap.
+A genuine read/parser failure or setter failure follows
 the preparation module's source outer-fallback policy. A successful value is
 published only after actual setter return and another control check. No ID,
 provider token, raw configuration or whole environment is logged. Real generated
@@ -53,19 +55,19 @@ accepted caller-Drop ownership and terminal drain. Existing `commit` still
 refreshes media settings. The new entrypoint is trusted native code only and
 requires callers to preserve `mediaFolderPath`.
 
-Six real native-host tests cover global persistence/unknown fields, library
+Seven real native-host tests cover global persistence/unknown fields, library
 selection, truthy JSON and exact fractional/negative-zero bits, role/stale/resource
-and actual parser failures, real read-only setter failure, four actually queued
-jobs through observer abort/seal/drain, and the real observer deadline retaining
+and actual parser failures, pretty-output expansion rejected before any write,
+real read-only setter failure, four actually queued jobs through observer abort/seal/drain, and the real observer deadline retaining
 its accepted queued job. A separate core test makes the actual configuration
 unreadable, verifies the narrow commit leaves the cached media snapshot intact,
 then verifies ordinary commit still refreshes it. These and strict native
 all-target Clippy pass locally. They do not establish foreign runtime, complete
 GUI startup, or all shutdown/error combinations.
 
-The original Conf root normalization and cached-getter behavior differ from the
-existing native store's non-object/external-edit handling; corrupt-profile
-startup and concurrent external writers remain storage compatibility gaps.
+The original Conf getter reads its file on each query and normalizes root values
+with Object.assign onto a plain object. The existing native store rejects
+non-object roots at startup; corrupt-profile startup and concurrent external writers remain storage compatibility gaps.
 The native provider's Linux corpus, Apple ABI provenance, foreign-runtime
 obligations and bounded-provider gaps remain in [the foundation](device-id.md).
 Provider connection queries are a separate subsequent binding; this commit
