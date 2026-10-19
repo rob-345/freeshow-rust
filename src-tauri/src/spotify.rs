@@ -23,6 +23,15 @@ struct State {
 #[derive(Clone)]
 pub struct NativeSpotify {
     state: Arc<Mutex<State>>,
+    #[cfg(test)]
+    after_begin: Arc<Mutex<Option<TestGate>>>,
+    #[cfg(test)]
+    before_context: Arc<Mutex<Option<TestGate>>>,
+}
+#[cfg(test)]
+struct TestGate {
+    entered: tokio::sync::oneshot::Sender<CancellationToken>,
+    release: tokio::sync::oneshot::Receiver<()>,
 }
 struct Caller {
     id: u64,
@@ -83,6 +92,10 @@ impl NativeSpotify {
                 service: None,
                 failure,
             })),
+            #[cfg(test)]
+            after_begin: Arc::new(Mutex::new(None)),
+            #[cfg(test)]
+            before_context: Arc::new(Mutex::new(None)),
         }
     }
     fn begin(
@@ -217,6 +230,8 @@ impl NativeSpotify {
         }
         let deadline = Instant::now() + Duration::from_secs(2);
         let (ticket, caller, owner) = self.begin(request.context.clone().unwrap(), deadline)?;
+        #[cfg(test)]
+        Self::hold_test_gate(&self.after_begin, &caller.cancel).await;
         let receipt = tokio::select! {
             _=caller.cancel.cancelled()=>return Err(WireError::new("spotify_cancelled","Desktop Spotify observer cancelled; accepted work remains owned")),
             reply=tokio::time::timeout_at(deadline.into(),ticket.finish())=>reply.map_err(|_|WireError::new("spotify_deadline","Desktop Spotify observer deadline elapsed; accepted work remains owned"))?.map_err(error)?,
@@ -245,10 +260,62 @@ impl NativeSpotify {
         );
         event.native_lifetime = Some(NativeLifetime::new(receipt));
         let mut events = vec![event];
+        #[cfg(test)]
+        Self::hold_test_gate(&self.before_context, &caller.cancel).await;
         library
             .contextualize(&request, &mut events)
             .map_err(WireError::from)?;
         Ok(events)
+    }
+    #[cfg(test)]
+    async fn hold_test_gate(slot: &Mutex<Option<TestGate>>, cancel: &CancellationToken) {
+        let gate = slot.lock().unwrap().take();
+        if let Some(gate) = gate {
+            let _ = gate.entered.send(cancel.clone());
+            let _ = gate.release.await;
+        }
+    }
+    #[cfg(test)]
+    fn test_gate(
+        slot: &Mutex<Option<TestGate>>,
+    ) -> (
+        tokio::sync::oneshot::Receiver<CancellationToken>,
+        tokio::sync::oneshot::Sender<()>,
+    ) {
+        let (entered, observed) = tokio::sync::oneshot::channel();
+        let (release, held) = tokio::sync::oneshot::channel();
+        let mut slot = slot.lock().unwrap();
+        assert!(slot.is_none(), "Only one test gate per native phase");
+        *slot = Some(TestGate {
+            entered,
+            release: held,
+        });
+        (observed, release)
+    }
+    #[cfg(test)]
+    #[allow(dead_code, reason = "Used by isolated native host integration tests")]
+    pub fn test_hold_after_begin(
+        &self,
+    ) -> (
+        tokio::sync::oneshot::Receiver<CancellationToken>,
+        tokio::sync::oneshot::Sender<()>,
+    ) {
+        Self::test_gate(&self.after_begin)
+    }
+    #[cfg(test)]
+    #[allow(dead_code, reason = "Used by isolated native host integration tests")]
+    pub fn test_hold_before_context(
+        &self,
+    ) -> (
+        tokio::sync::oneshot::Receiver<CancellationToken>,
+        tokio::sync::oneshot::Sender<()>,
+    ) {
+        Self::test_gate(&self.before_context)
+    }
+    #[cfg(test)]
+    #[allow(dead_code, reason = "Used by isolated native host integration tests")]
+    pub fn test_registered(&self) -> usize {
+        self.state.lock().unwrap().active.len()
     }
     #[cfg(test)]
     #[allow(dead_code)]
