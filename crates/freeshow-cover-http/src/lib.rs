@@ -490,7 +490,8 @@ fn parse_ranges(size: u64, value: &str) -> Result<Vec<(u64, u64)>, Error> {
 
 /// Bounded, deliberately narrow V8 Date.parse capability. IMF-fixdate with
 /// explicit GMT/UTC and years 1601..9999 is supported, including mismatched
-/// weekday and normalized day 29..31. Other digit-bearing spellings return an
+/// weekday, normalized day 29..31 and exact 24:00:00 next-day midnight.
+/// Other digit-bearing spellings return an
 /// explicit capability error rather than silently changing source decisions.
 fn parse_date(value: &str) -> Result<Option<i64>, Error> {
     if value.is_ascii() && !value.bytes().any(|b| b.is_ascii_digit()) {
@@ -549,12 +550,20 @@ fn parse_date(value: &str) -> Result<Option<i64>, Error> {
     if !(1601..=9999).contains(&year) {
         return Err(unsupported());
     }
-    if !(1..=31).contains(&day) || *hour > 23 || *minute > 59 || *second > 59 {
+    if !(1..=31).contains(&day)
+        || *hour > 24
+        || *minute > 59
+        || *second > 59
+        || (*hour == 24 && (*minute != 0 || *second != 0))
+    {
         return Ok(None);
     }
+    let midnight_rollover = u32::from(*hour == 24);
     let date = NaiveDate::from_ymd_opt(year, month, 1)
-        .and_then(|date| date.checked_add_signed(Duration::days((day - 1) as i64)))
-        .and_then(|date| date.and_hms_opt(*hour, *minute, *second));
+        .and_then(|date| {
+            date.checked_add_signed(Duration::days((day - 1 + midnight_rollover) as i64))
+        })
+        .and_then(|date| date.and_hms_opt(*hour % 24, *minute, *second));
     Ok(date.map(|date| date.and_utc().timestamp_millis()))
 }
 
@@ -584,6 +593,30 @@ mod tests {
         );
         assert!(SourceFileStat::new(MAX_BODY_BYTES + 1, 0.0).is_err());
         assert!(SourceFileStat::new(1, f64::INFINITY).is_err());
+    }
+    #[test]
+    fn source_exact_midnight_rolls_days_months_years_but_invalid_hours_stay_nan() {
+        for (value, expected) in [
+            ("Tue, 14 Nov 2023 24:00:00 GMT", "2023-11-15T00:00:00Z"),
+            ("Tue, 31 Oct 2023 24:00:00 GMT", "2023-11-01T00:00:00Z"),
+            ("Sun, 31 Dec 2023 24:00:00 GMT", "2024-01-01T00:00:00Z"),
+            ("Thu, 29 Feb 2024 24:00:00 UTC", "2024-03-01T00:00:00Z"),
+        ] {
+            assert_eq!(
+                parse_date(value).unwrap(),
+                Some(
+                    DateTime::parse_from_rfc3339(expected)
+                        .unwrap()
+                        .timestamp_millis()
+                )
+            );
+        }
+        for hour in ["24:00:01", "24:01:00", "25:00:00", "23:60:00"] {
+            assert_eq!(
+                parse_date(&format!("Tue, 14 Nov 2023 {hour} GMT")).unwrap(),
+                None
+            );
+        }
     }
     #[test]
     fn source_range_quirks_and_combine() {

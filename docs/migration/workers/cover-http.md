@@ -74,7 +74,12 @@ Content-Length. Query/path selection is absent from this API.
   Content-Range. Source build-time NODE_ENV is not proof of runtime HTTP policy.
 - Conditional dates support tested IMF-fixdate with explicit GMT/UTC,
   case-insensitive English names, year1601..9999 and source day overflow
-  normalization. Known digit-free invalid spellings yield invalid-date behavior.
+  normalization. Exact24:00:00 normalizes to next-day midnight, including month,
+  year and leap-day rollover;24:00:01,24:01:00,25:00:00 and23:60:00 remain actual
+  source NaN. Eighty additional GET/HEAD exchanges exercise consulted
+  If-Modified-Since, If-Unmodified-Since and If-Range on both sides of midnight,
+  invalid hours and ignored lower-priority dates. Known digit-free invalid
+  spellings yield invalid-date behavior.
   Other V8 spellings, including ISO8601, RFC850 and zone-less asctime, return
   `cover_date_unsupported` when that condition is actually consulted. The tests
   explicitly demonstrate a source ISO date succeeding where this capability
@@ -145,9 +150,9 @@ Windows/macOS native filesystem evidence is claimed from this Linux run. The
 suite runs real files on each host OS; only actual pre-epoch filesystem mtime
 capability failures are diagnosed/skipped individually.
 
-Seven Rust tests cover source rounding, pre-epoch dates, type/header/aggregate/
+Eight Rust tests cover source rounding, pre-epoch dates, type/header/aggregate/
 range/body budgets, ordering, deferred error distinction and conditional
-precedence, raw route boundaries and method/target budgets. Eight Node tests
+precedence, raw route boundaries and method/target budgets. Nine Node tests
 execute the original callback and server-instance routes using actual Express,
 send and finalhandler on sequential controlled127.0.0.1 listeners. The only
 injected source boundaries are fixed path lookup/existence (and finalhandler
@@ -167,8 +172,8 @@ development error Content-Length is explicitly unknown in the deferred outcome.
 The fixture waits for actual socket close events, not just server.close callback.
 All listeners/files are bounded and closed; no external endpoints are used.
 
-Final local receipt:7 Rust tests and8 Node tests passed, with375 completed real
-loopback HTTP exchanges (304 representation,70 full-source route and1 explicit
+Final local receipt:8 Rust tests and9 Node tests passed, with455 completed real
+loopback HTTP exchanges (384 representation,70 full-source route and1 explicit
 legacy-parser gap) and all fixture socket joins. No filesystem pre-epoch
 case was skipped on this Linux run. Strict Clippy for all targets, rustfmt,
 Prettier and diff whitespace checks passed.

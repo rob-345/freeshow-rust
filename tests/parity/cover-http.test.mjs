@@ -379,6 +379,55 @@ test("generated real transport ranges and explicit-zone dates compare all stable
     })
 })
 
+test("actual Node exact 24:00:00 rollover drives consulted conditions while invalid hours and unused dates preserve source precedence", async () => {
+    await oracle("production", async ({ file, request }) => {
+        const inputs = [],
+            actual = []
+        const record = async (stat, headers, method, status) => {
+            const response = await request(headers, { method })
+            assert.equal(response.status, status, JSON.stringify({ headers, method }))
+            inputs.push(input(stat, response.requestHeaders, { method }))
+            actual.push(response)
+        }
+        for (const [date, normalized] of [
+            ["Tue, 14 Nov 2023 24:00:00 GMT", "2023-11-15T00:00:00Z"],
+            ["Tue, 31 Oct 2023 24:00:00 GMT", "2023-11-01T00:00:00Z"],
+            ["Sun, 31 Dec 2023 24:00:00 GMT", "2024-01-01T00:00:00Z"],
+            ["Thu, 29 Feb 2024 24:00:00 UTC", "2024-03-01T00:00:00Z"]
+        ]) {
+            const midnight = Date.parse(date)
+            assert.equal(midnight, Date.parse(normalized), "actual pinned V8 normalizes the midnight spelling")
+            for (const delta of [-1000, 1000]) {
+                fs.utimesSync(file, new Date(midnight + delta), new Date(midnight + delta))
+                const stat = fs.statSync(file)
+                assert.equal(stat.mtime.getTime(), midnight + delta, "fixture must retain the decisive side of midnight")
+                for (const method of ["GET", "HEAD"]) {
+                    await record(stat, { "if-modified-since": date }, method, delta < 0 ? 304 : 200)
+                    await record(stat, { "if-unmodified-since": date }, method, delta < 0 ? 200 : 412)
+                    await record(stat, { range: "bytes=1-2", "if-range": date }, method, delta < 0 ? 206 : 200)
+                }
+            }
+        }
+        const stat = fs.statSync(file)
+        for (const time of ["24:00:01", "24:01:00", "25:00:00", "23:60:00"]) {
+            const date = `Tue, 14 Nov 2023 ${time} GMT`
+            assert.ok(Number.isNaN(Date.parse(date)), "invalid hour form is actually NaN in pinned V8")
+            for (const method of ["GET", "HEAD"]) for (const headers of [{ "if-modified-since": date }, { "if-unmodified-since": date }, { range: "bytes=1-2", "if-range": date }]) await record(stat, headers, method, 200)
+        }
+        const date = "Tue, 14 Nov 2023 24:00:00 GMT" // Earlier than the current March2024 fixture.
+        for (const method of ["GET", "HEAD"])
+            for (const headers of [
+                { "if-match": "*", "if-unmodified-since": date },
+                { "if-none-match": "wrong", "if-modified-since": date },
+                { "cache-control": "no-cache", "if-modified-since": date },
+                { range: "items=1-2", "if-range": date }
+            ])
+                await record(stat, headers, method, 200)
+        rust(inputs).forEach((native, index) => compare(native, actual[index], fixtureBytes, `midnight condition ${index}`))
+        assert.equal(inputs.length, 80, "all rollover, invalid-hour and unused-condition exchanges completed")
+    })
+})
+
 test("finite capability limits and V8 date spelling gaps are explicit, with source precedence preserved", async (t) => {
     const stat = { size: 37, mtimeMs: 1_700_000_000_123 }
     const cases = [
