@@ -141,6 +141,14 @@ struct Shared {
     failure: Mutex<Option<Failure>>,
     state: Mutex<Value>,
     next_run: AtomicU64,
+    #[cfg(test)]
+    exit_gate: Mutex<Option<Arc<SupervisorExitGate>>>,
+}
+#[cfg(test)]
+pub struct SupervisorExitGate {
+    pub entered: AtomicBool,
+    pub release: CancellationToken,
+    pub panic_after_release: AtomicBool,
 }
 impl Shared {
     fn current(&self, c: &RuntimeContext) -> Result<()> {
@@ -245,6 +253,8 @@ impl NativeTimecode {
             failure: Mutex::new(None),
             state: Mutex::new(json!({})),
             next_run: AtomicU64::new(1),
+            #[cfg(test)]
+            exit_gate: Mutex::new(None),
         });
         let (jobs, receive) = mpsc::channel(JOBS);
         let (control, changes) = mpsc::channel(1);
@@ -472,12 +482,24 @@ impl NativeTimecode {
             loop {
                 let p = done.borrow().clone();
                 if p.complete {
-                    if let Some(worker) = self.inner.worker.lock().await.take() {
-                        worker.await.map_err(|_| {
-                            error("timecode_worker", "Timecode supervisor panicked")
-                        })?;
+                    let mut retained = self.inner.worker.lock().await;
+                    if let Some(worker) = retained.as_mut() {
+                        // Cancellation drops only the mutex guard. The live join
+                        // handle stays owned for the next shutdown observer.
+                        let joined = worker.await;
+                        retained.take();
+                        if joined.is_err() {
+                            self.inner
+                                .shared
+                                .fail(error("timecode_worker", "Timecode supervisor panicked"));
+                        }
                     }
-                    return p.error.map_or(Ok(()), |(c, m)| Err(error(c, m)));
+                    return self
+                        .inner
+                        .shared
+                        .terminal_error()
+                        .or_else(|| p.error.map(|(c, m)| error(c, m)))
+                        .map_or(Ok(()), Err);
                 }
                 if p.attempt > before {
                     if let Some((c, m)) = p.error {
@@ -496,6 +518,16 @@ impl NativeTimecode {
                 "Actual timecode owners remain retained; retry shutdown",
             )
         })?
+    }
+    #[cfg(test)]
+    pub fn test_hold_supervisor_exit(&self) -> Arc<SupervisorExitGate> {
+        let gate = Arc::new(SupervisorExitGate {
+            entered: AtomicBool::new(false),
+            release: CancellationToken::new(),
+            panic_after_release: AtomicBool::new(false),
+        });
+        *lock(&self.inner.shared.exit_gate) = Some(gate.clone());
+        gate
     }
 }
 fn validate_context(c: &RuntimeContext) -> Result<()> {
@@ -1860,6 +1892,18 @@ async fn supervise(
                     let _ = change.reply.send(Ok(()));
                 }
                 run.snapshot(&shared);
+                #[cfg(test)]
+                {
+                    let gate = lock(&shared.exit_gate).take();
+                    if let Some(gate) = gate {
+                        gate.entered.store(true, Ordering::Release);
+                        gate.release.cancelled().await;
+                        assert!(
+                            !gate.panic_after_release.load(Ordering::Acquire),
+                            "controlled supervisor exit panic"
+                        );
+                    }
+                }
                 break;
             }
             let result: Result<()> = (|| {

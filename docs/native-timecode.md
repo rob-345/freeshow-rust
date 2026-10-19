@@ -124,6 +124,15 @@ failure remains sticky on repeated shutdown. Failed/unproven native cleanup
 retains logical ownership and returns an error rather than renewing or reporting
 complete teardown. Port OS calls, native C and destructors are cooperative and
 cannot be forcibly interrupted. The outer wait timeout does not prove real exit.
+After native drain progress completes, shutdown awaits the retained supervisor
+JoinHandle in place under its async mutex. Canceling or timing out that observer
+releases the mutex while retaining the live handle; retry still awaits actual
+task exit. Once the join settles, the handle is taken before propagating its
+result so a finished handle is never polled twice. A collected supervisor panic
+is retained as the first terminal failure on later shutdown calls. A test-only
+gate holds actual supervisor return after progress completion to verify this
+distinction independently of port-drain progress.
+
 Keep the Tokio runtime and LibraryService alive until this terminal drain has
 settled; last-handle Drop requests the same retained drain but supplies no receipt.
 

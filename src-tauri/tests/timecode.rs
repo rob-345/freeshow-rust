@@ -1060,3 +1060,56 @@ async fn missing_private_completion_fences_admission_and_actual_owners_still_joi
         "timecode_delivery_timeout"
     );
 }
+
+#[tokio::test]
+async fn canceled_shutdown_observer_retains_actual_supervisor_join_after_progress_complete() {
+    let f = Fixture::new(
+        TimecodeHostConfig {
+            lifecycle_timeout: Duration::from_millis(200),
+            ..Default::default()
+        },
+        false,
+    );
+    f.start("receive", "MTC", 25.0).await;
+    wait(|| f.native.status()["router"]["ownedListeners"] == 1).await;
+    let gate = f.native.test_hold_supervisor_exit();
+    let native = f.native.clone();
+    let observer = tokio::spawn(async move { native.shutdown().await });
+    // After Progress.complete and real port joins, before the supervisor can
+    // actually return and satisfy its retained JoinHandle.
+    wait(|| gate.entered.load(Ordering::Acquire)).await;
+    assert_eq!(f.active.load(Ordering::Acquire), 0);
+    observer.abort();
+    assert!(observer.await.unwrap_err().is_cancelled());
+    assert_eq!(
+        f.native.shutdown().await.unwrap_err().code,
+        "timecode_shutdown_timeout"
+    );
+    assert_eq!(
+        f.native.shutdown().await.unwrap_err().code,
+        "timecode_shutdown_timeout"
+    );
+    gate.release.cancel();
+    f.native.shutdown().await.unwrap();
+    f.native.shutdown().await.unwrap();
+    assert_eq!(f.active.load(Ordering::Acquire), 0);
+}
+
+#[tokio::test]
+async fn settled_supervisor_panic_is_collected_once_and_remains_sticky_for_retry() {
+    let f = Fixture::new(TimecodeHostConfig::default(), false);
+    let gate = f.native.test_hold_supervisor_exit();
+    gate.panic_after_release.store(true, Ordering::Release);
+    let native = f.native.clone();
+    let observer = tokio::spawn(async move { native.shutdown().await });
+    wait(|| gate.entered.load(Ordering::Acquire)).await;
+    observer.abort();
+    assert!(observer.await.unwrap_err().is_cancelled());
+    gate.release.cancel();
+    let first = f.native.shutdown().await.unwrap_err();
+    assert_eq!(first.code, "timecode_worker");
+    let second = f.native.shutdown().await.unwrap_err();
+    assert_eq!(first.code, second.code);
+    assert_eq!(first.message, second.message);
+    assert_eq!(f.native.status()["terminal"]["code"], "timecode_worker");
+}
