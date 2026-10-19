@@ -2,6 +2,67 @@
 
 Status: **active, incomplete**. Full feature parity and application performance improvement have not been demonstrated. The complete parity gate intentionally fails.
 
+`MAIN.AI_GET_STATUS` now supports the pinned explicit Nemotron/no-selected-model
+branch through one separate fixed filesystem owner and four whole jobs. Original
+stat-stamp shortcuts, ordered hashes and source-caught stamp-write failure remain
+intact. Opaque writes use the existing ordered library owner with original
+context/cancellation/deadlines; dropped observers retain real work and joins.
+Send-time cloning and JavaScript branch validation happen before JSON coercion.
+Matching source status does not establish a usable model or inference.
+[Native contract](native-ai-status.md).
+
+Eight more text-format IDs and standalone ChordPro `.pro` now feed the retained
+converters. Nine actual Linux WebKit requests create ten additional Unicode
+shows; all fifteen imported shows are saved with real Ctrl+S and archived as
+actual `.show` bytes. Independent pinned-source/raw IMPORT2/file/key/lyric/unknown
+field checks pass. SQLite/MDB, special containers and documented filename/suffix
+cases remain unsupported. The existing cleanup fence does not certify its
+thread's actual exit/join. [Transport](workers/imports-text.md) and
+[desktop evidence](workers/imports-text-desktop.md).
+
+The Linux Spotify command foundation now permits four concurrent command futures
+on the same fixed runtime thread while preserving its sequential state lane and
+shared four-job budget. Early true means scheduling acceptance. Actual child
+kill/wait, retained effects after receipt Drop and real owner joins are tested.
+A reproduced stale-capability race now updates cached/public observations
+together and recovers through an actual reprobe. Application command IPC remains
+unwired. [Foundation](workers/spotify-commands.md) and
+[race reproduction](workers/spotify-capability-race.md).
+
+The full local milestone passes **593 workspace Rust checks, 678 required-source
+Node checks, 20 frontend checks, and 392 native entry executions across 42 targets**. The
+AI-status feature run passes 18 entries, including three additional feature-only
+cases; its fifteen common cases are repeated, not added again. Five Rust
+supervisor entries and five source foreign-platform skips retain explicit scope.
+Strict workspace/native all-target Clippy, normal/frontend builds, formatting
+and the immutable source snapshot pass. The complete gate still fails.
+
+The isolated normal Linux binary passes **193 recorded editor observations,
+four GTK menu cases and both drop scales**. All three actual lifecycle phases
+compare AI status/inventory, genuine absent-service Spotify and the complete
+provider catalogue against pinned source. Independent checks preserve all fifteen
+persisted imports, 141 cover HTTP responses, both source JPEG pixel comparisons,
+original folder alerts and actual normal Quit. **49 other diagnostics remain**.
+Two failed GUI attempts are preserved: offscreen show selection and an ambiguous
+category/show viewport selector. The test now scans only the live ordinary Shows
+viewport before the existing real WebDriver click. No product hook replaces it.
+The frozen binary and exact remote resources remain unchanged after Cargo test
+builds; normal AI-status/browse test features are absent.
+[Hashed local receipt](baselines/ai-status-imports-linux-local.json).
+
+Published `983258f0` CI has **three successes and three failures**: Linux core,
+Linux desktop and macOS native passed; Windows core/native and macOS core failed
+in AI inventory fixtures. Native component joins and a genuine temporary-root
+fixture correct those tests without production changes or weakened comparisons.
+The historical Darwin shared-device fixture correction was not reached by that
+macOS core run. Fresh CI must establish current foreign runtime behavior; the
+historical normal binary also lacks the new before-test freeze proof.
+[Exact observations and artifact hashes](baselines/provider-catalogue-ci-observations.json)
+and [fixture corrections](workers/ai-local-fixtures.md).
+
+No whole-application speedup is claimed. Full feature parity, foreign GUI/hardware,
+usable models, provider accounts and application playback commands remain open.
+
 `MAIN.GET_CONTENT_PROVIDERS` now returns all five pinned provider declarations
 through the retained desktop bridge without library, credential or network IO.
 Four shared whole-result slots survive event cloning/native encoding; actual

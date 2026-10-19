@@ -88,3 +88,13 @@ The coordinator's actual GUI run is still required to verify Linux WebKit XML,
 retained history/rendering and real Ctrl+S/native filesystem persistence for the
 new formats. Failures must remain visible rather than substituting direct
 renderer-store writes or source-only conversion results for that evidence.
+
+The coordinator subsequently verified the complete normal Linux editor, menus
+and both drop scales. Nine source-compared requests create ten new Unicode
+shows; all fifteen actual persisted `.show` files are copied byte-for-byte into
+`desktop/imported-shows/` with paths, IDs, byte counts and SHA256 records in
+`imports.json::persistedFiles`. Independent source/raw/key/file/lyric/unknown-field
+checks pass. The two earlier failed selector attempts remain archived; the
+ordinary Shows viewport scan now handles category lists, delayed mounts and
+replacement before each existing real WebDriver click.
+[Integrated receipt and limits](../baselines/ai-status-imports-linux-local.json).

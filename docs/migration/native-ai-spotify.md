@@ -36,6 +36,10 @@ cleanup in these tests is an ordered terminal fence, not a library-thread join.
 [Source contract and resource limits](workers/ai-local.md) and
 [host lifecycle evidence](workers/ai-host-verification.md).
 
+The explicit Nemotron/no-selected-model status branch is now integrated through
+a separate fixed filesystem owner and ordered stamp effects. General model and
+provider status remain unsupported. [Status contract](native-ai-status.md).
+
 ## Linux Spotify state
 
 `MAIN.SPOTIFY_GET_STATE` captures the native session environment and uses fixed
@@ -85,7 +89,9 @@ Quit waits its pending save, backup and writes;49 other editor diagnostics remai
 [desktop fixture](workers/ai-spotify-desktop.md).
 
 Windows and macOS state backends return explicit unsupported capability errors.
-Playback commands, OAuth, account providers, real Spotify sessions, broad
+The bounded concurrent playback-command foundation is integrated into the workspace
+but is not yet bound to native IPC. [Foundation and limits](workers/spotify-commands.md).
+Playback commands through the application, OAuth, account providers, real Spotify sessions, broad
 album-art/media behavior and whole-feature parity remain open.
 [Source, supervision and limits](workers/spotify-linux.md) and
 [hydration contract](workers/spotify-hydration.md).

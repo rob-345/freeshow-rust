@@ -41,8 +41,10 @@ The native slice explicitly rejects such whole selections, including mixed
 valid XML/archive plus binary input, before reading an archive or publishing a
 successful result. It does not turn an unimplemented binary path into text.
 Uppercase/mixed-case SQLite/MDB suffixes do not trigger source filtering, but
-the existing conservative native special-extension guard still rejects them.
-This source/native difference is tested and remains explicit.
+the existing conservative native special-extension guard still rejects them on
+the plain-file path. With a selected ordinary ZIP, source selection ignores
+those nonarchives before that guard. These branch-specific boundaries remain
+explicit.
 
 Any ordinary selected `.zip` ignores selected nonarchives, as in the source.
 The existing validated archive/staging path admits XML for the XML formats,
@@ -108,6 +110,9 @@ Lessons.church download workflow remain unsupported. Third-party `.vpc`, `.qsp`
 and `.probundle` containers remain explicit errors even when the original ZIP
 reader could handle them. Every archived `.pro` invokes original protobuf
 handling regardless of import ID, so archived ChordPro `.pro` stays unsupported.
+A selected archive whose entire basename is `.zip` remains unsupported: the
+existing native extension check differs from the source suffix selection. Plain
+`.pro` names under the other eight IDs also remain conservatively unsupported.
 OpenSong HTML/browser and Bible variants are not certified by the XML fixture.
 An extensionless name ending in an astral character loses one UTF-16 code unit
 in the original and creates a lone surrogate; Rust rejects that representability
