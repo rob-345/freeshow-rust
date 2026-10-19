@@ -10,7 +10,10 @@ use std::{
     },
     time::{Duration, Instant},
 };
-use tokio::sync::{mpsc, oneshot, watch};
+use tokio::sync::{mpsc, oneshot, watch, Semaphore};
+
+const SHUTDOWN_OBSERVERS: usize = 4;
+const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Error {
@@ -160,10 +163,24 @@ pub struct Status {
     pub active_jobs: usize,
     pub queued_jobs: usize,
     pub queue_capacity: usize,
+    pub worker_joined: bool,
+    pub shutdown_observers: usize,
+}
+
+#[cfg(test)]
+#[derive(Default)]
+struct WorkerHooks {
+    exit: Option<(
+        std::sync::mpsc::SyncSender<()>,
+        std::sync::mpsc::Receiver<()>,
+    )>,
+    panic_at_exit: bool,
 }
 
 enum Operation {
     Os,
+    #[cfg(test)]
+    Panic,
     DeviceName,
     Memory,
     #[cfg(test)]
@@ -188,19 +205,60 @@ struct State {
     active: AtomicUsize,
     queued: AtomicUsize,
     done: watch::Sender<bool>,
+    failure: Mutex<Option<Error>>,
 }
 struct Inner {
     sender: Mutex<Option<mpsc::Sender<Job>>>,
     state: Arc<State>,
     limits: Limits,
     completion: watch::Receiver<bool>,
+    worker: Mutex<Option<std::thread::JoinHandle<()>>>,
+    shutdown_observers: Arc<Semaphore>,
 }
 impl Inner {
+    // Keep this guard through the actual join: another shutdown/status caller
+    // must not mistake a taken-but-unjoined handle for completed teardown.
+    fn try_join_finished(&self) -> bool {
+        let mut owner = self
+            .worker
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        if owner.as_ref().is_some_and(|thread| !thread.is_finished()) {
+            return false;
+        }
+        if let Some(thread) = owner.take() {
+            // Rust's documented nonblocking join pattern. A brief final native
+            // teardown interval after is_finished is not OS-preemptible.
+            if thread.join().is_err() {
+                self.state.retain_failure(Error::new(
+                    "system_worker",
+                    "System worker panicked during native teardown",
+                ));
+            }
+        }
+        true
+    }
     fn close(&self) {
         self.state.closing.store(true, Ordering::Release);
-        if let Ok(mut sender) = self.sender.lock() {
-            sender.take();
-        }
+        self.sender
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .take();
+    }
+}
+impl State {
+    fn retain_failure(&self, error: Error) {
+        self.closing.store(true, Ordering::Release);
+        self.failure
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .get_or_insert(error);
+    }
+    fn failure(&self) -> Option<Error> {
+        self.failure
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone()
     }
 }
 impl Drop for Inner {
@@ -239,6 +297,13 @@ fn check(state: &State, control: &JobControl) -> Result<(), Error> {
 }
 impl SystemService {
     pub fn start(limits: Limits) -> Result<Self, Error> {
+        Self::start_inner(
+            limits,
+            #[cfg(test)]
+            WorkerHooks::default(),
+        )
+    }
+    fn start_inner(limits: Limits, #[cfg(test)] hooks: WorkerHooks) -> Result<Self, Error> {
         if !(1..=32).contains(&limits.queue_capacity)
             || limits.max_job_duration.is_zero()
             || limits.max_job_duration > Duration::from_secs(10)
@@ -255,9 +320,10 @@ impl SystemService {
             active: AtomicUsize::new(0),
             queued: AtomicUsize::new(0),
             done,
+            failure: Mutex::new(None),
         });
         let worker = state.clone();
-        std::thread::Builder::new()
+        let thread = std::thread::Builder::new()
             .name("freeshow-system".into())
             .spawn(move || {
                 while let Some(job) = receiver.blocking_recv() {
@@ -267,6 +333,8 @@ impl SystemService {
                         check(&worker, &job.control)?;
                         let answer = match job.operation {
                             Operation::Os => Answer::Os(get_os()?),
+                            #[cfg(test)]
+                            Operation::Panic => panic!("Controlled system worker fault"),
                             Operation::DeviceName => {
                                 Answer::DeviceName(device_name(&native::hostname()?))
                             }
@@ -280,12 +348,32 @@ impl SystemService {
                         };
                         check(&worker, &job.control)?;
                         Ok(answer)
-                    }))
-                    .unwrap_or_else(|_| Err(Error::new("system_worker", "System worker panicked")));
+                    }));
+                    let result = match result {
+                        Ok(result) => result,
+                        Err(_) => {
+                            let error = Error::new("system_worker", "System worker panicked");
+                            // Publish terminal failure before the reply/consumer
+                            // can observe completion and begin shutdown.
+                            worker.retain_failure(error.clone());
+                            Err(error)
+                        }
+                    };
                     worker.active.store(0, Ordering::Release);
                     let _ = job.reply.send(result);
                 }
                 worker.done.send_replace(true);
+                #[cfg(test)]
+                {
+                    if let Some((entered, release)) = hooks.exit {
+                        let _ = entered.send(());
+                        let _ = release.recv();
+                    }
+                    assert!(
+                        !hooks.panic_at_exit,
+                        "Controlled native thread teardown fault"
+                    );
+                }
             })
             .map_err(|error| Error::os("start system worker", error))?;
         Ok(Self(Arc::new(Inner {
@@ -293,6 +381,8 @@ impl SystemService {
             state,
             limits,
             completion,
+            worker: Mutex::new(Some(thread)),
+            shutdown_observers: Arc::new(Semaphore::new(SHUTDOWN_OBSERVERS)),
         })))
     }
     fn admit(
@@ -362,25 +452,70 @@ impl SystemService {
         Ok(self.memory_sample(control).await?.usage())
     }
     pub fn status(&self) -> Status {
+        let owner = self
+            .0
+            .worker
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         Status {
             closing: self.0.state.closing.load(Ordering::Acquire),
-            worker_running: !*self.0.completion.borrow(),
+            worker_running: owner.as_ref().is_some_and(|thread| !thread.is_finished()),
             active_jobs: self.0.state.active.load(Ordering::Acquire),
             queued_jobs: self.0.state.queued.load(Ordering::Acquire),
             queue_capacity: self.0.limits.queue_capacity,
+            worker_joined: owner.is_none(),
+            shutdown_observers: SHUTDOWN_OBSERVERS - self.0.shutdown_observers.available_permits(),
         }
     }
-    /// Closes admission, cancels queued/active work cooperatively and drains the
-    /// one worker. An OS API already in progress cannot be interrupted.
+    /// Closes admission and cooperatively drains and actually joins the worker.
+    /// Four observers are admitted without waiting. Timeout/drop preserves the
+    /// real handle for a later retry; a native call cannot be interrupted.
     pub async fn shutdown(&self) -> Result<(), Error> {
+        self.shutdown_until(Instant::now() + SHUTDOWN_TIMEOUT).await
+    }
+    async fn shutdown_until(&self, deadline: Instant) -> Result<(), Error> {
         self.0.close();
-        let mut done = self.0.completion.clone();
-        while !*done.borrow_and_update() {
-            done.changed()
-                .await
-                .map_err(|_| Error::new("system_worker", "System completion channel closed"))?;
+        let _observer = self
+            .0
+            .shutdown_observers
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| {
+                Error::new("system_busy", "System shutdown observer capacity exhausted")
+            })?;
+        loop {
+            if self.0.try_join_finished() {
+                if let Some(error) = self.0.state.failure() {
+                    return Err(error);
+                }
+                // The watch is only loop-completion evidence AFTER an actual
+                // native join, never a substitute for it.
+                return if *self.0.completion.borrow() {
+                    Ok(())
+                } else {
+                    Err(Error::new(
+                        "system_worker",
+                        "System worker exited without completion",
+                    ))
+                };
+            }
+            if Instant::now() >= deadline {
+                return Err(Error::new(
+                    "system_shutdown_timeout",
+                    "Native system worker still owns teardown; shutdown can be retried",
+                ));
+            }
+            if tokio::runtime::Handle::try_current().is_err() {
+                return Err(Error::new(
+                    "system_runtime",
+                    "Pending system teardown requires a Tokio runtime; native handle retained",
+                ));
+            }
+            tokio::time::sleep(
+                Duration::from_millis(1).min(deadline.saturating_duration_since(Instant::now())),
+            )
+            .await;
         }
-        Ok(())
     }
 }
 

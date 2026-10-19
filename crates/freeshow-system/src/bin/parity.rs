@@ -5,32 +5,9 @@ use freeshow_system::{
 };
 use serde_json::{json, Value};
 use std::{
-    future::Future,
     io::{self, BufRead, Read},
-    pin::pin,
-    sync::Arc,
-    task::{Context, Poll, Wake, Waker},
     time::{Duration, Instant},
 };
-struct ThreadWake(std::thread::Thread);
-impl Wake for ThreadWake {
-    fn wake(self: Arc<Self>) {
-        self.0.unpark();
-    }
-    fn wake_by_ref(self: &Arc<Self>) {
-        self.0.unpark();
-    }
-}
-fn wait<F: Future>(future: F) -> F::Output {
-    let waker = Waker::from(Arc::new(ThreadWake(std::thread::current())));
-    let mut future = pin!(future);
-    loop {
-        match future.as_mut().poll(&mut Context::from_waker(&waker)) {
-            Poll::Ready(value) => return value,
-            Poll::Pending => std::thread::park(),
-        }
-    }
-}
 fn invalid(message: impl Into<String>) -> Error {
     Error {
         code: "system_invalid".into(),
@@ -49,7 +26,7 @@ fn number(value: &Value) -> Result<f64, Error> {
         })
         .ok_or_else(|| invalid("Number missing"))
 }
-fn execute(input: &Value) -> Result<Value, Error> {
+fn execute(input: &Value, runtime: &tokio::runtime::Runtime) -> Result<Value, Error> {
     match input["op"].as_str().unwrap_or("snapshot") {
         "batch" => {
             let cases = input["cases"]
@@ -61,7 +38,7 @@ fn execute(input: &Value) -> Result<Value, Error> {
             Ok(Value::Array(
                 cases
                     .iter()
-                    .map(|case| match execute(case) {
+                    .map(|case| match execute(case, runtime) {
                         Ok(value) => json!({"ok":true,"value":value}),
                         Err(error) => json!({"ok":false,"error":error}),
                     })
@@ -94,13 +71,19 @@ fn execute(input: &Value) -> Result<Value, Error> {
                 control.deadline = Instant::now() + Duration::from_millis(ms.min(10_000));
             }
             let result = match operation {
-                "os" => wait(service.get_os(control)).map(|value| json!(value)),
-                "deviceNative" => wait(service.get_device_name(control)).map(|value| json!(value)),
-                "ram" => wait(service.ram_usage(control)).map(|value| json!(value)),
+                "os" => runtime
+                    .block_on(service.get_os(control))
+                    .map(|value| json!(value)),
+                "deviceNative" => runtime
+                    .block_on(service.get_device_name(control))
+                    .map(|value| json!(value)),
+                "ram" => runtime
+                    .block_on(service.ram_usage(control))
+                    .map(|value| json!(value)),
                 _ => {
-                    let os = wait(service.get_os(control.clone()));
-                    let device = wait(service.get_device_name(control.clone()));
-                    let memory = wait(service.memory_sample(control));
+                    let os = runtime.block_on(service.get_os(control.clone()));
+                    let device = runtime.block_on(service.get_device_name(control.clone()));
+                    let memory = runtime.block_on(service.memory_sample(control));
                     match (os, device, memory) {
                         (Ok(os), Ok(device), Ok(memory)) => Ok(
                             json!({"os":os,"deviceName":device,"ram":memory.usage(),"memory":memory}),
@@ -109,13 +92,18 @@ fn execute(input: &Value) -> Result<Value, Error> {
                     }
                 }
             };
-            wait(service.shutdown())?;
+            runtime.block_on(service.shutdown())?;
             result
         }
         _ => Err(invalid("Unknown operation")),
     }
 }
 fn main() {
+    // One current-thread driver, with no extra native owner or helper thread.
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_time()
+        .build()
+        .expect("Bounded system probe runtime");
     let mut stdin = io::stdin().lock();
     loop {
         let mut line = String::new();
@@ -128,7 +116,7 @@ fn main() {
         } else {
             serde_json::from_str::<Value>(&line)
                 .map_err(|error| invalid(error.to_string()))
-                .and_then(|input| execute(&input))
+                .and_then(|input| execute(&input, &runtime))
         };
         println!(
             "{}",

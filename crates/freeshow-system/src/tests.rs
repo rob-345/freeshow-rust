@@ -239,3 +239,188 @@ async fn native_memory_has_provenance_and_original_reply_shape() {
     }
     service.shutdown().await.unwrap();
 }
+
+fn exit_service(panic_at_exit: bool) -> (SystemService, sync::Receiver<()>, sync::SyncSender<()>) {
+    let (entered, waiting) = sync::sync_channel(1);
+    let (release, resumed) = sync::sync_channel(1);
+    let service = SystemService::start_inner(
+        Limits::default(),
+        WorkerHooks {
+            exit: Some((entered, resumed)),
+            panic_at_exit,
+        },
+    )
+    .unwrap();
+    (service, waiting, release)
+}
+async fn observed(mut condition: impl FnMut() -> bool) {
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while !condition() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("Actual native ownership observation did not become ready");
+}
+
+#[tokio::test]
+async fn logical_completion_timeout_and_abandoned_waiter_retain_native_exit_then_real_join() {
+    let (service, entered, release) = exit_service(false);
+    service.0.close();
+    observed(|| entered.try_recv().is_ok()).await;
+    assert!(*service.0.completion.borrow());
+    assert_eq!(service.status().active_jobs, 0);
+    assert_eq!(service.status().queued_jobs, 0);
+    assert!(service.status().worker_running);
+    assert!(!service.status().worker_joined);
+    let error = service
+        .shutdown_until(Instant::now() + Duration::from_millis(10))
+        .await
+        .unwrap_err();
+    assert_eq!(error.code, "system_shutdown_timeout");
+    assert!(service.0.worker.lock().unwrap().is_some());
+    assert_eq!(service.status().shutdown_observers, 0);
+    let copy = service.clone();
+    let waiter = tokio::spawn(async move { copy.shutdown().await });
+    observed(|| service.status().shutdown_observers == 1).await;
+    waiter.abort();
+    assert!(waiter.await.unwrap_err().is_cancelled());
+    assert_eq!(service.status().shutdown_observers, 0);
+    assert!(service.status().worker_running);
+    assert!(!service.status().worker_joined);
+    release.send(()).unwrap();
+    observed(|| !service.status().worker_running).await;
+    // Exit observation never performs the actual join or discards the handle.
+    assert!(!service.status().worker_joined);
+    service.shutdown().await.unwrap();
+    assert!(service.status().worker_joined);
+    service.shutdown().await.unwrap();
+}
+
+#[tokio::test]
+async fn shutdown_observers_are_try_bounded_and_drop_does_not_release_the_native_owner() {
+    use std::{
+        future::Future,
+        task::{Context, Poll, Waker},
+    };
+    let (service, entered, release) = exit_service(false);
+    service.0.close();
+    observed(|| entered.try_recv().is_ok()).await;
+    let mut observers = (0..SHUTDOWN_OBSERVERS)
+        .map(|_| Box::pin(service.shutdown()))
+        .collect::<Vec<_>>();
+    let mut context = Context::from_waker(Waker::noop());
+    for observer in &mut observers {
+        assert!(matches!(
+            observer.as_mut().poll(&mut context),
+            Poll::Pending
+        ));
+    }
+    assert_eq!(service.status().shutdown_observers, SHUTDOWN_OBSERVERS);
+    assert_eq!(service.shutdown().await.unwrap_err().code, "system_busy");
+    observers.pop();
+    assert_eq!(service.status().shutdown_observers, SHUTDOWN_OBSERVERS - 1);
+    let mut replacement = Box::pin(service.shutdown());
+    assert!(matches!(
+        replacement.as_mut().poll(&mut context),
+        Poll::Pending
+    ));
+    assert_eq!(service.status().shutdown_observers, SHUTDOWN_OBSERVERS);
+    drop(replacement);
+    drop(observers);
+    assert_eq!(service.status().shutdown_observers, 0);
+    assert!(service.status().worker_running);
+    assert!(!service.status().worker_joined);
+    release.send(()).unwrap();
+    let one = service.clone();
+    let two = service.clone();
+    let (one, two) = tokio::join!(one.shutdown(), two.shutdown());
+    one.unwrap();
+    two.unwrap();
+    assert!(service.status().worker_joined);
+}
+
+#[tokio::test]
+async fn caught_job_panic_is_sticky_before_reply_and_still_requires_native_join() {
+    let (service, entered, release) = exit_service(false);
+    let answer = service
+        .admit(Operation::Panic, JobControl::default())
+        .unwrap();
+    let error = answer.await.unwrap().unwrap_err();
+    assert_eq!(error.code, "system_worker");
+    assert_eq!(service.0.state.failure(), Some(error.clone()));
+    service.0.close();
+    observed(|| entered.try_recv().is_ok()).await;
+    assert!(*service.0.completion.borrow());
+    assert!(!service.status().worker_joined);
+    assert_eq!(
+        service
+            .shutdown_until(Instant::now() + Duration::from_millis(10))
+            .await
+            .unwrap_err()
+            .code,
+        "system_shutdown_timeout"
+    );
+    release.send(()).unwrap();
+    observed(|| !service.status().worker_running).await;
+    assert_eq!(service.shutdown().await.unwrap_err(), error);
+    assert!(service.status().worker_joined);
+    assert_eq!(service.shutdown().await.unwrap_err(), error);
+    assert_eq!(
+        service
+            .get_os(JobControl::default())
+            .await
+            .unwrap_err()
+            .code,
+        "system_shutdown"
+    );
+}
+
+#[tokio::test]
+async fn actual_native_join_panic_stays_failed_after_handle_is_joined() {
+    let (service, entered, release) = exit_service(true);
+    service.0.close();
+    observed(|| entered.try_recv().is_ok()).await;
+    assert!(*service.0.completion.borrow());
+    assert_eq!(service.0.state.failure(), None);
+    release.send(()).unwrap();
+    observed(|| !service.status().worker_running).await;
+    assert!(!service.status().worker_joined);
+    let error = service.shutdown().await.unwrap_err();
+    assert_eq!(error.code, "system_worker");
+    assert!(service.status().worker_joined);
+    assert_eq!(service.shutdown().await.unwrap_err(), error);
+}
+
+#[test]
+fn no_runtime_pending_shutdown_retains_owner_and_finished_shutdown_joins_without_runtime() {
+    use std::{
+        future::Future,
+        pin::pin,
+        task::{Context, Poll, Waker},
+    };
+    let (service, entered, release) = exit_service(false);
+    service.0.close();
+    entered.recv_timeout(Duration::from_secs(2)).unwrap();
+    let mut context = Context::from_waker(Waker::noop());
+    let result = pin!(service.shutdown()).as_mut().poll(&mut context);
+    assert!(matches!(result, Poll::Ready(Err(Error { code, .. })) if code == "system_runtime"));
+    assert!(!service.status().worker_joined);
+    assert!(service.status().worker_running);
+    assert_eq!(service.status().shutdown_observers, 0);
+    release.send(()).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while service.status().worker_running {
+        assert!(
+            Instant::now() < deadline,
+            "Actual native owner did not exit"
+        );
+        std::thread::yield_now();
+    }
+    assert!(!service.status().worker_joined);
+    assert!(matches!(
+        pin!(service.shutdown()).as_mut().poll(&mut context),
+        Poll::Ready(Ok(()))
+    ));
+    assert!(service.status().worker_joined);
+}
