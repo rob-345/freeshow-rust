@@ -51,10 +51,12 @@ fn fixture() -> (
     mpsc::Receiver<Event>,
 ) {
     let temp = tempfile::tempdir().unwrap();
-    let library = LibraryService::start(
-        Runtime::new(temp.path().join("app"), temp.path().join("data")).unwrap(),
-    )
-    .unwrap();
+    #[cfg(target_os = "macos")]
+    let base = temp.path().canonicalize().unwrap();
+    #[cfg(not(target_os = "macos"))]
+    let base = temp.path().to_path_buf();
+    let library =
+        LibraryService::start(Runtime::new(base.join("app"), base.join("data")).unwrap()).unwrap();
     let (send, receive) = mpsc::channel(16);
     let config = remote_config(temp.path());
     let native = remotes::NativeRemotes::new(library.clone(), config, move |event| {
@@ -1199,7 +1201,7 @@ async fn context_control_retires_discovery_work_after_timed_out_stop_removed_lis
     no_late_positive(&fixture.peer).await;
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 #[tokio::test]
 async fn configured_native_start_serves_real_selected_covers_and_stop_drains_independent_alert_delivery(
 ) {

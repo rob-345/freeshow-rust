@@ -31,18 +31,18 @@ pub enum FailureKind {
     Unsupported,
     Changed,
     #[cfg_attr(
-        not(target_os = "linux"),
+        not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
         allow(
             dead_code,
-            reason = "The explicitly unavailable anchored backend constructs this variant only on Linux"
+            reason = "Only supported anchored backends construct this variant"
         )
     )]
     Io,
     #[cfg_attr(
-        not(target_os = "linux"),
+        not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
         allow(
             dead_code,
-            reason = "The explicitly unavailable anchored backend constructs this variant only on Linux"
+            reason = "Only supported anchored backends construct this variant"
         )
     )]
     Resource,
@@ -68,7 +68,7 @@ impl Failure {
             os_code: None,
         }
     }
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     fn os(stage: &str, error: io::Error) -> Self {
         Self {
             os_code: error.raw_os_error(),
@@ -246,18 +246,18 @@ impl Observation {
 }
 pub enum Outcome {
     #[cfg_attr(
-        not(target_os = "linux"),
+        not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
         allow(
             dead_code,
-            reason = "Only the verified Linux backend constructs a successful outcome"
+            reason = "Only supported anchored backends construct a successful outcome"
         )
     )]
     Missing,
     #[cfg_attr(
-        not(target_os = "linux"),
+        not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
         allow(
             dead_code,
-            reason = "Only the verified Linux backend constructs held cover authority"
+            reason = "Only supported anchored backends construct held cover authority"
         )
     )]
     File(HeldCover),
@@ -317,7 +317,7 @@ impl HeldCover {
                 "Bounded cover read range required",
             ));
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
         {
             use std::os::unix::fs::FileExt;
             self.authority
@@ -327,7 +327,15 @@ impl HeldCover {
                 .0
                 .read_at(buffer, offset)
         }
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(target_os = "windows")]
+        {
+            backend::read_at(
+                &self.authority.leaf.as_ref().expect("held cover").0,
+                offset,
+                buffer,
+            )
+        }
+        #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
         {
             let _ = buffer;
             Err(io::Error::new(
@@ -342,9 +350,9 @@ impl HeldCover {
 }
 struct Authority {
     context: RuntimeContext,
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     root: File,
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     audio: Option<File>,
     leaf: Option<(File, FileStat)>,
     validating: AtomicBool,
@@ -443,7 +451,7 @@ impl CoverFiles {
                     authority: None,
                     _lease: lease.clone(),
                 };
-                #[cfg(target_os = "linux")]
+                #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
                 let mut observation = observation;
                 let result = (|| {
                     control.check()?;
@@ -453,22 +461,26 @@ impl CoverFiles {
                             "Ordered context changed",
                         ));
                     }
-                    #[cfg(target_os = "linux")]
+                    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
                     {
                         backend::prepare(
                             &mut observation,
                             lease,
                             &control,
-                            #[cfg(test)]
+                            #[cfg(all(test, target_os = "linux"))]
                             &hooks,
                         )
                     }
-                    #[cfg(not(target_os = "linux"))]
+                    #[cfg(not(any(
+                        target_os = "linux",
+                        target_os = "macos",
+                        target_os = "windows"
+                    )))]
                     {
                         let _ = lease;
                         Err(Failure::new(
                             FailureKind::Unsupported,
-                            "Anchored cover backend verified only on Linux",
+                            "Anchored fixed-cover IO is unavailable on this platform",
                         ))
                     }
                 })();
@@ -509,16 +521,16 @@ fn validate_submit(
     let ordered = phase
         .submit(request(&guard.authority.context), move |_| {
             let result = {
-                #[cfg(target_os = "linux")]
+                #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
                 {
                     backend::revalidate(&guard.authority, &control)
                 }
-                #[cfg(not(target_os = "linux"))]
+                #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
                 {
                     let _ = control;
                     Err(Failure::new(
                         FailureKind::Unsupported,
-                        "Anchored cover backend verified only on Linux",
+                        "Anchored fixed-cover IO is unavailable on this platform",
                     ))
                 }
             };
@@ -805,6 +817,19 @@ mod backend {
         Ok(Some(expected.clone()))
     }
 }
+
+#[cfg(target_os = "macos")]
+#[path = "now_playing_cover_file/macos.rs"]
+mod backend;
+#[cfg(target_os = "windows")]
+#[path = "now_playing_cover_file/windows.rs"]
+mod backend;
+#[cfg(all(test, target_os = "macos"))]
+#[allow(
+    unused_imports,
+    reason = "Dedicated macOS integration target uses this test-only hook type"
+)]
+pub use backend::MacTestStage;
 
 #[cfg(all(test, target_os = "linux"))]
 #[derive(Clone, Copy, PartialEq, Eq)]

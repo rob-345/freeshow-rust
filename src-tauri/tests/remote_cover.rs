@@ -15,7 +15,7 @@ use now_playing_cover_file::CoverFiles;
 use remote_cover::Source;
 use remote_cover_publications::Publications;
 use std::time::{Duration, Instant};
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 use std::{future::poll_fn, task::Poll};
 use tokio_util::sync::CancellationToken;
 
@@ -23,10 +23,10 @@ static SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 struct Fixture {
     _temp: tempfile::TempDir,
     #[cfg_attr(
-        not(target_os = "linux"),
+        not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
         allow(
             dead_code,
-            reason = "Only Linux context-interleaving cases read the fixture library directly"
+            reason = "Only supported native filesystem cases read the fixture library directly"
         )
     )]
     library: LibraryService,
@@ -38,10 +38,13 @@ struct Fixture {
 impl Fixture {
     fn new() -> Self {
         let temp = tempfile::tempdir().unwrap();
-        let library = LibraryService::start(
-            Runtime::new(temp.path().join("app"), temp.path().join("selected")).unwrap(),
-        )
-        .unwrap();
+        #[cfg(target_os = "macos")]
+        let base = temp.path().canonicalize().unwrap();
+        #[cfg(not(target_os = "macos"))]
+        let base = temp.path().to_path_buf();
+        let library =
+            LibraryService::start(Runtime::new(base.join("app"), base.join("selected")).unwrap())
+                .unwrap();
         let files = CoverFiles::default();
         let publications = Publications::new();
         publications.ready(library.context().unwrap()).unwrap();
@@ -69,7 +72,7 @@ impl Fixture {
             deadline: Instant::now() + Duration::from_secs(5),
         }
     }
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     fn install(&self, bytes: &[u8]) -> std::path::PathBuf {
         let audio = self.library.context().unwrap().data_path.join("Audio");
         std::fs::create_dir_all(&audio).unwrap();
@@ -84,12 +87,12 @@ async fn native_source_reports_actual_platform_capability_and_settles_file_owner
     let _serial = SERIAL.lock().await;
     let mut f = Fixture::new();
     let mut prepared = f.source.prepare(f.control()).await.unwrap();
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     {
         assert!(matches!(prepared.state(), CoverState::Missing));
         prepared.before_headers().await.unwrap();
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
     {
         assert!(matches!(prepared.state(), CoverState::Failed));
         assert_eq!(
@@ -102,7 +105,7 @@ async fn native_source_reports_actual_platform_capability_and_settles_file_owner
     assert!(f.events.try_recv().is_err());
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 #[tokio::test]
 async fn held_opaque_bytes_and_posix_stat_survive_until_actual_header_validation_and_disposal() {
     let _serial = SERIAL.lock().await;
@@ -126,7 +129,7 @@ async fn held_opaque_bytes_and_posix_stat_survive_until_actual_header_validation
     assert!(f.events.try_recv().is_err());
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 #[tokio::test]
 async fn actual_folder_alert_precedes_missing_http_continuation_but_completion_owns_its_private_lease(
 ) {
@@ -249,4 +252,32 @@ async fn http_cancellation_after_actual_mkdir_failure_does_not_erase_its_indepen
     prepared.finish().await.unwrap();
     assert_eq!((f.files.retained(), f.publications.retained()), (0, 0));
     assert!(f.events.try_recv().is_err());
+}
+
+#[cfg(target_os = "windows")]
+#[tokio::test]
+async fn windows_exceptional_raw_file_times_fail_header_projection_without_inventing_missing() {
+    let _serial = SERIAL.lock().await;
+    let f = Fixture::new();
+    let path = f.install(b"opaque Windows cover");
+    for time in [
+        std::time::UNIX_EPOCH - Duration::from_secs(1),
+        std::time::UNIX_EPOCH + Duration::from_secs(u64::from(u32::MAX) + 1),
+    ] {
+        std::fs::File::options()
+            .write(true)
+            .open(&path)
+            .unwrap()
+            .set_times(std::fs::FileTimes::new().set_modified(time))
+            .unwrap();
+        assert_eq!(std::fs::metadata(&path).unwrap().modified().unwrap(), time);
+        let mut prepared = f.source.prepare(f.control()).await.unwrap();
+        assert!(matches!(prepared.state(), CoverState::Failed));
+        assert_eq!(
+            prepared.before_headers().await.unwrap_err().code,
+            "cover_mtime"
+        );
+        prepared.finish().await.unwrap();
+        assert_eq!((f.files.retained(), f.publications.retained()), (0, 0));
+    }
 }

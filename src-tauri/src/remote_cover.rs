@@ -56,6 +56,24 @@ fn error(code: &'static str, message: impl ToString) -> RemoteError {
     message.truncate(end);
     RemoteError { code, message }
 }
+fn representation(stat: &file::FileStat) -> Result<CoverFileStat, RemoteError> {
+    // Pinned Node22 casts Windows times through 32-bit unsigned long. True
+    // native fields outside this interval need separate libuv overflow evidence;
+    // preserve them for guards but never emit guessed successful HTTP headers.
+    #[cfg(target_os = "windows")]
+    if !(0..=i64::from(u32::MAX)).contains(&stat.modified_seconds()) {
+        return Err(error(
+            "cover_mtime",
+            "Windows cover time is outside the verified source interval",
+        ));
+    }
+    CoverFileStat::from_posix(
+        stat.length(),
+        stat.modified_seconds(),
+        stat.modified_nanoseconds(),
+    )
+    .map_err(|e| error(e.code, e.message))
+}
 fn file_error(failure: file::Failure) -> RemoteError {
     error(failure.code(), failure.message)
 }
@@ -152,13 +170,7 @@ impl CoverSource for Source {
                 }
                 Outcome::File(file) => {
                     let stat = file.stat();
-                    CoverFileStat::from_posix(
-                        stat.length(),
-                        stat.modified_seconds(),
-                        stat.modified_nanoseconds(),
-                    )
-                    .map(CoverState::File)
-                    .map_err(|e| error(e.code, e.message))
+                    representation(stat).map(CoverState::File)
                 }
                 Outcome::Failed(_) => Ok(CoverState::Failed),
             };

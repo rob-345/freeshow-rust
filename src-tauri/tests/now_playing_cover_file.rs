@@ -1,3 +1,4 @@
+#![cfg(not(any(target_os = "macos", target_os = "windows")))]
 #[allow(dead_code)]
 #[path = "../src/now_playing_cover_file.rs"]
 mod cover;
