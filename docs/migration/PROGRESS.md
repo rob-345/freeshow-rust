@@ -35,25 +35,30 @@ survives actual consumer destruction; its Windows CI fixture waits for real
 reply-frame disposal. Controlled negative tests detect the old behavior.
 No whole-application CPU improvement is claimed.
 
-The current integration passes **493 Rust + 584 pinned-Node + 20 frontend
-checks** (1,097), plus **352 native executions** (339 host integration and thirteen
+The current integration passes **501 Rust + 598 pinned-Node + 20 frontend
+checks** (1,119), plus **355 native executions** (342 host integration and thirteen
 desktop binary unit cases, including shared cases repeated by importing targets).
 Five ignored Rust subprocess entry fixtures are driven by supervisor tests;
 four source suites retain existing platform/capability skips. Strict workspace
 and native all-target Clippy, focused TypeScript, formatting and immutable-source
 snapshot checks pass. The full parity gate intentionally remains incomplete.
 
-Published `19d68467` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39260766076).
-Actual Windows core passes all 36 browsing cases, including complete source
-records and the three strict Number-comparison controls. Darwin passes eight
+Published `e53b7a25` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39266756301).
+Actual Windows core passes all 43 browsing cases, including complete source
+records, the three strict Number-comparison controls and queued admission.
+Darwin passes fifteen
 module and six integration cases; eight are platform-specific. Native Windows
 and Darwin again pass their dedicated eighteen and twelve cover cases,
-Source cases and actual three-port TCP/STOP lifetime tests. Independently
+Source cases and actual three-port TCP/STOP lifetime tests. Both also pass all
+four native browse cases, including the three new actual queued-owner tests.
+Independently
 validated downloaded Linux artifacts preserve all 187 editor steps, 141 HTTP
 responses, exact supported JPEG pixels, original callbacks and visible text,
 unchanged blockers/sentinels, menus/drops and real process exit. This complete
-editor receipt retains 53 expected other-feature diagnostics.
-[Current CI receipt](baselines/windows-listing-native-ci.json).
+editor receipt retains 54 expected other-feature diagnostics. All three core
+jobs also pass the portable historical-ablation replay and corruption controls;
+CI collects no new performance samples.
+[Current CI receipt](baselines/queued-browse-lazy-native-ci.json).
 
 The rebuilt **187-step Linux editor**, four GTK menus and both native drop scales
 pass. Fourteen actual cover phases make **141 HTTP requests** across all three
@@ -200,25 +205,55 @@ twelve genuine 44,100Hz PCM packets, continuous native Opus and actual TCP/Ogg;
 independent coordinator replay matches the immutable source/original NAPI1.4
 after raw CRC validation. Both use normal CLOSE and real child cleanup. The
 declared diagnostic hook is functional evidence, not a performance build.
-Video creators, physical devices and recording success remain separate gaps.
+The narrow VideoPlayer correction also preserves CORS through its initial
+native fetch, metadata fetch and actual unchanged-resource soft loop. Actual
+original/corrected WebKit controls distinguish advancing silent playback from
+nonzero routed samples. Source-swapped resources keep their original clone
+behavior. These controls use the public VideoPlayer API through a declared
+trusted fixture; untouched Svelte video-button workflows, video pixels, physical
+devices and recording success remain separate gaps.
 [CORS correction](workers/audio-player-cors.md) and
-[full application evidence](workers/audio-context-fullfork.md).
+[full application evidence](workers/audio-context-fullfork.md),
+[VideoPlayer evidence](workers/video-player-cors.md).
 
-The integrated source checks comprise 581 full-suite passes plus three new
-effective-source identity tests. The latter reject unknown/mislabeled analyser
-code and use actual hashes rather than environment labels; the lazy candidate
-is not imported into the application. A reviewed two-Tauri release collector
-passes fourteen tests, preserving original process accounting. Clean eager/lazy
-production builds are underway with one runtime-source delta and matching
-toolchain/features/resources. No new performance sampling or improvement is
-claimed. The separate download shutdown fixture now observes actual retained
+The lazy analyser is now integrated. Eight actual immutable-source graph tests
+preserve active routing/sender/resume behavior and intentionally distinguish
+zero-context cold configuration from the original eager allocation. Separate
+isolated WebKit and full-application controls cover their declared functional
+boundaries. Effective-source identity checks reject unknown/mislabeled code.
+A reviewed two-Tauri release collector passes fourteen tests. Two immutable
+normal releases differ only in the analyser source and use matching build inputs,
+toolchains, features and resources. One warmup pair and five measured pairs
+complete with all 504 observed steady PSS snapshots covered. Median observed
+idle CPU across runs is 20.12% of one core eager versus 8.64% lazy; the median
+paired relative change is -57.74%. Median paired PSS change is -6.96 MiB.
+These are descriptive results for this software-rendered Linux empty editor:
+CPU remains an observed-process lower bound, PSS covers observed membership,
+and the fixed external Pulse provider is excluded. They establish neither a
+startup gain nor full-application/hardware/Electron performance. Actual raw
+sample arithmetic, provenance and process cleanup are independently checked
+and archived with corruption controls.
+[Measured ablation and limits](workers/audio-context-ablation.md).
+
+Native browsing now queues eight waiting admissions behind the existing two
+filesystem owners; ten live host futures cover the queue and thumbnail work.
+Actual owner gates verify capacity, original correlation, context changes,
+caller Drop and shutdown through real filesystem return/join. Two normal
+production profiles render correct Audio rows and every folder count on first
+Audio mount, using one trusted top-tab click and no All/folder retry. Both exit
+through normal CLOSE and real child cleanup. This is first Audio mount after
+the production Shows default, not an added startup preference.
+[Queue ownership](workers/browse-host-queue.md) and
+[ordinary UI evidence](workers/browse-startup.md).
+
+The separate download shutdown fixture now observes actual retained
 network and file-thread exit before strict final joins/sticky faults; all sixteen
 crate tests pass locally, with production deadlines and join order unchanged.
 The integrated production build again passes all 187 Linux editor steps, four
 menus and both actual drop scales. Independent validation preserves both JPEG
 pixel hashes, all typed metadata/folder effects and141 HTTP responses, unchanged
 blockers/sentinels and real quit, with55 expected other-feature diagnostics.
-[Current local receipt](baselines/windows-listing-audio-linux-local.json).
+[Current local receipt](baselines/queued-browse-lazy-audio-linux-local.json).
 [Collector](workers/release-ablation-collector.md) and
 [download fixture](workers/download-owner-exit-fixture.md).
 
@@ -227,7 +262,7 @@ common-picture insertion position, fixed-cover HTTP parser/date/error-rendering
 edge cases and foreign filesystem/browser behavior remain open. Actual packaged
 Electron JPEG comparisons demonstrate ordinary pure-Rust decoder pixel
 mismatches; the bounded native Linux subset above has separate source evidence.
-No new application performance gain is established.
+Whole-application performance improvement remains unproven.
 
 Retained timecode now has production main-window typed/raw IPC, exact native
 Uint8Array/IEEE hydration and a verified Linux LTC backend. One fixed supervisor

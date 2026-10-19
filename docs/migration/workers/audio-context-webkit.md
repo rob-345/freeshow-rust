@@ -1,5 +1,11 @@
 # Lazy AudioAnalyser: isolated native WebKit evidence
 
+Later [full retained-application controls](audio-context-fullfork.md) and a
+[controlled production idle ablation](audio-context-ablation.md) cover their
+separate integration and measurement boundaries. The coordinator has now
+integrated the candidate. The isolated evidence below remains unchanged and
+does not itself establish those later results.
+
 The lazy analyser candidate passes the functional browser checks below and is suitable for a later **private full-fork integration test**. This does not enable it in the coordinator workspace, establish whole-app playback/capture parity, or establish a CPU improvement. The existing root binary/cache, pinned Electron baseline and archived release binaries are untouched. No Cargo build or CPU/performance sampling ran for this slice.
 
 The worktree started at `d85dd546`. It preserves `523a4fc3` as `ec30ca83` (read-only profiling note), and the unchanged candidate `06553282` as `dbf91d8b`. Runtime scope remains only `src/frontend/audio/audioAnalyser.ts`: postpone its singleton constructor until actual use, retain cold settings without a graph, and bypass inactive cold recorder activation. Public method signatures, active source/routing/sender/processor implementations and page-lifetime ownership remain unchanged. Constructor failures move from import to first use. Source audit found no external access to its private `ac`; all direct users go through public methods. AudioPlayer/video attachment, microphone, metronome, preview, channel recording, output/live recording, routing and visualizer consumers must still be covered during final integration.
