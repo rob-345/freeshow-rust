@@ -54,6 +54,7 @@ const remoteCommands = new Set(["START", "STOP", "SERVER_DATA"])
 const midiCommands = new Set(["GET_MIDI_INPUTS", "GET_MIDI_OUTPUTS", "SEND_MIDI", "RECEIVE_MIDI", "CLOSE_MIDI"])
 const timecodeCommands = new Set(["TIMECODE_START", "TIMECODE_STOP", "TIMECODE_VALUE", "TIMECODE_STATUS", "TIMECODE_AUDIO_DATA"])
 const nowPlayingCommands = new Set(["NOW_PLAYING", "NOW_PLAYING_UNSET", "OPEN_NOW_PLAYING"])
+const spotifyCommands = new Set(["playpause", "next", "prev", "pause", "seek", "setVolume"])
 export type TimecodeTransport = Pick<TimecodeBridgeOptions, "command" | "audio" | "complete" | "retire">
 export type RemoteCompletion = (id: string, accepted: boolean) => Promise<unknown>
 export type CoverCompletion = CoverBridgeOptions["complete"]
@@ -124,7 +125,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
         return true
     }
 
-    function dispatch(event: RuntimeEvent, origin?: { channel: string; data?: any; listenerId?: string }) {
+    function dispatch(event: RuntimeEvent, origin?: { channel: string; data?: any; listenerId?: string; context?: RuntimeContext }) {
         if (event.nativeCover) {
             if (!covers) {
                 reportError({ code: "cover_unavailable", message: "Native cover notifications are unavailable in this window" }, event)
@@ -248,6 +249,19 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
             reportError({ code: "spotify_publication", message: "Native Spotify reply lacks restoration" }, event)
             return
         }
+        if (event.channel === "MAIN" && event.message.channel === "SPOTIFY_COMMAND") {
+            const captured = origin?.context
+            const same = (left?: RuntimeContext, right?: RuntimeContext) => !!left && !!right && left.runtimeId === right.runtimeId && left.libraryGeneration === right.libraryGeneration && left.dataPath === right.dataPath
+            if (!context || !event.context || event.context.runtimeId !== context.runtimeId) return
+            // Accepted controls are OS-global. A later library selection must
+            // neither cancel their effects nor retag their original callback.
+            if (origin?.channel !== "MAIN" || origin.data?.channel !== "SPOTIFY_COMMAND" || !spotifyCommands.has(origin.data?.data?.command) || !same(captured, event.context) || event.listenerId !== origin.listenerId || event.message.data !== true) {
+                reportError({ code: "spotify_command_publication", message: "Unexpected native Spotify scheduling reply" }, event)
+                return
+            }
+            deliver("MAIN", { channel: "SPOTIFY_COMMAND", data: true }, event.listenerId)
+            return
+        }
         if (event.channel === "MAIN" && event.message.channel === "AI_GET_STATUS") {
             if (!context || !event.context || event.context.runtimeId !== context.runtimeId || event.context.libraryGeneration !== context.libraryGeneration || event.context.dataPath !== context.dataPath) return
             const data = event.message.data
@@ -337,6 +351,19 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                         return
                     }
                 }
+                if (channel === "MAIN" && data?.channel === "SPOTIFY_COMMAND") {
+                    try {
+                        data = structuredClone(data)
+                    } catch {
+                        reportError({ code: "spotify_command_unsupported", message: "Spotify command payload cannot be cloned" }, { channel, data, listenerId })
+                        return
+                    }
+                    const command = data.data?.command
+                    if (!spotifyCommands.has(command) || ((command === "seek" || command === "setVolume") && (typeof data.data?.value !== "number" || !Number.isFinite(data.data.value)))) {
+                        reportError({ code: "spotify_command_unsupported", message: "A known Spotify command and primitive finite numeric value are required" }, { channel, data, listenerId })
+                        return
+                    }
+                }
                 const mediaCopy = channel === "MAIN" && ["BUNDLE_MEDIA_FILES", "MEDIA_FOLDER_COPY"].includes(data?.channel)
                 // Electron serializes at send time. Output updates often reuse
                 // mutable Svelte objects; queued cues must keep their snapshot.
@@ -421,7 +448,16 @@ export async function installRustBridge(target: Window = window) {
     const context = await tauri.core.invoke("runtime_context")
     if (!context?.runtimeId || !Number.isSafeInteger(context.libraryGeneration) || typeof context.dataPath !== "string") throw new Error("The Rust runtime context is unavailable")
     const bridge = createRustApi(
-        (request) => tauri.core.invoke("ipc_dispatch", { request }),
+        (request) => {
+            if (request.channel === "MAIN" && request.data?.channel === "SPOTIFY_COMMAND") {
+                // One snapshotted frame preserves the original numeric token;
+                // native decoding must not round it through generic Value.
+                const bytes = new TextEncoder().encode(JSON.stringify(request))
+                if (bytes.byteLength > 65536) return Promise.reject({ code: "spotify_resource_limit", message: "Spotify command frame exceeds bounds" })
+                return tauri.core.invoke("spotify_command", bytes)
+            }
+            return tauri.core.invoke("ipc_dispatch", { request })
+        },
         (error, request) => {
             console.error("FreeShow runtime request failed", { request, error })
             target.dispatchEvent(

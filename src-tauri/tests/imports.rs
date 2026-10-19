@@ -317,7 +317,7 @@ async fn pipeline_capacity_includes_prepared_waiters_and_shutdown_cancels_then_j
         "import_busy"
     );
     let importer = native.clone();
-    let shutting_down = tokio::spawn(async move { importer.shutdown().await });
+    let mut shutting_down = tokio::spawn(async move { importer.shutdown().await });
     timeout(Duration::from_secs(5), async {
         while native.status()["closing"] != true {
             tokio::task::yield_now().await;
@@ -325,8 +325,13 @@ async fn pipeline_capacity_includes_prepared_waiters_and_shutdown_cancels_then_j
     })
     .await
     .unwrap();
+    // The real library owner still holds both staged closures. Poll the actual
+    // shutdown future while they remain held: an instantaneous is_finished()
+    // check can pass merely because the shutdown observer has not run yet.
     assert!(
-        !shutting_down.is_finished(),
+        timeout(Duration::from_millis(40), &mut shutting_down)
+            .await
+            .is_err(),
         "shutdown must own retained cleanup"
     );
     release.send(()).unwrap();
@@ -341,6 +346,76 @@ async fn pipeline_capacity_includes_prepared_waiters_and_shutdown_cancels_then_j
         .unwrap();
     assert!(!context.data_path.join("Imports").exists());
     assert_eq!(fs::read_dir(staging).unwrap().count(), 0);
+}
+
+#[tokio::test]
+async fn abandoned_shutdown_observers_keep_real_queued_stages_for_terminal_retry() {
+    let (temp, library, native, staging) = setup();
+    let context = library.context().unwrap();
+    let source = bundle(temp.path(), "abandoned-observers.project");
+    let (release, owner) = pause(&library).await;
+    let mut imports = Vec::new();
+    for count in 1..=2 {
+        let importer = native.clone();
+        let ordered = library.clone();
+        let frozen = context.clone();
+        let source = source.clone();
+        imports.push(tokio::spawn(async move {
+            importer
+                .dispatch(
+                    &ordered,
+                    request("freeshow_project", &[source], &frozen),
+                    "main",
+                    |_| Ok(()),
+                )
+                .await
+        }));
+        queued(&library, count).await;
+    }
+    assert_eq!(fs::read_dir(&staging).unwrap().count(), 2);
+    let mut shutdowns = Vec::new();
+    for _ in 0..4 {
+        let importer = native.clone();
+        shutdowns.push(tokio::spawn(async move { importer.shutdown().await }));
+    }
+    timeout(Duration::from_secs(5), async {
+        while native.test_shutdown_observers() != 4 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        native.shutdown().await.unwrap_err().code,
+        "import_lifecycle_busy"
+    );
+    assert!(shutdowns.iter().all(|task| !task.is_finished()));
+    for task in shutdowns {
+        task.abort();
+        assert!(task.await.unwrap_err().is_cancelled());
+    }
+    assert_eq!(native.test_shutdown_observers(), 0);
+    assert!(timeout(Duration::from_millis(40), native.shutdown())
+        .await
+        .is_err());
+    assert_eq!(native.test_shutdown_observers(), 0);
+    assert_eq!(native.status()["admittedRequests"], 2);
+    assert_eq!(fs::read_dir(&staging).unwrap().count(), 2);
+    assert!(!context.data_path.join("Imports").exists());
+
+    release.send(()).unwrap();
+    owner.await.unwrap().unwrap();
+    for task in imports {
+        assert_eq!(task.await.unwrap().unwrap_err().code, "cancelled");
+    }
+    timeout(Duration::from_secs(5), native.shutdown())
+        .await
+        .unwrap()
+        .unwrap();
+    native.shutdown().await.unwrap();
+    assert_eq!(native.status()["admittedRequests"], 0);
+    assert_eq!(fs::read_dir(staging).unwrap().count(), 0);
+    assert!(!context.data_path.join("Imports").exists());
 }
 
 #[tokio::test]

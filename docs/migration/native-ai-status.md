@@ -11,7 +11,7 @@ selectors from truthy values that JSON would coerce to null, zero or an empty
 string. The host also validates the main window, original listener, live full
 runtime/generation/path context and explicit bounded native payload before work.
 Replies retain the original listener and ordered `{nemotron: {ready, error}}` or
-`{nemotron: {ready, message}}` shape. Only `{channel, data}` reaches the original
+`{nemotron: {ready, localPath}}` shape. Only `{channel, data}` reaches the original
 callback; native context and lifetime guards remain private.
 
 One lazy fixed filesystem thread prepares status independently of library IO.

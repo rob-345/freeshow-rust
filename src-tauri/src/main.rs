@@ -39,6 +39,7 @@ mod remote_cover_publications;
 mod remotes;
 mod scriptures;
 mod spotify;
+mod spotify_input;
 mod system;
 mod thumbnails;
 mod timecode;
@@ -128,6 +129,11 @@ fn output_status(app: tauri::AppHandle) -> Result<serde_json::Value, WireError> 
 #[tauri::command]
 fn imports_status(app: tauri::AppHandle) -> serde_json::Value {
     app.state::<AppState>().imports.status()
+}
+
+#[tauri::command]
+fn spotify_status(app: tauri::AppHandle) -> Option<freeshow_spotify::Status> {
+    app.state::<AppState>().spotify.status()
 }
 
 #[tauri::command]
@@ -787,6 +793,39 @@ fn contextual_events(
 }
 
 #[tauri::command]
+async fn spotify_command(
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+) -> Result<Vec<Event>, WireError> {
+    if window.label() != "main" {
+        return Err(WireError::new(
+            "spotify_role",
+            "Spotify controls require the main window",
+        ));
+    }
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(WireError::new(
+            "spotify_raw_body",
+            "Spotify controls require one bounded raw Request frame",
+        ));
+    };
+    let input =
+        spotify_input::parse(bytes).map_err(|error| WireError::new(error.code, error.message))?;
+    let state = window.app_handle().state::<AppState>();
+    if let Some(number) = input.number {
+        state
+            .spotify
+            .dispatch_with_number(&state.library, input.request, window.label(), number)
+            .await
+    } else {
+        state
+            .spotify
+            .dispatch(&state.library, input.request, window.label())
+            .await
+    }
+}
+
+#[tauri::command]
 async fn ipc_dispatch(
     window: tauri::WebviewWindow,
     request: Request,
@@ -1061,6 +1100,12 @@ async fn dispatch_native(
                 ));
             }
             return Ok(imported.events);
+        }
+        if command == "SPOTIFY_COMMAND" {
+            return Err(WireError::new(
+                "spotify_raw_body",
+                "Spotify controls require one bounded raw Request frame",
+            ));
         }
         if command == "SPOTIFY_GET_STATE" {
             let state = app.state::<AppState>();
@@ -2056,6 +2101,8 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             ipc_dispatch,
+            spotify_command,
+            spotify_status,
             runtime_context,
             library_status,
             output_status,

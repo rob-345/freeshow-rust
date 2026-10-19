@@ -18,6 +18,7 @@ use tokio_util::sync::CancellationToken;
 
 pub const COMMANDS: &[&str] = &["IMPORT_FILES"];
 const MAX_REQUESTS: usize = 2;
+const MAX_SHUTDOWN_OBSERVERS: usize = 4;
 
 #[derive(Debug)]
 pub struct Imported {
@@ -41,6 +42,7 @@ pub struct NativeImports {
     registry: Arc<Mutex<Registry>>,
     changed: Arc<Notify>,
     shutdown: Arc<AsyncMutex<()>>,
+    shutdown_observers: Arc<Semaphore>,
 }
 
 struct RequestLease {
@@ -105,6 +107,7 @@ impl NativeImports {
             registry: Arc::new(Mutex::new(Registry::default())),
             changed: Arc::new(Notify::new()),
             shutdown: Arc::new(AsyncMutex::new(())),
+            shutdown_observers: Arc::new(Semaphore::new(MAX_SHUTDOWN_OBSERVERS)),
         }
     }
 
@@ -269,6 +272,18 @@ impl NativeImports {
     }
 
     pub async fn shutdown(&self) -> std::result::Result<(), WireError> {
+        // Include serialized waiters in the observer bound. An abandoned
+        // observer never owns the native worker handles or accepted plans.
+        let _observer = self
+            .shutdown_observers
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| {
+                WireError::new(
+                    "import_lifecycle_busy",
+                    "Native import shutdown observers are at capacity",
+                )
+            })?;
         let _serial = self.shutdown.lock().await;
         {
             let mut registry = self
@@ -281,7 +296,10 @@ impl NativeImports {
                 token.cancel();
             }
         }
-        let first = self.service.shutdown().await;
+        // Retained host closures still own staged plans. Join preparation and
+        // fence released stages before waiting for those closures; terminal
+        // cleanup cannot join until their real plans have been disposed.
+        let first = self.service.close_preparation().await;
         loop {
             let changed = self.changed.notified();
             tokio::pin!(changed);
@@ -297,11 +315,17 @@ impl NativeImports {
             }
             changed.await;
         }
-        // The service's first fence can precede retained host plans dropping.
-        // This second fence covers their cleanup before Quit acknowledges drain.
+        // Always attempt actual cleanup-thread join, including after an earlier
+        // preparation/fence error. Neither failure may become joined success.
         let final_cleanup = self.service.shutdown().await;
         first
             .and(final_cleanup)
             .map_err(|error| WireError::new(error.code, error.message))
+    }
+
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn test_shutdown_observers(&self) -> usize {
+        MAX_SHUTDOWN_OBSERVERS - self.shutdown_observers.available_permits()
     }
 }

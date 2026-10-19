@@ -9,6 +9,7 @@ import ts from "typescript"
 import { root, upstreamFunctions } from "./oracle.mjs"
 import { corpus, generatedCorpus } from "../../crates/freeshow-exif/tools/fixtures.mjs"
 import { Driver as SpotifyDriver, sourceOracle as spotifyOracle } from "./spotify-oracle.mjs"
+import { commandOracle as spotifyCommandOracle } from "./spotify-command-oracle.mjs"
 import { catalogueOracle, assertNoCatalogueActivity } from "./provider-catalogue-oracle.mjs"
 import { oracle as aiStatusOracle } from "./ai-status-oracle.mjs"
 
@@ -65,6 +66,191 @@ const javascript = ts
     .replace('from "./spotify"', `from "${spotifyModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("Spotify controls snapshot once and preserve the actual source early scheduling callback for all six selectors", async () => {
+    const context = { runtimeId: "spotify-command", libraryGeneration: 3, dataPath: "/selected" }
+    for (const command of ["playpause", "next", "prev", "pause", "seek", "setVolume"]) {
+        const original = spotifyCommandOracle((command, callback) => callback(null, command.includes("string:'Metadata'") ? 'string "mpris:trackid" variant string "/track"' : "")),
+            messages = [],
+            errors = [],
+            requests = []
+        let reads = 0
+        const payload = {
+            channel: "SPOTIFY_COMMAND",
+            data: {
+                command,
+                get value() {
+                    reads++
+                    return 0.5000000000000001
+                },
+                nested: { sent: true }
+            }
+        }
+        const bridge = createRustApi(
+            async (request) => {
+                requests.push(request)
+                assert.equal(await original.send(request.data.data, request.listenerId), undefined)
+                return original.calls.replies.map(([channel, message, listenerId]) => ({ channel, message, listenerId, context, nativeAssets: [], privateReceipt: "omitted" }))
+            },
+            (...error) => errors.push(error),
+            context
+        )
+        assert.equal(bridge.api.send("MAIN", payload, command), undefined)
+        bridge.api.receive("MAIN", (...args) => messages.push(args))
+        payload.data.command = "unknown"
+        payload.data.nested.sent = false
+        await tick()
+        assert.equal(reads, 1, "exactly one send-time clone reads the original getter")
+        assert.equal(requests.length, 1)
+        assert.equal(requests[0].data.data.command, command)
+        assert.equal(requests[0].data.data.value, 0.5000000000000001)
+        assert.deepEqual(requests[0].data.data.nested, { sent: true })
+        assert.deepEqual(
+            messages,
+            original.calls.replies.map((reply) => reply.slice(1))
+        )
+        assert.deepEqual(Object.keys(messages[0][0]), ["channel", "data"])
+        assert.equal(messages[0].length, 2)
+        assert.equal(original.calls.commands.length, command === "seek" ? 2 : 1)
+        assert.equal(original.calls.errors, 0)
+        assert.deepEqual(errors, [])
+        assert.deepEqual(bridge.api.getRuntimeContext(), context)
+    }
+})
+
+test("Spotify numeric guards run before JSON coercion while source-ignored values remain ignored", async () => {
+    const context = { runtimeId: "spotify-primitive", libraryGeneration: 0, dataPath: "/selected" },
+        requests = [],
+        errors = []
+    const bridge = createRustApi(
+        async (request) => {
+            requests.push(request)
+            return []
+        },
+        (error) => errors.push(error),
+        context
+    )
+    for (const command of ["seek", "setVolume"]) {
+        for (const value of [undefined, null, false, "0.5", NaN, Infinity, -Infinity, new Number(0.5), [0.5], { value: 0.5 }]) bridge.api.send("MAIN", { channel: "SPOTIFY_COMMAND", data: { command, value } })
+    }
+    for (const command of ["unknown", "SEEK", null, 1]) bridge.api.send("MAIN", { channel: "SPOTIFY_COMMAND", data: { command, value: 0.5 } })
+    bridge.api.send("MAIN", { channel: "SPOTIFY_COMMAND", data: { command: "pause", value: () => {} } })
+    await tick()
+    assert.equal(requests.length, 0)
+    assert.equal(errors.length, 25)
+    assert.ok(errors.every((error) => error.code === "spotify_command_unsupported"))
+    for (const command of ["playpause", "next", "prev", "pause"]) {
+        for (const value of [undefined, null, false, "ignored", { value: 0.5 }]) bridge.api.send("MAIN", { channel: "SPOTIFY_COMMAND", data: { command, value } })
+    }
+    for (const value of [-0, 5e-324, -9.084938291167941e48]) bridge.api.send("MAIN", { channel: "SPOTIFY_COMMAND", data: { command: "setVolume", value } })
+    await tick()
+    assert.equal(requests.length, 23)
+    assert.equal(errors.length, 25)
+    assert.ok(Object.is(requests[20].data.data.value, -0))
+})
+
+test("accepted global Spotify callbacks retain their original context after selection without retagging the selected library", async () => {
+    const old = { runtimeId: "spotify-global", libraryGeneration: 2, dataPath: "/old" },
+        next = { ...old, libraryGeneration: 3, dataPath: "/new" },
+        replies = [],
+        errors = [],
+        requests = []
+    let finish
+    const bridge = createRustApi(
+        (request) => {
+            requests.push(request)
+            return new Promise((resolve) => {
+                finish = resolve
+            })
+        },
+        (error) => errors.push(error),
+        old
+    )
+    bridge.api.receive("MAIN", (...args) => replies.push(args))
+    bridge.api.send("MAIN", { channel: "SPOTIFY_COMMAND", data: { command: "seek", value: 0.5 } }, "accepted-old")
+    await tick()
+    const origin = requests[0],
+        event = { channel: "MAIN", message: { channel: "SPOTIFY_COMMAND", data: true, autoProfile: "private" }, listenerId: "accepted-old", context: old }
+    bridge.dispatch({ channel: "MAIN", message: { channel: "DATA_PATH", data: next.dataPath }, context: next }, { channel: "MAIN", data: { channel: "UPDATE_DATA_PATH" } })
+    replies.length = 0
+    for (const changed of [undefined, { ...old, libraryGeneration: 1 }, { ...old, libraryGeneration: 3 }, { ...old, dataPath: "/forged" }]) bridge.dispatch({ ...event, context: changed }, origin)
+    bridge.dispatch({ ...event, listenerId: "forged" }, origin)
+    bridge.dispatch({ ...event, message: { channel: "SPOTIFY_COMMAND", data: false } }, origin)
+    bridge.dispatch(event, { ...origin, data: { channel: "SPOTIFY_COMMAND", data: { command: "unknown" } } })
+    bridge.dispatch(event, { ...origin, context: next })
+    bridge.dispatch({ ...event, nativeSpotify: { undefinedFields: [], specialNumbers: [] } }, origin)
+    bridge.dispatch({ ...event, context: { ...old, runtimeId: "foreign" } }, origin)
+    assert.deepEqual(replies, [])
+    // Missing/foreign runtime and stale state-restoration frames are ignored;
+    // seven command-origin mismatches produce command diagnostics.
+    assert.equal(errors.length, 7)
+    assert.ok(errors.every((error) => error.code === "spotify_command_publication"))
+    finish([event])
+    await tick()
+    assert.deepEqual(replies, [[{ channel: "SPOTIFY_COMMAND", data: true }, "accepted-old"]])
+    assert.deepEqual(bridge.api.getRuntimeContext(), next)
+    assert.deepEqual(event.message, { channel: "SPOTIFY_COMMAND", data: true, autoProfile: "private" })
+    assert.equal(errors.length, 7)
+})
+
+test("installed Spotify transport carries one canonical bounded raw Request and preserves numeric tokens", async () => {
+    const context = { runtimeId: "spotify-raw", libraryGeneration: 3, dataPath: "/selected/音" },
+        calls = [],
+        replies = [],
+        errors = []
+    const target = {
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent: (event) => errors.push(event.detail),
+        __TAURI__: {
+            core: {
+                invoke: async (name, args) => {
+                    calls.push({ name, args })
+                    if (name === "runtime_context") return context
+                    if (name === "spotify_command") {
+                        assert.ok(args instanceof Uint8Array)
+                        const request = JSON.parse(new TextDecoder().decode(args))
+                        return [{ channel: "MAIN", message: { channel: "SPOTIFY_COMMAND", data: true }, listenerId: request.listenerId, context: request.context }]
+                    }
+                    return []
+                }
+            },
+            webviewWindow: { getCurrentWebviewWindow: () => ({ label: "main" }) },
+            event: { listen: async () => () => {} }
+        }
+    }
+    await installRustBridge(target)
+    target.api.receive("MAIN", (...reply) => replies.push(reply))
+    const values = [-0, 5e-324, 0.5000000000000001, -9.084938291167941e48]
+    const expected = values.map((value, index) => ({ channel: "MAIN", data: { channel: "SPOTIFY_COMMAND", data: { command: "setVolume", value } }, listenerId: "exact-" + index, context }))
+    for (const request of expected) {
+        const payload = structuredClone(request.data)
+        target.api.send("MAIN", payload, request.listenerId)
+        payload.data.value = 17
+    }
+    target.api.send("MAIN", { channel: "VERSION" }, "ordinary")
+    await tick()
+    const frames = calls.filter((call) => call.name === "spotify_command")
+    assert.equal(frames.length, values.length)
+    for (let index = 0; index < frames.length; index++) assert.equal(new TextDecoder().decode(frames[index].args), JSON.stringify(expected[index]))
+    assert.match(new TextDecoder().decode(frames[3].args), /-9\.084938291167941e\+48/)
+    assert.equal(calls.filter((call) => call.name === "ipc_dispatch").length, 1)
+    assert.deepEqual(
+        replies,
+        values.map((_, index) => [{ channel: "SPOTIFY_COMMAND", data: true }, "exact-" + index])
+    )
+    const previousError = console.error
+    try {
+        console.error = () => {}
+        target.api.send("MAIN", { channel: "SPOTIFY_COMMAND", data: { command: "pause", ignored: "x".repeat(65536) } }, "too-large")
+        await tick()
+    } finally {
+        console.error = previousError
+    }
+    assert.equal(calls.filter((call) => call.name === "spotify_command").length, values.length)
+    assert.equal(errors.length, 1)
+    assert.equal(errors[0].error.code, "spotify_resource_limit")
+})
 
 test("provider catalogue callbacks preserve actual source declarations, listeners and command snapshots through caller reuse", async () => {
     const context = { runtimeId: "catalogue-source", libraryGeneration: 3, dataPath: "/selected" }
