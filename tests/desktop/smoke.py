@@ -70,6 +70,7 @@ def run():
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     (ARTIFACTS / "ffmpeg-download.json").unlink(missing_ok=True)
     (ARTIFACTS / "now-playing-folder-alerts.json").unlink(missing_ok=True)
+    (ARTIFACTS / "ai-spotify.json").unlink(missing_ok=True)
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
     native = os.environ.get("WEBKIT_WEBDRIVER") or shutil.which("WebKitWebDriver")
     xdotool = os.environ.get("XDOTOOL") or shutil.which("xdotool")
@@ -82,6 +83,17 @@ def run():
         temp = Path(temporary)
         data_dir = temp / "selected-data"
         data_dir.mkdir()
+        # Actual process-global userData inventory, never a renderer-selected root.
+        ai_engine = temp / "app/bin/nemotron"
+        ai_fixture_files = {"README": b"Inert AI inventory fixture\n", "models/模型.bin": b"\x00\x01\x02\xff\x10"}
+        for relative, content in ai_fixture_files.items():
+            target = ai_engine / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+        ai_fixture_receipt = [{"relative":relative,"bytes":len(content),"sha256":hashlib.sha256(content).hexdigest()} for relative, content in ai_fixture_files.items()]
+        ai_ignored_root = temp / "ignored-renderer-ai-root"
+        (ai_ignored_root / "bin/nemotron").mkdir(parents=True)
+        (ai_ignored_root / "bin/nemotron/not-global").write_bytes(b"renderer decoy " * 31)
         assert shutil.which("ffmpeg") and shutil.which("ffprobe"), "Native media integration requires ffmpeg and ffprobe"
         media_fixture = temp / "原音 native probe.m4a"
         subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=8000:duration=1", "-c:a", "aac", "-b:a", "32k", "-threads", "1", "-y", str(media_fixture)], check=True, timeout=15)
@@ -249,6 +261,45 @@ def run():
             device_provider_receipts[phase] = observed
             (ARTIFACTS / "device-providers.json").write_text(json.dumps({"phases":device_provider_receipts,"rawIdentityArchived":False,"sameGlobalIdentityAcrossPhases":True},ensure_ascii=False,indent=2))
             steps.append("Retained device identity and empty stored-provider callbacks preserve persistence, context and original listener: " + phase)
+
+        ai_spotify_receipts = {}
+        def probe_ai_spotify(phase):
+            def archive():
+                (ARTIFACTS / "ai-spotify.json").write_text(json.dumps({"fixture":{"userData":str(temp / "app"),"files":ai_fixture_receipt},"phases":ai_spotify_receipts,"rawIdentityArchived":False,"spotifyStateCorpus":"actual private Linux bus ServiceUnknown only"},ensure_ascii=False,indent=2))
+            for relative, content in ai_fixture_files.items():
+                assert (ai_engine / relative).read_bytes() == content, "Global AI fixture changed across actual editor lifecycle"
+            context = invoke("runtime_context")
+            selected_decoy = Path(context["dataPath"]) / "bin/nemotron"
+            assert selected_decoy != ai_engine
+            selected_decoy.mkdir(parents=True, exist_ok=True)
+            (selected_decoy / "not-global").write_bytes(b"selected library decoy " * 19)
+            oracle_args = [os.environ.get("FREESHOW_TEST_NODE", "node"),"tests/desktop/ai_spotify_oracle.mjs",str(temp / "app"),phase]
+            expected = json.loads(subprocess.check_output(oracle_args,cwd=ROOT,env=env,text=True,timeout=15))
+            assert expected["ai"]["data"] == [{"path":str(ai_engine),"name":"nemotron","size":sum(map(len,ai_fixture_files.values()))}]
+            assert expected["spotify"]["data"] is None and expected["spotify"]["sourceNullReason"] == "ServiceUnknown"
+            ai_spotify_receipts[phase] = {"sourceBefore":expected,"pending":True}
+            archive()
+            runtime_before = script("return (window.__testRuntimeErrors || []).length")
+            observed = script((ROOT / "tests/desktop/ai_spotify_probe.js").read_text(), {"phase":phase,"ignoredRoot":str(ai_ignored_root)})
+            assert observed["context"] == observed["current"] == context == invoke("runtime_context"), observed
+            assert sorted(observed["callbacks"]) == ["AI_GET_BIN","SPOTIFY_GET_STATE"], observed
+            assert observed["sendUndefined"] == {"AI_GET_BIN":True,"SPOTIFY_GET_STATE":True}, observed
+            for command, key in [("AI_GET_BIN","ai"),("SPOTIFY_GET_STATE","spotify")]:
+                actual, original = observed[key], expected[key]
+                assert actual["data"] == original["data"], (command,actual,original)
+                assert actual["messageKeys"] == original["messageKeys"] == ["channel","data"], actual
+                assert actual["listener"] == original["listener"] and actual["args"] == 2, actual
+                assert actual["callbackContext"] == context, actual
+            assert observed["ai"]["rowKeys"] == expected["ai"]["rowKeys"] == [["path","name","size"]]
+            confirmed = json.loads(subprocess.check_output(oracle_args,cwd=ROOT,env=env,text=True,timeout=15))
+            assert confirmed == expected, "Actual original source or private bus changed around native callbacks"
+            command_errors = script("return (window.__testRuntimeErrors || []).slice(arguments[0]).filter(entry=>['AI_GET_BIN','SPOTIFY_GET_STATE'].includes(entry.request?.data?.channel || entry.request?.message?.channel))", runtime_before)
+            assert command_errors == [], command_errors
+            for relative, content in ai_fixture_files.items():
+                assert (ai_engine / relative).read_bytes() == content
+            ai_spotify_receipts[phase] = {"sourceBefore":expected,"nativeCallbacks":observed,"sourceAfter":confirmed,"fixtureBytesUnchanged":True,"commandRuntimeErrors":0,"pending":False}
+            archive()
+            steps.append("Retained AI inventory and genuine Linux Spotify service-null match immutable source callbacks, native global root, void send and current context: " + phase)
 
         def output_handle(output_id):
             registry = invoke("output_status")
@@ -447,6 +498,7 @@ def run():
             (ARTIFACTS / "saved.show").write_text(json.dumps(saved, ensure_ascii=False, indent=2))
             assert script("return window.__testErrors") == []
             probe_device_providers("normal")
+            probe_ai_spotify("normal")
             # Restart the actual application with the same profile and data.
             http("DELETE", f"/session/{session}")
             session = None
@@ -488,6 +540,7 @@ def run():
             wait(lambda: script("return window.__selectedRoot === arguments[0]", str(data_dir)), "Selected data library reopened after restart")
             attach_errors()
             probe_device_providers("restarted")
+            probe_ai_spotify("restarted")
             configured_media_folder = data_dir.parent / "Native media folder 敬拜"
             media_folder_reset = script("""
                 return (async()=>{
@@ -909,7 +962,9 @@ def run():
                 assert observed["status"]["admittedRequests"] == observed["status"]["readyUncollected"] == 0, observed
                 installed = temp / "app/bin/ffmpeg"
                 assert installed.read_bytes() == inert_download and installed.stat().st_mode & 0o777 == 0o755
-                assert all(path.name == "ffmpeg" for path in installed.parent.iterdir()), list(installed.parent.iterdir())
+                assert {path.name for path in installed.parent.iterdir()} == {"ffmpeg","nemotron"}, list(installed.parent.iterdir())
+                for relative, content in ai_fixture_files.items():
+                    assert (ai_engine / relative).read_bytes() == content, "Download changed the preexisting AI fixture"
                 assert not (Path(observed["context"]["dataPath"]) / "bin/ffmpeg").exists()
                 assert download_requests == ["/inert-ffmpeg.gz"] * (len(download_receipts) + 1), download_requests
                 download_receipts[phase] = {"native":observed,"sha256":hashlib.sha256(installed.read_bytes()).hexdigest(),"mode":installed.stat().st_mode & 0o777,"requests":list(download_requests),"inert":True}
@@ -1319,6 +1374,7 @@ def run():
             probe_remotes('switched','Second library lyric')
             switched_cover_context = invoke("runtime_context")
             probe_device_providers("switched")
+            probe_ai_spotify("switched")
             assert switched_cover_context != old_context and old_cover_sentinel.read_bytes() == old_cover_bytes
             assert not (Path(switched_cover_context["dataPath"]) / "Audio/NowPlayingCover.png").exists()
             switched_cover = probe_selected_cover("switched-library")
