@@ -2,6 +2,41 @@
 
 Status: **active, incomplete**. Full feature parity and application performance improvement have not been demonstrated. The complete parity gate intentionally fails.
 
+The latest local milestone binds `MAIN.AI_GET_BIN` and Linux
+`MAIN.SPOTIFY_GET_STATE` to separate lazy, fixed native owners. Four complete
+leases retain real work/results through native event encoding; actual shutdown
+joins and full request-context checks survive caller cancellation and library
+selection. AI metadata completes during a held library commit.
+Spotify adds seven actual private-bus host scenarios/source comparisons and
+preserves own undefined/IEEE values through the retained bridge. A reproduced
+mutable-command regression now has send-time snapshotting and rejection controls.
+The bounded ChurchApps show-builder foundation joins the root workspace while
+provider network/import effects remain unimplemented.
+[Contracts and limits](native-ai-spotify.md).
+
+Current local verification passes **563 Rust checks** (560 full-workspace plus
+three added portable fixture controls), **645 source Node checks** and **20
+frontend checks**, plus **378 native entry executions** (375 full-suite plus
+three new Spotify entries; seven actual supervised child scenarios are reported
+separately). Five Rust supervisor fixtures and five source platform/capability
+skips retain their explicit treatment. Strict native/workspace Clippy, focused
+Darwin cross-Clippy, frontend/normal binary builds and source snapshot pass.
+The isolated normal Linux binary passes **193 editor steps, four GTK menu cases
+and both drag-and-drop scales**. Three actual source/native AI/Spotify phases
+preserve nonempty inventory, absent-service Spotify null, original callbacks,
+listeners and context across real restart and library selection. Independent
+cover/JPEG/folder/quit checks pass; **49 other editor diagnostics remain**.
+[Local receipt](baselines/ai-spotify-linux-local.json).
+
+Published `07c89581` has four actual Linux/Windows CI successes. Its macOS retry
+exposed a shared `/dev/null` timestamp race in the source fixture; this is
+recorded as failure. The correction brackets only actually changed shared-device
+times with two source observations while preserving exact stable/private bits.
+Three portable corruption controls and strict Darwin cross-Clippy pass; the
+corrected actual Darwin test and new bindings need the next six-job CI run.
+[CI observations](baselines/device-provider-ci-observations.json) and
+[fixture correction](workers/macos-live-device-fixture.md).
+
 `MAIN.DEVICE_ID` now preserves the global configuration identity through the
 existing ordered owner, actual legacy/UUID preparation and real setter return.
 Four complete leases survive accepted observer Drop/deadlines and CLOSE sealing.
@@ -23,7 +58,7 @@ moves to partial for this indication only. Authentication, refresh, real backend
 availability and service imports remain incomplete.
 [Host](workers/provider-connections-host.md) and [source contract](workers/provider-connections.md).
 
-The latest normal root-workspace binary passes all **190 Linux editor steps**,
+The preceding normal root-workspace binary passed all **190 Linux editor steps**,
 four GTK menus and both drop scales. Retained Device ID/provider callbacks pass
 before restart, after actual restart and after a real library switch; the same
 global identity remains persisted, raw identity bytes are absent from the saved
@@ -77,7 +112,7 @@ survives actual consumer destruction; its Windows CI fixture waits for real
 reply-frame disposal. Controlled negative tests detect the old behavior.
 No whole-application CPU improvement is claimed.
 
-The current integration passes **520 Rust + 610 pinned-Node + 20 frontend
+The preceding Device ID integration passed **520 Rust + 610 pinned-Node + 20 frontend
 checks** (1,150), plus **369 native executions** (356 host integration and thirteen
 desktop binary unit cases, including shared cases repeated by importing targets).
 Five ignored Rust subprocess entry fixtures are driven by supervisor tests;

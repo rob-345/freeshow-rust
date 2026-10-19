@@ -1,0 +1,1382 @@
+{
+  "schemaVersion": 1,
+  "upstream": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+  "platform": "Linux x86_64, WebKitGTK, private Xvfb/session bus",
+  "runtimeSourceCommit": "53932c3bb547d8e0b9160ef1aa813d71546d6359",
+  "frontendSourceCommit": "c316b01268d51fc3dda4290ccce5e4a582103c24",
+  "desktopFixtureCommit": "7875418f5d4e80dfd3f8ec7fe35c8023b702dcd9",
+  "normalBinary": {
+    "path": "/mnt/data/cache/freeshow-rust-build/provider-foundations/final-normal-binary/target/debug/freeshow-desktop",
+    "bytes": 109486840,
+    "sha256": "d25184214822e733eebe95653210d021ea5b35564ee4bd1c3b89f4704e384ea2",
+    "features": [
+      "custom-protocol"
+    ],
+    "browseFeatures": [],
+    "diagnosticFrontend": false,
+    "isolatedFromCargoWrites": true,
+    "resources": [
+      {
+        "path": "remotes/controller/client.js",
+        "bytes": 120451,
+        "sha256": "4e97dd9fbbb85433250bbf1dffdf9eff959f554ceeee0a345fd06f7047ac8cbc"
+      },
+      {
+        "path": "remotes/controller/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "remotes/controller/index.html",
+        "bytes": 724,
+        "sha256": "7ee566ef9c0d705f074842b863fc404d18eda59654f8530ea9d867db082da4b8"
+      },
+      {
+        "path": "remotes/controller/manifest.json",
+        "bytes": 1140,
+        "sha256": "bd378c1db5f22dcb57c29df7983532fc3283544ceae14fe1f08bd91cc4c93cdb"
+      },
+      {
+        "path": "remotes/controller/styles.css",
+        "bytes": 5119,
+        "sha256": "5c9c7e953558697b67c144cf1094ba8a9190d5b62cf6126f8fe9583db0ed7d61"
+      },
+      {
+        "path": "remotes/controller/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      },
+      {
+        "path": "remotes/remote/client.js",
+        "bytes": 538536,
+        "sha256": "54548607c0d8d67b1e853d3d92c9316bee67c8ec1cfaad44adc6d238310851fc"
+      },
+      {
+        "path": "remotes/remote/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "remotes/remote/index.html",
+        "bytes": 759,
+        "sha256": "dfeaf0799c8cf595653ff1ec7c05704a7ad4ba61e2d5dc51417c644e98a54a4d"
+      },
+      {
+        "path": "remotes/remote/manifest.json",
+        "bytes": 1123,
+        "sha256": "6c97e0daf5743cc7268ddb429462ef1825306c5021b3122c541a55c2e96b948e"
+      },
+      {
+        "path": "remotes/remote/styles.css",
+        "bytes": 95888,
+        "sha256": "ff952338033431b584c665f440048d0d1ba8235b7d2529ec5e45ccfdffcac1d2"
+      },
+      {
+        "path": "remotes/remote/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      },
+      {
+        "path": "remotes/stage/client.js",
+        "bytes": 237034,
+        "sha256": "2bdbe95ae3c8b4ca22125fb050609e01cd38d3e42defca5eb155e2ba071e135a"
+      },
+      {
+        "path": "remotes/stage/html/navigation.js",
+        "bytes": 8635,
+        "sha256": "7f47e63c0e048addfc9794d8cdb33dc5e15e8888b52f07cd37ff0a641a7f71a1"
+      },
+      {
+        "path": "remotes/stage/html/show.css",
+        "bytes": 1643,
+        "sha256": "7c9b53c6416c8a51afc3af78b475b459cc3034ba320f45dbaa54c0d42d20a177"
+      },
+      {
+        "path": "remotes/stage/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "remotes/stage/index.html",
+        "bytes": 719,
+        "sha256": "602201ef24291a61b7bd37b5a7f275a2853041f386fcfbefafcaa94e3f18c7af"
+      },
+      {
+        "path": "remotes/stage/manifest.json",
+        "bytes": 1128,
+        "sha256": "f18464a42544a481e82863733c785c03912884c772f8c9afe1af27e6ceca2bd0"
+      },
+      {
+        "path": "remotes/stage/styles.css",
+        "bytes": 20200,
+        "sha256": "4b2d6d2163081aab0044825c8bafe49ce242290699349b79d64f4f2051642bb4"
+      },
+      {
+        "path": "remotes/stage/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      }
+    ]
+  },
+  "checks": {
+    "workspaceFull": {
+      "passed": 560,
+      "failed": 0,
+      "ignored": 5
+    },
+    "addedPortableDarwinControls": 3,
+    "distinctRustChecks": 563,
+    "nativeFull": {
+      "passed": 375,
+      "failed": 0,
+      "ignored": 0
+    },
+    "newNativeSpotifyEntries": {
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    "nativeEntryExecutions": 378,
+    "supervisedNativeSpotifyScenarios": 7,
+    "supervisedPinnedSourceComparisons": 7,
+    "node": {
+      "tests": 650,
+      "pass": 645,
+      "fail": 0,
+      "skipped": 5,
+      "cancelled": 0
+    },
+    "frontendPassed": 20,
+    "strictWorkspaceAndNativeAllTargetClippy": true,
+    "focusedLinuxAndDarwinCrossClippy": true,
+    "sourceSnapshotAndFormatting": true,
+    "fullParityGate": "expected failure; migration incomplete"
+  },
+  "gui": {
+    "editorSteps": 193,
+    "nativeMenus": 4,
+    "dropScales": [
+      1,
+      2
+    ],
+    "normalQuitProcessExited": true,
+    "aiSpotifySourceCallbacks": {
+      "fixture": {
+        "userData": "/tmp/freeshow-desktop-test-bqe3twia/app",
+        "files": [
+          {
+            "relative": "README",
+            "bytes": 27,
+            "sha256": "2309242e6c36479d3555cc5023a4974750b6d2d4083d5426104335e786ccfe51"
+          },
+          {
+            "relative": "models/模型.bin",
+            "bytes": 5,
+            "sha256": "776b66ccb941608c8b038c22e8649651145a42a74f4a8dd08e7e1e4b3a405c2b"
+          }
+        ]
+      },
+      "phases": {
+        "normal": {
+          "sourceBefore": {
+            "phase": "normal",
+            "ai": {
+              "data": [
+                {
+                  "path": "/tmp/freeshow-desktop-test-bqe3twia/app/bin/nemotron",
+                  "name": "nemotron",
+                  "size": 32
+                }
+              ],
+              "rowKeys": [
+                [
+                  "path",
+                  "name",
+                  "size"
+                ]
+              ],
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-normal-AI_GET_BIN"
+            },
+            "spotify": {
+              "data": null,
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-normal-SPOTIFY_GET_STATE",
+              "sourceNullReason": "ServiceUnknown",
+              "callbackCount": 1,
+              "sourceConsoleErrors": 0,
+              "sourceShellWaited": true,
+              "processExit": {
+                "code": 1,
+                "signal": null
+              },
+              "before": {
+                "nameHasOwner": false,
+                "activatable": false
+              },
+              "after": {
+                "nameHasOwner": false,
+                "activatable": false
+              }
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "node": "22.21.1",
+              "managerSha256": "8f015d524d7f14ac536033530a15407989033556be3ac1c21ca3f0c265b1f80b",
+              "folderFunctionSha256": "5d68a709d96083c42805dd8649af0ea30e03ddb377227224db852ab19db2109a",
+              "spotifyHelperSha256": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+              "dbusSendSha256": "ae37b272dad147c4f47e55db7595bc2892867fe5f86b11349e9ab6caf71e3ffd"
+            },
+            "rawIdentityArchived": false
+          },
+          "nativeCallbacks": {
+            "rawIdentityArchived": false,
+            "spotify": {
+              "listener": "ai-spotify-probe-normal-SPOTIFY_GET_STATE",
+              "args": 2,
+              "data": null,
+              "callbackContext": {
+                "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/selected-data",
+                "libraryGeneration": 1,
+                "runtimeId": "a13acf94-e543-444f-9061-c3ef517874b5"
+              },
+              "messageKeys": [
+                "channel",
+                "data"
+              ]
+            },
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/selected-data",
+              "libraryGeneration": 1,
+              "runtimeId": "a13acf94-e543-444f-9061-c3ef517874b5"
+            },
+            "phase": "normal",
+            "callbacks": [
+              "AI_GET_BIN",
+              "SPOTIFY_GET_STATE"
+            ],
+            "current": {
+              "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/selected-data",
+              "libraryGeneration": 1,
+              "runtimeId": "a13acf94-e543-444f-9061-c3ef517874b5"
+            },
+            "sendUndefined": {
+              "SPOTIFY_GET_STATE": true,
+              "AI_GET_BIN": true
+            },
+            "ai": {
+              "args": 2,
+              "data": [
+                {
+                  "size": 32,
+                  "name": "nemotron",
+                  "path": "/tmp/freeshow-desktop-test-bqe3twia/app/bin/nemotron"
+                }
+              ],
+              "rowKeys": [
+                [
+                  "path",
+                  "name",
+                  "size"
+                ]
+              ],
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "listener": "ai-spotify-probe-normal-AI_GET_BIN",
+              "callbackContext": {
+                "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/selected-data",
+                "libraryGeneration": 1,
+                "runtimeId": "a13acf94-e543-444f-9061-c3ef517874b5"
+              }
+            }
+          },
+          "sourceAfter": {
+            "phase": "normal",
+            "ai": {
+              "data": [
+                {
+                  "path": "/tmp/freeshow-desktop-test-bqe3twia/app/bin/nemotron",
+                  "name": "nemotron",
+                  "size": 32
+                }
+              ],
+              "rowKeys": [
+                [
+                  "path",
+                  "name",
+                  "size"
+                ]
+              ],
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-normal-AI_GET_BIN"
+            },
+            "spotify": {
+              "data": null,
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-normal-SPOTIFY_GET_STATE",
+              "sourceNullReason": "ServiceUnknown",
+              "callbackCount": 1,
+              "sourceConsoleErrors": 0,
+              "sourceShellWaited": true,
+              "processExit": {
+                "code": 1,
+                "signal": null
+              },
+              "before": {
+                "nameHasOwner": false,
+                "activatable": false
+              },
+              "after": {
+                "nameHasOwner": false,
+                "activatable": false
+              }
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "node": "22.21.1",
+              "managerSha256": "8f015d524d7f14ac536033530a15407989033556be3ac1c21ca3f0c265b1f80b",
+              "folderFunctionSha256": "5d68a709d96083c42805dd8649af0ea30e03ddb377227224db852ab19db2109a",
+              "spotifyHelperSha256": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+              "dbusSendSha256": "ae37b272dad147c4f47e55db7595bc2892867fe5f86b11349e9ab6caf71e3ffd"
+            },
+            "rawIdentityArchived": false
+          },
+          "fixtureBytesUnchanged": true,
+          "commandRuntimeErrors": 0,
+          "pending": false
+        },
+        "restarted": {
+          "sourceBefore": {
+            "phase": "restarted",
+            "ai": {
+              "data": [
+                {
+                  "path": "/tmp/freeshow-desktop-test-bqe3twia/app/bin/nemotron",
+                  "name": "nemotron",
+                  "size": 32
+                }
+              ],
+              "rowKeys": [
+                [
+                  "path",
+                  "name",
+                  "size"
+                ]
+              ],
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-restarted-AI_GET_BIN"
+            },
+            "spotify": {
+              "data": null,
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-restarted-SPOTIFY_GET_STATE",
+              "sourceNullReason": "ServiceUnknown",
+              "callbackCount": 1,
+              "sourceConsoleErrors": 0,
+              "sourceShellWaited": true,
+              "processExit": {
+                "code": 1,
+                "signal": null
+              },
+              "before": {
+                "nameHasOwner": false,
+                "activatable": false
+              },
+              "after": {
+                "nameHasOwner": false,
+                "activatable": false
+              }
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "node": "22.21.1",
+              "managerSha256": "8f015d524d7f14ac536033530a15407989033556be3ac1c21ca3f0c265b1f80b",
+              "folderFunctionSha256": "5d68a709d96083c42805dd8649af0ea30e03ddb377227224db852ab19db2109a",
+              "spotifyHelperSha256": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+              "dbusSendSha256": "ae37b272dad147c4f47e55db7595bc2892867fe5f86b11349e9ab6caf71e3ffd"
+            },
+            "rawIdentityArchived": false
+          },
+          "nativeCallbacks": {
+            "rawIdentityArchived": false,
+            "spotify": {
+              "listener": "ai-spotify-probe-restarted-SPOTIFY_GET_STATE",
+              "args": 2,
+              "data": null,
+              "callbackContext": {
+                "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "6b9a45f5-80a9-40ca-9877-d03d8ed5e575"
+              },
+              "messageKeys": [
+                "channel",
+                "data"
+              ]
+            },
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "6b9a45f5-80a9-40ca-9877-d03d8ed5e575"
+            },
+            "phase": "restarted",
+            "callbacks": [
+              "AI_GET_BIN",
+              "SPOTIFY_GET_STATE"
+            ],
+            "current": {
+              "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "6b9a45f5-80a9-40ca-9877-d03d8ed5e575"
+            },
+            "sendUndefined": {
+              "SPOTIFY_GET_STATE": true,
+              "AI_GET_BIN": true
+            },
+            "ai": {
+              "args": 2,
+              "data": [
+                {
+                  "size": 32,
+                  "name": "nemotron",
+                  "path": "/tmp/freeshow-desktop-test-bqe3twia/app/bin/nemotron"
+                }
+              ],
+              "rowKeys": [
+                [
+                  "path",
+                  "name",
+                  "size"
+                ]
+              ],
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "listener": "ai-spotify-probe-restarted-AI_GET_BIN",
+              "callbackContext": {
+                "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "6b9a45f5-80a9-40ca-9877-d03d8ed5e575"
+              }
+            }
+          },
+          "sourceAfter": {
+            "phase": "restarted",
+            "ai": {
+              "data": [
+                {
+                  "path": "/tmp/freeshow-desktop-test-bqe3twia/app/bin/nemotron",
+                  "name": "nemotron",
+                  "size": 32
+                }
+              ],
+              "rowKeys": [
+                [
+                  "path",
+                  "name",
+                  "size"
+                ]
+              ],
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-restarted-AI_GET_BIN"
+            },
+            "spotify": {
+              "data": null,
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-restarted-SPOTIFY_GET_STATE",
+              "sourceNullReason": "ServiceUnknown",
+              "callbackCount": 1,
+              "sourceConsoleErrors": 0,
+              "sourceShellWaited": true,
+              "processExit": {
+                "code": 1,
+                "signal": null
+              },
+              "before": {
+                "nameHasOwner": false,
+                "activatable": false
+              },
+              "after": {
+                "nameHasOwner": false,
+                "activatable": false
+              }
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "node": "22.21.1",
+              "managerSha256": "8f015d524d7f14ac536033530a15407989033556be3ac1c21ca3f0c265b1f80b",
+              "folderFunctionSha256": "5d68a709d96083c42805dd8649af0ea30e03ddb377227224db852ab19db2109a",
+              "spotifyHelperSha256": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+              "dbusSendSha256": "ae37b272dad147c4f47e55db7595bc2892867fe5f86b11349e9ab6caf71e3ffd"
+            },
+            "rawIdentityArchived": false
+          },
+          "fixtureBytesUnchanged": true,
+          "commandRuntimeErrors": 0,
+          "pending": false
+        },
+        "switched": {
+          "sourceBefore": {
+            "phase": "switched",
+            "ai": {
+              "data": [
+                {
+                  "path": "/tmp/freeshow-desktop-test-bqe3twia/app/bin/nemotron",
+                  "name": "nemotron",
+                  "size": 32
+                }
+              ],
+              "rowKeys": [
+                [
+                  "path",
+                  "name",
+                  "size"
+                ]
+              ],
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-switched-AI_GET_BIN"
+            },
+            "spotify": {
+              "data": null,
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-switched-SPOTIFY_GET_STATE",
+              "sourceNullReason": "ServiceUnknown",
+              "callbackCount": 1,
+              "sourceConsoleErrors": 0,
+              "sourceShellWaited": true,
+              "processExit": {
+                "code": 1,
+                "signal": null
+              },
+              "before": {
+                "nameHasOwner": false,
+                "activatable": false
+              },
+              "after": {
+                "nameHasOwner": false,
+                "activatable": false
+              }
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "node": "22.21.1",
+              "managerSha256": "8f015d524d7f14ac536033530a15407989033556be3ac1c21ca3f0c265b1f80b",
+              "folderFunctionSha256": "5d68a709d96083c42805dd8649af0ea30e03ddb377227224db852ab19db2109a",
+              "spotifyHelperSha256": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+              "dbusSendSha256": "ae37b272dad147c4f47e55db7595bc2892867fe5f86b11349e9ab6caf71e3ffd"
+            },
+            "rawIdentityArchived": false
+          },
+          "nativeCallbacks": {
+            "rawIdentityArchived": false,
+            "spotify": {
+              "listener": "ai-spotify-probe-switched-SPOTIFY_GET_STATE",
+              "args": 2,
+              "data": null,
+              "callbackContext": {
+                "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/other-library",
+                "libraryGeneration": 1,
+                "runtimeId": "6b9a45f5-80a9-40ca-9877-d03d8ed5e575"
+              },
+              "messageKeys": [
+                "channel",
+                "data"
+              ]
+            },
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "6b9a45f5-80a9-40ca-9877-d03d8ed5e575"
+            },
+            "phase": "switched",
+            "callbacks": [
+              "AI_GET_BIN",
+              "SPOTIFY_GET_STATE"
+            ],
+            "current": {
+              "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "6b9a45f5-80a9-40ca-9877-d03d8ed5e575"
+            },
+            "sendUndefined": {
+              "SPOTIFY_GET_STATE": true,
+              "AI_GET_BIN": true
+            },
+            "ai": {
+              "args": 2,
+              "data": [
+                {
+                  "size": 32,
+                  "name": "nemotron",
+                  "path": "/tmp/freeshow-desktop-test-bqe3twia/app/bin/nemotron"
+                }
+              ],
+              "rowKeys": [
+                [
+                  "path",
+                  "name",
+                  "size"
+                ]
+              ],
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "listener": "ai-spotify-probe-switched-AI_GET_BIN",
+              "callbackContext": {
+                "dataPath": "/tmp/freeshow-desktop-test-bqe3twia/other-library",
+                "libraryGeneration": 1,
+                "runtimeId": "6b9a45f5-80a9-40ca-9877-d03d8ed5e575"
+              }
+            }
+          },
+          "sourceAfter": {
+            "phase": "switched",
+            "ai": {
+              "data": [
+                {
+                  "path": "/tmp/freeshow-desktop-test-bqe3twia/app/bin/nemotron",
+                  "name": "nemotron",
+                  "size": 32
+                }
+              ],
+              "rowKeys": [
+                [
+                  "path",
+                  "name",
+                  "size"
+                ]
+              ],
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-switched-AI_GET_BIN"
+            },
+            "spotify": {
+              "data": null,
+              "messageKeys": [
+                "channel",
+                "data"
+              ],
+              "outer": "MAIN",
+              "listener": "ai-spotify-probe-switched-SPOTIFY_GET_STATE",
+              "sourceNullReason": "ServiceUnknown",
+              "callbackCount": 1,
+              "sourceConsoleErrors": 0,
+              "sourceShellWaited": true,
+              "processExit": {
+                "code": 1,
+                "signal": null
+              },
+              "before": {
+                "nameHasOwner": false,
+                "activatable": false
+              },
+              "after": {
+                "nameHasOwner": false,
+                "activatable": false
+              }
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "node": "22.21.1",
+              "managerSha256": "8f015d524d7f14ac536033530a15407989033556be3ac1c21ca3f0c265b1f80b",
+              "folderFunctionSha256": "5d68a709d96083c42805dd8649af0ea30e03ddb377227224db852ab19db2109a",
+              "spotifyHelperSha256": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+              "dbusSendSha256": "ae37b272dad147c4f47e55db7595bc2892867fe5f86b11349e9ab6caf71e3ffd"
+            },
+            "rawIdentityArchived": false
+          },
+          "fixtureBytesUnchanged": true,
+          "commandRuntimeErrors": 0,
+          "pending": false
+        }
+      },
+      "rawIdentityArchived": false,
+      "spotifyStateCorpus": "actual private Linux bus ServiceUnknown only"
+    },
+    "independentAiSpotify": {
+      "phases": 3,
+      "fixtureBytes": 32,
+      "rowsPerPhase": 1,
+      "sourceAndNativeExactRowsAndKeyOrder": true,
+      "spotifySourceNullReason": "ServiceUnknown",
+      "sourceShellsWaited": 6,
+      "nativeCommandErrors": 0,
+      "originalVoidAndListenerPreserved": true,
+      "exactCallbackEnvelopeAndPrivateFieldOmission": true,
+      "actualRestartAndLibrarySwitch": true,
+      "finalQuitExited": true,
+      "fullEditorDiagnostics": 49,
+      "scope": "Actual isolated normal Linux editor plus six real immutable-source queries around three retained callback phases. Inventory is metadata only; Spotify corpus is absent-service null only. Separate native/private-bus suites cover non-null state and cancellation. No usable-model, account, foreign GUI or performance claim."
+    },
+    "independentNowPlaying": {
+      "run": "local",
+      "sha": "53932c3b",
+      "editorSteps": 193,
+      "ordinaryNowPlaying": 6,
+      "folderPhases": 3,
+      "metadataAndFolderCounts": [
+        [
+          1,
+          4,
+          0
+        ],
+        [
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          1,
+          1
+        ]
+      ],
+      "nativeMenus": 4,
+      "dropScales": [
+        1,
+        2
+      ],
+      "processExited": true,
+      "fullEditorDiagnostics": 49,
+      "scope": "Actual local Linux receipts: exact source/native typed values excluding root picture position, exact folder callback/visible text, unchanged blocker hash, actual admitted/completed advances, ordinary idle and no reveal advance. No PNG encoded parity, global zero-error or per-operation terminal join claimed."
+    },
+    "independentCoverHttp": {
+      "editorSteps": 193,
+      "menus": 4,
+      "dropScales": [
+        1,
+        2
+      ],
+      "coverPhases": 14,
+      "httpRequests": 141,
+      "httpStatusCounts": {
+        "200": 60,
+        "404": 63,
+        "206": 9,
+        "304": 9
+      },
+      "exactOriginalFolderAlerts": 3,
+      "coverRuntimeErrors": 0,
+      "coverBrowserErrors": 0,
+      "sourceAcks": 0,
+      "finalRetentionVerifiedZero": true,
+      "unchangedBlockerAndOldLibraryCoverHashesVerified": true,
+      "fullEditorDiagnostics": 49,
+      "processExited": true,
+      "scope": "Actual rebuilt Linux desktop, independent HTTP/file-byte checks and retained original UI callbacks/visible message. Zero counters are observed ordinary disposal, not per-operation IO-thread join or peer-receipt proof; separate native STOP/Weak test checks actual source lifetime. Full parity/performance remains unproven."
+    },
+    "independentJpegPixels": {
+      "recordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+      "cases": [
+        {
+          "id": "jpeg-apic",
+          "width": 17,
+          "height": 11,
+          "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+          "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+          "nativePngBytes": 518,
+          "compressedPngBytesEqualObserved": false,
+          "fullSourceSetCompared": true,
+          "actualFilesystemRead": true,
+          "unsetVerified": true
+        },
+        {
+          "id": "jpeg-flac",
+          "width": 64,
+          "height": 48,
+          "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+          "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+          "nativePngBytes": 8138,
+          "compressedPngBytesEqualObserved": false,
+          "fullSourceSetCompared": true,
+          "actualFilesystemRead": true,
+          "unsetVerified": true
+        }
+      ],
+      "scope": "Actual migrated WebKit metadata/counters/filesystem receipts checked against actual packaged Electron recording; exact RGBA, not compressed bytes or unrestricted format support."
+    },
+    "diagnostics": {
+      "count": 49,
+      "byCommand": [
+        {
+          "channel": "MAIN",
+          "command": "GET_MIDI_INPUTS",
+          "code": "midi_backend_unavailable",
+          "count": 2
+        },
+        {
+          "channel": "MAIN",
+          "command": "GET_MIDI_OUTPUTS",
+          "code": "midi_backend_unavailable",
+          "count": 2
+        },
+        {
+          "channel": "MAIN",
+          "command": "SAVE",
+          "code": "io_error",
+          "count": 1
+        },
+        {
+          "channel": "MAIN",
+          "command": "SAVE",
+          "code": "stale_library",
+          "count": 1
+        },
+        {
+          "channel": "NOW_PLAYING",
+          "command": null,
+          "code": "cover_unsupported",
+          "count": 1
+        },
+        {
+          "channel": "OUTPUT",
+          "command": "CAPTURE",
+          "code": "unsupported_command",
+          "count": 19
+        },
+        {
+          "channel": "OUTPUT",
+          "command": "SET_VALUE",
+          "code": "unsupported_command",
+          "count": 8
+        },
+        {
+          "channel": "REMOTE",
+          "command": "ACTIONS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "ACTION_TAGS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "AUDIO_CHANNELS_DATA",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "AUDIO_ROUTING",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "FOLDERS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "PROJECT",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "SCRIPTURE",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "TIMERS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "TIMER_TAGS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "VARIABLES",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "VARIABLE_TAGS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "STAGE",
+          "command": "EVENTS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "STAGE",
+          "command": "METRONOME",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "STAGE",
+          "command": "TIMERS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "STAGE",
+          "command": "VARIABLES",
+          "code": "stale_generation",
+          "count": 1
+        }
+      ]
+    }
+  },
+  "regressions": {
+    "spotifyOrigin": "Actual mutation test fails against the old by-reference command; both pre-transport and pending-reply mutations pass after source-compatible send-time structured cloning.",
+    "darwinDeviceFixture": "Actual previous CI failed on independently changing /dev/null mtime. Only changed shared-device timestamps use source-before/native/source-after bracketing; private/stable fields remain exact captured bits. Three portable corruption controls and cross-Clippy pass; actual corrected Darwin runtime awaits CI.",
+    "spotifyLifecycle": "Real startup/reprobe child panic, held native post-done frame, caller Drop, guarded receipts, context retirement and actual native joins covered separately; no TLS-destructor claim."
+  },
+  "rejectedGuiRuns": [
+    "Preflight missing tauri-driver in PATH; explicit native driver fixed before app launch.",
+    "Concurrent native test build replaced Cargo executable during GUI process tracking; run rejected and actual owned app cleanup checked.",
+    "Relocated copied binary initially lacked Tauri resource layout; both failed startup receipts retained. Final immutable normal copy retains native target/debug resource resolution and exact20 resource files."
+  ],
+  "archive": {
+    "path": "/mnt/data/cache/freeshow-rust-build/provider-foundations/gui-final-normal-53932c3b",
+    "files": [
+      {
+        "path": "desktop/ai-spotify.json",
+        "bytes": 17515,
+        "sha256": "d14a1d71968ca217849d8ea8f653334e9038f42ee6b08ea9ec3104b53c4ae27d"
+      },
+      {
+        "path": "desktop/api.json",
+        "bytes": 43872,
+        "sha256": "ff7ea0e9ec61f30611733b263bb5dc941e5b05a9b1c0346e1ed23d23cb53a39c"
+      },
+      {
+        "path": "desktop/assets.json",
+        "bytes": 3022,
+        "sha256": "86e41c14f2b5836b63dc1c58b451867be99a731f79ced483294899987e850a1b"
+      },
+      {
+        "path": "desktop/audio-metadata.json",
+        "bytes": 2614,
+        "sha256": "04ade8338c6daf3d7c6e352572ddd81a15899ba60b09dac8e76c446620833491"
+      },
+      {
+        "path": "desktop/audio-stream.json",
+        "bytes": 196289,
+        "sha256": "9432ee720774901fa62239dc3e1af1e45be99a2a15c36416fb8d7fe4a5d51b34"
+      },
+      {
+        "path": "desktop/browse.json",
+        "bytes": 8710,
+        "sha256": "baf402ac96427b6245af2e39c4b9f4afba928000962adf663a6c1f58058405b7"
+      },
+      {
+        "path": "desktop/close-drain.json",
+        "bytes": 1140,
+        "sha256": "d50d174e2afded308f4702658a9d6fe2087e2910cc098f1dcd816e0e6963ec00"
+      },
+      {
+        "path": "desktop/device-providers.json",
+        "bytes": 2673,
+        "sha256": "a5a8f6719922197f0fd832471ae6167e0e68f023aed4e5ba9e2fac532bf6902c"
+      },
+      {
+        "path": "desktop/driver.log",
+        "bytes": 23275,
+        "sha256": "716f055b96df3bd1805daec6d175a6c0a4f068f32194cb3595fc4ed356663e63"
+      },
+      {
+        "path": "desktop/editor.png",
+        "bytes": 101883,
+        "sha256": "1ae8c2c61091670fa576e6001ec6e80c76ffe0f95fe136e94960907591de7b73"
+      },
+      {
+        "path": "desktop/encoders.json",
+        "bytes": 25513,
+        "sha256": "fc0b9901d36cbdac6eae4d5446ab51f3054a42983248a6008b33f1d2353213ce"
+      },
+      {
+        "path": "desktop/ffmpeg-download.json",
+        "bytes": 3181,
+        "sha256": "6b05958268004b04066809495055f8cbd1610b4df0a7eef8d3e5846c83ca4bc5"
+      },
+      {
+        "path": "desktop/file-reads.json",
+        "bytes": 3974,
+        "sha256": "90c07975fb3bba872ccfa6497d06e4fa052114997ba7ad928872d451e6f79a35"
+      },
+      {
+        "path": "desktop/imports.json",
+        "bytes": 11872,
+        "sha256": "17b7059a32a9469dd6e28faaa6e2b8e7e1d8df8fc4cb62de70aa73073bc0c0d9"
+      },
+      {
+        "path": "desktop/library-switch.png",
+        "bytes": 106485,
+        "sha256": "9a72096afc63999325a311a5c56ef328a703ef1fbd6b31d5e847d0ca3c7d2105"
+      },
+      {
+        "path": "desktop/maximize-reply.json",
+        "bytes": 166,
+        "sha256": "11f9fa0d08332d48fa892565525f5eead973ff55e3f9f528b3721262be96e8f0"
+      },
+      {
+        "path": "desktop/media-copy.json",
+        "bytes": 10209,
+        "sha256": "14a984b6bcbe5fe39759b865f7d41e865c5515689340feecfcb3d71363421ef7"
+      },
+      {
+        "path": "desktop/media-folder-reset.json",
+        "bytes": 589,
+        "sha256": "3591d5825e917f1314175fee5d4a70e7fd50bad9520761e07c04a1b9aaf677d4"
+      },
+      {
+        "path": "desktop/media-locate.json",
+        "bytes": 2055,
+        "sha256": "496759136b38693f0fffd1715cd5d298280a63224d5282d8b46e1898e0924fc8"
+      },
+      {
+        "path": "desktop/media-probe.json",
+        "bytes": 10028,
+        "sha256": "0cd10dd695754714e718a887c22aec10554945c87221068026614fc85e20bbff"
+      },
+      {
+        "path": "desktop/midi.json",
+        "bytes": 4312,
+        "sha256": "feeaa6b4dd851f35913a920d75789cf118254b4420ae6283c32a8dca097e8f20"
+      },
+      {
+        "path": "desktop/network-queries.json",
+        "bytes": 16769,
+        "sha256": "1d2430fb1824b745c96e7b984fb2cadad3444fd0989e3658c5b2f2d845c838d3"
+      },
+      {
+        "path": "desktop/now-playing-folder-alerts.json",
+        "bytes": 13869,
+        "sha256": "080b749a043f6615bb901e6c4916f4369071aa10151fb0887b8bd8b116c1fbb2"
+      },
+      {
+        "path": "desktop/now-playing.json",
+        "bytes": 154997,
+        "sha256": "c865a1828e040d4b0a512a3a3daf82100537240ef1cc2d3a4fd1f553eadebed6"
+      },
+      {
+        "path": "desktop/osc-loopback.json",
+        "bytes": 133,
+        "sha256": "dabd828edcce06af741fb111a96fab824d35f94ea7c456942c92c11a60c5602c"
+      },
+      {
+        "path": "desktop/output-chorus.png",
+        "bytes": 7050,
+        "sha256": "b20325ca2a9550fe728e655158e08332bd208e412cdc99a1bfed2ff90b24ab12"
+      },
+      {
+        "path": "desktop/output-scripture.png",
+        "bytes": 8223,
+        "sha256": "a33b99e0e02fd07f825412e5635d3b7a00a779ee4c7baace0e2ca858cc9ad3e7"
+      },
+      {
+        "path": "desktop/output-targeted-primary.png",
+        "bytes": 9179,
+        "sha256": "2087d766871dc8aa3581bb355de4e66a130c5205b905631e74706e04a468a7ee"
+      },
+      {
+        "path": "desktop/output-targeted-secondary.png",
+        "bytes": 6745,
+        "sha256": "5ea0cc78f530a5b20dacb48adf1ad1d80865a5179f14bc5bbd7a7b6fd6131b4d"
+      },
+      {
+        "path": "desktop/output-verse.png",
+        "bytes": 9179,
+        "sha256": "2087d766871dc8aa3581bb355de4e66a130c5205b905631e74706e04a468a7ee"
+      },
+      {
+        "path": "desktop/receipt.json",
+        "bytes": 253527,
+        "sha256": "24603ac5a2d24570eb15278953a8d62aad4b56ff651c23af319de78f8a382b31"
+      },
+      {
+        "path": "desktop/remote-covers.json",
+        "bytes": 128159,
+        "sha256": "d92382d11bfb4d555f5d0716a730ea6f6373df989077b77297aec2901062e7d8"
+      },
+      {
+        "path": "desktop/remotes.json",
+        "bytes": 82250,
+        "sha256": "c7b617ec80380354984a9aeb72c43f7223d78947af4484b74a31e49358dbd3cb"
+      },
+      {
+        "path": "desktop/responsiveness.json",
+        "bytes": 23842,
+        "sha256": "382b1e668a5b123161c619f49f92aaf8ffd4bcf4111c5c9e8f5db759308cbf18"
+      },
+      {
+        "path": "desktop/save-revision-race.json",
+        "bytes": 3060,
+        "sha256": "e498616458f93f796f9eefb37cc77402a0ec6ee8d0bc015d83527c76c7547030"
+      },
+      {
+        "path": "desktop/saved-before-dialog.show",
+        "bytes": 2174,
+        "sha256": "c22fa417cb173b613613bfdaac75f57387aaf0a5300b5d4ba1ef91d21eed81ef"
+      },
+      {
+        "path": "desktop/saved.show",
+        "bytes": 2070,
+        "sha256": "d529bd0708304083e1f97ad68f558d70e7f6f7e0529730740635298d0ac83bc1"
+      },
+      {
+        "path": "desktop/scriptures.json",
+        "bytes": 14122,
+        "sha256": "417b65e3c88b7d50e4f4c36d32ab4d519ee393dfbe293c81c9a850fbb57cc355"
+      },
+      {
+        "path": "desktop/stale-save-recovery.json",
+        "bytes": 1033,
+        "sha256": "8626ec9be314892dee13fd67a1c0604f320e17f37566eec831ea57c312f82e9c"
+      },
+      {
+        "path": "desktop/system-info.json",
+        "bytes": 2375,
+        "sha256": "4be69f00831713a5f5d8821fc51657c595266bb0b0179cff5b1cedd1b89a4b82"
+      },
+      {
+        "path": "desktop/thumbnails.json",
+        "bytes": 18488,
+        "sha256": "162eb72ecd6483899086c97ff0f8fb6b23bd498fcfa12caa2f059081a4c75378"
+      },
+      {
+        "path": "desktop/timecode.json",
+        "bytes": 441026,
+        "sha256": "79e2635607075c0c565cb2b0a3885677ffb96e255177d803aacf268f2602333f"
+      },
+      {
+        "path": "desktop/uncached-show-read.json",
+        "bytes": 3155,
+        "sha256": "6ff63d9d919cd617e01504a985a46127bc9c97e8bdd8165f680d7131c939c8d6"
+      },
+      {
+        "path": "desktop.log",
+        "bytes": 12716,
+        "sha256": "fbe563a11fba95cdd4d2921935248df3e471d0a4a99788013d9f260cf31d5345"
+      },
+      {
+        "path": "drop-1.log",
+        "bytes": 5609,
+        "sha256": "2eb1a6b4494244f9e3b8976117f2b5a34cfcecc2518fadfc359a229103131b3d"
+      },
+      {
+        "path": "drop-2.log",
+        "bytes": 5609,
+        "sha256": "2909fb38ba4d45e4e09d84e1e46cfad439c2bfbaa1baa6c469f5c3a3aa80b8ed"
+      },
+      {
+        "path": "menu.log",
+        "bytes": 5579,
+        "sha256": "15ac1d139af1eb13f6213a1c281d0342070b94885700542cce264d2620855700"
+      },
+      {
+        "path": "native-drop/driver-1x.log",
+        "bytes": 1676,
+        "sha256": "aa2ec8d1b748a04e3e360d0f36a701e55f7391a956f9f509bfc67c2cf5a34074"
+      },
+      {
+        "path": "native-drop/driver-2x.log",
+        "bytes": 1676,
+        "sha256": "a8c05805e31b8e413f99c0601b0ea0bef483d382011dd22ce9f258fed247f14e"
+      },
+      {
+        "path": "native-drop/receipt-1x.json",
+        "bytes": 4755,
+        "sha256": "e21caf4f77a42af58e144bc8ac789cde2e96439a5e6251fb2ad50897efd3cc4b"
+      },
+      {
+        "path": "native-drop/receipt-2x.json",
+        "bytes": 4755,
+        "sha256": "8803066055875471bbe0cd3820d972fed860eaf5a083b093eb615a14eee64afa"
+      },
+      {
+        "path": "native-menu/driver.log",
+        "bytes": 2216,
+        "sha256": "107478cc0094771757f786667c48a2fe4abf4f20712231699922a9cd2d68bceb"
+      },
+      {
+        "path": "native-menu/quit-observation.json",
+        "bytes": 145250,
+        "sha256": "6c96940cdbbd057b0d148cb9fafced968b5bb41fb93b7507ae0ba99f0c3c21a8"
+      },
+      {
+        "path": "native-menu/receipt.json",
+        "bytes": 807,
+        "sha256": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98"
+      }
+    ]
+  },
+  "logs": [
+    {
+      "path": "/tmp/freeshow-provider-foundations-workspace-clippy.log",
+      "bytes": 306,
+      "sha256": "1ecd340e755d4da23706488b478014a4d23b046bdda5ec4bb29c9921deab7656"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-workspace-tests.log",
+      "bytes": 73650,
+      "sha256": "66c5257a7388766d2718bc6894d7c889286c2009bea6c3f9233efc3327ba8cdd"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-all-target-build.log",
+      "bytes": 186,
+      "sha256": "b6c53652075862338eddbad66c4a8d7497d4aabe39f8f40061a72fe50b9f2697"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-native-clippy-current.log",
+      "bytes": 419,
+      "sha256": "2463da773e6c1e0567acb62df5da15704c1b456ea2d7d3be2f3cfd75b701255d"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-native-tests-current.log",
+      "bytes": 44588,
+      "sha256": "a49a281268d7472b3c3d7a2219c4a66565d8a4a16752895868b1e6f7a31acb86"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-native-spotify-tests.log",
+      "bytes": 631,
+      "sha256": "b3c59fca24c1c7cecc7af829952734e1e7cd9dad794c184f9dee002b9143e196"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-native-clippy-final.log",
+      "bytes": 173,
+      "sha256": "2ca480b6b3da223db2e16ece729512d7618ca57626522bdab4f4b5cb68983575"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-full-source-tests-required.log",
+      "bytes": 176832,
+      "sha256": "331357f30a46caba4e5bc41c69f1aebcabccab7dad8b139ad60d6d431f3818f5"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-frontend-tests.log",
+      "bytes": 650,
+      "sha256": "3f263e4ca14209a907e2eb7bdad29fc597f623a0712c1482246c6195afc3b1c9"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-frontend-production-snapshot-fix.log",
+      "bytes": 5369,
+      "sha256": "c393d4d227100e2a59b73c8d0e19b01832c7a3dce9d4f28199b31b3af663c627"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-normal-binary-final.log",
+      "bytes": 518589,
+      "sha256": "b15b1f8bc531b748effb132711271e6ff5a551d690dc391070ba55c08fd7bec2"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-normal-binary-final-stderr.log",
+      "bytes": 173,
+      "sha256": "36c789495e20197ac626cab91bd94c8df4bfabf5024e86228b2fca92722315c2"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-fmt-workspace.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-fmt-native.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-snapshot.log",
+      "bytes": 60,
+      "sha256": "a66ca856b09339fa757b9da8b0fbc7f7526ed631662c01869fd2034724eb89a9"
+    },
+    {
+      "path": "/tmp/freeshow-provider-foundations-full-gate.log",
+      "bytes": 13285,
+      "sha256": "3ca1c7373c7f8b4885f82ad7ac9f984b86c4ad7c3670307089070191943e2b0f"
+    },
+    {
+      "path": "/tmp/freeshow-macos-live-device-evidence-tests.log",
+      "bytes": 2751,
+      "sha256": "e36ed09aae5c61b94ee4ae68f757dac81756b017fcd41466c33a77d965ccb47f"
+    },
+    {
+      "path": "/tmp/freeshow-macos-live-device-clippy.log",
+      "bytes": 184,
+      "sha256": "605ec8403212368c6789409264f721879588dc3464ccc50f08e83aff641c3210"
+    },
+    {
+      "path": "/tmp/freeshow-macos-live-device-cross-clippy.log",
+      "bytes": 184,
+      "sha256": "cdb0b658b4c2a263eae79199d028d912f38d81ef16c70d102800a85af90bb263"
+    },
+    {
+      "path": "/tmp/freeshow-spotify-command-snapshot-negative.log",
+      "bytes": 1290,
+      "sha256": "657e2786944cfac5d43c16979abfd8421ccb53e0b65f121a8a17fb373f17fe24"
+    },
+    {
+      "path": "/tmp/freeshow-spotify-command-snapshot-bridge-tests.log",
+      "bytes": 11576,
+      "sha256": "2d03e0ab006a958430cd684e55ccf77a6d96ba2873ab3bb89573797f95cde1be"
+    }
+  ],
+  "limitations": [
+    "No full feature parity, whole-application performance gain, foreign GUI, actual Spotify account or usable-model/inference claim.",
+    "The GUI Spotify corpus proves genuine absent-service null; seven separate native/private-bus scenarios and other source/hydration suites cover non-null values and lifecycle.",
+    "Native event guards retain real results through serialization, not WebView delivery or encoded transport-buffer disposal.",
+    "Library terminal fences are not library-thread joins; nonpreemptible filesystem/OS calls remain explicit limits.",
+    "Provider show builders are pure preparation; no authentication, network JSON parser, importer persistence or provider availability claim.",
+    "Published07c CI is not all green: four Linux/Windows successes and actual Darwin fixture failure are retained separately."
+  ]
+}

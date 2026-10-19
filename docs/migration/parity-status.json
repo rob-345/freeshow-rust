@@ -78,7 +78,8 @@
         "src-tauri/tests/device_id.rs",
         "tests/parity/device-id.test.mjs",
         "tests/desktop/device_provider_probe.js",
-        "docs/migration/baselines/device-provider-linux-local.json"
+        "docs/migration/baselines/device-provider-linux-local.json",
+        "docs/migration/baselines/device-provider-ci-observations.json"
       ],
       "remaining": [
         "native drop: Windows/macOS GUI, virtual/non-file URI payloads, arbitrary File/Blob byte readers, hover feedback and original asynchronous handler context propagation",
@@ -92,7 +93,7 @@
         "system information: actual cross-platform hostname-provider and RAM backend behavior beyond the source/native test corpus",
         "Device ID corrupt-profile normalization, external writer races, nonfinite legacy JSON and foreign native provider runtime validation"
       ],
-      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation; localized native menus compared across all bundled locales/platform conditions; actual Linux menu commands and Quit confirmation/final-save/drain workflows; native absolute-path file drops preserve ordered Unicode project/import dispatch through retained Svelte handlers, bounded metadata work and stale gesture/library rejection; actual GTK targeting at scale 1 and 2; GET_OS, GET_DEVICE_NAME and CHECK_RAM_USAGE use one bounded native OS worker, source-compatible aliases/hostname/RAM decisions and tagged readonly replies; native global DEVICE_ID preparation/persistence now runs within the existing ordered configuration owner with four complete leases, actual legacy hash/UUID/write-fallback source policy, strict bounded identity Number parsing, actual pretty-output size validation and explicit cancellation/deadline/resource failures; eight actual host tests cover persistence, global-library isolation, permission failure and accepted lifecycle; actual normal Linux editor callbacks preserve one persisted global identity and empty stored-provider replies before restart, after restart and after a real library switch; this newer milestone awaits its own foreign/native CI"
+      "scope": "Linux editor/native dialogs and main/two-output lifecycle; live projection text checked with an emoji font after transitions, output wizard and library recreation; localized native menus compared across all bundled locales/platform conditions; actual Linux menu commands and Quit confirmation/final-save/drain workflows; native absolute-path file drops preserve ordered Unicode project/import dispatch through retained Svelte handlers, bounded metadata work and stale gesture/library rejection; actual GTK targeting at scale 1 and 2; GET_OS, GET_DEVICE_NAME and CHECK_RAM_USAGE use one bounded native OS worker, source-compatible aliases/hostname/RAM decisions and tagged readonly replies; native global DEVICE_ID preparation/persistence now runs within the existing ordered configuration owner with four complete leases, actual legacy hash/UUID/write-fallback source policy, strict bounded identity Number parsing, actual pretty-output size validation and explicit cancellation/deadline/resource failures; eight actual host tests cover persistence, global-library isolation, permission failure and accepted lifecycle; actual normal Linux editor callbacks preserve one persisted global identity and empty stored-provider replies before restart, after restart and after a real library switch; this newer milestone awaits its own foreign/native CI Current07c CI has four completed Linux/Windows successes and actual Darwin core failure on shared /dev/null timestamp mutation. The narrow fixture correction retains private/stable exact-bit checks and awaits a fresh actual Darwin run; complete six-job success is not claimed."
     },
     {
       "id": "editor",
@@ -328,16 +329,18 @@
         "tests/parity/spotify.test.mjs",
         "tests/parity/spotify-hydration.test.mjs",
         "crates/freeshow-spotify/src/tests.rs",
-        "crates/freeshow-core/tests/native_lifetime.rs"
+        "crates/freeshow-core/tests/native_lifetime.rs",
+        "tests/parity/bridge.test.mjs",
+        "src-tauri/tests/spotify.rs"
       ],
       "remaining": [
         "native Windows/macOS state backends",
         "playback commands, OAuth and account providers",
         "actual Spotify account/session and broad album-art/media integration",
-        "ordinary bridge, native host and rebuilt GUI proof at this integration milestone",
-        "hard interruption of OS calls and whole-application performance comparison"
+        "hard interruption of OS calls and whole-application performance comparison",
+        "fresh six-job CI, actual foreign runtime backends and WebView/hardware workflows"
       ],
-      "scope": "Linux source-compatible bounded MPRIS state uses one lazy fixed native owner/runtime, captured native transport, four whole jobs/ready receipts and four shutdown observers. Fourteen foundation Rust tests and six actual immutable-source/private-bus Node suites cover real profiles, child cancellation/reaping, quotas, borrowed receipts and actual post-done thread-return/join behavior. Seven frontend hydration suites preserve source own undefined/order/IEEE values using paired explicit restoration. Native host retains the receipt through serde-skipped Event lifetime and checks actual request context independently of its process-global owner; frontend validates full current context and original command/listener before callback. Full integration checks and platform scope remain explicitly separate."
+      "scope": "Linux source-compatible bounded MPRIS state uses one lazy fixed native owner/runtime, captured native transport, four whole jobs/ready receipts and four shutdown observers. Fourteen foundation Rust tests and six actual immutable-source/private-bus Node suites cover real profiles, child cancellation/reaping, quotas, borrowed receipts and actual post-done thread-return/join behavior. Seven frontend hydration suites preserve source own undefined/order/IEEE values using paired explicit restoration. Native host retains the receipt through serde-skipped Event lifetime and checks actual request context independently of its process-global owner; frontend validates full current context and original command/listener before callback. Full integration checks and platform scope remain explicitly separate. Six ordinary bridge tests now include a genuine failing mutation control and source-compatible send-time command snapshot. Three native host entry tests drive seven actual private-bus scenarios and seven pinned-source comparisons, proving caller cancellation, real library selection, final stale-event rejection, guarded result serialization/clone capacity and independent work during a held library commit. Actual native PID waits and native-thread joins remain distinct from WebView delivery. The isolated normal Linux binary now passes193 editor steps,4GTK menu cases and both drop scales; six actual source queries bracket three retained AI/Spotify phases across restart and real library selection. Spotify UI evidence is genuine absent-service null only; no capability error is accepted as source null. The full editor retains49 other diagnostics."
     },
     {
       "id": "network-and-control",
@@ -463,7 +466,9 @@
         "tests/parity/ai-local.test.mjs",
         "crates/freeshow-ai-local/src/tests.rs",
         "src-tauri/tests/ai_local.rs",
-        "crates/freeshow-core/tests/native_lifetime.rs"
+        "crates/freeshow-core/tests/native_lifetime.rs",
+        "tests/desktop/ai_spotify_oracle.mjs",
+        "tests/desktop/ai_spotify_probe.js"
       ],
       "remaining": [
         "model setup, validation, download, execution and deletion; local-model inventory beyond the documented finite source subset",
@@ -472,7 +477,7 @@
         "audio and transcript streaming",
         "native Windows/macOS filesystem and GUI runtime validation, hard cancellation of entered filesystem syscalls and complete IPC transport budgets"
       ],
-      "scope": "Native MAIN.AI_GET_BIN uses one lazy fixed process-global filesystem owner at trusted app-data/bin/nemotron, four complete queued/active/ready/borrowed leases, retained actual shutdown join and strict real request-context/window/listener checks. Thirteen foundation Rust cases, seven actual-source Node suites and six focused host tests cover bounded real files, source size/property policy, result lifetime, caller abort, actual library selection and independent completion during a held library commit. A Rust-only serde-skipped event guard retains the real read through native encoding; no renderer acknowledgment or whole-feature/performance gain is claimed. Rebuilt ordinary GUI proof is a separate integration check."
+      "scope": "Native MAIN.AI_GET_BIN uses one lazy fixed process-global filesystem owner at trusted app-data/bin/nemotron, four complete queued/active/ready/borrowed leases, retained actual shutdown join and strict real request-context/window/listener checks. Thirteen foundation Rust cases, seven actual-source Node suites and six focused host tests cover bounded real files, source size/property policy, result lifetime, caller abort, actual library selection and independent completion during a held library commit. A Rust-only serde-skipped event guard retains the real read through native encoding; no renderer acknowledgment or whole-feature/performance gain is claimed. The actual isolated normal Linux GUI now compares a nonempty32-byte fixture, row/property order and original callbacks against actual source before/after all three restart/library phases; fixture bytes remain unchanged. This is inventory metadata, not model validation or inference."
     },
     {
       "id": "performance",

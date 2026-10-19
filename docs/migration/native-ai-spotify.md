@@ -72,6 +72,18 @@ all explicit special-number tags and rejection without mutating input. Native
 host, ordinary bridge and rebuilt GUI verification are separate integration
 requirements; the foundation results alone do not certify them.
 
+The integrated host now passes three entry tests driving seven actual private-bus
+scenarios and seven pinned-source comparisons. Six ordinary bridge tests include
+a reproduced caller-mutation regression and preserve the command's send-time
+snapshot through the native wait. The isolated normal Linux binary passes193
+editor steps, four menu cases and both drop scales. Actual source queries before
+and after three retained callback phases compare nonempty32-byte AI inventory and
+genuine absent-service Spotify null across restart and library selection. Normal
+Quit waits its pending save, backup and writes;49 other editor diagnostics remain.
+[Local receipt](baselines/ai-spotify-linux-local.json),
+[native host tests](workers/spotify-native-host-tests.md) and
+[desktop fixture](workers/ai-spotify-desktop.md).
+
 Windows and macOS state backends return explicit unsupported capability errors.
 Playback commands, OAuth, account providers, real Spotify sessions, broad
 album-art/media behavior and whole-feature parity remain open.

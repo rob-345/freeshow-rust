@@ -1,0 +1,1017 @@
+{
+  "schemaVersion": 1,
+  "run": 39274111800,
+  "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39274111800",
+  "commit": "07c89581bbc6c77356de08df6f679703f3ca9919",
+  "observedAt": "2026-10-19T15:47:00Z",
+  "overallSuccessClaimed": false,
+  "firstAttempt": "Four jobs passed; both macOS jobs cancelled before any steps because hosted runners could not be acquired.",
+  "secondAttempt": "Actual macOS core test failed on shared /dev/null mtime changes. Native macOS was still in progress at this observation. No passing six-job receipt is claimed.",
+  "windowsNative": {
+    "deviceId": {
+      "passed": 7,
+      "cases": [
+        {
+          "name": "actual_truthy_json_ids_and_fractional_number_bits_return_unchanged_without_writes",
+          "result": "ok"
+        },
+        {
+          "name": "accepted_aborted_callers_keep_four_real_queued_leases_until_owner_return_and_seal_fences_them",
+          "result": "ok"
+        },
+        {
+          "name": "global_identity_is_persisted_once_preserves_unknown_config_and_survives_library_selection",
+          "result": "ok"
+        },
+        {
+          "name": "stale_role_resource_and_real_config_read_failures_are_distinct",
+          "result": "ok"
+        },
+        {
+          "name": "valid_deep_configuration_is_an_explicit_resource_error_instead_of_a_legacy_fallback",
+          "result": "ok"
+        },
+        {
+          "name": "pretty_persistence_limit_rejects_before_write_and_preserves_near_cap_input",
+          "result": "ok"
+        },
+        {
+          "name": "actual_observer_deadline_keeps_accepted_queued_job_until_the_ordered_fence",
+          "result": "ok"
+        }
+      ],
+      "logSha256": "542446ab3030f07cfa1c82c63712d15e561016d054b36c5f007039249903218b"
+    },
+    "storedProviders": {
+      "passed": 5,
+      "cases": [
+        {
+          "name": "actual_parse_nonobject_role_stale_and_nonregular_failures_never_fabricate_empty_replies",
+          "result": "ok"
+        },
+        {
+          "name": "accepted_aborted_callers_keep_four_real_queued_leases_until_owner_return_and_seal_fences_them",
+          "result": "ok"
+        },
+        {
+          "name": "actual_global_access_preserves_source_scope_order_omits_secrets_and_survives_library_selection",
+          "result": "ok"
+        },
+        {
+          "name": "actual_whole_snapshot_resource_limits_include_unknown_secrets_and_preserve_bytes",
+          "result": "ok"
+        },
+        {
+          "name": "actual_observer_deadline_keeps_accepted_queued_job_until_the_ordered_fence",
+          "result": "ok"
+        }
+      ],
+      "logSha256": "542446ab3030f07cfa1c82c63712d15e561016d054b36c5f007039249903218b"
+    },
+    "systemHost": {
+      "passed": 3,
+      "cases": [
+        {
+          "name": "native_system_shutdown_is_terminal_and_never_returns_fabricated_os_values",
+          "result": "ok"
+        },
+        {
+          "name": "native_system_host_rejects_missing_or_obsolete_context_before_reading_the_os",
+          "result": "ok"
+        },
+        {
+          "name": "native_system_replies_retain_contract_context_and_correlation_while_library_owner_is_blocked",
+          "result": "ok"
+        }
+      ],
+      "logSha256": "542446ab3030f07cfa1c82c63712d15e561016d054b36c5f007039249903218b"
+    },
+    "browse": {
+      "passed": 4,
+      "cases": [
+        {
+          "name": "queued::two_entered_plus_eight_waiting_keep_each_original_reply_and_a_finite_host_bound",
+          "result": "ok"
+        },
+        {
+          "name": "role_context_platform_limits_and_terminal_shutdown_are_explicit",
+          "result": "ok"
+        },
+        {
+          "name": "queued::actual_library_retirement_cancels_queued_replies_but_new_context_waits_for_real_workers",
+          "result": "ok"
+        },
+        {
+          "name": "queued::queued_caller_abort_recovers_capacity_and_shutdown_still_waits_for_physical_return",
+          "result": "ok"
+        }
+      ],
+      "logSha256": "542446ab3030f07cfa1c82c63712d15e561016d054b36c5f007039249903218b"
+    }
+  },
+  "windowsCore": {
+    "browse": {
+      "passed": 43,
+      "cases": [
+        {
+          "name": "engine::windows::scandir::record_tests::source_dot_terminal_nul_and_known_error_projection_are_explicit",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::scandir::record_tests::checked_public_abi_record_chain_rejects_truncation_offsets_and_utf16",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::record_comparison::integer_float_representation_matches_all_source_number_bits",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::record_comparison::non_stats_shapes_types_and_array_object_order_remain_strict",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::record_comparison::every_stat_bit_key_order_type_and_observation_is_required",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_entry_output_math_cancel_and_deadline_caps_apply_to_native_jobs",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_accepted_native_handle_survives_caller_drop_and_shutdown_waiter_drop",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_actual_open_directory_is_retained_across_parent_name_replacement",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_junction_follows_source_fixed_local_target_without_authorization_claim",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_capture_uses_first_four_native_media_entries_and_source_cutoffs",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_native_multibatch_scandir_matches_actual_node_order_without_sorting",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_unc_device_verbatim_relative_and_ambiguous_spelling_are_explicitly_unsupported",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_unpaired_utf16_filename_is_rejected_without_lossy_alias",
+          "result": "ok"
+        },
+        {
+          "name": "paths::windows::tests::explicit_capability_errors_and_work_boundaries",
+          "result": "ok"
+        },
+        {
+          "name": "paths::windows::tests::join_dot_roots_and_trailing_separator_are_lexical",
+          "result": "ok"
+        },
+        {
+          "name": "paths::windows::tests::raw_parts_borrow_original_path_and_parent_is_parse_dir",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_missing_file_and_locked_directory_use_real_source_empty_listing",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::full_native_identity_is_checked_before_lossy_js_integer_conversion",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_full_recursive_source_stats_unicode_spelling_and_depth",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::file_info_and_ordinary_listing_use_fixed_workers_with_separate_verbatim_capabilities",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::real_windows_exceptional_times_are_explicit_unsupported_not_fabricated_null_or_wrapped_stat",
+          "result": "ok"
+        },
+        {
+          "name": "engine::windows::tests::windows_similar_preserves_native_ties_duplicates_utf16_and_directory_candidates",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::real_windows_exclusive_data_lock_still_allows_actual_source_and_native_attribute_stat",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::real_windows_junction_and_available_file_symlink_follow_actual_source_targets",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::real_windows_oracle_crlf_transport_preserves_values_and_strict_source_gate",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::real_windows_readonly_mode_matches_source_without_inventing_executable_bits",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::stat_path_operation_and_cancel_budgets_apply_before_native_work",
+          "result": "ok"
+        },
+        {
+          "name": "tests::configuration_is_bounded",
+          "result": "ok"
+        },
+        {
+          "name": "tests::invalid_request_unknown_and_shutdown_are_explicit",
+          "result": "ok"
+        },
+        {
+          "name": "tests::operation_cell_string_and_cancel_bounds",
+          "result": "ok"
+        },
+        {
+          "name": "tests::queued_canceled_or_dropped_result_keeps_permit_until_actual_worker_return",
+          "result": "ok"
+        },
+        {
+          "name": "tests::queued_cancellation_and_caller_drop_remove_waiters_without_native_entry",
+          "result": "ok"
+        },
+        {
+          "name": "tests::queued_public_test_harness_observes_actual_owners_and_drop_releases_gates",
+          "result": "ok"
+        },
+        {
+          "name": "tests::queued_shutdown_cancels_waiters_and_retains_real_workers_after_observer_drop",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::real_windows_source_stats_order_types_files_folders_links_allocation_and_raw_spelling",
+          "result": "ok"
+        },
+        {
+          "name": "tests::queued_two_real_workers_and_eight_waiters_are_bounded_and_fifo",
+          "result": "ok"
+        },
+        {
+          "name": "tests::queued_without_runtime_rejects_before_retaining_or_dispatching_work",
+          "result": "ok"
+        },
+        {
+          "name": "tests::shutdown_both_admission_orderings",
+          "result": "ok"
+        },
+        {
+          "name": "tests::shutdown_without_runtime_returns_without_panic",
+          "result": "ok"
+        },
+        {
+          "name": "tests::source_path_shapes_and_utf16_scores",
+          "result": "ok"
+        },
+        {
+          "name": "tests::queued_total_deadline_expires_wait_and_result_without_releasing_held_workers",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::real_windows_source_failure_null_is_certified_for_missing_nondirectory_empty_and_dangling",
+          "result": "ok"
+        },
+        {
+          "name": "stats::windows::tests::real_windows_fractional_and_unsigned32_time_boundary_matches_node_f64_projection",
+          "result": "ok"
+        }
+      ],
+      "logSha256": "8fa24b16a49e228b75616bf1bda3b7068cdc20949ecf80f56e8d2192c37eae55"
+    },
+    "system": {
+      "passed": 19,
+      "cases": [
+        {
+          "name": "device_id::tests::actual_entropy_fallback_is_uuid_v4_and_is_not_generated_before_needed",
+          "result": "ok"
+        },
+        {
+          "name": "device_id::tests::resource_cancellation_deadline_and_capability_failures_never_fabricate_identity",
+          "result": "ok"
+        },
+        {
+          "name": "device_id::tests::stored_values_never_touch_provider_random_or_write_and_write_failure_is_outer_fallback",
+          "result": "ok"
+        },
+        {
+          "name": "native::tests::invalid_native_total_is_an_explicit_error_and_zero_free_is_valid",
+          "result": "ok"
+        },
+        {
+          "name": "tests::actual_native_join_panic_stays_failed_after_handle_is_joined",
+          "result": "ok"
+        },
+        {
+          "name": "tests::bounded_admission_and_runtime_progress_while_os_worker_is_active",
+          "result": "ok"
+        },
+        {
+          "name": "tests::caught_job_panic_is_sticky_before_reply_and_still_requires_native_join",
+          "result": "ok"
+        },
+        {
+          "name": "tests::deadlines_include_queue_wait_and_cancelled_jobs_never_sample_os",
+          "result": "ok"
+        },
+        {
+          "name": "tests::dropped_future_cancels_only_its_admitted_token_and_normal_completion_keeps_token",
+          "result": "ok"
+        },
+        {
+          "name": "tests::hard_pool_limits_reject_unbounded_configuration",
+          "result": "ok"
+        },
+        {
+          "name": "tests::linux_proc_semantics_use_memavailable_and_bounded_unsigned_kib_fields",
+          "result": "ok"
+        },
+        {
+          "name": "tests::logical_completion_timeout_and_abandoned_waiter_retain_native_exit_then_real_join",
+          "result": "ok"
+        },
+        {
+          "name": "tests::native_memory_has_provenance_and_original_reply_shape",
+          "result": "ok"
+        },
+        {
+          "name": "tests::no_runtime_pending_shutdown_retains_owner_and_finished_shutdown_joins_without_runtime",
+          "result": "ok"
+        },
+        {
+          "name": "tests::shutdown_observers_are_try_bounded_and_drop_does_not_release_the_native_owner",
+          "result": "ok"
+        },
+        {
+          "name": "tests::shutdown_rejects_new_work_discards_active_result_and_settles_queue",
+          "result": "ok"
+        },
+        {
+          "name": "device_id::tests::actual_pinned_helper_preserves_stored_json_falsy_values_and_outer_failures",
+          "result": "ok"
+        },
+        {
+          "name": "device_id::tests::actual_dependency_expose_and_js_whitespace_are_certified_for_ascii_identity_tokens",
+          "result": "ok"
+        },
+        {
+          "name": "device_id::tests::actual_native_legacy_matches_installed_dependency_without_outputting_stable_id",
+          "result": "ok"
+        }
+      ],
+      "logSha256": "8fa24b16a49e228b75616bf1bda3b7068cdc20949ecf80f56e8d2192c37eae55"
+    },
+    "storedProviders": {
+      "passed": 5,
+      "cases": [
+        {
+          "name": "invalid_root_is_not_a_successful_empty_store",
+          "result": "ok"
+        },
+        {
+          "name": "js_truthiness_and_nested_wrong_shapes_do_not_validate_tokens",
+          "result": "ok"
+        },
+        {
+          "name": "registration_order_and_combined_scope_keys_are_preserved",
+          "result": "ok"
+        },
+        {
+          "name": "node_and_depth_limits_cover_unused_data_at_exact_boundaries",
+          "result": "ok"
+        },
+        {
+          "name": "json_byte_limit_counts_unknown_secrets_keys_unicode_and_escaping",
+          "result": "ok"
+        }
+      ],
+      "logSha256": "8fa24b16a49e228b75616bf1bda3b7068cdc20949ecf80f56e8d2192c37eae55"
+    }
+  },
+  "darwinFailure": {
+    "test": "symlinks_follow_real_targets_and_missing_loops_fifo_and_devices_match_source_stat",
+    "field": "/stat/mtimeMs",
+    "nativeBits": "427a154c7df7ab2b",
+    "sourceBits": "427a154c7db8ee25",
+    "nativeMs": 1792423747450.698,
+    "sourceMs": 1792423746446.884,
+    "integrationPassed": 5,
+    "integrationFailed": 1,
+    "correctedFixtureCommit": "75acc1e3",
+    "correctionScope": "Separate actual source-before/native/source-after observation only for shared /dev/null; unchanged numbers remain exact. Corrected Darwin runtime proof requires the next CI run."
+  },
+  "linuxDesktop": {
+    "nowPlaying": {
+      "run": 39274111800,
+      "sha": "07c89581bbc6c77356de08df6f679703f3ca9919",
+      "editorSteps": 190,
+      "ordinaryNowPlaying": 6,
+      "folderPhases": 3,
+      "metadataAndFolderCounts": [
+        [
+          1,
+          4,
+          0
+        ],
+        [
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          1,
+          1
+        ]
+      ],
+      "nativeMenus": 4,
+      "dropScales": [
+        1,
+        2
+      ],
+      "processExited": true,
+      "fullEditorDiagnostics": 54,
+      "scope": "Actual downloaded Linux CI receipts: exact source/native typed values excluding root picture position, exact folder callback/visible text, unchanged blocker hash, actual admitted/completed advances, ordinary idle and no reveal advance. No PNG encoded parity, global zero-error or per-operation terminal join claimed."
+    },
+    "coverHttp": {
+      "editorSteps": 190,
+      "menus": 4,
+      "dropScales": [
+        1,
+        2
+      ],
+      "coverPhases": 14,
+      "httpRequests": 141,
+      "httpStatusCounts": {
+        "200": 60,
+        "404": 63,
+        "206": 9,
+        "304": 9
+      },
+      "exactOriginalFolderAlerts": 3,
+      "coverRuntimeErrors": 0,
+      "coverBrowserErrors": 0,
+      "sourceAcks": 0,
+      "finalRetentionVerifiedZero": true,
+      "unchangedBlockerAndOldLibraryCoverHashesVerified": true,
+      "fullEditorDiagnostics": 54,
+      "processExited": true,
+      "scope": "Actual rebuilt Linux desktop, independent HTTP/file-byte checks and retained original UI callbacks/visible message. Zero counters are observed ordinary disposal, not per-operation IO-thread join or peer-receipt proof; separate native STOP/Weak test checks actual source lifetime. Full parity/performance remains unproven."
+    },
+    "jpegPixels": {
+      "recordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+      "cases": [
+        {
+          "id": "jpeg-apic",
+          "width": 17,
+          "height": 11,
+          "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+          "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+          "nativePngBytes": 518,
+          "compressedPngBytesEqualObserved": false,
+          "fullSourceSetCompared": true,
+          "actualFilesystemRead": true,
+          "unsetVerified": true
+        },
+        {
+          "id": "jpeg-flac",
+          "width": 64,
+          "height": 48,
+          "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+          "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+          "nativePngBytes": 8138,
+          "compressedPngBytesEqualObserved": false,
+          "fullSourceSetCompared": true,
+          "actualFilesystemRead": true,
+          "unsetVerified": true
+        }
+      ],
+      "scope": "Actual migrated WebKit metadata/counters/filesystem receipts checked against actual packaged Electron recording; exact RGBA, not compressed bytes or unrestricted format support."
+    },
+    "deviceProviders": {
+      "run": 39274111800,
+      "commit": "07c89581bbc6c77356de08df6f679703f3ca9919",
+      "callbacks": {
+        "phases": {
+          "normal": {
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-3dx2ms2x/selected-data",
+              "libraryGeneration": 1,
+              "runtimeId": "3719a747-5e5d-4b31-b363-51df78a3c1dc"
+            },
+            "identity": {
+              "listener": "device-provider-probe-normal-identity",
+              "type": "string",
+              "legacyFallback": false,
+              "nonempty": true,
+              "equalsPersisted": true
+            },
+            "phase": "normal",
+            "callbacks": [
+              "DEVICE_ID",
+              "PROVIDER_CONNECTIONS"
+            ],
+            "current": {
+              "dataPath": "/tmp/freeshow-desktop-test-3dx2ms2x/selected-data",
+              "libraryGeneration": 1,
+              "runtimeId": "3719a747-5e5d-4b31-b363-51df78a3c1dc"
+            },
+            "providers": {
+              "listener": "device-provider-probe-normal-providers",
+              "keys": [],
+              "data": {}
+            }
+          },
+          "restarted": {
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-3dx2ms2x/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "c542eeb7-7e12-455d-ac10-a74800b05382"
+            },
+            "identity": {
+              "listener": "device-provider-probe-restarted-identity",
+              "type": "string",
+              "legacyFallback": false,
+              "nonempty": true,
+              "equalsPersisted": true
+            },
+            "phase": "restarted",
+            "callbacks": [
+              "DEVICE_ID",
+              "PROVIDER_CONNECTIONS"
+            ],
+            "current": {
+              "dataPath": "/tmp/freeshow-desktop-test-3dx2ms2x/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "c542eeb7-7e12-455d-ac10-a74800b05382"
+            },
+            "providers": {
+              "listener": "device-provider-probe-restarted-providers",
+              "keys": [],
+              "data": {}
+            }
+          },
+          "switched": {
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-3dx2ms2x/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "c542eeb7-7e12-455d-ac10-a74800b05382"
+            },
+            "identity": {
+              "listener": "device-provider-probe-switched-identity",
+              "type": "string",
+              "legacyFallback": false,
+              "nonempty": true,
+              "equalsPersisted": true
+            },
+            "phase": "switched",
+            "callbacks": [
+              "DEVICE_ID",
+              "PROVIDER_CONNECTIONS"
+            ],
+            "current": {
+              "dataPath": "/tmp/freeshow-desktop-test-3dx2ms2x/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "c542eeb7-7e12-455d-ac10-a74800b05382"
+            },
+            "providers": {
+              "listener": "device-provider-probe-switched-providers",
+              "keys": [],
+              "data": {}
+            }
+          }
+        },
+        "rawIdentityArchived": false,
+        "sameGlobalIdentityAcrossPhases": true
+      },
+      "diagnostics": {
+        "count": 54,
+        "byCommand": [
+          {
+            "channel": "MAIN",
+            "command": "GET_MIDI_INPUTS",
+            "code": "midi_backend_unavailable",
+            "count": 2
+          },
+          {
+            "channel": "MAIN",
+            "command": "GET_MIDI_OUTPUTS",
+            "code": "midi_backend_unavailable",
+            "count": 2
+          },
+          {
+            "channel": "MAIN",
+            "command": "SAVE",
+            "code": "io_error",
+            "count": 1
+          },
+          {
+            "channel": "MAIN",
+            "command": "SAVE",
+            "code": "stale_library",
+            "count": 1
+          },
+          {
+            "channel": "MAIN",
+            "command": "SPOTIFY_GET_STATE",
+            "code": "unsupported_command",
+            "count": 5
+          },
+          {
+            "channel": "NOW_PLAYING",
+            "command": null,
+            "code": "cover_unsupported",
+            "count": 1
+          },
+          {
+            "channel": "OUTPUT",
+            "command": "CAPTURE",
+            "code": "unsupported_command",
+            "count": 19
+          },
+          {
+            "channel": "OUTPUT",
+            "command": "SET_VALUE",
+            "code": "unsupported_command",
+            "count": 8
+          },
+          {
+            "channel": "REMOTE",
+            "command": "ACTIONS",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "ACTION_TAGS",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "AUDIO_CHANNELS_DATA",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "AUDIO_ROUTING",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "FOLDERS",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "PROJECT",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "SCRIPTURE",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "TIMERS",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "TIMER_TAGS",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "VARIABLES",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "REMOTE",
+            "command": "VARIABLE_TAGS",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "STAGE",
+            "command": "EVENTS",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "STAGE",
+            "command": "METRONOME",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "STAGE",
+            "command": "TIMERS",
+            "code": "stale_generation",
+            "count": 1
+          },
+          {
+            "channel": "STAGE",
+            "command": "VARIABLES",
+            "code": "stale_generation",
+            "count": 1
+          }
+        ]
+      },
+      "scope": "Three actual retained UI phases and real persisted identity comparison; no account authentication/backend availability or library thread join claim."
+    }
+  },
+  "artifactFiles": [
+    {
+      "file": "desktop/api.json",
+      "bytes": 43880,
+      "sha256": "1670530274e98a2a6a10876d75c53068a7d9e07b36dbf240326593e826ede775"
+    },
+    {
+      "file": "desktop/assets.json",
+      "bytes": 3025,
+      "sha256": "ca9afd6ecb3534ea7882f0fb4ed160c04c9c5e5880602c91984be32208f22aaf"
+    },
+    {
+      "file": "desktop/audio-metadata.json",
+      "bytes": 2614,
+      "sha256": "a23f10c9af011f711e0a8789528c565c9cddec9a5022483955d44af5fb211289"
+    },
+    {
+      "file": "desktop/audio-stream.json",
+      "bytes": 196283,
+      "sha256": "b45a5d395a24d0903916d838a3822e2008434d5ad10a0626bc4d17f5cb8e91ee"
+    },
+    {
+      "file": "desktop/browse.json",
+      "bytes": 8740,
+      "sha256": "7a3040855df8c7d60321d46249612ce15c6a5eafe96cfbe2c165292a0e93e869"
+    },
+    {
+      "file": "desktop/close-drain.json",
+      "bytes": 1141,
+      "sha256": "03876623b0c73ebc273810500beddfb310774cb067dfa4220e651c295749307d"
+    },
+    {
+      "file": "desktop/device-providers.json",
+      "bytes": 2673,
+      "sha256": "13603d7f1c19bbc250ac349b8ff5140a24a665683ce803aa9b752fdedb019560"
+    },
+    {
+      "file": "desktop/driver.log",
+      "bytes": 20914,
+      "sha256": "da4e5a741303f68a7b0520acd6658c48a79e41d1af4994c0b761b1253cda83a4"
+    },
+    {
+      "file": "desktop/editor.png",
+      "bytes": 100802,
+      "sha256": "5c24b2c6cf525edd46df5cded51882d932606edcba43e796c3ca583c2958f5d2"
+    },
+    {
+      "file": "desktop/encoders.json",
+      "bytes": 25497,
+      "sha256": "5eba0e54f9fc8f0831b33082bbb9eded66cc9008450afca91f888e457111bebe"
+    },
+    {
+      "file": "desktop/ffmpeg-download.json",
+      "bytes": 3181,
+      "sha256": "3476a88eadcc315c98993cfbfeb40d228770f941042b0a8139f0f4e062e918c7"
+    },
+    {
+      "file": "desktop/file-reads.json",
+      "bytes": 3974,
+      "sha256": "c1ce8ed0673d9e8a4f1ea853c1b4c700d6f84fe1aaf9101c327f873e18f67ec3"
+    },
+    {
+      "file": "desktop/imports.json",
+      "bytes": 12144,
+      "sha256": "9d30d862116c5de79733131137653f0387a97909bb8c0ffb6c5f6ed4799b07b8"
+    },
+    {
+      "file": "desktop/library-switch.png",
+      "bytes": 102367,
+      "sha256": "823b64fb183222ddc9f070f320df6fa901062c6b73ac62638fbb9274a28bc87c"
+    },
+    {
+      "file": "desktop/maximize-reply.json",
+      "bytes": 166,
+      "sha256": "11f9fa0d08332d48fa892565525f5eead973ff55e3f9f528b3721262be96e8f0"
+    },
+    {
+      "file": "desktop/media-copy.json",
+      "bytes": 10191,
+      "sha256": "682d7121a789350cdf53e9c74b36571f00d1ca6f2f89eb265292c83b0b8ef8e8"
+    },
+    {
+      "file": "desktop/media-folder-reset.json",
+      "bytes": 589,
+      "sha256": "9b53d912adf0397a5e67274b07588d5f0b542c6e775ca2802886f154e78de2db"
+    },
+    {
+      "file": "desktop/media-locate.json",
+      "bytes": 2055,
+      "sha256": "ebcd7fda35d9cf8dcfa76d5e9034ca2b2a78e6e46b4f0d9e4f7beda8b8bf2d62"
+    },
+    {
+      "file": "desktop/media-probe.json",
+      "bytes": 10036,
+      "sha256": "fe16f22510c3121d4764a35ed22952658ddc080c99e47619ed70d7c6eea6426d"
+    },
+    {
+      "file": "desktop/midi.json",
+      "bytes": 4312,
+      "sha256": "30473b6089098a2c2d02caddc7476b0566751ff753087c063b88137e52d73d7b"
+    },
+    {
+      "file": "desktop/network-queries.json",
+      "bytes": 11000,
+      "sha256": "8a211632135cec0340acaac1423e542713cc96f1e780f0a510516cef5dc08eac"
+    },
+    {
+      "file": "desktop/now-playing-folder-alerts.json",
+      "bytes": 13869,
+      "sha256": "0b2677f94e262918c9d646889fef47de4f70c55efb2832af6364a46d0a196a99"
+    },
+    {
+      "file": "desktop/now-playing.json",
+      "bytes": 154997,
+      "sha256": "cf6514fb881b667199b240516ba4407a198b8cc7b485a50e3c86272aa5c745c0"
+    },
+    {
+      "file": "desktop/osc-loopback.json",
+      "bytes": 133,
+      "sha256": "e02ffe480ca21ee95fd3be22e3893d7be924f6959c5d6342b4157ee777fc8dcf"
+    },
+    {
+      "file": "desktop/output-chorus.png",
+      "bytes": 5137,
+      "sha256": "68575fdc7f105e90a57f54ce7585f8eab7ded4dd215f6caa4cb5ab851391ac60"
+    },
+    {
+      "file": "desktop/output-scripture.png",
+      "bytes": 7527,
+      "sha256": "0bcbf03c6f6508281bdb51b0cd275df1dfcdfc74b26bc181afc0567fbf45e48a"
+    },
+    {
+      "file": "desktop/output-targeted-primary.png",
+      "bytes": 8807,
+      "sha256": "b3d367889d0884512f43c6b86f3b0a9ed245a890fb2ddab2129180d3e9f5b250"
+    },
+    {
+      "file": "desktop/output-targeted-secondary.png",
+      "bytes": 5137,
+      "sha256": "68575fdc7f105e90a57f54ce7585f8eab7ded4dd215f6caa4cb5ab851391ac60"
+    },
+    {
+      "file": "desktop/output-verse.png",
+      "bytes": 8807,
+      "sha256": "b3d367889d0884512f43c6b86f3b0a9ed245a890fb2ddab2129180d3e9f5b250"
+    },
+    {
+      "file": "desktop/receipt.json",
+      "bytes": 256595,
+      "sha256": "ffe7084bef9a6e0a2f768df13ec4cd0fcef8fc48cc8bbfa6c41782e3c36699c6"
+    },
+    {
+      "file": "desktop/remote-covers.json",
+      "bytes": 128185,
+      "sha256": "82660a7eef660e0e444b921d759bd4668b98a60118cd2c978f6a0c43237c85e0"
+    },
+    {
+      "file": "desktop/remotes.json",
+      "bytes": 66219,
+      "sha256": "cb1b911259daf4d401faddf933b728f377f3ff5f754b6c5d080c52cb8d6c8f3a"
+    },
+    {
+      "file": "desktop/responsiveness.json",
+      "bytes": 26859,
+      "sha256": "0185e3efa63487e680325783c1bf83b3a9d1bf0f57d7a381f9a08a706bd11543"
+    },
+    {
+      "file": "desktop/save-revision-race.json",
+      "bytes": 3084,
+      "sha256": "ed4fe5afdfea027f15525a924785a8be98f7ab1634b872831648e9d36dc201d0"
+    },
+    {
+      "file": "desktop/saved-before-dialog.show",
+      "bytes": 2174,
+      "sha256": "ee9fb4c9bbef62ccf914a06f2844027965aa114f4dd98c1708e39098111c4438"
+    },
+    {
+      "file": "desktop/saved.show",
+      "bytes": 2174,
+      "sha256": "ee9fb4c9bbef62ccf914a06f2844027965aa114f4dd98c1708e39098111c4438"
+    },
+    {
+      "file": "desktop/scriptures.json",
+      "bytes": 14122,
+      "sha256": "11a26f4be543ee6cea57d4ae0ce6d8eea073255b094c4744bd1882fe49ee0590"
+    },
+    {
+      "file": "desktop/stale-save-recovery.json",
+      "bytes": 1033,
+      "sha256": "768b707a1e9406ba6304ccd7a8264f94980370e54af9cd21f14ed3095b949f20"
+    },
+    {
+      "file": "desktop/system-info.json",
+      "bytes": 2399,
+      "sha256": "c74f9dff7b54bbf92223d6ac2c9e7424524d80b043a1d50ed66e173eafee0f78"
+    },
+    {
+      "file": "desktop/thumbnails.json",
+      "bytes": 18493,
+      "sha256": "db57ddd96d7ade3b75d301c22c4be961796caa621dbcc53acae27a5a90b08760"
+    },
+    {
+      "file": "desktop/timecode.json",
+      "bytes": 441026,
+      "sha256": "61f6e331a7914c9bf33cffdc1165a02d3361f24959bab5a30b0906b3c859ad35"
+    },
+    {
+      "file": "desktop/uncached-show-read.json",
+      "bytes": 3183,
+      "sha256": "aa4a3e0d8f9ca269d1d1104aad150c5d3c8adf1af05aeb34fecfdff5f72b5223"
+    },
+    {
+      "file": "native-drop/driver-1x.log",
+      "bytes": 1254,
+      "sha256": "c61233ffe4bd508796927e4aac4d43464bf822d817394b8512ba5712337f2d17"
+    },
+    {
+      "file": "native-drop/driver-2x.log",
+      "bytes": 1254,
+      "sha256": "660c9094a8169184d893c3270689f8b3ac6b2c70b5387c44de5d2784433ee5ec"
+    },
+    {
+      "file": "native-drop/receipt-1x.json",
+      "bytes": 4755,
+      "sha256": "d79488278913f7a52e302d5c317ffe4263857d563498d98ceaa2f70352a16194"
+    },
+    {
+      "file": "native-drop/receipt-2x.json",
+      "bytes": 4755,
+      "sha256": "fb235b7a5dd96b5d1be2018faf4b6748c5ad2dd0eddaf4616dd5dfef95eaa8f9"
+    },
+    {
+      "file": "native-menu/driver.log",
+      "bytes": 1788,
+      "sha256": "31300fe9c1014a13edf1d440a6ddcda15349b3226017101cdc75452b0a8d0f6a"
+    },
+    {
+      "file": "native-menu/quit-observation.json",
+      "bytes": 145204,
+      "sha256": "759e88dcd068817f74fe235c40df31f691dfca9e7dfba9b26487414f2071133e"
+    },
+    {
+      "file": "native-menu/receipt.json",
+      "bytes": 807,
+      "sha256": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98"
+    }
+  ],
+  "logs": [
+    {
+      "lane": "linux-core",
+      "bytes": 540009,
+      "sha256": "3c90fb8b85a4e028c66487239513e0fc361bd4cd04995d585a456f11707f7c09"
+    },
+    {
+      "lane": "windows-core",
+      "bytes": 431140,
+      "sha256": "8fa24b16a49e228b75616bf1bda3b7068cdc20949ecf80f56e8d2192c37eae55"
+    },
+    {
+      "lane": "windows-native",
+      "bytes": 109787,
+      "sha256": "542446ab3030f07cfa1c82c63712d15e561016d054b36c5f007039249903218b"
+    },
+    {
+      "lane": "linux-desktop",
+      "bytes": 419173,
+      "sha256": "06c0e95ac0eae06df694a6da6ed824e50604b83b2254ae472e1b4299e75f111a"
+    },
+    {
+      "lane": "macos-core",
+      "bytes": 80780,
+      "sha256": "c9a44ee0f4a9876a3a5116229af267b616f1bb0eed7b8551f9ed3afbd5c6653e"
+    }
+  ],
+  "scope": "Four successful original jobs plus actual failed Darwin evidence. Downloaded Linux190-step editor/menu/drop/HTTP/JPEG/identity/provider receipts independently checked;54 other diagnostics remain. Windows7identity/5provider cases exclude Unix permission cases. No full parity, complete six-job success, foreign GUI, authentication or new performance claim."
+}
