@@ -26,8 +26,17 @@ owner joins after library selection. One phase runs during the same real 64 MiB
 ZIP compression. All three have zero timecode runtime/browser errors or source
 ACKs; the full desktop receipt retains expected other-feature diagnostics.
 Native hardware/capture/playback, packaged codecs, complete timeline workflows,
-Windows/macOS GUI and an overall performance improvement remain open. This local
-timecode milestone still requires its own complete remote CI run.
+Windows/macOS GUI and an overall performance improvement remain open. Published
+timecode commit `e81f315f` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39213713551):
+core on Linux/Windows/macOS, native on Windows/macOS and the full Linux desktop
+workflow. Downloaded green-run artifacts independently verify all 156 steps,
+three exact 24-event original/native LTC replays, actual STOP frees, four menus
+and both drop scales. The complete desktop receipt retains 52 expected
+other-feature diagnostic entries. The preceding run exposed a Linux-only test
+helper compiled by other OS lint jobs and a macOS fixture expecting one 30 ms
+retry to cover real cleanup. The correction scopes that helper and drives only
+documented timeout retries under a five-second outer bound, retaining actual
+zero owner counts and both original request errors.
 
 The following audio-only numbers describe the previously published milestone.
 

@@ -92,8 +92,11 @@ tests, with four existing OS/capability skips. The full Linux native run passes
 binary unit executions, including shared cases repeated by importing targets.
 That run includes 22 timecode ownership/source tests and eight raw framing tests.
 Strict workspace/native all-target Clippy and focused shared-bridge TypeScript
-pass. Native observer bounds and the real desktop replay pass. The final timecode
-milestone still requires its own complete remote CI run.
+pass. Native observer bounds and the real desktop replay pass. Published commit
+`e81f315f` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39213713551).
+Downloaded green-run artifacts independently verify 156 editor steps, three
+exact source/native LTC phases, real STOP frees, four menus and both drop scales.
+The raw editor receipt preserves unrelated expected capability/stale diagnostics.
 
 The [desktop probe and source oracle](workers/timecode-desktop.md) require real
 native receipts, exact original addon audio bytes, decoded values, original
