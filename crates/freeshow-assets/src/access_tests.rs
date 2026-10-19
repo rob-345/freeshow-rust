@@ -42,6 +42,23 @@ async fn settled(mut predicate: impl FnMut() -> bool) {
     .await
     .unwrap();
 }
+async fn worker_exited(server: &AssetServer) {
+    // A released native gate need not finish Windows thread teardown within the
+    // fixture's100ms operation budget. Wait for the actual retained handle, not
+    // a release notification/body counter or a blind delay/retried shutdown.
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while !server.0.shared.pool.worker_exit_observation().1 {
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .expect("Actual native asset worker did not exit within the fixture bound");
+    assert_eq!(server.0.shared.pool.worker_exit_observation(), (0, true));
+    assert!(
+        !server.status().file_workers_joined,
+        "Observation must retain the real handles for shutdown to join"
+    );
+}
 fn source(dir: &tempfile::TempDir) -> PathBuf {
     let path = dir.path().join("source 日本語.wav");
     fs::write(&path, b"first real bytes").unwrap();
@@ -617,7 +634,9 @@ async fn dropped_or_canceled_callers_keep_actual_accepted_io_and_leases_until_th
             "assets_shutdown_timeout"
         );
         assert!(!server.status().file_workers_joined);
+        assert!(!server.0.shared.pool.worker_exit_observation().1);
         release.send(()).unwrap();
+        worker_exited(&server).await;
         server.shutdown().await.unwrap();
         assert_eq!(server.status().native_reads, 0);
         assert_eq!(server.status().open_files, 0);
@@ -721,11 +740,17 @@ async fn canceled_shutdown_observers_keep_real_thread_joins_after_logical_comple
         assert_eq!(server.status().open_files, 0);
         assert!(!server.status().file_workers_joined);
         assert_eq!(
+            server.0.shared.pool.worker_exit_observation(),
+            (0, false),
+            "Logical completion must not count a real blocked exit as finished"
+        );
+        assert_eq!(
             server.shutdown().await.unwrap_err().code,
             "assets_shutdown_timeout"
         );
         assert!(!server.status().file_workers_joined);
         release.send(()).unwrap();
+        worker_exited(&server).await;
         if panic {
             assert_eq!(server.shutdown().await.unwrap_err().code, "assets_worker");
             assert_eq!(server.shutdown().await.unwrap_err().code, "assets_worker");

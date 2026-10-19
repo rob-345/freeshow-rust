@@ -449,6 +449,16 @@ impl Pool {
             .unwrap_or(false)
     }
     #[cfg(test)]
+    pub(crate) fn worker_exit_observation(&self) -> (usize, bool) {
+        // Observation only: retain every real handle for production drain/join.
+        // Logical body completion alone does not prove the thread has exited.
+        let workers = self.0.workers.lock().unwrap();
+        (
+            *self.0.done.borrow(),
+            workers.iter().all(std::thread::JoinHandle::is_finished),
+        )
+    }
+    #[cfg(test)]
     pub(crate) fn pause_for(&self, path: PathBuf) -> (oneshot::Receiver<()>, mpsc::SyncSender<()>) {
         let (entered, waiting) = oneshot::channel();
         let (release, held) = mpsc::sync_channel(1);
