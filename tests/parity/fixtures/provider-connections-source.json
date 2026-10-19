@@ -1,0 +1,29 @@
+{
+    "oracle": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "normalization": "CRLF to LF",
+    "handlerSha256": "567aa109b43d325e78326db7367a6354f7661678214f6cc31e4a149724bc1b61",
+    "sources": {
+        "src/electron/IPC/responsesMain.ts": "70372b48b698f74f239b82f92e48dde69880a7c4d78af1a9f0e1723313fb57a3",
+        "src/electron/IPC/main.ts": "11afb38cdc1ca36134b48b7457da2cd27078dedd8b6d7a54cf24e0ecc0608609",
+        "src/electron/data/contentProviders.ts": "d7d81f197d4b50b0a294469933c135a440236d38f100a0abc3fc938e352fdb64",
+        "src/electron/data/store.ts": "f436789c48aefd916a1c6eccbaf1d51259734cac86b577e92334a75eb002cff8",
+        "src/electron/contentProviders/ContentProviderRegistry.ts": "232c1ee43473113353024fb8560cfb75da20af4f04146c7ddd6176918677de10",
+        "src/electron/contentProviders/base/ContentProvider.ts": "c6e2376b91a94c7d18511e9bffb544058047ed2767b05a09ff8747410fae6002",
+        "src/electron/contentProviders/base/OAuth2Helper.ts": "688e83dcd09c114ff9f2a9bf6ad1d9d2dd2ccb51ac5ae29884ea2f9bd34126d2",
+        "src/electron/contentProviders/base/types.ts": "3ee9aa39de81699e4fa5c0d08fdedf92bd3aed85ef7b5ff39a1d2423dc2b6ebd",
+        "src/types/IPC/ToMain.ts": "cbb658ff42353597249074aca147d933e9169cc05ea5e31a61f7a37929c8db31",
+        "src/types/IPC/Main.ts": "e0d9cb8bb07eec6d9dcab44576f8300ffc75e32f401b714a4148c610a8ff6ad2",
+        "src/electron/contentProviders/churchApps/ChurchAppsProvider.ts": "264dc221beadd914b9a1015804a7648e962cb9d18ec34e00a43dba05e19becdd",
+        "src/electron/contentProviders/churchApps/ChurchAppsConnect.ts": "26a734471823f7466c2a4f6fc5a29f5199c1a2364fd51cb7ca60aa3f2b52bd9c",
+        "src/electron/contentProviders/churchApps/types.ts": "f36e71a230e004963501aaca9503ffa4d1f8aafff0cb5435ed36f6b02ce4ea19",
+        "src/electron/contentProviders/planningCenter/PlanningCenterProvider.ts": "80ec35b58f2e032ca712afe62b6e5842b6f4b8b2d9d899db26536137c13c51db",
+        "src/electron/contentProviders/planningCenter/connect.ts": "41a3277128daef2e388a7d0a313114f63c8fbc86faf8a7830d7c42c7c9563213",
+        "src/electron/contentProviders/amazingLife/AmazingLifeProvider.ts": "7d5b2cfa80b65c7c6f3576c6359a6522b2f929b9ed70bdc5d550f60d4682a061",
+        "src/electron/contentProviders/amazingLife/AmazingLifeConnect.ts": "6de5183111483a54cccbe676460ceaeaf9a14226b12561ba994eff41b2e32503",
+        "src/electron/contentProviders/amazingLife/types.ts": "bd3780ca68944e862bdaf58f46bce96738ade2faa96803ecd948b5a8f035ec55",
+        "src/electron/contentProviders/onStage/OnStageProvider.ts": "3d435de3cde6b8067325ca520a55864f919a21f31b703fa068cdd4ae14ee2f7c",
+        "src/electron/contentProviders/onStage/connect.ts": "059b90737f97a0eb417b63145b7a816e9096128d2554bbc87960ce65adff9695",
+        "src/electron/contentProviders/canva/CanvaProvider.ts": "c4b62b7aaf6b2d553b26168af4972a5852a7e1dd6b74a302d8283ab77777a794",
+        "src/electron/contentProviders/canva/CanvaConnect.ts": "7ae7116d52d807762fcc11b1c62a1769069a29cb3df39a9bb0aa71214f3cb0b5"
+    }
+}

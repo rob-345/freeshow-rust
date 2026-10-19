@@ -1,5 +1,6 @@
 pub mod device_id;
 mod native;
+pub mod provider_connections;
 pub use native::meminfo_field;
 use serde::{Deserialize, Serialize};
 use std::{
