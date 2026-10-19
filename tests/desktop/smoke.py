@@ -400,7 +400,29 @@ def run():
         def click(selector):
             click_element(element(selector), selector)
 
-        def click_text(text):
+        def click_text(text, virtual_show=False):
+            if virtual_show:
+                materialized = script(r"""
+                    return (async () => {
+                        const text=arguments[0], viewport=document.querySelector('.drawer svelte-virtual-list-viewport');
+                        if (!viewport || viewport.clientHeight<=0) return false;
+                        const normalize=value=>value.replace(/\s+/g,' ').trim();
+                        const found=()=>Array.from(viewport.querySelectorAll('*')).some(node=>
+                            normalize(node.textContent||'')===text &&
+                            !Array.from(node.children).some(child=>normalize(child.textContent||'')===text));
+                        for(let step=0;step<64;step++) {
+                            if(found()) return true;
+                            const end=Math.max(0,viewport.scrollHeight-viewport.clientHeight);
+                            const top=Math.min(step*Math.max(30,viewport.clientHeight*0.75),end);
+                            viewport.scrollTop=top;
+                            viewport.dispatchEvent(new Event('scroll'));
+                            await new Promise(resolve=>setTimeout(resolve,25));
+                            if(top>=Math.max(0,viewport.scrollHeight-viewport.clientHeight) && step>0) return found();
+                        }
+                        return found();
+                    })()
+                """, text)
+                assert materialized, "Show not materialized within bounded ordinary viewport scan: " + text
             # Locate by text in the real document, then perform a WebDriver click.
             # XPath has no JSON backslash escapes. Keep Unicode literal and
             # construct concat() only when the text contains both quote kinds.
@@ -1162,7 +1184,7 @@ def run():
             assert thumbnails["status"]["captures"] == 0 and thumbnails["status"]["requests"] == 0
             steps.append("Actual retained image/video canvas PNG bytes install unchanged before native media URL callbacks")
             steps.append("Folder capture preserves depth semantics, cache reuse, source existence replies and terminal request cleanup")
-            click_text("Rust parity test")
+            click_text("Rust parity test", virtual_show=True)
             wait(lambda: script("return document.body.innerText.includes('Amazing grace')"), "Original show reselected after import checks")
 
             # Applying the retained default output template can add align/auto
@@ -1219,7 +1241,7 @@ def run():
             wait(lambda: script("return Array.isArray(window.__cancelResult)"), "Native folder cancellation completed")
             assert script("return window.__cancelResult") == []
 
-            click_text("Rust parity test")
+            click_text("Rust parity test", virtual_show=True)
             wait(lambda: script("return document.body.innerText.includes('Amazing grace')"), "Restored show reopened for output cues")
 
             # Use the renderer's real initial-state sender and actual slide
@@ -1350,7 +1372,7 @@ def run():
             (ARTIFACTS / "output-scripture.png").write_bytes(base64.b64decode(command("GET", "/screenshot")))
             command("POST", "/window", {"handle":main_window})
             click('section.drawer button#shows')
-            click_text("Rust parity test")
+            click_text("Rust parity test", virtual_show=True)
             wait(lambda: script("return document.querySelectorAll('#showArea .grid .slide.context').length>=2"), "Original show controls restored after the Bible cue")
             script("window.__outputStates=[];window.api.send('OUTPUT',{channel:'TOGGLE_OUTPUTS',data:{outputs:arguments[0],state:false,autoPosition:false}})", [output_config, secondary_config])
             wait(lambda: script("return arguments[0].every(id=>window.__outputStates.at(-1)?.some(s=>s.id===id && s.active===false))", [output_id, secondary_id]), "Both native projections hidden")
