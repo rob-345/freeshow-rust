@@ -98,7 +98,7 @@ async fn main_role_full_context_and_listener_validate_before_lazy_start() {
             "spotify_resource_limit"
         );
     }
-    for (outer, inner) in [("OUTPUT", "SPOTIFY_GET_STATE"), ("MAIN", "SPOTIFY_COMMAND")] {
+    for (outer, inner) in [("OUTPUT", "SPOTIFY_GET_STATE"), ("MAIN", "SPOTIFY_UNKNOWN")] {
         let mut invalid = request(&library);
         invalid.channel = outer.into();
         invalid.data["channel"] = json!(inner);

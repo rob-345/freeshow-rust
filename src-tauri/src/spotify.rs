@@ -4,7 +4,9 @@ use freeshow_core::{
     service::LibraryService,
     WireError,
 };
-use freeshow_spotify::{Backend, Limits, Owner, SpotifyService, Ticket};
+use freeshow_spotify::{
+    Backend, CommandControl, CommandReceipt, Limits, Owner, PreparedCommand, SpotifyService, Ticket,
+};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -15,6 +17,7 @@ struct State {
     closed: bool,
     next: u64,
     active: HashMap<u64, (RuntimeContext, CancellationToken)>,
+    commands: Vec<(RuntimeContext, CommandControl)>,
     owner: Option<Owner>,
     backend: Option<Backend>,
     service: Option<SpotifyService>,
@@ -27,6 +30,8 @@ pub struct NativeSpotify {
     after_begin: Arc<Mutex<Option<TestGate>>>,
     #[cfg(test)]
     before_context: Arc<Mutex<Option<TestGate>>>,
+    #[cfg(test)]
+    after_command_begin: Arc<Mutex<Option<TestGate>>>,
 }
 #[cfg(test)]
 struct TestGate {
@@ -87,6 +92,7 @@ impl NativeSpotify {
                 closed: false,
                 next: 0,
                 active: HashMap::new(),
+                commands: Vec::new(),
                 owner,
                 backend,
                 service: None,
@@ -96,6 +102,8 @@ impl NativeSpotify {
             after_begin: Arc::new(Mutex::new(None)),
             #[cfg(test)]
             before_context: Arc::new(Mutex::new(None)),
+            #[cfg(test)]
+            after_command_begin: Arc::new(Mutex::new(None)),
         }
     }
     fn begin(
@@ -104,6 +112,25 @@ impl NativeSpotify {
         deadline: Instant,
     ) -> Result<(Ticket, Caller, Owner), WireError> {
         let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let (service, owner) = Self::service(&mut state)?;
+        let id = state.next;
+        state.next = id
+            .checked_add(1)
+            .ok_or_else(|| WireError::new("spotify_owner", "Native Spotify sequence exhausted"))?;
+        let ticket = service.begin_state(&owner, deadline).map_err(error)?;
+        let cancel = CancellationToken::new();
+        state.active.insert(id, (context, cancel.clone()));
+        Ok((
+            ticket,
+            Caller {
+                id,
+                cancel,
+                state: self.state.clone(),
+            },
+            owner,
+        ))
+    }
+    fn service(state: &mut State) -> Result<(SpotifyService, Owner), WireError> {
         if state.closed {
             return Err(WireError::new(
                 "spotify_shutdown",
@@ -126,27 +153,28 @@ impl NativeSpotify {
                 Err(e) => return Err(error(e)),
             }
         }
-        let id = state.next;
-        state.next = id
-            .checked_add(1)
-            .ok_or_else(|| WireError::new("spotify_owner", "Native Spotify sequence exhausted"))?;
-        let ticket = state
-            .service
-            .as_ref()
-            .unwrap()
-            .begin_state(&owner, deadline)
+        Ok((state.service.as_ref().unwrap().clone(), owner))
+    }
+    fn begin_command(
+        &self,
+        context: RuntimeContext,
+        command: PreparedCommand,
+        deadline: Instant,
+    ) -> Result<(CommandReceipt, Owner), WireError> {
+        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let (service, owner) = Self::service(&mut state)?;
+        state.commands.retain(|(_, control)| !control.settled());
+        if state.commands.len() >= freeshow_spotify::JOB_CAPACITY {
+            return Err(WireError::new(
+                "spotify_busy",
+                "Native command registry is full",
+            ));
+        }
+        let receipt = service
+            .begin_command(&owner, command, deadline)
             .map_err(error)?;
-        let cancel = CancellationToken::new();
-        state.active.insert(id, (context, cancel.clone()));
-        Ok((
-            ticket,
-            Caller {
-                id,
-                cancel,
-                state: self.state.clone(),
-            },
-            owner,
-        ))
+        state.commands.push((context, receipt.control()));
+        Ok((receipt, owner))
     }
     pub fn seal(&self) {
         let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
@@ -154,15 +182,25 @@ impl NativeSpotify {
         for (_, cancel) in state.active.values() {
             cancel.cancel();
         }
+        state.commands.retain(|(_, control)| !control.settled());
+        for (_, control) in &state.commands {
+            control.cancel();
+        }
         if let Some(service) = &state.service {
             service.close();
         }
     }
     pub fn context_changed(&self, current: &RuntimeContext) {
-        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         for (context, cancel) in state.active.values() {
             if context != current {
                 cancel.cancel();
+            }
+        }
+        state.commands.retain(|(_, control)| !control.settled());
+        for (context, control) in &state.commands {
+            if context != current {
+                control.cancel();
             }
         }
     }
@@ -174,27 +212,58 @@ impl NativeSpotify {
             .unwrap_or_else(|e| e.into_inner())
             .service
             .clone();
-        if let Some(service) = service {
+        let result = if let Some(service) = service {
             if tokio::runtime::Handle::try_current().is_err() {
-                return service.shutdown().await.map_err(error);
-            }
-            tokio::time::timeout(Duration::from_secs(2), service.shutdown())
-                .await
-                .map_err(|_| {
-                    WireError::new(
+                service.shutdown().await.map_err(error)
+            } else {
+                match tokio::time::timeout(Duration::from_secs(2), service.shutdown()).await {
+                    Ok(result) => result.map_err(error),
+                    Err(_) => Err(WireError::new(
                         "spotify_shutdown_timeout",
                         "Native Spotify owner remains retained; shutdown can be retried",
-                    )
-                })?
-                .map_err(error)?;
-        }
-        Ok(())
+                    )),
+                }
+            }
+        } else {
+            Ok(())
+        };
+        self.state
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .commands
+            .retain(|(_, control)| !control.settled());
+        result
     }
     pub async fn dispatch(
         &self,
         library: &LibraryService,
+        request: Request,
+        window: &str,
+    ) -> Result<Vec<Event>, WireError> {
+        self.dispatch_inner(library, request, window, None).await
+    }
+    /// Native-only exact binary64 input from a separately validated raw decoder.
+    /// The request must still contain an actual numeric value and numeric command.
+    #[allow(
+        dead_code,
+        reason = "The native raw numeric adapter is integrated separately"
+    )]
+    pub async fn dispatch_with_number(
+        &self,
+        library: &LibraryService,
+        request: Request,
+        window: &str,
+        number: f64,
+    ) -> Result<Vec<Event>, WireError> {
+        self.dispatch_inner(library, request, window, Some(number))
+            .await
+    }
+    async fn dispatch_inner(
+        &self,
+        library: &LibraryService,
         mut request: Request,
         window: &str,
+        number: Option<f64>,
     ) -> Result<Vec<Event>, WireError> {
         if window != "main" {
             return Err(WireError::new(
@@ -202,7 +271,9 @@ impl NativeSpotify {
                 "Only the main window may request desktop Spotify state",
             ));
         }
-        if request.channel != "MAIN" || request.data["channel"] != "SPOTIFY_GET_STATE" {
+        let command = request.data["channel"] == "SPOTIFY_COMMAND";
+        if request.channel != "MAIN" || (!command && request.data["channel"] != "SPOTIFY_GET_STATE")
+        {
             return Err(WireError::new(
                 "unsupported_command",
                 "Unknown desktop Spotify command",
@@ -221,7 +292,19 @@ impl NativeSpotify {
                 "Desktop Spotify listener exceeds bounds",
             ));
         }
-        request.data = serde_json::json!({"channel":"SPOTIFY_GET_STATE"});
+        let prepared = if command {
+            bound_payload(&request.data)?;
+            Some(prepare_command(&request.data["data"], number)?)
+        } else {
+            if number.is_some() {
+                return Err(WireError::new(
+                    "spotify_command_unsupported",
+                    "Numeric input requires a Spotify playback command",
+                ));
+            }
+            None
+        };
+        request.data = serde_json::json!({"channel":if command {"SPOTIFY_COMMAND"} else {"SPOTIFY_GET_STATE"}});
         if tokio::runtime::Handle::try_current().is_err() {
             return Err(WireError::new(
                 "spotify_runtime",
@@ -229,6 +312,46 @@ impl NativeSpotify {
             ));
         }
         let deadline = Instant::now() + Duration::from_secs(2);
+        if let Some(prepared) = prepared {
+            let (receipt, owner) =
+                self.begin_command(request.context.clone().unwrap(), prepared, deadline)?;
+            let control = receipt.control();
+            // No production await follows admission. Aborting a test-held caller
+            // drops only its observation/receipt; the registry retains intent.
+            #[cfg(test)]
+            Self::hold_test_gate(&self.after_command_begin, &CancellationToken::new()).await;
+            let reply = receipt.reply(&owner).map_err(error)?;
+            let mut event = Event::reply(
+                "MAIN",
+                "SPOTIFY_COMMAND",
+                serde_json::json!(reply),
+                request.listener_id.clone(),
+            );
+            event.native_lifetime = Some(NativeLifetime::new(receipt));
+            let mut events = vec![event];
+            #[cfg(test)]
+            Self::hold_test_gate(&self.before_context, &CancellationToken::new()).await;
+            let current = library
+                .contextualize(&request, &mut events)
+                .map_err(WireError::from);
+            let closed = self.state.lock().unwrap_or_else(|e| e.into_inner()).closed;
+            if let Err(e) = current {
+                control.cancel();
+                return Err(e);
+            }
+            if closed || Instant::now() >= deadline {
+                control.cancel();
+                return Err(WireError::new(
+                    if closed {
+                        "spotify_shutdown"
+                    } else {
+                        "spotify_deadline"
+                    },
+                    "Native Spotify command publication retired; accepted work remains owned",
+                ));
+            }
+            return Ok(events);
+        }
         let (ticket, caller, owner) = self.begin(request.context.clone().unwrap(), deadline)?;
         #[cfg(test)]
         Self::hold_test_gate(&self.after_begin, &caller.cancel).await;
@@ -313,16 +436,31 @@ impl NativeSpotify {
         Self::test_gate(&self.before_context)
     }
     #[cfg(test)]
+    #[allow(dead_code, reason = "Used by isolated command host integration tests")]
+    pub fn test_hold_after_command_begin(
+        &self,
+    ) -> (
+        tokio::sync::oneshot::Receiver<CancellationToken>,
+        tokio::sync::oneshot::Sender<()>,
+    ) {
+        Self::test_gate(&self.after_command_begin)
+    }
+    #[cfg(test)]
+    #[allow(dead_code, reason = "Used by isolated command host integration tests")]
+    pub fn test_registered_commands(&self) -> usize {
+        self.state.lock().unwrap().commands.len()
+    }
+    #[cfg(test)]
     #[allow(dead_code, reason = "Used by isolated native host integration tests")]
     pub fn test_registered(&self) -> usize {
         self.state.lock().unwrap().active.len()
     }
-    #[cfg(test)]
-    #[allow(dead_code)]
+    /// Native-only actual owner/late-command diagnostics, not a source reply.
+    #[allow(dead_code, reason = "Optional native lifecycle/command diagnostics")]
     pub fn status(&self) -> Option<freeshow_spotify::Status> {
         self.state
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .service
             .as_ref()
             .map(SpotifyService::status)
@@ -339,4 +477,85 @@ impl NativeSpotify {
             .map(|owner| (owner, backend)),
         )
     }
+}
+fn prepare_command(
+    payload: &serde_json::Value,
+    number: Option<f64>,
+) -> Result<PreparedCommand, WireError> {
+    let name = payload
+        .get("command")
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| {
+            WireError::new(
+                "spotify_command_unsupported",
+                "A supported literal Spotify command is required",
+            )
+        })?;
+    let numeric = matches!(name, "seek" | "setVolume");
+    if number.is_some() && !numeric {
+        return Err(WireError::new(
+            "spotify_command_unsupported",
+            "Exact numeric input requires seek or setVolume",
+        ));
+    }
+    let value = if numeric {
+        let field = payload.get("value").ok_or_else(|| {
+            WireError::new(
+                "spotify_command_unsupported",
+                "A numeric Spotify command value is required",
+            )
+        })?;
+        let value = field.as_f64().ok_or_else(|| {
+            WireError::new(
+                "spotify_command_unsupported",
+                "Spotify command value must be a finite Number",
+            )
+        })?;
+        Some(number.unwrap_or(value))
+    } else {
+        None
+    };
+    PreparedCommand::new(name, value).map_err(error)
+}
+fn bound_payload(value: &serde_json::Value) -> Result<(), WireError> {
+    fn visit(
+        value: &serde_json::Value,
+        depth: usize,
+        nodes: &mut usize,
+        bytes: &mut usize,
+    ) -> Result<(), ()> {
+        if depth > 16 || *nodes == 0 {
+            return Err(());
+        }
+        *nodes -= 1;
+        let cost = 32 + value.as_str().map_or(0, str::len);
+        *bytes = bytes.checked_sub(cost).ok_or(())?;
+        match value {
+            serde_json::Value::Array(values) => {
+                if values.len() > *nodes {
+                    return Err(());
+                }
+                for value in values {
+                    visit(value, depth + 1, nodes, bytes)?;
+                }
+            }
+            serde_json::Value::Object(values) => {
+                if values.len() > *nodes {
+                    return Err(());
+                }
+                for (key, value) in values {
+                    *bytes = bytes.checked_sub(key.len()).ok_or(())?;
+                    visit(value, depth + 1, nodes, bytes)?;
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    visit(value, 0, &mut 4096, &mut (64 * 1024)).map_err(|_| {
+        WireError::new(
+            "spotify_resource_limit",
+            "Spotify command payload exceeds native bounds",
+        )
+    })
 }
