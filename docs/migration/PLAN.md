@@ -40,6 +40,16 @@ The library worker admits up to eight waiting jobs and one active job. The SHOW 
 
 Add responsiveness and concurrency tests alongside functionality tests. Measure latency under sustained load before increasing parallelism: dependency ordering, disk contention and output timing matter more than the number of workers.
 
+Local-model inventory and Linux Spotify state now each have one lazy, fixed,
+process-global owner, independent of ordered library writes. Each retains four
+complete native jobs through actual work and guarded result encoding; changing
+libraries cancels stale observers while preserving the global capability.
+Shutdown retains real thread handles through observer cancellation and awaits
+actual joins. A held-commit test demonstrates independent AI execution; it is
+not a performance measurement. The ChurchApps show-builder foundation performs
+bounded pure preparation without creating a worker or provider connection.
+[Native contracts and current verification scope](native-ai-spotify.md).
+
 Media lookup runs on two fixed filesystem threads with eight queued slots and bounded input/enumeration work. The native host additionally caps ten whole requests through their ordered effect commits, cancels old-library scans and rejects stale commits. Committed media configuration/context comes from a short atomic snapshot. Existing-file replies and media-folder queries can complete during compression; lookup misses with cache effects wait for their ordered commit before replying. Folder setting/query order is retained separately from long library saves. The packaged Electron Unicode 15.1 corpus supplies filename-folding behavior. Actual playback, public change-time existence checks, universal nested duplicate winners and Windows/macOS filesystem/GUI checks remain pending. [Detailed limits and evidence](workers/media-locate.md).
 
 ## Development

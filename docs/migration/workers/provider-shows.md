@@ -146,9 +146,8 @@ serialization allocation. Small-budget Rust controls exercise real 32-file media
 expansion at the exact two-row boundary and one byte below it; the latter must
 not build the third row. This aggregate fixture budget is separate from the
 unchanged production per-call ceilings. Its tagged/IEEE fixtures are test transport, not a
-production deserializer or provider authority. Standalone manifest/lock are
-provided for review; coordinator owns eventual workspace membership and removes
-the nested `[workspace]`/lock at integration.
+production deserializer or provider authority. The crate is now a root workspace member; integration removed its temporary
+nested `[workspace]` and standalone lock without changing existing registry versions.
 
 ## Source evidence and checks
 

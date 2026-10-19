@@ -2,8 +2,8 @@
 
 This slice executes the original Linux desktop Spotify query using real
 `dbus-send` children. It does not use the Spotify Web API, credentials, a Node
-runtime sidecar, or a replacement disconnected-state constant. Main/IPC/renderer
-integration remains coordinator-owned; broad Spotify/provider parity is pending.
+runtime sidecar, or a replacement disconnected-state constant. The [native host and renderer binding](../native-ai-spotify.md) now integrate
+this foundation; broad Spotify/provider parity is pending.
 
 ## Native API
 
@@ -261,14 +261,13 @@ FREESHOW_SPOTIFY_BIN=/private/target/debug/freeshow-spotify-parity \
 ```
 
 The Node default binary is root `target/debug/freeshow-spotify-parity` (`.exe` on
-Windows). The binary is a bounded test driver, never a runtime sidecar. Root must
-add the crate to its workspace and remove its temporary nested `[workspace]` and
-standalone lock when integrating. Dependencies are already present in root's
-lock graph: serde/serde_json(preserve_order), regex1, futures-util0.3,
+Windows). The binary is a bounded test driver, never a runtime sidecar. The crate is now a root workspace member; integration removed the temporary
+nested `[workspace]` and standalone lock without changing existing registry
+versions. Dependencies were already present in root's lock graph: serde/serde_json(preserve_order), regex1, futures-util0.3,
 tokio(rt/process/io-util/sync/time/macros), tokio-util(rt). No core/native/IPC/CI
 files are changed by this worker.
 
-Remaining: actual root command/hydration/context/shutdown binding; retained
-WebView UI/album-art integration; Spotify desktop runtime evidence; commands,
+Remaining: independently verified retained WebView UI/album-art integration;
+actual Spotify desktop runtime evidence; commands,
 macOS AppleScript/TCC, Windows libspotifyctl/bridge lifecycle, OAuth/provider
 startup imports; packaging/tool discovery and missing-session/autolaunch variants.
