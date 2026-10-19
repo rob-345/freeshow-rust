@@ -93,10 +93,16 @@ pub(crate) struct Run {
     pub gate: Arc<Mutex<HashMap<String, bool>>>,
     pub dropped_diagnostics: AtomicU64,
     pub static_requests: Arc<Semaphore>,
+    pub cover: Option<Arc<dyn crate::CoverSource>>,
+    pub file_failure: Mutex<Option<RemoteError>>,
     sequence: AtomicU64,
     admission: Mutex<bool>,
     #[cfg(test)]
     pub handshake_pause: Mutex<Option<(Arc<tokio::sync::Notify>, Arc<tokio::sync::Notify>)>>,
+    #[cfg(test)]
+    pub transport_fault: (Mutex<Option<bool>>, tokio::sync::Notify),
+    #[cfg(test)]
+    pub socket_send_buffer: std::sync::atomic::AtomicUsize,
 }
 impl Run {
     pub fn new(
@@ -106,6 +112,7 @@ impl Run {
         controls: mpsc::Sender<RemoteEvent>,
         events: mpsc::Sender<RemoteEvent>,
         gate: Arc<Mutex<HashMap<String, bool>>>,
+        cover: Option<Arc<dyn crate::CoverSource>>,
     ) -> (Arc<Self>, mpsc::Receiver<Command>) {
         let (commands, receiver) = mpsc::channel(config.command_capacity);
         (
@@ -117,6 +124,8 @@ impl Run {
                     config.static_workers + config.static_queue,
                 )),
                 config,
+                cover,
+                file_failure: Mutex::new(None),
                 generation,
                 spec,
                 cancel: CancellationToken::new(),
@@ -134,6 +143,10 @@ impl Run {
                 admission: Mutex::new(true),
                 #[cfg(test)]
                 handshake_pause: Mutex::new(None),
+                #[cfg(test)]
+                transport_fault: (Mutex::new(None), tokio::sync::Notify::new()),
+                #[cfg(test)]
+                socket_send_buffer: std::sync::atomic::AtomicUsize::new(0),
             }),
             receiver,
         )

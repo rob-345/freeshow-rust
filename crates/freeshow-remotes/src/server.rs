@@ -45,6 +45,37 @@ use tokio_util::sync::WaitForCancellationFutureOwned;
 use tower::ServiceExt;
 use uuid::Uuid;
 
+// Contain a transport poll panic while preserving the separately owned file
+// pool and runtime. Never repoll the failed future; actual file work drains next.
+async fn contain<T>(future: impl Future<Output = Result<T>>) -> Result<T> {
+    tokio::pin!(future);
+    std::future::poll_fn(|cx| {
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| future.as_mut().poll(cx)))
+            .unwrap_or_else(|_| {
+                Poll::Ready(Err(RemoteError::new(
+                    "worker_panicked",
+                    "Remote transport panicked",
+                )))
+            })
+    })
+    .await
+}
+async fn injected_fault(_run: &Run) -> Result<()> {
+    #[cfg(test)]
+    {
+        _run.transport_fault.1.notified().await;
+        if _run.transport_fault.0.lock().unwrap().take().unwrap() {
+            panic!("controlled transport poll panic");
+        }
+        Err(RemoteError::new(
+            "controlled_transport_error",
+            "Controlled transport error",
+        ))
+    }
+    #[cfg(not(test))]
+    std::future::pending().await
+}
+
 #[derive(Clone)]
 pub struct RemoteService {
     inner: Arc<Inner>,
@@ -98,6 +129,15 @@ impl RemoteService {
         ))
     }
     pub async fn start(&self, payload: &Value, context: u64) -> Result<BoundServers> {
+        self.start_with_cover(payload, context, None).await
+    }
+    /// Native per-start authority only. Source receives no request-selected path.
+    pub async fn start_with_cover(
+        &self,
+        payload: &Value,
+        context: u64,
+        cover: Option<Arc<dyn crate::CoverSource>>,
+    ) -> Result<BoundServers> {
         self.ensure_open()?;
         let _admission =
             self.inner.lifecycle.try_acquire().map_err(|_| {
@@ -138,6 +178,7 @@ impl RemoteService {
             self.inner.controls.clone(),
             self.inner.events.clone(),
             self.inner.gate.clone(),
+            cover,
         );
         let (ready, started) = oneshot::channel();
         let (done, finished) = oneshot::channel();
@@ -153,14 +194,23 @@ impl RemoteService {
                         .enable_all().build().map_err(io_error)?;
                     let _ = task_run.runtime.set(runtime.handle().clone());
                     let result = runtime.block_on(async {
-                        let transport = Transport::start(listeners, task_run.clone())?;
+                        // Keep the actual file owner outside fallible/panicking
+                        // transport work. Its accepted futures need this runtime
+                        // alive through asynchronous drain even after a fault.
+                        let files = FilePool::new(task_run.clone())?;
+                        let mut transport = Transport::start(listeners, task_run.clone(), files.sender())?;
                         #[cfg(test)]
                         if let Some((entered, release)) = ready_pause {
                             entered.notify_one();
                             tokio::select! { _=release.notified()=>{}, _=task_run.cancel.cancelled()=>{} }
                         }
                         let _ = ready.take().unwrap().send(Ok(()));
-                        transport.work(commands).await
+                        let result = contain(transport.work(commands)).await;
+                        task_run.close_admission();
+                        let transport_stop = contain(transport.close()).await;
+                        let files_stop = files.stop().await;
+                        let file_failure = task_run.file_failure.lock().unwrap().clone();
+                        result.and(transport_stop).and(files_stop).and(file_failure.map_or(Ok(()), Err))
                     });
                     drop(runtime);
                     for (name, available, expected) in [
@@ -426,20 +476,18 @@ struct Transport {
     io: BTreeMap<ServerKind, SocketIo>,
     raw: BTreeMap<ServerKind, Router>,
     tasks: Vec<JoinHandle<()>>,
-    files: Option<FilePool>,
 }
 impl Transport {
     fn start(
         listeners: BTreeMap<ServerKind, std::net::TcpListener>,
         run: Arc<Run>,
+        pool: crate::static_files::PoolSender,
     ) -> Result<Self> {
-        let files = FilePool::new(run.clone())?;
         let mut transport = Self {
             run: run.clone(),
             io: BTreeMap::new(),
             raw: BTreeMap::new(),
             tasks: vec![],
-            files: Some(files),
         };
         for (kind, listener) in listeners {
             let parser = socketioxide::ParserConfig::common()
@@ -457,7 +505,7 @@ impl Transport {
                 .build_layer();
             connect(&io, kind, run.clone());
             let static_run = run.clone();
-            let pool = transport.files.as_ref().unwrap().sender();
+            let pool = pool.clone();
             let raw = Router::new()
                 .fallback(any(move |request: Request| {
                     crate::static_files::serve(request, kind, static_run.clone(), pool.clone())
@@ -482,9 +530,9 @@ impl Transport {
         }
         Ok(transport)
     }
-    async fn work(mut self, mut commands: mpsc::Receiver<Command>) -> Result<()> {
+    async fn work(&mut self, mut commands: mpsc::Receiver<Command>) -> Result<()> {
         loop {
-            tokio::select! {biased;_=self.run.cancel.cancelled()=>break,command=commands.recv()=>{let Some(command)=command else{break};let result=self.emit(&command);let _=command.reply.send(result);}}
+            tokio::select! {biased;_=self.run.cancel.cancelled()=>break, error=injected_fault(&self.run)=>return error,command=commands.recv()=>{let Some(command)=command else{break};let result=self.emit(&command);let _=command.reply.send(result);}}
         }
         self.run.close_admission();
         commands.close();
@@ -493,6 +541,10 @@ impl Transport {
                 .reply
                 .send(Err(RemoteError::new("cancelled", "Remote run stopped")));
         }
+        Ok(())
+    }
+    async fn close(&mut self) -> Result<()> {
+        self.run.close_admission();
         for task in self.tasks.drain(..) {
             let _ = task.await;
         }
@@ -561,9 +613,6 @@ impl Transport {
                 "Remote Engine.IO session references did not drain",
             )
         })?;
-        if let Some(files) = self.files.take() {
-            files.stop().await?;
-        }
         Ok(())
     }
     fn emit(&self, command: &Command) -> Result<()> {
@@ -836,3 +885,7 @@ include!("transport.rs");
 #[cfg(test)]
 #[path = "server_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "cover_tests.rs"]
+mod cover_tests;

@@ -1,6 +1,12 @@
 //! Native REMOTE/STAGE/CONTROLLER transport. The host owns main-window IPC,
 //! frozen library context, retained renderer authorization and client assets.
+mod cover;
 mod json;
+pub use cover::{CoverControl, CoverFuture, CoverSource, PreparedCover};
+pub use freeshow_cover_http::{
+    ErrorRendering as CoverErrorRendering, SourceFileStat as CoverFileStat,
+    SourceState as CoverState,
+};
 mod semantics;
 mod server;
 mod state;

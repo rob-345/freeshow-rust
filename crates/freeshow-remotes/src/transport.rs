@@ -41,8 +41,14 @@ async fn serve_tcp(listener: TcpListener, router: Router, run: Arc<Run>, kind: S
             Some(_)=tasks.join_next(),if !tasks.is_empty()=>{},
             accepted=listener.accept()=>{let(stream,_)=match accepted{Ok(pair)=>pair,Err(error)=>{run.diagnostic(kind,RemoteError::new("accept_failed",error.to_string()));break;}};
                 let permit=match run.tcp_connections.clone().try_acquire_owned(){Ok(permit)=>permit,Err(_)=>{drop(stream);run.diagnostic(kind,RemoteError::new("connection_limit","Remote TCP connection limit reached"));continue;}};
-                let router=router.clone();let cancel=run.cancel.clone();let io=TokioIo::new(CancelIo{stream,cancelled:Box::pin(cancel.clone().cancelled_owned()),_permit:permit});
-                tasks.spawn(async move{let mut builder=hyper::server::conn::http1::Builder::new();builder.timer(TokioTimer::new()).header_read_timeout(Duration::from_secs(10)).max_buf_size(16_384).max_headers(100);let connection=builder.serve_connection(io,TowerToHyperService::new(router)).with_upgrades();tokio::select!{_=cancel.cancelled()=>{},_=connection=>{}}});
+                #[cfg(test)]
+                { let bytes=run.socket_send_buffer.load(Ordering::Acquire); if bytes>0 { socket2::SockRef::from(&stream).set_send_buffer_size(bytes).unwrap(); } }
+                // A native cover deadline may cancel only this HTTP connection.
+                // The child still follows run cancellation, including WebSockets.
+                let cancel=run.cancel.child_token();
+                let router=router.clone().layer(axum::Extension(crate::cover::ConnectionAbort(cancel.clone())));
+                let io=TokioIo::new(CancelIo{stream,cancelled:Box::pin(cancel.clone().cancelled_owned()),_permit:permit});
+                tasks.spawn(async move{let mut builder=hyper::server::conn::http1::Builder::new();builder.timer(TokioTimer::new()).header_read_timeout(Duration::from_secs(10)).max_buf_size(16_384).max_headers(100);let service=tower::util::MapResponse::new(router,crate::cover::transport_response);let connection=builder.serve_connection(io,TowerToHyperService::new(service)).with_upgrades();tokio::select!{_=cancel.cancelled()=>{},_=connection=>{}}});
             }
         }
     }

@@ -8,6 +8,7 @@ repository = "https://github.com/rob-345/freeshow-rust"
 [dependencies]
 axum = { version = "0.8.9", default-features = false, features = ["http1", "tokio"] }
 form_urlencoded = "1"
+freeshow-cover-http = { path = "../freeshow-cover-http" }
 httpdate = "1"
 hyper = { version = "1", features = ["server", "http1"] }
 hyper-util = { version = "0.1", features = ["tokio", "service"] }

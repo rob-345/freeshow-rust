@@ -17,7 +17,11 @@ use tokio::sync::{mpsc, oneshot, OwnedSemaphorePermit};
 
 type Chunk = std::result::Result<Vec<u8>, io::Error>;
 pub(crate) type PoolSender = Arc<Mutex<Option<std_mpsc::SyncSender<Work>>>>;
-pub(crate) struct Work {
+pub(crate) enum Work {
+    Static(StaticWork),
+    Cover(crate::cover::Work),
+}
+pub(crate) struct StaticWork {
     started: Instant,
     root: PathBuf,
     path: String,
@@ -42,7 +46,7 @@ impl FilePool {
             threads: vec![],
             done: vec![],
         };
-        if run.config.static_roots.is_empty() {
+        if run.config.static_roots.is_empty() && run.cover.is_none() {
             pool.sender.lock().unwrap().take();
             return Ok(pool);
         }
@@ -55,7 +59,10 @@ impl FilePool {
                     loop {
                         let work = receiver.lock().unwrap().recv();
                         let Ok(work) = work else { break };
-                        handle(work);
+                        match work {
+                            Work::Static(work) => handle(work),
+                            Work::Cover(work) => crate::cover::handle(work),
+                        }
                     }
                     let _ = done.send(());
                 })
@@ -70,17 +77,22 @@ impl FilePool {
     }
     pub async fn stop(mut self) -> Result<()> {
         self.sender.lock().unwrap().take();
+        let mut failure = None;
         for done in self.done.drain(..) {
-            done.await.map_err(|_| {
-                RemoteError::new("file_worker_unavailable", "Static file worker exited")
-            })?;
+            if done.await.is_err() {
+                failure.get_or_insert_with(|| {
+                    RemoteError::new("file_worker_unavailable", "Static file worker exited")
+                });
+            }
         }
         for thread in self.threads.drain(..) {
-            thread.join().map_err(|_| {
-                RemoteError::new("file_worker_panicked", "Static file worker panicked")
-            })?;
+            if thread.join().is_err() {
+                failure.get_or_insert_with(|| {
+                    RemoteError::new("file_worker_panicked", "Static file worker panicked")
+                });
+            }
         }
-        Ok(())
+        failure.map_or(Ok(()), Err)
     }
 }
 impl Drop for FilePool {
@@ -120,7 +132,16 @@ pub(crate) async fn serve(
     run: Arc<Run>,
     sender: PoolSender,
 ) -> Response {
-    if request.uri().path() == "/nowplayingcover" {
+    if run.cover.is_some() {
+        match crate::cover::route(&request) {
+            Ok(freeshow_cover_http::Route::AutomaticOptions) => return crate::cover::options(),
+            Ok(freeshow_cover_http::Route::Read { method }) => {
+                return crate::cover::serve(request, kind, run, sender, method).await
+            }
+            Ok(freeshow_cover_http::Route::Fallthrough) => {}
+            Err(error) => return crate::cover::rejected(&run, kind, error),
+        }
+    } else if request.uri().path() == "/nowplayingcover" {
         return error(
             StatusCode::NOT_IMPLEMENTED,
             "Now-playing cover capability is not implemented",
@@ -145,7 +166,7 @@ pub(crate) async fn serve(
         }
     };
     let (reply, receive) = oneshot::channel();
-    let work = Work {
+    let work = StaticWork {
         started: Instant::now(),
         root,
         path: request.uri().path().into(),
@@ -160,7 +181,7 @@ pub(crate) async fn serve(
         .lock()
         .unwrap()
         .as_ref()
-        .is_some_and(|sender| sender.try_send(work).is_ok());
+        .is_some_and(|sender| sender.try_send(Work::Static(work)).is_ok());
     if !admitted {
         return error(
             StatusCode::SERVICE_UNAVAILABLE,
@@ -180,7 +201,7 @@ fn error(status: StatusCode, message: &str) -> Response {
 fn header<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
     headers.get(name).and_then(|v| v.to_str().ok())
 }
-fn handle(work: Work) {
+fn handle(work: StaticWork) {
     if work.run.cancel.is_cancelled()
         || work.started.elapsed() >= work.run.config.body_timeout
         || work.reply.is_closed()
