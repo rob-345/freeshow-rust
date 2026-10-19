@@ -134,45 +134,23 @@ fn compare(command: &str, payload: Value) -> (BrowseReply, Value) {
         let expected_data = expected["data"].as_object().unwrap();
         assert_eq!(actual.len(), expected_data.len());
         for (path, record) in actual {
-            assert_eq!(
-                record, &expected_data[path],
-                "complete source record {path}"
+            record_comparison::assert_record(
+                record,
+                expected_data
+                    .get(path)
+                    .expect("same complete source path set"),
+                expected["statsBits"].get(path),
+                path,
             );
-            assert_eq!(
-                record.as_object().unwrap().keys().collect::<Vec<_>>(),
-                expected_data[path]
-                    .as_object()
-                    .unwrap()
-                    .keys()
-                    .collect::<Vec<_>>(),
-                "record key order {path}"
-            );
-            if record["isFolder"] == false {
-                let stats = record["stats"].as_object().unwrap();
-                assert_eq!(
-                    stats.keys().collect::<Vec<_>>(),
-                    expected_data[path]["stats"]
-                        .as_object()
-                        .unwrap()
-                        .keys()
-                        .collect::<Vec<_>>()
-                );
-                for (key, bits) in expected["statsBits"][path].as_object().unwrap() {
-                    let actual = stats[key]
-                        .as_f64()
-                        .unwrap()
-                        .to_le_bytes()
-                        .iter()
-                        .map(|byte| format!("{byte:02x}"))
-                        .collect::<String>();
-                    assert_eq!(
-                        actual,
-                        bits.as_str().unwrap(),
-                        "source native Number bits {path}:{key}"
-                    );
-                }
-            }
         }
+        assert_eq!(
+            expected["statsBits"].as_object().unwrap().len(),
+            actual
+                .values()
+                .filter(|record| record.get("stats").is_some())
+                .count(),
+            "one raw Number-bit observation for every file and no unrelated paths"
+        );
         let mut own_undefined: Vec<_> = actual
             .iter()
             .filter(|(_, record)| record.get("noMedia").is_some_and(Value::is_null))
@@ -674,4 +652,249 @@ async fn windows_actual_open_directory_is_retained_across_parent_name_replacemen
         scandir::readdir(&spelling, &mut budget(BrowseConfig::default())).unwrap(),
         [lexical(paths::join(&spelling, "replacement.txt")).unwrap()]
     );
+}
+
+// Self-contained for portable comparator controls; no Windows API is simulated.
+mod record_comparison {
+    use serde_json::Value;
+
+    const STAT_KEYS: [&str; 14] = [
+        "dev",
+        "mode",
+        "nlink",
+        "uid",
+        "gid",
+        "rdev",
+        "blksize",
+        "ino",
+        "size",
+        "blocks",
+        "atimeMs",
+        "mtimeMs",
+        "ctimeMs",
+        "birthtimeMs",
+    ];
+
+    fn assert_exact(actual: &Value, expected: &Value, label: &str) {
+        match (actual, expected) {
+            (Value::Object(actual), Value::Object(expected)) => {
+                assert_eq!(
+                    actual.keys().collect::<Vec<_>>(),
+                    expected.keys().collect::<Vec<_>>(),
+                    "source object keys/order {label}"
+                );
+                for (key, value) in expected {
+                    assert_exact(&actual[key], value, label);
+                }
+            }
+            (Value::Array(actual), Value::Array(expected)) => {
+                assert_eq!(actual.len(), expected.len(), "source array length {label}");
+                for (actual, expected) in actual.iter().zip(expected) {
+                    assert_exact(actual, expected, label);
+                }
+            }
+            _ => assert_eq!(actual, expected, "complete source value/type {label}"),
+        }
+    }
+
+    pub(super) fn assert_record(
+        actual: &Value,
+        expected: &Value,
+        stats_bits: Option<&Value>,
+        label: &str,
+    ) {
+        let actual = actual.as_object().expect("native record object");
+        let expected = expected.as_object().expect("source record object");
+        assert_eq!(
+            actual.keys().collect::<Vec<_>>(),
+            expected.keys().collect::<Vec<_>>(),
+            "complete source record keys/order {label}"
+        );
+        for (name, value) in expected {
+            if name != "stats" {
+                assert_exact(&actual[name], value, label);
+                continue;
+            }
+            let native = actual[name].as_object().expect("native Stats object");
+            let projected = value.as_object().expect("source Stats object");
+            let bits = stats_bits
+                .expect("source captured Number bits before JSON")
+                .as_object()
+                .expect("source Number-bit object");
+            for fields in [native, projected, bits] {
+                assert_eq!(
+                    fields.keys().map(String::as_str).collect::<Vec<_>>(),
+                    STAT_KEYS,
+                    "all14 Stats fields and their original order {label}"
+                );
+            }
+            for key in STAT_KEYS {
+                let number = native[key].as_f64().expect("native Stats Number");
+                let source_number = projected[key].as_f64().expect("source Stats Number");
+                assert_eq!(
+                    number, source_number,
+                    "source JSON Number value {label}:{key}"
+                );
+                // JSON loses -0's sign and has no integer/f64 distinction in
+                // JavaScript. The pre-JSON capture remains the bitwise oracle.
+                let actual_bits = number
+                    .to_le_bytes()
+                    .iter()
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect::<String>();
+                assert_eq!(
+                    actual_bits,
+                    bits[key].as_str().expect("source Number-bit string"),
+                    "source native Number bits {label}:{key}"
+                );
+            }
+        }
+        assert_eq!(
+            stats_bits.is_some(),
+            expected.contains_key("stats"),
+            "only file records carry a Stats-bit observation {label}"
+        );
+    }
+
+    #[cfg(test)]
+    fn fixture() -> (Value, Value, Value) {
+        use serde_json::{json, Map};
+        let mut native = Map::new();
+        let mut projected = Map::new();
+        let mut bits = Map::new();
+        for (index, key) in STAT_KEYS.iter().enumerate() {
+            let integer = match *key {
+                "size" => 21,
+                "uid" | "gid" | "rdev" => 0,
+                _ => index + 1,
+            };
+            let number = integer as f64;
+            native.insert((*key).into(), json!(number));
+            projected.insert((*key).into(), json!(integer));
+            bits.insert(
+                (*key).into(),
+                json!(number
+                    .to_le_bytes()
+                    .iter()
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect::<String>()),
+            );
+        }
+        (
+            json!({"isFolder":false,"path":"C:\\音楽.wav","name":"音楽.wav","thumbnailPath":"","stats":native}),
+            json!({"isFolder":false,"path":"C:\\音楽.wav","name":"音楽.wav","thumbnailPath":"","stats":projected}),
+            Value::Object(bits),
+        )
+    }
+
+    #[cfg(test)]
+    fn rejects(actual: &Value, expected: &Value, bits: Option<&Value>) {
+        assert!(
+            std::panic::catch_unwind(|| assert_record(actual, expected, bits, "control")).is_err()
+        );
+    }
+
+    #[test]
+    fn integer_float_representation_matches_all_source_number_bits() {
+        let (native, source, bits) = fixture();
+        assert_ne!(native["stats"]["size"], source["stats"]["size"]);
+        assert_record(&native, &source, Some(&bits), "integer21 versus float21.0");
+        let mut negative_zero = native.clone();
+        negative_zero["stats"]["uid"] = serde_json::json!(-0.0);
+        let mut negative_bits = bits.clone();
+        negative_bits["uid"] = serde_json::json!("0000000000000080");
+        assert_record(
+            &negative_zero,
+            &source,
+            Some(&negative_bits),
+            "source JSON loses -0 sign",
+        );
+        rejects(&negative_zero, &source, Some(&bits));
+    }
+
+    #[test]
+    fn every_stat_bit_key_order_type_and_observation_is_required() {
+        use serde_json::json;
+        let (native, source, bits) = fixture();
+        for key in STAT_KEYS {
+            let mut changed = native.clone();
+            let number = changed["stats"][key].as_f64().unwrap();
+            changed["stats"][key] = json!(f64::from_bits(number.to_bits() + 1));
+            rejects(&changed, &source, Some(&bits));
+        }
+        for target in 0..3 {
+            for mutation in 0..3 {
+                let (mut native, mut source, mut bits) = fixture();
+                let fields = match target {
+                    0 => native["stats"].as_object_mut().unwrap(),
+                    1 => source["stats"].as_object_mut().unwrap(),
+                    _ => bits.as_object_mut().unwrap(),
+                };
+                let removed = fields.remove("dev").unwrap();
+                match mutation {
+                    1 => {
+                        fields.insert("dev".into(), removed);
+                    }
+                    2 => {
+                        fields.insert("unexpectedDev".into(), removed);
+                    }
+                    _ => {}
+                }
+                rejects(&native, &source, Some(&bits));
+            }
+        }
+        let mut wrong_bits = bits.clone();
+        wrong_bits["size"] = json!("0100000000003540");
+        rejects(&native, &source, Some(&wrong_bits));
+        wrong_bits["size"] = json!(21);
+        rejects(&native, &source, Some(&wrong_bits));
+        let mut wrong_type = native.clone();
+        wrong_type["stats"]["size"] = json!("21");
+        rejects(&wrong_type, &source, Some(&bits));
+        let mut wrong_type = source.clone();
+        wrong_type["stats"]["size"] = json!("21");
+        rejects(&native, &wrong_type, Some(&bits));
+        rejects(&native, &source, None);
+    }
+
+    #[test]
+    fn non_stats_shapes_types_and_array_object_order_remain_strict() {
+        use serde_json::json;
+        let (native, source, bits) = fixture();
+        let mut changed = native.clone();
+        changed["path"] = json!("C:\\different.wav");
+        rejects(&changed, &source, Some(&bits));
+        changed = native.clone();
+        changed["isFolder"] = json!(0);
+        rejects(&changed, &source, Some(&bits));
+        for reorder in [false, true] {
+            changed = native.clone();
+            let fields = changed.as_object_mut().unwrap();
+            let removed = fields.remove("name").unwrap();
+            if reorder {
+                fields.insert("name".into(), removed);
+            }
+            rejects(&changed, &source, Some(&bits));
+        }
+        changed = native.clone();
+        changed["extra"] = json!(null);
+        rejects(&changed, &source, Some(&bits));
+        let source = json!({"isFolder":true,"path":"C:\\folder","files":["first","second"],"noMedia":null,"details":{"x":1,"y":2}});
+        assert_record(&source, &source, None, "complete folder");
+        rejects(&source, &source, Some(&bits));
+        for files in [
+            json!(["second", "first"]),
+            json!(["first"]),
+            json!({"0":"first","1":"second"}),
+        ] {
+            let mut changed = source.clone();
+            changed["files"] = files;
+            rejects(&changed, &source, None);
+        }
+        let mut changed = source.clone();
+        changed["details"] = json!({"y":2,"x":1});
+        rejects(&changed, &source, None);
+        changed["details"] = json!({"x":1.0,"y":2});
+        rejects(&changed, &source, None);
+    }
 }

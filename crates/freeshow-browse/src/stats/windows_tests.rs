@@ -554,10 +554,16 @@ async fn file_info_and_ordinary_listing_use_fixed_workers_with_separate_verbatim
         .await
         .unwrap();
     assert_eq!(folder.data[ordinary_root]["isFolder"], true);
-    assert_eq!(
-        folder.data[ordinary_file.to_str().unwrap()]["stats"]["size"],
-        expected["value"]["stat"]["size"]
-    );
+    let actual_size = folder.data[ordinary_file.to_str().unwrap()]["stats"]["size"]
+        .as_f64()
+        .unwrap();
+    let actual_size_bits = actual_size
+        .to_le_bytes()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    assert_eq!(actual_size_bits, expected["bits"]["size"].as_str().unwrap());
+    assert_eq!(actual_size, 21.0, "actual worker-owned fixture byte length");
     assert!(service
         .dispatch("GET_SIMILAR", &json!({"paths":[ordinary_file]}))
         .await
