@@ -79,4 +79,27 @@ Explicit recording reproduction requires the official unchanged Linux executable
 xvfb-run -a /path/to/node-v22.21.1/bin/node tests/desktop/jpeg_now_playing_oracle.mjs --record-original /absolute/private/new-recording.json
 ```
 
-Do not run this during reserved GUI/performance measurements. Ordinary CI requires only the committed recording and real parser dependencies; a missing official executable is neither a hidden dependency nor a skipped parity claim. Final native/WebView byte hydration, actual JPEG installation and void UNSET still require the coordinator's rebuilt desktop run.
+Do not run this during reserved GUI/performance measurements. Ordinary CI requires only the committed recording and real parser dependencies; a missing official executable is neither a hidden dependency nor a skipped parity claim.
+
+## Coordinator integration evidence
+
+The rebuilt Linux custom-protocol editor now executes both unchanged fixtures
+through real retained `window.api`. Native typed metadata and source text match;
+`--verify` reads the actual installed files, independently decodes the PNGs and
+matches both recorded RGBA hashes. Actual UNSET empties text/removes the cover,
+with original void commands, no source ACK, admitted/completed advances and
+ordinary idle. The existing HTTP probe serves each current cover through all
+three ports and verifies its actual bytes. Compressed PNG bytes differ, and root
+picture placement remains excluded explicitly.
+
+The first run caught invalid ID3 timestamp text and multiple FLAC comment-block
+parser differences before decoding. Separate bounded compatibility corrections
+fixed those without modifying the fixtures or recording. The complete local run
+passes 493 Rust, 563 source, 20 frontend and 352 native executions, plus 187 editor
+steps, four menus and both drop scales. Fourteen cover phases make 141 actual HTTP
+requests. All original folder-alert/blocker, library-switch, backup and real Quit
+checks remain intact; the whole editor retains 55 expected diagnostics.
+[Durable local receipt](../baselines/jpeg-desktop-linux.json) records executable,
+original recording, pixel and complete artifact hashes. Native Windows/macOS and
+the complete CI run remain separate acceptance work; no performance gain is
+claimed.

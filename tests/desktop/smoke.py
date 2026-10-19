@@ -89,6 +89,9 @@ def run():
         subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=8000:duration=1", "-c:a", "flac", "-threads", "1", "-metadata", "title=Native 敬拜 café", "-metadata", "artist=Artist Ελληνικά", "-metadata", "replaygain_album_gain=+9.0 dB", "-metadata", "replaygain_track_peak=0.8", "-y", str(audio_fixture)], check=True, timeout=15)
         expected_audio = json.loads(subprocess.check_output(["node", "tests/desktop/audio_oracle.mjs", str(audio_fixture)], cwd=ROOT, text=True, timeout=15))
         now_playing_fixtures = json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE", "node"), "tests/desktop/now_playing_desktop_oracle.mjs", "--fixtures", str(temp / "now-playing-fixtures")], cwd=ROOT, text=True, timeout=15))
+        jpeg_oracle = "tests/desktop/jpeg_now_playing_oracle.mjs"
+        jpeg_fixtures = json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE", "node"), jpeg_oracle, "--fixtures", str(temp / "jpeg-now-playing-fixtures")], cwd=ROOT, text=True, timeout=15))
+        now_playing_fixtures["cases"].extend(jpeg_fixtures["cases"])
         expected_network = json.loads(subprocess.check_output(["node", "tests/desktop/network_queries_oracle.mjs"], cwd=ROOT, text=True, timeout=15))
         assert expected_audio["common"]["title"] == "Native 敬拜 café" and expected_audio["replayGainMultiplier"] == 1.25
         expected_system = json.loads(subprocess.check_output(["node", "tests/desktop/system_oracle.mjs"], cwd=ROOT, text=True, timeout=15))
@@ -687,7 +690,8 @@ def run():
                 observed = script((ROOT / "tests/desktop/now_playing_probe.js").read_text(), {"phase":"initial-" + entry["id"], "action":"set", "case":entry})
                 replay_file = temp / "now-playing-script.json"
                 replay_file.write_text(json.dumps(observed["script"],ensure_ascii=False))
-                expected = json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE", "node"), "tests/desktop/now_playing_desktop_oracle.mjs", "--replay", str(replay_file)], cwd=ROOT, text=True, timeout=15))
+                oracle = jpeg_oracle if entry["imageCapability"] == "small-jpeg" else "tests/desktop/now_playing_desktop_oracle.mjs"
+                expected = json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE", "node"), oracle, "--replay", str(replay_file)], cwd=ROOT, text=True, timeout=15))
                 assert observed["context"] == observed["current"] == invoke("runtime_context"), observed
                 assert observed["sourceAcks"] == observed["browserErrors"] == [] and observed["ordinaryIdleVerified"], observed
                 assert len(observed["events"]) == 1, observed
@@ -706,10 +710,17 @@ def run():
                     assert list(int.from_bytes(actual_png[index:index+4], "big") for index in [16,20]) == [1,1]
                     files["coverSha256"] = hashlib.sha256(actual_png).hexdigest()
                     files["coverDimensions"] = [1,1]
+                if entry["imageCapability"] == "small-jpeg":
+                    files["jpeg"] = json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE", "node"), jpeg_oracle, "--verify", str(replay_file)], cwd=ROOT, text=True, timeout=15))
+                    assert files["jpeg"]["actualFilesystemRead"] and files["jpeg"]["exactSourceRgbaVerified"], files
                 probe_selected_cover("set-" + entry["id"], cover_path if cover_path.exists() else None)
                 cleared = script((ROOT / "tests/desktop/now_playing_probe.js").read_text(), {"phase":"unset-" + entry["id"], "action":"unset"})
                 assert text_path.read_bytes() == b'' and not cover_path.exists(), (entry,cleared)
                 assert cleared["sourceAcks"] == cleared["browserErrors"] == cleared["events"] == cleared["errors"] == [], cleared
+                if entry["imageCapability"] == "small-jpeg":
+                    replay_file.write_text(json.dumps(cleared["script"],ensure_ascii=False))
+                    cleared["filesystem"] = json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE", "node"), jpeg_oracle, "--verify", str(replay_file)], cwd=ROOT, text=True, timeout=15))
+                    assert cleared["filesystem"]["actualFilesystemRead"] and not cleared["filesystem"]["coverExists"] and cleared["filesystem"]["text"] == "", cleared
                 probe_selected_cover("unset-" + entry["id"])
                 now_playing_receipts.append({"native":observed,"source":expected,"files":files,"unset":cleared,"rootPicturePositionCompared":False,"encodedPngParityClaimed":False})
                 (ARTIFACTS / "now-playing.json").write_text(json.dumps(now_playing_receipts,ensure_ascii=False,indent=2))

@@ -88,10 +88,10 @@ all-target compiler/lint checks of the actual native modules pass on Linux,
 Windows GNU and macOS ARM; those cross checks do not establish native OS runtime
 or browser behavior.
 
-The rebuilt full Linux editor passes 181 steps, four GTK menus and native drops
-at both scales. Ten actual cover phases make 93 HTTP requests on all three
-ports: 36 status-200 responses (including OPTIONS), 51 missing responses, three ranges and
-three not-modified responses. Independent Python reads compare actual bytes and
+The rebuilt full Linux editor passes 187 steps, four GTK menus and native drops
+at both scales. Fourteen actual cover phases make 141 HTTP requests on all three
+ports: 60 status-200 responses (including OPTIONS), 63 missing responses, nine ranges and
+nine not-modified responses. Independent Python reads compare actual bytes and
 hashes, MIME/length, one-byte ranges and ETags. OPTIONS runs before folder effects.
 A real regular-file Audio blocker produces exactly three source-shaped alerts,
 with undefined listener/private-field stripping and the actual visible popup;

@@ -33,16 +33,16 @@ survives actual consumer destruction; its Windows CI fixture waits for real
 reply-frame disposal. Controlled negative tests detect the old behavior.
 No whole-application CPU improvement is claimed.
 
-The current local integration passes **482 Rust + 549 pinned-Node + 20 frontend
-checks** (1,051), plus **352 native executions** (339 host integration and thirteen
+The current JPEG/parser integration passes **493 Rust + 563 pinned-Node + 20 frontend
+checks** (1,076), plus **352 native executions** (339 host integration and thirteen
 desktop binary unit cases, including shared cases repeated by importing targets).
 Five ignored Rust subprocess entry fixtures are driven by supervisor tests;
 four source suites retain existing platform/capability skips. Strict workspace
 and native all-target Clippy, focused TypeScript, formatting and immutable-source
 snapshot checks pass. The full parity gate intentionally remains incomplete.
 
-The rebuilt **181-step Linux editor**, four GTK menus and both native drop scales
-pass. Ten new actual cover phases make **93 HTTP requests** across all three
+The rebuilt **187-step Linux editor**, four GTK menus and both native drop scales
+pass. Fourteen actual cover phases make **141 HTTP requests** across all three
 ports, comparing current file bytes/hash/MIME/length, HEAD, range and conditional
 responses. OPTIONS precedes the actual Audio-folder effects. An independently
 verified regular-file Audio blocker produces three exact original public alerts
@@ -55,7 +55,7 @@ The complete editor receipt retains **55 expected other-feature/capability
 diagnostics**, not a global zero-error result. Real backup/pending writes and
 final process exit still pass.
 
-The four ordinary and three caught-folder-failure now-playing cases remain in
+The six ordinary and three caught-folder-failure now-playing cases remain in
 that workflow. They preserve typed metadata, original callback envelopes,
 SET/UNSET/OPEN alert order, visible popup text, actual admitted/completed advances,
 ordinary idle and independently unchanged blockers, without a trusted reveal
@@ -65,21 +65,37 @@ compare 84 complete original/native responses, with separate raw-TCP parser
 boundary controls. Actual private native modules also pass strict cross checks
 on Windows GNU and macOS ARM; these are compilation evidence only.
 
-Published foundation `6a111747` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39234231075),
-including Windows native and the full 169-step Linux workflow. Independently
-validated downloaded artifacts confirm all seven now-playing cases, original
-visible messages, exact public callbacks, counter advances, blocker hashes,
-menus/drops and final process exit. That run contains 54 expected other-feature
-or capability diagnostics. The new running HTTP integration above still needs
-its own complete CI run.
+Published `a57338c1` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39239768321):
+core on Linux/Windows/macOS, native on Windows/macOS and the complete 181-step
+Linux desktop workflow. Independently validated downloaded artifacts confirm all
+seven now-playing cases and ten cover phases/93 HTTP responses, original visible
+messages, exact public callbacks, counter advances, blocker/old-library cover
+hashes, menus/drops and final process exit. That complete CI editor receipt
+retains 54 expected other-feature/capability diagnostics.
+
+The newer bounded JPEG decoder matches fifteen actual Electron fixtures on Linux
+x64 with checked GdkPixbuf 2.42.10. It uses the existing fixed image owners and
+strict preflight; native writes, caller Drop, cancellation and actual joins have
+separate ownership tests. The original packaged recording covers real MP3 APIC
+and FLAC PICTURE files with actual nativeImage, parser, SET/UNSET and PNG pixels.
+The expanded editor initially caught two earlier parser differences: invalid
+ID3 timestamp text was rejected, and only the last FLAC comment block survived.
+Narrow bounded corrections preserve both source behaviors without changing the
+fixtures/recording. The rebuilt editor now compares both complete typed metadata
+observations and actual text, then independently decodes each real PNG and
+matches the original RGBA hash (17×11 and 64×48). Actual UNSET clears both files;
+all three HTTP ports serve the current bytes. Compressed PNG bytes differ.
+[JPEG capability](workers/cover-jpeg.md), [recording/replay](workers/jpeg-desktop-evidence.md),
+[ID3 correction](workers/audio-id3-recovery.md) and
+[FLAC correction](workers/audio-flac-comments.md) retain exact limits and gaps.
+This newer local milestone still requires its own complete CI run.
 
 Now-playing remains partial: broader image/metadata/resize fidelity, root
 common-picture insertion position, fixed-cover HTTP parser/date/error-rendering
 edge cases and foreign filesystem/browser behavior remain open. Actual packaged
 Electron JPEG comparisons demonstrate ordinary pure-Rust decoder pixel
-mismatches; an installed Linux consumer matches the measured fifteen-file
-corpus, but its production JPEG integration is separate work. No new application
-performance gain is established.
+mismatches; the bounded native Linux subset above has separate source evidence.
+No new application performance gain is established.
 
 Retained timecode now has production main-window typed/raw IPC, exact native
 Uint8Array/IEEE hydration and a verified Linux LTC backend. One fixed supervisor
@@ -118,7 +134,6 @@ documented timeout retries under a five-second outer bound, retaining actual
 zero owner counts and both original request errors.
 
 The following audio-only numbers describe the previously published milestone.
-
 
 The retained AUDIO API now reaches a real bounded Rust pipeline through transferred MessagePorts and raw binary IPC. A native parser preserves precise typed-view ranges, full context, missing/null metadata and negative zero. One fixed ingress pump retains entered native work after its caller drops; four whole packet/result leases and four lifecycle waiters bound owned work. Shared bridge tests exercise actual transferred ports, raw invoke bodies, independent context retirement, stale status rejection and native CLOSE after frontend drain failure. [Contracts and evidence](native-audio.md).
 
@@ -407,7 +422,6 @@ The next run [39155168419](https://github.com/rob-345/freeshow-rust/actions/runs
 
 Run [39155868656](https://github.com/rob-345/freeshow-rust/actions/runs/39155868656) on `fc22ecc4` passed the Windows directory diagnostic, macOS core, both native jobs and the full Linux desktop workflow. Linux/Windows core then exposed a paused-socket test observer that could miss a close event emitted before its listener was installed. The observer now recognizes an already-closed socket before awaiting that event. The two-second close deadline, bounded buffering, stream cancellation, exact status counters and incomplete-transfer assertions remain unchanged. All nine focused asset parity tests pass locally; a fresh full run is pending.
 
-
 ## Retained canvas thumbnails and guarded cache integration (2026-10-18)
 
 The Linux desktop now routes GET_THUMBNAIL and DOES_MEDIA_EXIST through native preparation and the existing retained canvas helper. A private one-use raw ArrayBuffer completion preserves send-time bytes without granting arbitrary SAVE_IMAGE paths write authority. Final invalidations/installations remain ordered on the library owner, use anchored identity/hash/no-clobber guards and publish final cache grants before callbacks. READ_FOLDER resolves exact prepared 250-pixel capture slots without rerunning different listing options. GET_CACHE_PATH now returns the source `media-cache` root. [Contracts, finite limits, source quirks and remaining work](native-thumbnails.md).
@@ -421,7 +435,6 @@ Local verification passed **195 Rust, 185 pinned-Node and 20 frontend tests** (4
 The thumbnail run [39156702315](https://github.com/rob-345/freeshow-rust/actions/runs/39156702315) on `27cf8f66` passed Windows/macOS core and both native builds/Clippy/38 host tests. Linux core found two harness synchronization races: the asset child can exit between its quit reply and cleanup attaching an exit listener, and sequential thumbnail oracle fixtures can temporarily fill retained leases while the fixed reaper has not yet removed their discarded staging. The asset harness now captures process close at spawn; the thumbnail harness explicitly fences released staging between independent cases. A new service test proves that barrier waits for discarded staging, preserves live-plan admission and does not close the service. Production admission, worker/reaper limits, deadlines and source-value assertions are unchanged. All 13 thumbnail Rust tests and 16 focused asset/thumbnail Node tests plus strict Clippy pass locally; a fresh full run is pending.
 
 The corrected thumbnail run [39157268253](https://github.com/rob-345/freeshow-rust/actions/runs/39157268253) on `5f943f4c` passed **all six jobs**: Linux/Windows/macOS core, Windows/macOS native builds/strict Clippy/**38 host tests**, and the actual Linux desktop workflow. Downloaded receipts verify **117 editor steps**, four GTK menu checks, both drop scales and three real WebKit canvas PNGs (image/video/folder), with the expected chunks and no active thumbnail requests afterward. Runtime capture/stat/effects remain Linux-only; passing other native builds does not certify their GUI/filesystem capture parity.
-
 
 ## Native document and EXIF integration (2026-10-18)
 

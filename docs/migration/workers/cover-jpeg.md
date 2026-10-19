@@ -116,3 +116,12 @@ cargo test -p freeshow-cover-images --all-targets
 The production driver keeps its original name. Worker verification uses a temporary standalone manifest naming the driver `freeshow-cover-jpeg-service-parity`, so it cannot overwrite the coordinator's pre-integration binary during concurrent source checks. The old `tools/electron-reference.mjs` now verifies its actual generated JPEG on the enabled platform instead of retaining the former expected JPEG rejection; historical receipts are not rewritten. Windows/macOS/other architectures remain buildable with explicit unavailable JPEG behavior and no new Gdk dependency there.
 
 Final focused validation: 18 Rust tests, ten repeated full native runs (180 passes), eight JPEG and ten existing cover/image Node suites, strict Clippy and all-target compilation for Linux/Windows GNU/macOS ARM, rustfmt/Prettier/diff checks. The actual packaged reference rerun preserves all nine previous PNG bitmap comparisons and verifies one additional genuinely generated 2×1 JPEG through native create→PNG with exact source bitmap equality. Its local receipt is `/tmp/freeshow-cover-jpeg-native-electron.json`; the committed fifteen-fixture immutable-source receipt remains unchanged.
+
+Coordinator integration now includes both lockfiles and the Linux core CI
+GdkPixbuf build package. The rebuilt actual Linux editor verifies two unchanged
+MP3 APIC/FLAC PICTURE files against an actual packaged SET/UNSET recording, with
+exact installed PNG RGBA hashes and explicit unequal compressed bytes. The
+[desktop evidence](jpeg-desktop-evidence.md#coordinator-integration-evidence)
+and [local receipt](../baselines/jpeg-desktop-linux.json) distinguish real GUI
+observations from the independent decoder/ownership tests. The newer complete
+CI run remains required.
