@@ -69,6 +69,16 @@ def wait(predicate, label, seconds=20):
     raise AssertionError(f"Bounded observation failed: {label}: {problem}")
 
 
+def expected_cold_contexts(build):
+    identities = {
+        "ff000b9ddcd06eb88069a210abe09fb293e75a34e116bc702de0045768146eff": ("immutable-eager-control", 1),
+        "20630ed8e7f025ee664cb0bd7851e2daf5e80ba63c42fe10784d344168e361d1": ("candidate-lazy", 0),
+    }
+    identity = identities.get(build.get("effectiveAnalyserSha256"))
+    assert identity and build.get("analyserVariant") == identity[0], "Unknown or inconsistent effective analyser identity"
+    return identity[1]
+
+
 def run():
     artifacts = ROOT / "test-output-rust/audio-context-fullfork"
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -80,7 +90,8 @@ def run():
     receipt = {"ok": False, "binary": str(binary), "binarySha256": hashlib.sha256(binary.read_bytes()).hexdigest(), "performanceSample": False, "physicalAudioVerified": False}
     receipt["build"] = json.loads((artifacts / "build.json").read_text())
     receipt["diagnosticAnonymousReload"] = os.environ.get("FREESHOW_AUDIO_FULLFORK_DIAGNOSE") == "1"
-    receipt["immutableEagerControl"] = os.environ.get("FREESHOW_AUDIO_FULLFORK_EAGER") == "1"
+    cold_contexts = expected_cold_contexts(receipt["build"])
+    receipt["immutableEagerControl"] = cold_contexts == 1
     session = None
     process = pulse = None
     observations = []
@@ -171,7 +182,7 @@ def run():
                 click("#guideButtons button")
             cold = observe("full-editor-cold")
             assert cold["origin"] == "tauri://localhost" and cold["secure"], cold
-            assert len(cold["contexts"]) == (1 if os.environ.get("FREESHOW_AUDIO_FULLFORK_EAGER") == "1" else 0), "Actual constructor boundary before genuine use"
+            assert len(cold["contexts"]) == cold_contexts, "Actual constructor boundary before genuine use"
             script("return window.__audioFullFork.configure(arguments[0])", str(folder))
             # Navigation is an ordinary retained UI effect. A startup auto-read
             # can hit the actual fixed browse quota; do not invent its result.

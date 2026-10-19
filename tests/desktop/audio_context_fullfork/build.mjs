@@ -6,6 +6,7 @@ import { createHash } from "node:crypto"
 import { execFileSync } from "node:child_process"
 import { build } from "vite"
 import configuration from "../../../vite.rust.config.mjs"
+import { analyserIdentity } from "./identity.mjs"
 const root = fileURLToPath(new URL("../../../", import.meta.url)),
     hook = path.join(root, "tests/desktop/audio_context_fullfork/hook.ts"),
     hash = (file) =>
@@ -14,7 +15,8 @@ const root = fileURLToPath(new URL("../../../", import.meta.url)),
             .digest("hex")
 const eager = process.env.FREESHOW_AUDIO_FULLFORK_EAGER === "1",
     originalAnalyser = eager ? execFileSync("git", ["show", "2d94defcf98175e4f5c9504e7f4fd1d33c35c975:src/frontend/audio/audioAnalyser.ts"], { cwd: root, encoding: "utf8", timeout: 10000, maxBuffer: 1048576 }).replace(/\r\n/g, "\n") : undefined
-if (originalAnalyser && createHash("sha256").update(originalAnalyser).digest("hex") !== "ff000b9ddcd06eb88069a210abe09fb293e75a34e116bc702de0045768146eff") throw new Error("Immutable eager source mismatch")
+const identity = analyserIdentity(originalAnalyser ?? fs.readFileSync(path.join(root, "src/frontend/audio/audioAnalyser.ts"), "utf8"))
+if (eager && identity.analyserVariant !== "immutable-eager-control") throw new Error("Immutable eager source mismatch")
 const originalPlayer = process.env.FREESHOW_AUDIO_FULLFORK_ORIGINAL_PLAYER === "1" ? execFileSync("git", ["show", "2d94defcf98175e4f5c9504e7f4fd1d33c35c975:src/frontend/audio/audioPlayer.ts"], { cwd: root, encoding: "utf8", timeout: 10000, maxBuffer: 1048576 }).replace(/\r\n/g, "\n") : undefined
 if (originalPlayer && createHash("sha256").update(originalPlayer).digest("hex") !== "0731f9e0de7a001e9bf71ff650b4b4e19bcd10e59474c54d258719d6d3fda918") throw new Error("Immutable player source mismatch")
 await build({
@@ -43,9 +45,9 @@ fs.writeFileSync(
     path.join(root, "test-output-rust/audio-context-fullfork/build.json"),
     JSON.stringify(
         {
-            base: "ef7fadfbb1d9986ae119f9f2ec94290036516400",
-            analyserVariant: eager ? "immutable-eager-control" : "candidate-lazy",
-            effectiveAnalyserSha256: originalAnalyser ? createHash("sha256").update(originalAnalyser).digest("hex") : hash("src/frontend/audio/audioAnalyser.ts"),
+            harnessHistoricalBase: "ef7fadfbb1d9986ae119f9f2ec94290036516400",
+            ...identity,
+            immutableEagerOverlayRequested: eager,
             playerVariant: originalPlayer ? "immutable-player-control" : "native-asset-cors",
             effectivePlayerSha256: originalPlayer ? createHash("sha256").update(originalPlayer).digest("hex") : hash("src/frontend/audio/audioPlayer.ts"),
             head: execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(),

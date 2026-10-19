@@ -160,3 +160,15 @@ global-zero requirement. This slice certifies neither physical microphone/
 speaker, capture UI, successful recording, every routing control, video soft
 loops, all file/codec variants, other platforms, full application parity nor
 performance. No CPU/performance sample was collected.
+
+## Current harness identity followup
+
+New builds classify the **effective** analyser by its normalized source SHA256,
+not by the EAGER environment switch: exact `ff000b9d…` is the immutable eager
+control and exact `20630ed8…` is the lazy candidate. Unknown source rejects before
+building. Thus the ordinary eager source on a later root is correctly recognized
+without an overlay flag. The controller validates hash/label consistency and
+derives its cold-context assertion from that receipt. The explicit override is
+recorded separately; `harnessHistoricalBase` describes the original investigation
+base while `head` is the actual build checkout. Historical committed receipts
+remain unchanged. This test-only refinement is not an app run or release build.
