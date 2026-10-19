@@ -456,19 +456,27 @@ mod tests {
     }
 
     #[cfg(unix)]
+    fn link_version_probe(path: &std::path::Path) {
+        // Never write the executable inode while other tests can spawn children.
+        // A concurrent fork can retain a writable descriptor until exec, causing
+        // ETXTBSY even after the test's own writer has closed. The cache test
+        // creates only symlinks and non-executable witness files.
+        let fixture =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/version-probe.sh");
+        std::os::unix::fs::symlink(fixture, path).unwrap();
+    }
+
+    #[cfg(unix)]
     #[tokio::test]
     async fn cache_invalidation_follows_real_inflight_resolution_and_selects_a_new_binary() {
-        use std::os::unix::fs::PermissionsExt;
+        use std::future::Future;
 
         let dir = tempfile::tempdir().unwrap();
         let first = dir.path().join("first 日本語");
         let second = dir.path().join("second Ελληνικά");
         let marker = |suffix: &str| PathBuf::from(format!("{}{suffix}", first.display()));
-        std::fs::write(&first, b"#!/bin/sh\nexit 0\n").unwrap();
-        std::fs::write(&second, b"#!/bin/sh\nexit 0\n").unwrap();
-        for path in [&first, &second] {
-            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
-        }
+        link_version_probe(&first);
+        link_version_probe(&second);
         let service = MediaService::new(MediaConfig {
             ffmpeg_candidates: vec![first.clone(), second.clone()],
             discover_system: false,
@@ -489,26 +497,39 @@ mod tests {
             second.to_str().unwrap()
         );
 
-        // Restore the first real executable, then hold its actual resolver child.
-        std::fs::copy(&second, &first).unwrap();
-        std::fs::write(&first, b"#!/bin/sh\n: > \"$0.ready\"\nwhile [ ! -e \"$0.release\" ]; do sleep 0.01; done\nexit 0\n").unwrap();
+        // Restore the first candidate, then hold its actual resolver child. The
+        // marker changes fixture behavior without opening the executable inode.
+        link_version_probe(&first);
+        std::fs::write(marker(".hold"), []).unwrap();
         service.clear_ffmpeg_path_cache().await;
         let owned = service.clone();
         let resolving =
             tokio::spawn(async move { owned.dispatch("FFMPEG_CHECK", Value::Null).await });
         tokio::time::timeout(Duration::from_secs(3), async {
-            while !tokio::fs::try_exists(marker(".ready")).await.unwrap() {
+            while tokio::fs::read_to_string(marker(".ready"))
+                .await
+                .ok()
+                .and_then(|value| value.trim().parse::<u32>().ok())
+                .is_none()
+            {
                 tokio::time::sleep(Duration::from_millis(5)).await;
             }
         })
         .await
         .unwrap();
+        // The old child really started before the candidate changed. Its result
+        // must settle first; invalidation then evicts that result, so later work
+        // selects the remaining candidate rather than a late old cache value.
+        std::fs::remove_file(&first).unwrap();
+        assert!(service.inner.ffmpeg.try_lock().is_err());
         let clear = service.clear_ffmpeg_path_cache();
         tokio::pin!(clear);
-        tokio::select! {
-            biased;
-            _ = &mut clear => panic!("invalidation overtook the real in-flight resolver"),
-            _ = tokio::task::yield_now() => {},
+        {
+            let mut context = std::task::Context::from_waker(std::task::Waker::noop());
+            assert!(
+                clear.as_mut().poll(&mut context).is_pending(),
+                "invalidation overtook the real in-flight resolver"
+            );
         }
         std::fs::write(marker(".release"), []).unwrap();
         assert_eq!(
@@ -518,13 +539,57 @@ mod tests {
         tokio::time::timeout(Duration::from_secs(3), clear)
             .await
             .unwrap();
-        std::fs::remove_file(&first).unwrap();
         assert_eq!(
             check().await.unwrap().data["path"],
             second.to_str().unwrap(),
             "the old resolver cannot republish its cache after invalidation"
         );
         service.shutdown().await;
+    }
+
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn resolver_skips_an_executable_with_a_live_writable_descriptor() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = tempfile::tempdir().unwrap();
+        let first = dir.path().join("busy 日本語");
+        let second = dir.path().join("available Ελληνικά");
+        let mut writer = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&first)
+            .unwrap();
+        std::io::Write::write_all(&mut writer, b"#!/bin/sh\nexit 0\n").unwrap();
+        writer
+            .set_permissions(std::fs::Permissions::from_mode(0o755))
+            .unwrap();
+        link_version_probe(&second);
+
+        // This is a controlled kernel rejection, not a scheduler-dependent
+        // assumption that a newly written executable can immediately run.
+        let error = std::process::Command::new(&first)
+            .arg("-version")
+            .status()
+            .unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(26), "Linux ETXTBSY");
+        let service = MediaService::new(MediaConfig {
+            ffmpeg_candidates: vec![first, second.clone()],
+            discover_system: false,
+            ..MediaConfig::default()
+        })
+        .unwrap();
+        assert_eq!(
+            service
+                .dispatch("FFMPEG_CHECK", Value::Null)
+                .await
+                .unwrap()
+                .data["path"],
+            second.to_str().unwrap(),
+            "an unusable first candidate must not prevent a usable fallback"
+        );
+        service.shutdown().await;
+        drop(writer);
     }
 
     #[test]
