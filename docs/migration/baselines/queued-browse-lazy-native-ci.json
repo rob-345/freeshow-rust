@@ -1,0 +1,923 @@
+{
+    "schemaVersion": 1,
+    "run": 39266756301,
+    "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39266756301",
+    "commit": "e53b7a25d4e2c540feb8b747efebf3b536891b9d",
+    "conclusion": "success",
+    "jobs": [
+        {
+            "name": "core (ubuntu-24.04)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39266756301/job/118108241779"
+        },
+        {
+            "name": "native (windows-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39266756301/job/118108242151"
+        },
+        {
+            "name": "desktop-linux",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39266756301/job/118108242407"
+        },
+        {
+            "name": "core (macos-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39266756301/job/118108242584"
+        },
+        {
+            "name": "native (macos-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39266756301/job/118108242615"
+        },
+        {
+            "name": "core (windows-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39266756301/job/118108242620"
+        }
+    ],
+    "windowsBrowse": {
+        "passed": 43,
+        "failed": 0,
+        "ignored": 0,
+        "cases": [
+            {
+                "name": "engine::windows::scandir::record_tests::source_dot_terminal_nul_and_known_error_projection_are_explicit",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::scandir::record_tests::checked_public_abi_record_chain_rejects_truncation_offsets_and_utf16",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::record_comparison::integer_float_representation_matches_all_source_number_bits",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::record_comparison::non_stats_shapes_types_and_array_object_order_remain_strict",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::record_comparison::every_stat_bit_key_order_type_and_observation_is_required",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_entry_output_math_cancel_and_deadline_caps_apply_to_native_jobs",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_accepted_native_handle_survives_caller_drop_and_shutdown_waiter_drop",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_actual_open_directory_is_retained_across_parent_name_replacement",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_junction_follows_source_fixed_local_target_without_authorization_claim",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_capture_uses_first_four_native_media_entries_and_source_cutoffs",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_native_multibatch_scandir_matches_actual_node_order_without_sorting",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_unc_device_verbatim_relative_and_ambiguous_spelling_are_explicitly_unsupported",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_unpaired_utf16_filename_is_rejected_without_lossy_alias",
+                "result": "ok"
+            },
+            {
+                "name": "paths::windows::tests::explicit_capability_errors_and_work_boundaries",
+                "result": "ok"
+            },
+            {
+                "name": "paths::windows::tests::join_dot_roots_and_trailing_separator_are_lexical",
+                "result": "ok"
+            },
+            {
+                "name": "paths::windows::tests::raw_parts_borrow_original_path_and_parent_is_parse_dir",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_missing_file_and_locked_directory_use_real_source_empty_listing",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::full_native_identity_is_checked_before_lossy_js_integer_conversion",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_full_recursive_source_stats_unicode_spelling_and_depth",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::file_info_and_ordinary_listing_use_fixed_workers_with_separate_verbatim_capabilities",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_exceptional_times_are_explicit_unsupported_not_fabricated_null_or_wrapped_stat",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_similar_preserves_native_ties_duplicates_utf16_and_directory_candidates",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_exclusive_data_lock_still_allows_actual_source_and_native_attribute_stat",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_oracle_crlf_transport_preserves_values_and_strict_source_gate",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_junction_and_available_file_symlink_follow_actual_source_targets",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_readonly_mode_matches_source_without_inventing_executable_bits",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::stat_path_operation_and_cancel_budgets_apply_before_native_work",
+                "result": "ok"
+            },
+            {
+                "name": "tests::configuration_is_bounded",
+                "result": "ok"
+            },
+            {
+                "name": "tests::invalid_request_unknown_and_shutdown_are_explicit",
+                "result": "ok"
+            },
+            {
+                "name": "tests::operation_cell_string_and_cancel_bounds",
+                "result": "ok"
+            },
+            {
+                "name": "tests::queued_canceled_or_dropped_result_keeps_permit_until_actual_worker_return",
+                "result": "ok"
+            },
+            {
+                "name": "tests::queued_cancellation_and_caller_drop_remove_waiters_without_native_entry",
+                "result": "ok"
+            },
+            {
+                "name": "tests::queued_public_test_harness_observes_actual_owners_and_drop_releases_gates",
+                "result": "ok"
+            },
+            {
+                "name": "tests::queued_shutdown_cancels_waiters_and_retains_real_workers_after_observer_drop",
+                "result": "ok"
+            },
+            {
+                "name": "tests::queued_total_deadline_expires_wait_and_result_without_releasing_held_workers",
+                "result": "ok"
+            },
+            {
+                "name": "tests::queued_two_real_workers_and_eight_waiters_are_bounded_and_fifo",
+                "result": "ok"
+            },
+            {
+                "name": "tests::queued_without_runtime_rejects_before_retaining_or_dispatching_work",
+                "result": "ok"
+            },
+            {
+                "name": "tests::shutdown_both_admission_orderings",
+                "result": "ok"
+            },
+            {
+                "name": "tests::shutdown_without_runtime_returns_without_panic",
+                "result": "ok"
+            },
+            {
+                "name": "tests::source_path_shapes_and_utf16_scores",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_source_stats_order_types_files_folders_links_allocation_and_raw_spelling",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_source_failure_null_is_certified_for_missing_nondirectory_empty_and_dangling",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_fractional_and_unsigned32_time_boundary_matches_node_f64_projection",
+                "result": "ok"
+            }
+        ],
+        "logSha256": "ce8797e70c30bee69640ed32c378ae583f35968347f0401bbca0ad76163f5628"
+    },
+    "darwinBrowse": {
+        "module": {
+            "passed": 15,
+            "failed": 0,
+            "ignored": 0,
+            "cases": [
+                {
+                    "name": "tests::configuration_is_bounded",
+                    "result": "ok"
+                },
+                {
+                    "name": "stats::macos::tests::stat_consumes_actual_budget_and_preserves_explicit_cancel_path_and_backend_errors",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::operation_cell_string_and_cancel_bounds",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::invalid_request_unknown_and_shutdown_are_explicit",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::queued_cancellation_and_caller_drop_remove_waiters_without_native_entry",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::queued_canceled_or_dropped_result_keeps_permit_until_actual_worker_return",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::queued_shutdown_cancels_waiters_and_retains_real_workers_after_observer_drop",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::queued_public_test_harness_observes_actual_owners_and_drop_releases_gates",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::queued_two_real_workers_and_eight_waiters_are_bounded_and_fifo",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::queued_without_runtime_rejects_before_retaining_or_dispatching_work",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::shutdown_both_admission_orderings",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::shutdown_without_runtime_returns_without_panic",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::source_path_shapes_and_utf16_scores",
+                    "result": "ok"
+                },
+                {
+                    "name": "tests::queued_total_deadline_expires_wait_and_result_without_releasing_held_workers",
+                    "result": "ok"
+                },
+                {
+                    "name": "stats::macos::tests::pure_darwin_fields_match_actual_node_projection_including_precision_and_signed_subseconds",
+                    "result": "ok"
+                }
+            ],
+            "logSha256": "d1905bde957125c9b0fbfcff54c855859fe761a93d31b768579b31d53ca3a8ba"
+        },
+        "integration": {
+            "passed": 6,
+            "failed": 0,
+            "ignored": 0,
+            "cases": [
+                {
+                    "name": "real_files_directories_hardlinks_and_sparse_size_match_all_numeric_source_fields",
+                    "result": "ok"
+                },
+                {
+                    "name": "malformed_resource_and_cancellation_failures_remain_explicit_and_shutdown_joins",
+                    "result": "ok"
+                },
+                {
+                    "name": "actual_permission_errors_preserve_original_null_empty_shapes_and_require_non_root",
+                    "result": "ok"
+                },
+                {
+                    "name": "real_posix_listing_depth_capture_no_media_and_unicode_similarity_preserve_source_shapes",
+                    "result": "ok"
+                },
+                {
+                    "name": "signed_pre_epoch_fractional_and_large_time_fields_match_actual_node_without_birth_substitution",
+                    "result": "ok"
+                },
+                {
+                    "name": "symlinks_follow_real_targets_and_missing_loops_fifo_and_devices_match_source_stat",
+                    "result": "ok"
+                }
+            ],
+            "logSha256": "d1905bde957125c9b0fbfcff54c855859fe761a93d31b768579b31d53ca3a8ba"
+        },
+        "platformSpecificCases": 8
+    },
+    "nativeWindowsCover": {
+        "passed": 18,
+        "failed": 0,
+        "ignored": 0,
+        "cases": [
+            {
+                "name": "cover::backend::tests::native_epoch_conversion_keeps_signed_subseconds",
+                "result": "ok"
+            },
+            {
+                "name": "cover::backend::tests::only_proven_namespace_failure_can_become_missing",
+                "result": "ok"
+            },
+            {
+                "name": "cover::backend::tests::unsupported_namespaces_fail_before_attempting_remote_or_device_opens",
+                "result": "ok"
+            },
+            {
+                "name": "cover::backend::tests::ambiguous_relative_components_are_explicitly_unsupported",
+                "result": "ok"
+            },
+            {
+                "name": "windows_dropped_caller_and_timeout_keep_blocked_ordered_io_until_real_return",
+                "result": "ok"
+            },
+            {
+                "name": "windows_actual_node_stat_etag_matches_ordinary_times_and_records_gated_exceptional_times",
+                "result": "ok"
+            },
+            {
+                "name": "windows_actual_folder_error_survives_later_audio_namespace_change",
+                "result": "ok"
+            },
+            {
+                "name": "windows_exists_true_then_actual_open_failure_never_turns_into_missing",
+                "result": "ok"
+            },
+            {
+                "name": "windows_global_four_slots_follow_descriptors_and_ready_revalidation_not_phase_fences",
+                "result": "ok"
+            },
+            {
+                "name": "windows_held_bytes_explicit_offsets_signed_native_times_and_resource_bounds",
+                "result": "ok"
+            },
+            {
+                "name": "windows_held_identity_survives_replacement_but_inplace_and_foreign_validation_fail",
+                "result": "ok"
+            },
+            {
+                "name": "windows_missing_is_an_observed_guard_result_not_a_promise_of_later_absence",
+                "result": "ok"
+            },
+            {
+                "name": "windows_raced_broken_junction_after_absent_probe_is_not_followed_or_replaced",
+                "result": "ok"
+            },
+            {
+                "name": "windows_raced_regular_collision_after_absent_probe_preserves_identity_and_bytes",
+                "result": "ok"
+            },
+            {
+                "name": "windows_real_junctions_and_symlink_leaf_are_never_followed",
+                "result": "ok"
+            },
+            {
+                "name": "windows_real_mkdir_missing_and_regular_audio_blocker_preserve_actual_observation",
+                "result": "ok"
+            },
+            {
+                "name": "windows_real_sharing_failure_is_explicit_not_an_unproven_exists_false",
+                "result": "ok"
+            },
+            {
+                "name": "windows_root_audio_and_opened_leaf_swaps_fail_actual_handle_revalidation",
+                "result": "ok"
+            }
+        ],
+        "logSha256": "3d6b0babb4274ffd669b4e1561d2eb53c501df6a7a04a22f14d85ffc8ab83ced"
+    },
+    "nativeDarwinCover": {
+        "passed": 12,
+        "failed": 0,
+        "ignored": 0,
+        "cases": [
+            {
+                "name": "actual_read_permission_failures_are_failed_not_missing_and_do_not_claim_source_parity",
+                "result": "ok"
+            },
+            {
+                "name": "absent_audio_is_created_and_real_regular_blocker_keeps_one_mkdir_failure_and_missing",
+                "result": "ok"
+            },
+            {
+                "name": "before_header_revalidation_detects_changes_but_held_reads_are_not_immutable_snapshots",
+                "result": "ok"
+            },
+            {
+                "name": "accepted_caller_drop_does_not_cancel_actual_ordered_preparation_or_release_early",
+                "result": "ok"
+            },
+            {
+                "name": "cancellation_deadline_and_root_work_bounds_do_not_dispose_accepted_results_early",
+                "result": "ok"
+            },
+            {
+                "name": "completed_uncollected_results_keep_all_four_leases_until_real_receipt_disposal",
+                "result": "ok"
+            },
+            {
+                "name": "global_four_leases_span_contexts_and_held_descriptor_outlives_discarded_observation",
+                "result": "ok"
+            },
+            {
+                "name": "opaque_empty_and_limit_files_use_positional_reads_and_raw_signed_darwin_times",
+                "result": "ok"
+            },
+            {
+                "name": "real_mkdir_failure_is_preserved_when_later_parent_check_or_cancellation_fails",
+                "result": "ok"
+            },
+            {
+                "name": "root_parent_leaf_swaps_and_exists_true_then_unlink_never_return_false_missing",
+                "result": "ok"
+            },
+            {
+                "name": "symlink_ancestors_parents_leaves_and_nonregular_variants_are_never_followed",
+                "result": "ok"
+            },
+            {
+                "name": "validation_queued_active_ready_and_collected_receipts_keep_one_real_continuation_guard",
+                "result": "ok"
+            }
+        ],
+        "logSha256": "ab58d7f17786ad01f478917236223ab7f6f58c4ad1d6bdb36c68cbcc33d1c0b3"
+    },
+    "nativeSource": {
+        "windows-native": {
+            "passed": 8,
+            "failed": 0,
+            "ignored": 0,
+            "cases": [
+                {
+                    "name": "now_playing_cover_file::backend::tests::ambiguous_relative_components_are_explicitly_unsupported",
+                    "result": "ok"
+                },
+                {
+                    "name": "now_playing_cover_file::backend::tests::native_epoch_conversion_keeps_signed_subseconds",
+                    "result": "ok"
+                },
+                {
+                    "name": "now_playing_cover_file::backend::tests::only_proven_namespace_failure_can_become_missing",
+                    "result": "ok"
+                },
+                {
+                    "name": "now_playing_cover_file::backend::tests::unsupported_namespaces_fail_before_attempting_remote_or_device_opens",
+                    "result": "ok"
+                },
+                {
+                    "name": "native_source_reports_actual_platform_capability_and_settles_file_ownership",
+                    "result": "ok"
+                },
+                {
+                    "name": "held_opaque_bytes_and_posix_stat_survive_until_actual_header_validation_and_disposal",
+                    "result": "ok"
+                },
+                {
+                    "name": "actual_folder_alert_precedes_missing_http_continuation_but_completion_owns_its_private_lease",
+                    "result": "ok"
+                },
+                {
+                    "name": "windows_exceptional_raw_file_times_fail_header_projection_without_inventing_missing",
+                    "result": "ok"
+                }
+            ],
+            "logSha256": "3d6b0babb4274ffd669b4e1561d2eb53c501df6a7a04a22f14d85ffc8ab83ced",
+            "tcpLifetimeCase": "configured_native_start_serves_real_selected_covers_and_stop_drains_independent_alert_delivery"
+        },
+        "macos-native": {
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "cases": [
+                {
+                    "name": "native_source_reports_actual_platform_capability_and_settles_file_ownership",
+                    "result": "ok"
+                },
+                {
+                    "name": "actual_folder_alert_precedes_missing_http_continuation_but_completion_owns_its_private_lease",
+                    "result": "ok"
+                },
+                {
+                    "name": "held_opaque_bytes_and_posix_stat_survive_until_actual_header_validation_and_disposal",
+                    "result": "ok"
+                }
+            ],
+            "logSha256": "ab58d7f17786ad01f478917236223ab7f6f58c4ad1d6bdb36c68cbcc33d1c0b3",
+            "tcpLifetimeCase": "configured_native_start_serves_real_selected_covers_and_stop_drains_independent_alert_delivery"
+        }
+    },
+    "queuedNativeBrowse": {
+        "windows": {
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0,
+            "cases": [
+                {
+                    "name": "role_context_platform_limits_and_terminal_shutdown_are_explicit",
+                    "result": "ok"
+                },
+                {
+                    "name": "queued::two_entered_plus_eight_waiting_keep_each_original_reply_and_a_finite_host_bound",
+                    "result": "ok"
+                },
+                {
+                    "name": "queued::actual_library_retirement_cancels_queued_replies_but_new_context_waits_for_real_workers",
+                    "result": "ok"
+                },
+                {
+                    "name": "queued::queued_caller_abort_recovers_capacity_and_shutdown_still_waits_for_physical_return",
+                    "result": "ok"
+                }
+            ],
+            "logSha256": "3d6b0babb4274ffd669b4e1561d2eb53c501df6a7a04a22f14d85ffc8ab83ced"
+        },
+        "macos": {
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0,
+            "cases": [
+                {
+                    "name": "role_context_platform_limits_and_terminal_shutdown_are_explicit",
+                    "result": "ok"
+                },
+                {
+                    "name": "queued::two_entered_plus_eight_waiting_keep_each_original_reply_and_a_finite_host_bound",
+                    "result": "ok"
+                },
+                {
+                    "name": "queued::actual_library_retirement_cancels_queued_replies_but_new_context_waits_for_real_workers",
+                    "result": "ok"
+                },
+                {
+                    "name": "queued::queued_caller_abort_recovers_capacity_and_shutdown_still_waits_for_physical_return",
+                    "result": "ok"
+                }
+            ],
+            "logSha256": "ab58d7f17786ad01f478917236223ab7f6f58c4ad1d6bdb36c68cbcc33d1c0b3"
+        }
+    },
+    "archivedAblationReplay": {
+        "corePlatforms": 3,
+        "newSamplesCollected": false,
+        "scope": "Portable historical arithmetic and four corruption controls, not new measurements"
+    },
+    "linuxDesktop": {
+        "now-playing": {
+            "run": 39266756301,
+            "sha": "e53b7a25d4e2c540feb8b747efebf3b536891b9d",
+            "editorSteps": 187,
+            "ordinaryNowPlaying": 6,
+            "folderPhases": 3,
+            "metadataAndFolderCounts": [
+                [1, 4, 0],
+                [0, 2, 0],
+                [0, 1, 1]
+            ],
+            "nativeMenus": 4,
+            "dropScales": [1, 2],
+            "processExited": true,
+            "fullEditorDiagnostics": 54,
+            "scope": "Downloaded actual Linux receipts: exact source/native typed values excluding root picture position, exact folder callback/visible text, unchanged blocker hash, actual admitted/completed advances, ordinary idle and no reveal advance. No PNG encoded parity, global zero-error or per-operation terminal join claimed."
+        },
+        "cover": {
+            "editorSteps": 187,
+            "menus": 4,
+            "dropScales": [1, 2],
+            "coverPhases": 14,
+            "httpRequests": 141,
+            "httpStatusCounts": {
+                "200": 60,
+                "404": 63,
+                "206": 9,
+                "304": 9
+            },
+            "exactOriginalFolderAlerts": 3,
+            "coverRuntimeErrors": 0,
+            "coverBrowserErrors": 0,
+            "sourceAcks": 0,
+            "finalRetentionVerifiedZero": true,
+            "unchangedBlockerAndOldLibraryCoverHashesVerified": true,
+            "fullEditorDiagnostics": 54,
+            "processExited": true,
+            "scope": "Actual rebuilt Linux desktop, independent HTTP/file-byte checks and retained original UI callbacks/visible message. Zero counters are observed ordinary disposal, not per-operation IO-thread join or peer-receipt proof; separate native STOP/Weak test checks actual source lifetime. Full parity/performance remains unproven."
+        },
+        "pixel": {
+            "recordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+            "cases": [
+                {
+                    "id": "jpeg-apic",
+                    "width": 17,
+                    "height": 11,
+                    "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+                    "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+                    "nativePngBytes": 518,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                },
+                {
+                    "id": "jpeg-flac",
+                    "width": 64,
+                    "height": 48,
+                    "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+                    "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+                    "nativePngBytes": 8138,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                }
+            ],
+            "scope": "Actual migrated WebKit metadata/counters/filesystem receipts checked against actual packaged Electron recording; exact RGBA, not compressed bytes or unrestricted format support."
+        }
+    },
+    "artifactFiles": [
+        {
+            "file": "desktop/api.json",
+            "bytes": 43888,
+            "sha256": "b527a825d44550c5ab018aeb6b26b5f6d771fb9468b381af9fdb244db0da0625"
+        },
+        {
+            "file": "desktop/assets.json",
+            "bytes": 3023,
+            "sha256": "71ec7d0e105b9f820806e6dede08b06856bfdf30590973bc3f916ea1dcbe3fc7"
+        },
+        {
+            "file": "desktop/audio-metadata.json",
+            "bytes": 2614,
+            "sha256": "df479cf3c0d4768ca27a23ebde28dead8abb196b5d46dd1a2e6b9cd6ac724e0e"
+        },
+        {
+            "file": "desktop/audio-stream.json",
+            "bytes": 196277,
+            "sha256": "7c0a40827ab3ff4cab7800458dc0d90116dfcde7fbae0e4cc5b8e50a39411827"
+        },
+        {
+            "file": "desktop/browse.json",
+            "bytes": 8733,
+            "sha256": "11a23be4d0a8110b7a91d0e8ab7a36c39dd4f141f1f23e53435445c8c1271f3a"
+        },
+        {
+            "file": "desktop/close-drain.json",
+            "bytes": 1139,
+            "sha256": "e8845598c220c6ed6c1a1654b876d77ec99140845485ce685418fd7ad0822bb2"
+        },
+        {
+            "file": "desktop/driver.log",
+            "bytes": 20914,
+            "sha256": "bb8d1c5de6c8100d5952a88eda32fa3160ef8d0249ff78524148317bbacfd5f2"
+        },
+        {
+            "file": "desktop/editor.png",
+            "bytes": 97056,
+            "sha256": "ed93df304c9d24236f27456807c9d0ee235028b6b35aec4ea7bf1c74ba90ee21"
+        },
+        {
+            "file": "desktop/encoders.json",
+            "bytes": 25513,
+            "sha256": "9690459b219718c4c1785495c30faefa765b6e8d970154622b394e6614b35a07"
+        },
+        {
+            "file": "desktop/ffmpeg-download.json",
+            "bytes": 3181,
+            "sha256": "f7558abd984fed0d656231578e7ab9d2d00cbe3666f802a43cbafebb607f2f81"
+        },
+        {
+            "file": "desktop/file-reads.json",
+            "bytes": 3974,
+            "sha256": "c1bf7e3803c80325f668c6aed769a226295d3b667096d4f7722f3254016270ea"
+        },
+        {
+            "file": "desktop/imports.json",
+            "bytes": 12144,
+            "sha256": "921c214ae1094c6e33b2c1c8e3a2d87bdee7ee5d526acdf4d308e6b483c98f07"
+        },
+        {
+            "file": "desktop/library-switch.png",
+            "bytes": 102155,
+            "sha256": "83d9cb11cf509fae840860b1dacfc1a7f8adc18f44c7f6d208fcf7826ea9c51b"
+        },
+        {
+            "file": "desktop/maximize-reply.json",
+            "bytes": 166,
+            "sha256": "11f9fa0d08332d48fa892565525f5eead973ff55e3f9f528b3721262be96e8f0"
+        },
+        {
+            "file": "desktop/media-copy.json",
+            "bytes": 10196,
+            "sha256": "32954606d7bc0a19ab8f335eb57ea1b9cedcf88b61908c0fde00d38009293d25"
+        },
+        {
+            "file": "desktop/media-folder-reset.json",
+            "bytes": 589,
+            "sha256": "bf257ca61da87d4139a26efdc83d7bb7f43deaf1feb487f5ef4b6d1e464e8e86"
+        },
+        {
+            "file": "desktop/media-locate.json",
+            "bytes": 2055,
+            "sha256": "37240dc300c6aeb1208d91913953361c5a2b5b8401fed1a68aaee7cd122286e7"
+        },
+        {
+            "file": "desktop/media-probe.json",
+            "bytes": 10036,
+            "sha256": "170dc679d85011ee687db0209e971ea25cbf27795d7511299275677be5fb6fff"
+        },
+        {
+            "file": "desktop/midi.json",
+            "bytes": 4312,
+            "sha256": "3ae2ee248a7b60f65bf7da5cb190e6ed4d60b5f1209a194ee93e9e42f1a8839f"
+        },
+        {
+            "file": "desktop/network-queries.json",
+            "bytes": 10985,
+            "sha256": "d192a6e34884ad4dab6f3ad8afccb94656ef07a61a275d55ba93f07678cb0e16"
+        },
+        {
+            "file": "desktop/now-playing-folder-alerts.json",
+            "bytes": 13869,
+            "sha256": "e880b340e408b53295cc2aaa39ec254162e5b1a2270ced2acaa3dda460618479"
+        },
+        {
+            "file": "desktop/now-playing.json",
+            "bytes": 154997,
+            "sha256": "1342fc3f9240fe726438f94abea2ae075af91cfec51e63088ac214f5ae702287"
+        },
+        {
+            "file": "desktop/osc-loopback.json",
+            "bytes": 133,
+            "sha256": "ace561465c61bf204672f5138e82cf1681dbc80fcf9b1baf2476fa8a43d73126"
+        },
+        {
+            "file": "desktop/output-chorus.png",
+            "bytes": 5137,
+            "sha256": "68575fdc7f105e90a57f54ce7585f8eab7ded4dd215f6caa4cb5ab851391ac60"
+        },
+        {
+            "file": "desktop/output-scripture.png",
+            "bytes": 7527,
+            "sha256": "0bcbf03c6f6508281bdb51b0cd275df1dfcdfc74b26bc181afc0567fbf45e48a"
+        },
+        {
+            "file": "desktop/output-targeted-primary.png",
+            "bytes": 8807,
+            "sha256": "b3d367889d0884512f43c6b86f3b0a9ed245a890fb2ddab2129180d3e9f5b250"
+        },
+        {
+            "file": "desktop/output-targeted-secondary.png",
+            "bytes": 5137,
+            "sha256": "68575fdc7f105e90a57f54ce7585f8eab7ded4dd215f6caa4cb5ab851391ac60"
+        },
+        {
+            "file": "desktop/output-verse.png",
+            "bytes": 8807,
+            "sha256": "b3d367889d0884512f43c6b86f3b0a9ed245a890fb2ddab2129180d3e9f5b250"
+        },
+        {
+            "file": "desktop/receipt.json",
+            "bytes": 256206,
+            "sha256": "d050a8428b127a637fe2c49061abc22ba35feb40f21be7ea82e73970918452f7"
+        },
+        {
+            "file": "desktop/remote-covers.json",
+            "bytes": 128159,
+            "sha256": "3ae5af091cec98df2eed875a605e0f10ee0309fbc33f1fa010f9097d9336b8be"
+        },
+        {
+            "file": "desktop/remotes.json",
+            "bytes": 66380,
+            "sha256": "303a891bf906e5809fdc0256e78907aea09b3b9b5d825d2da76f519b40073294"
+        },
+        {
+            "file": "desktop/responsiveness.json",
+            "bytes": 26940,
+            "sha256": "8095e2d0301bd6e0f4fe7d0b106aee086741efc790db35728eea321718c2c199"
+        },
+        {
+            "file": "desktop/save-revision-race.json",
+            "bytes": 3096,
+            "sha256": "56506bd000eed334768d2a8cf33fc7a023174cdf7879af9161e63d9610eaaef6"
+        },
+        {
+            "file": "desktop/saved-before-dialog.show",
+            "bytes": 2174,
+            "sha256": "607ddb2297771758f80a0e3b2bfe40e552735bb13ed1c04caf6a3005b3976587"
+        },
+        {
+            "file": "desktop/saved.show",
+            "bytes": 2174,
+            "sha256": "607ddb2297771758f80a0e3b2bfe40e552735bb13ed1c04caf6a3005b3976587"
+        },
+        {
+            "file": "desktop/scriptures.json",
+            "bytes": 14122,
+            "sha256": "26a8ac8f38becd08f05831deaaaec8bce6232158a5e5e821630de12cddda75a5"
+        },
+        {
+            "file": "desktop/stale-save-recovery.json",
+            "bytes": 1033,
+            "sha256": "6079fac41ffcd7fabb8600785a4e52e083b42d82ddbbf1eccf15378a9e68420e"
+        },
+        {
+            "file": "desktop/system-info.json",
+            "bytes": 2399,
+            "sha256": "02265be1ef3a9b68005f2566a54ebc1a8be9107e0a60ee7e20030fcd6dcd00b4"
+        },
+        {
+            "file": "desktop/thumbnails.json",
+            "bytes": 18488,
+            "sha256": "abdb91336011009b8216a0654b4b947661cc75261979332ec7c403b8cc2367a5"
+        },
+        {
+            "file": "desktop/timecode.json",
+            "bytes": 441026,
+            "sha256": "250410891a921279e378f4d38c13f855c2521298e6c91a2af2fd8c069ae66314"
+        },
+        {
+            "file": "desktop/uncached-show-read.json",
+            "bytes": 3182,
+            "sha256": "eb8d4d080c69776a4f696256f059192b73f4333af7e9e8e4cb3f5898d6082894"
+        },
+        {
+            "file": "native-drop/driver-1x.log",
+            "bytes": 1254,
+            "sha256": "e007a3dd8c6f1ab7842c6777cd43b6429a22361650d33dd552853a963f70177b"
+        },
+        {
+            "file": "native-drop/driver-2x.log",
+            "bytes": 1254,
+            "sha256": "686e63c4d57d6d15441b6cb9a288b247c3c776149b095ec110b9eecb3bf9e23b"
+        },
+        {
+            "file": "native-drop/receipt-1x.json",
+            "bytes": 4755,
+            "sha256": "1ff8783894ef888f0afee92d5056a509fc2906909d96c40bb19ffc011e14d47f"
+        },
+        {
+            "file": "native-drop/receipt-2x.json",
+            "bytes": 4755,
+            "sha256": "0d6e7394a87a501804811f619b7118d509aecef43f5366fd7a139be65fea808f"
+        },
+        {
+            "file": "native-menu/driver.log",
+            "bytes": 1788,
+            "sha256": "0790327bacd2c2a8732cd3e12c4e248625f39c3de66ea3bc968d0b0735f7a478"
+        },
+        {
+            "file": "native-menu/quit-observation.json",
+            "bytes": 145249,
+            "sha256": "6c6958716baf581ff48e2eddaabb1aae9e06b77f943cdc42a04824dae5a777b2"
+        },
+        {
+            "file": "native-menu/receipt.json",
+            "bytes": 807,
+            "sha256": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98"
+        }
+    ],
+    "jobLogs": [
+        {
+            "job": "linux-core",
+            "bytes": 530638,
+            "sha256": "477928bc8563324babb2e4a2e70c203eda6689753cf7745298a9b68a9fc67016"
+        },
+        {
+            "job": "windows-core",
+            "bytes": 420430,
+            "sha256": "ce8797e70c30bee69640ed32c378ae583f35968347f0401bbca0ad76163f5628"
+        },
+        {
+            "job": "macos-core",
+            "bytes": 414752,
+            "sha256": "d1905bde957125c9b0fbfcff54c855859fe761a93d31b768579b31d53ca3a8ba"
+        },
+        {
+            "job": "linux-desktop",
+            "bytes": 413967,
+            "sha256": "c1389d4ad39b701a8c40030631859fd24e0afb3e651033fe73ca204bfd351284"
+        },
+        {
+            "job": "windows-native",
+            "bytes": 101846,
+            "sha256": "3d6b0babb4274ffd669b4e1561d2eb53c501df6a7a04a22f14d85ffc8ab83ced"
+        },
+        {
+            "job": "macos-native",
+            "bytes": 99000,
+            "sha256": "ab58d7f17786ad01f478917236223ab7f6f58c4ad1d6bdb36c68cbcc33d1c0b3"
+        }
+    ],
+    "scope": "All six actual CI jobs pass. Windows43 browsing cases and Darwin15 module plus6 integration cases include actual native/source comparisons for their declared path subsets. Downloaded Linux editor evidence independently validated:187 steps,141 HTTP responses, exact supported JPEG RGBA, original callbacks/visible messages, blocker/old-library bytes, menus, drops and final exit;54 expected other-feature diagnostics remain. Full parity gate remains incomplete. No foreign browser, unrestricted filesystem/media or performance claim."
+}

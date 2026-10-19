@@ -43,17 +43,22 @@ four source suites retain existing platform/capability skips. Strict workspace
 and native all-target Clippy, focused TypeScript, formatting and immutable-source
 snapshot checks pass. The full parity gate intentionally remains incomplete.
 
-Published `19d68467` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39260766076).
-Actual Windows core passes all 36 browsing cases, including complete source
-records and the three strict Number-comparison controls. Darwin passes eight
+Published `e53b7a25` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39266756301).
+Actual Windows core passes all 43 browsing cases, including complete source
+records, the three strict Number-comparison controls and queued admission.
+Darwin passes fifteen
 module and six integration cases; eight are platform-specific. Native Windows
 and Darwin again pass their dedicated eighteen and twelve cover cases,
-Source cases and actual three-port TCP/STOP lifetime tests. Independently
+Source cases and actual three-port TCP/STOP lifetime tests. Both also pass all
+four native browse cases, including the three new actual queued-owner tests.
+Independently
 validated downloaded Linux artifacts preserve all 187 editor steps, 141 HTTP
 responses, exact supported JPEG pixels, original callbacks and visible text,
 unchanged blockers/sentinels, menus/drops and real process exit. This complete
-editor receipt retains 53 expected other-feature diagnostics.
-[Current CI receipt](baselines/windows-listing-native-ci.json).
+editor receipt retains 54 expected other-feature diagnostics. All three core
+jobs also pass the portable historical-ablation replay and corruption controls;
+CI collects no new performance samples.
+[Current CI receipt](baselines/queued-browse-lazy-native-ci.json).
 
 The rebuilt **187-step Linux editor**, four GTK menus and both native drop scales
 pass. Fourteen actual cover phases make **141 HTTP requests** across all three
