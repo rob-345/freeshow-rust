@@ -61,7 +61,7 @@ jobs:
           echo "FREESHOW_REQUIRE_OPUS=1" >> "$GITHUB_ENV"
           echo "FREESHOW_REQUIRE_OPUS_ORACLE=1" >> "$GITHUB_ENV"
       - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness,freeshow-opus/test-harness -- -D warnings
+      - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness,freeshow-opus/test-harness,freeshow-ai-status/test-harness -- -D warnings
       - run: npm run rust:test
       - run: cargo test -p freeshow-ai-status --features test-harness --locked
       - run: npm run rust:parity:report

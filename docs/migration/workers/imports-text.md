@@ -60,9 +60,12 @@ entries, depth 16, 16 MiB per text, 128 MiB aggregate input/expanded bytes,
 32 MiB output, and bounded operations/deadline checks. The existing guarded ZIP
 parser rejects traversal, duplicate entries, encrypted/unsupported archives,
 declared-size/decompression/resource violations. Cancellation, caller drop,
-retained plans, staging cleanup, and terminal joins continue through the existing
-service. OS/filesystem calls remain cooperatively checked between chunks; this
-does not make a blocking filesystem syscall preemptible.
+retained plans and staging cleanup continue through the existing service.
+Shutdown joins the preparation workers and waits for a cleanup fence. The existing
+cleanup thread discards its join handle and may remain alive while cleanup
+senders are retained; the fence does not certify its exit or actual join.
+OS/filesystem calls remain cooperatively checked between chunks; this does not
+make a blocking filesystem syscall preemptible.
 
 ## Evidence
 
