@@ -1,0 +1,22 @@
+[package]
+name = "freeshow-metadata-wire"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Bounded native audio metadata wire preparation"
+
+[workspace]
+
+[dependencies]
+freeshow-audio = { path = "../freeshow-audio" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+base64 = "0.22"
+
+[[bin]]
+name = "freeshow-metadata-wire-parity"
+path = "src/bin/parity.rs"
+
+[profile.dev]
+debug = 0
+incremental = false
