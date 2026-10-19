@@ -3,6 +3,9 @@ use base64::Engine;
 use serde::Serialize;
 use serde_json::Value;
 use std::{collections::BTreeMap, sync::Arc};
+mod native;
+use native::{Common, RawCommon, View};
+pub use native::{NativeMetadataPublication, NativePicture};
 pub const MAX_ACTIVE: usize = 4;
 pub const MAX_TEXT: usize = 1024 * 1024;
 pub const MAX_COVER: usize = 4 * 1024 * 1024;
@@ -261,9 +264,10 @@ impl Picture {
 pub enum Covers {
     Unknown,
     Complete(Vec<Picture>),
+    NativeComplete(Vec<NativePicture>),
 }
 pub struct Metadata {
-    common: Value,
+    common: Common,
     covers: Covers,
     wire_projection: bool,
 }
@@ -273,25 +277,43 @@ impl Metadata {
         if !common.is_object() || common.get("picture").is_some() {
             return Err(error("now_playing_metadata"));
         }
-        if let Covers::Complete(pictures) = &covers {
-            if pictures.len() > 8
-                || pictures.iter().map(|p| p.bytes.len()).sum::<usize>() > MAX_COVER
-            {
-                return Err(error("now_playing_picture"));
-            }
-            for p in pictures {
-                bounded_json(&p.fields, 65536)?;
-                if !p.fields.is_object() || p.fields.get("data").is_some() {
-                    return Err(error("now_playing_picture"));
-                }
-            }
-        }
+        validate_covers(&covers)?;
         // Never project away unrelated common tags or invent picture absence.
         Ok(Self {
-            common,
+            common: Common::Json(common),
             covers,
             wire_projection: false,
         })
+    }
+    /// Preserve the actual parser-owned native receipt before JSON projection.
+    /// Unknown covers still require a separate complete, authoritative receipt.
+    pub fn from_native_common(
+        common: freeshow_audio::NativeCommon,
+        covers: Covers,
+    ) -> Result<Self> {
+        native::validate_object(common.value(), native::COMMON_LIMIT, "picture")?;
+        validate_covers(&covers)?;
+        Ok(Self {
+            common: Common::Native(RawCommon::Parsed(Arc::new(common))),
+            covers,
+            wire_projection: true,
+        })
+    }
+    /// Trusted native exact values. This constructor supplies no parser or
+    /// file-identity evidence and is never an untrusted renderer JSON decoder.
+    pub fn from_common_value(common: freeshow_audio::CommonValue, covers: Covers) -> Result<Self> {
+        native::validate_object(&common, native::COMMON_LIMIT, "picture")?;
+        validate_covers(&covers)?;
+        Ok(Self {
+            common: Common::Native(RawCommon::Host(Arc::new(common))),
+            covers,
+            wire_projection: true,
+        })
+    }
+    fn with_covers(mut self, covers: Covers) -> Result<Self> {
+        validate_covers(&covers)?;
+        self.covers = covers;
+        Ok(self)
     }
     /// READ_AUDIO_METADATA skips covers. Unknown requires another real receipt.
     pub fn from_audio_reply(
@@ -320,6 +342,20 @@ impl Metadata {
         Ok(Some(metadata))
     }
 }
+fn validate_covers(covers: &Covers) -> Result<()> {
+    match covers {
+        Covers::Unknown => Ok(()),
+        Covers::Complete(pictures) => native::validate_legacy(pictures),
+        Covers::NativeComplete(pictures) => {
+            if pictures.len() > 8
+                || pictures.iter().map(|p| p.bytes().len()).sum::<usize>() > MAX_COVER
+            {
+                return Err(error("now_playing_picture"));
+            }
+            Ok(())
+        }
+    }
+}
 #[derive(Debug, Serialize)]
 pub enum WritePolicy {
     SkipIfExistsAndSourceReadUtf8Equals,
@@ -339,6 +375,8 @@ pub enum Effect {
         common: Value,
         pictures: Vec<Picture>,
         json_projection_only: bool,
+        #[serde(skip)]
+        native_receipt: Option<NativeMetadataPublication>,
     },
     IcecastMetadata {
         title: String,
@@ -388,9 +426,20 @@ pub enum Effect {
         message: String,
     },
 }
+impl Effect {
+    /// Exact native common/picture values. JSON serialization intentionally
+    /// omits this observation; publication still requires the host's live context.
+    pub fn native_metadata(&self) -> Option<&NativeMetadataPublication> {
+        match self {
+            Self::PublishMetadata { native_receipt, .. } => native_receipt.as_ref(),
+            _ => None,
+        }
+    }
+}
 pub enum Receipt {
     Metadata(Option<Metadata>),
     Covers(Vec<Picture>),
+    NativeCovers(Vec<NativePicture>),
     Done { success: bool },
     Exists(bool),
     Image(u64),
@@ -694,17 +743,42 @@ fn next_effect(o: &mut Operation, p: &TrustedPaths) -> Result<Option<Effect>> {
         },
         Publish => {
             let m = o.metadata.as_ref().unwrap();
-            let crate::Covers::Complete(pictures) = &m.covers else {
-                return Err(error("now_playing_covers_unknown"));
+            let pictures = match &m.covers {
+                crate::Covers::Complete(pictures) => pictures.clone(),
+                crate::Covers::NativeComplete(pictures) => {
+                    pictures.iter().map(NativePicture::projection).collect()
+                }
+                crate::Covers::Unknown => return Err(error("now_playing_covers_unknown")),
+            };
+            let file_path: String = o.data.as_ref().unwrap().payload["filePath"]
+                .as_str()
+                .unwrap()
+                .into();
+            let is_native =
+                m.common.is_native() || matches!(m.covers, crate::Covers::NativeComplete(_));
+            let native_receipt = if is_native {
+                let native_pictures = match &m.covers {
+                    crate::Covers::Complete(pictures) => pictures
+                        .iter()
+                        .map(NativePicture::from_legacy)
+                        .collect::<Result<Vec<_>>>()?,
+                    crate::Covers::NativeComplete(pictures) => pictures.clone(),
+                    crate::Covers::Unknown => unreachable!(),
+                };
+                Some(NativeMetadataPublication::new(
+                    file_path.clone(),
+                    m.common.raw()?,
+                    native_pictures,
+                ))
+            } else {
+                None
             };
             Effect::PublishMetadata {
-                file_path: o.data.as_ref().unwrap().payload["filePath"]
-                    .as_str()
-                    .unwrap()
-                    .into(),
-                common: m.common.clone(),
-                pictures: pictures.clone(),
-                json_projection_only: m.wire_projection,
+                file_path,
+                common: m.common.json(),
+                pictures,
+                json_projection_only: m.wire_projection || is_native,
+                native_receipt,
             }
         }
         Icecast => {
@@ -805,7 +879,7 @@ fn receipt_matches(stage: Stage, r: &Receipt) -> bool {
     matches!(r, Receipt::Failed(_))
         || match stage {
             Parse => matches!(r, Receipt::Metadata(_)),
-            Covers => matches!(r, Receipt::Covers(_)),
+            Covers => matches!(r, Receipt::Covers(_) | Receipt::NativeCovers(_)),
             ExistsCover | UnsetExists | OpenExists => matches!(r, Receipt::Exists(_)),
             ImageCreate => matches!(r, Receipt::Image(_)),
             ImagePng | Resize => matches!(r, Receipt::Bytes(_)),
@@ -831,9 +905,12 @@ fn apply(o: &mut Operation, r: Receipt, p: &TrustedPaths) -> Result<()> {
         }
         (Covers, Receipt::Covers(pictures)) => {
             let m = o.metadata.take().unwrap();
-            let mut metadata = Metadata::from_host(m.common, crate::Covers::Complete(pictures))?;
-            metadata.wire_projection = m.wire_projection;
-            o.metadata = Some(metadata);
+            o.metadata = Some(m.with_covers(crate::Covers::Complete(pictures))?);
+            Publish
+        }
+        (Covers, Receipt::NativeCovers(pictures)) => {
+            let m = o.metadata.take().unwrap();
+            o.metadata = Some(m.with_covers(crate::Covers::NativeComplete(pictures))?);
             Publish
         }
         (Publish, _) => Icecast,
@@ -841,6 +918,7 @@ fn apply(o: &mut Operation, r: Receipt, p: &TrustedPaths) -> Result<()> {
         (CoverFolder, _) => {
             o.original_cover = o.metadata.as_ref().and_then(|m| match &m.covers {
                 crate::Covers::Complete(p) => p.first().map(|p| p.bytes.clone()),
+                crate::Covers::NativeComplete(p) => p.first().map(|p| p.bytes().to_vec()),
                 crate::Covers::Unknown => None,
             });
             if o.original_cover.is_some() {
@@ -933,18 +1011,18 @@ fn replace_pass(o: &mut Operation, p: &TrustedPaths) -> Result<()> {
         1 => title(m, &data.payload)?,
         2 => {
             let album = common(m, "album");
-            if truthy(&album) {
-                string(&album)
+            if album.truthy() {
+                album.string()
             } else {
                 choose(&[unknown(&data.payload, 2)?], "Unknown Album")
             }
         }
         3 => {
             let year = common(m, "year");
-            if year.is_null() {
+            if year.nullish() {
                 "Unknown Year".into()
             } else {
-                let value = string(&year);
+                let value = year.string();
                 if value.is_empty() {
                     "Unknown Year".into()
                 } else {
@@ -981,10 +1059,8 @@ fn replace_pass(o: &mut Operation, p: &TrustedPaths) -> Result<()> {
     o.index += 1;
     Ok(())
 }
-fn common(m: Option<&Metadata>, key: &str) -> Value {
-    m.and_then(|m| m.common.get(key))
-        .cloned()
-        .unwrap_or(Value::Null)
+fn common<'a>(m: Option<&'a Metadata>, key: &str) -> View<'a> {
+    m.map(|m| m.common.get(key)).unwrap_or(View::Undefined)
 }
 fn cover_base64(bytes: Option<&[u8]>) -> Result<String> {
     let Some(bytes) = bytes else {
@@ -1028,8 +1104,8 @@ fn unknown(data: &Value, index: usize) -> Result<Value> {
 }
 fn title(m: Option<&Metadata>, data: &Value) -> Result<String> {
     let title = common(m, "title");
-    if truthy(&title) {
-        return Ok(string(&title));
+    if title.truthy() {
+        return Ok(title.string());
     }
     if data.get("name").is_some_and(truthy) {
         return Ok(string(&data["name"]));
@@ -1040,22 +1116,26 @@ fn artist(m: Option<&Metadata>, data: &Value) -> Result<String> {
     let mut values = vec![];
     if let Some(m) = m {
         let selected = m.common.get("artists");
-        let artists = match selected {
-            Some(Value::Array(a)) if !a.is_empty() => a.clone(),
-            Some(Value::String(s)) if !s.is_empty() => return Err(error("now_playing_js_type")),
-            Some(Value::Object(o)) if o.get("length").is_some_and(truthy) => {
+        let artists = match selected.array() {
+            Some(a) if !a.is_empty() => a,
+            _ if selected.as_str().is_some_and(|s| !s.is_empty())
+                || selected.get("length").truthy() =>
+            {
                 return Err(error("now_playing_js_type"))
             }
-            _ => vec![m
-                .common
-                .get("artist")
-                .filter(|v| truthy(v))
-                .or_else(|| m.common.get("albumartist").filter(|v| truthy(v)))
-                .or_else(|| m.common.get("originalartist"))
-                .cloned()
-                .unwrap_or(Value::Null)],
+            _ => {
+                let artist = m.common.get("artist");
+                let albumartist = m.common.get("albumartist");
+                vec![if artist.truthy() {
+                    artist
+                } else if albumartist.truthy() {
+                    albumartist
+                } else {
+                    m.common.get("originalartist")
+                }]
+            }
         };
-        for value in artists.into_iter().filter(truthy) {
+        for value in artists.into_iter().filter(|value| value.truthy()) {
             let text = value
                 .as_str()
                 .ok_or_else(|| error("now_playing_js_type"))?
@@ -1256,5 +1336,7 @@ fn bounded_json(value: &Value, max: usize) -> Result<()> {
     }
     visit(value, 0, &mut 0, &mut 0, max)
 }
+#[cfg(test)]
+mod native_tests;
 #[cfg(test)]
 mod tests;
