@@ -694,6 +694,14 @@ fn set_capability(shared: &Shared, capability: &Result<()>) {
     };
     shared.notify.notify_waiters();
 }
+fn record_capability(cached: &RefCell<Result<()>>, shared: &Shared, observed: Result<()>) {
+    // Only an actual probe or binary failure changes capability. A job's older
+    // snapshot may span concurrent child IO and must never overwrite a newer
+    // observation merely because that job finished later. Keep both views in
+    // agreement on the same fixed owner without an intervening await.
+    *cached.borrow_mut() = observed.clone();
+    set_capability(shared, &observed);
+}
 async fn probe(
     backend: &Backend,
     deadline: Instant,
@@ -887,7 +895,7 @@ async fn state_job(
         // The selected native path/environment never changes and idle has no timer.
         if capability.is_err() {
             capability = probe(&backend, work.deadline, &work.token, &shared, &mut active).await;
-            set_capability(&shared, &capability);
+            record_capability(&cached, &shared, capability.clone());
         }
         match &capability {
             Err(error) => Err(error.clone()),
@@ -920,8 +928,7 @@ async fn state_job(
     };
     if let Err(error) = &result {
         if error.code == "spotify_binary_unavailable" {
-            capability = Err(error.clone());
-            set_capability(&shared, &capability);
+            record_capability(&cached, &shared, Err(error.clone()));
         }
     }
     if shared
@@ -934,7 +941,6 @@ async fn state_job(
             "Completion counter exhausted",
         ));
     }
-    *cached.borrow_mut() = capability;
     let _ = work.reply.send(Receipt {
         owner,
         shared,
@@ -976,8 +982,7 @@ async fn command_job(
         let mut capability = cached.borrow().clone();
         if capability.is_err() {
             capability = probe(&backend, work.deadline, &work.token, &shared, &mut active).await;
-            *cached.borrow_mut() = capability.clone();
-            set_capability(&shared, &capability);
+            record_capability(&cached, &shared, capability.clone());
         }
         capability?;
         command(
@@ -1006,9 +1011,7 @@ async fn command_job(
     };
     if let Err(error) = &result {
         if error.code == "spotify_binary_unavailable" {
-            let unavailable = Err(error.clone());
-            *cached.borrow_mut() = unavailable.clone();
-            set_capability(&shared, &unavailable);
+            record_capability(&cached, &shared, Err(error.clone()));
         }
     }
     let diagnostic = match &result {

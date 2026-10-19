@@ -894,6 +894,146 @@ mod command_lifecycle {
         .unwrap();
     }
     #[tokio::test(flavor = "current_thread")]
+    async fn held_state_cannot_erase_concurrent_binary_failure_and_request_reprobe_recovers_commands(
+    ) {
+        use std::os::unix::fs::{symlink, DirBuilderExt};
+        let _serial = TEST_OWNER.lock().unwrap();
+        struct Fixture(std::path::PathBuf);
+        impl Drop for Fixture {
+            fn drop(&mut self) {
+                let _ = std::fs::remove_dir_all(&self.0);
+            }
+        }
+        let folder = std::env::temp_dir().join(format!(
+            "freeshow-spotify-capability-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&folder)
+            .unwrap();
+        let fixture = Fixture(folder);
+        let executable = fixture.0.join("dbus-send 日本語");
+        let marker = fixture.0.join("entered");
+        let script =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/capability-race.sh");
+        symlink(&script, &executable).unwrap();
+        let own = owner();
+        let s = SpotifyService::start(
+            own.clone(),
+            Backend {
+                executable: executable.clone(),
+                env: vec![("FREESHOW_TEST_CAPABILITY_MARKER", marker.clone().into())],
+                unavailable: None,
+            },
+            Limits {
+                query_timeout: Duration::from_secs(5),
+                ..Limits::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(s.ready().await.unwrap(), Capability::Available);
+        let state = s
+            .begin_state(&own, Instant::now() + Duration::from_secs(5))
+            .unwrap();
+        // Witness the real script's stopped Metadata child, not just its spawn
+        // or a scheduling delay. The fixed owner remains free for other jobs.
+        observed(&s, |status| {
+            status.active_pid != 0
+                && marker.is_file()
+                && std::fs::read(format!("/proc/{}/status", status.active_pid)).is_ok_and(|bytes| {
+                    bytes
+                        .split(|byte| *byte == b'\n')
+                        .any(|line| line.starts_with(b"State:\tT"))
+                })
+        })
+        .await;
+        let held_pid = s.status().active_pid;
+        std::fs::remove_file(&executable).unwrap();
+        let command = s
+            .begin_command(
+                &own,
+                PreparedCommand::new("pause", None).unwrap(),
+                Instant::now() + Duration::from_secs(5),
+            )
+            .unwrap();
+        assert!(
+            command.reply(&own).unwrap(),
+            "source early scheduling reply"
+        );
+        let command = command.finish().await.unwrap();
+        assert_eq!(
+            command.result(&own).unwrap_err().code,
+            "spotify_binary_unavailable"
+        );
+        assert_eq!(
+            s.status().capability,
+            Capability::Unavailable {
+                code: "spotify_binary_unavailable"
+            }
+        );
+        symlink(&script, &executable).unwrap();
+        // This is an owned, waited test signal helper, never production IO.
+        assert!(std::process::Command::new("/bin/kill")
+            .args(["-CONT", &held_pid.to_string()])
+            .status()
+            .unwrap()
+            .success());
+        let state = state.finish().await.unwrap();
+        assert!(matches!(state.reply(&own).unwrap(), Outcome::State(_)));
+        assert_eq!(
+            s.status().spawned,
+            5,
+            "initial probe and four state children"
+        );
+        assert_eq!(
+            s.begin_command(
+                &own,
+                PreparedCommand::new("pause", None).unwrap(),
+                Instant::now() + Duration::from_secs(5)
+            )
+            .err()
+            .unwrap()
+            .code,
+            "spotify_binary_unavailable",
+            "an old state result does not silently erase the actual failure"
+        );
+        drop((state, command));
+        let recovered = s
+            .begin_state(&own, Instant::now() + Duration::from_secs(5))
+            .unwrap()
+            .finish()
+            .await
+            .unwrap();
+        assert!(matches!(recovered.reply(&own).unwrap(), Outcome::State(_)));
+        assert_eq!(s.status().capability, Capability::Available);
+        assert_eq!(
+            s.status().spawned,
+            10,
+            "recovery executes the real help probe before four query children"
+        );
+        let command = s
+            .begin_command(
+                &own,
+                PreparedCommand::new("pause", None).unwrap(),
+                Instant::now() + Duration::from_secs(5),
+            )
+            .unwrap();
+        assert!(command.reply(&own).unwrap());
+        let command = command.finish().await.unwrap();
+        assert_eq!(command.result(&own).unwrap(), &CommandOutcome::Sent);
+        drop((recovered, command));
+        s.shutdown().await.unwrap();
+        let done = s.status();
+        assert!(done.drained);
+        assert_eq!((done.spawned, done.reaped, done.retained), (11, 11, 0));
+        assert!(!Path::new(&format!("/proc/{held_pid}")).exists());
+    }
+    #[tokio::test(flavor = "current_thread")]
     async fn independent_query_and_commands_hold_real_children_and_drop_is_not_cancellation() {
         let _serial = TEST_OWNER.lock().unwrap();
         let own = owner();
