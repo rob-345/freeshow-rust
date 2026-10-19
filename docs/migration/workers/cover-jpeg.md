@@ -51,4 +51,28 @@ FREESHOW_JPEG_RECEIPT=crates/freeshow-cover-images/fixtures/jpeg/electron-linux.
 xvfb-run -a node crates/freeshow-cover-images/tools/jpeg-reference.mjs
 ```
 
-The tool verifies the packaged versions, removes its private profile on exit, bounds candidate subprocess output/deadline, and never mutates `node_modules`. The committed receipt is roughly 90 KiB, containing fixture bytes and evidence rather than an executable. A native libjpeg-turbo/system-libjpeg comparison is a separate next investigation, not an enabled capability or bundled distribution claim.
+The tool verifies the packaged versions, removes its private profile on exit, bounds candidate subprocess output/deadline, and never mutates `node_modules`. The committed receipt is roughly 90 KiB, containing fixture bytes and evidence rather than an executable.
+
+## Installed native consumer follow-up
+
+The separate explicit `tools/jpeg-system-probe.py` consumes that same immutable-source fixture receipt using installed native software. It never invokes an application decoder fallback or installs dependencies. `/usr/bin/python3` with existing GObject introspection/GdkPixbuf 2.0 support is required for this optional experiment; ordinary Node tests validate its committed receipt without requiring Python, GdkPixbuf, or `djpeg` on that test machine.
+
+The local GdkPixbuf 2.42.10 default JPEG buffer loader matches all fifteen source decoded RGBA hashes and dimensions exactly. The loader is used without its optional embedded-orientation transform, matching the measured source behavior. The probe records actual `/proc/self/maps` identities and SHA-256: its compiled consumer loads only `libjpeg.so.8.2.2` (Ubuntu `libjpeg-turbo8` 2.1.5-2ubuntu2), not libjpeg9. This is genuine libjpeg-turbo-through-consumer evidence. It does not establish direct C ABI declarations, decoder initialization/default controls, allocations, cancellation, or arbitrary JPEG parity.
+
+Local `jpeglib.h` development headers and the libjpeg pkg-config entry are absent. The experiment does not guess `jpeg_decompress_struct` layout. GdkPixbuf's public loader interface exposes no DCT/upsampling switches. Installed `djpeg`, independently linked to **libjpeg9e**, provides the controlled switch comparison below; its results must not be attributed to turbo:
+
+| Actual libjpeg9e settings | Exact fixtures |
+| ------------------------- | -------------: |
+| Integer DCT, fancy        |           6/15 |
+| Integer DCT, no smoothing |           6/15 |
+| Fast DCT, fancy           |           4/15 |
+| Fast DCT, no smoothing    |           4/15 |
+
+Reproduce this bounded local experiment with:
+
+```sh
+/usr/bin/python3 crates/freeshow-cover-images/tools/jpeg-system-probe.py \
+  crates/freeshow-cover-images/fixtures/jpeg/system-linux.json
+```
+
+Every controlled decoder invocation has a finite input corpus, dimensions/byte checks, and a subprocess deadline. The receipt pins the source receipt, probe code, loaded consumer/jpeg libraries, actual installed package versions, and CLI executable/library identities. The current positive evidence justifies investigating a maintained opaque GdkPixbuf binding inside existing workers, with strict format/resource preflight and actual service tests. Production remains unchanged in this commit; no system library or binary packaging is solved here.

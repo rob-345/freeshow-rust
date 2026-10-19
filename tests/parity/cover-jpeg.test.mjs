@@ -164,3 +164,31 @@ test("real tagged MP3/FLAC parsing retains original JPEG bytes independently of 
         assert.equal(result.status.reserved_bytes, 0)
     }
 })
+
+test("separate installed consumer evidence distinguishes matching turbo defaults from different libjpeg9 mode results", () => {
+    const measured = JSON.parse(fs.readFileSync(path.join(root, "crates/freeshow-cover-images/fixtures/jpeg/system-linux.json")))
+    assert.equal(measured.sourceReceiptSha256, hash(fs.readFileSync(path.join(root, "crates/freeshow-cover-images/fixtures/jpeg/electron-linux.json"), "utf8").replace(/\r\n/g, "\n")))
+    assert.equal(measured.probeSourceSha256, hash(fs.readFileSync(path.join(root, "crates/freeshow-cover-images/tools/jpeg-system-probe.py"), "utf8").replace(/\r\n/g, "\n")))
+    assert.equal(measured.gdkPixbufVersion, "2.42.10")
+    assert.ok(measured.loadedNativeLibraries.some((f) => f.path.endsWith("libjpeg.so.8.2.2") && f.sha256 === "ac09f2cd6f8a3b8e3cb123999ce275f9bcbe31c6cf9e20212c8f297772591d15"))
+    for (const f of measured.consumerDefault.fixtures) {
+        assert.equal(f.differentPixels, 0)
+        assert.equal(f.differentChannels, 0)
+        assert.equal(f.maximumDifference, 0)
+        assert.equal(f.rgbaSha256, receipt.fixtures.find((original) => original.name === f.name).source.rgba.sha256)
+    }
+    assert.equal(measured.consumerDefault.fixtures.length, 15)
+    assert.equal(measured.djpeg.available, true)
+    assert.ok(measured.djpeg.linkedJpegLibraries.some((f) => f.path.endsWith("libjpeg.so.9.5.0")))
+    assert.deepEqual(
+        measured.djpeg.modes.map((mode) => [mode.name, mode.fixtures.filter((f) => f.differentPixels === 0).length]),
+        [
+            ["accurate-fancy", 6],
+            ["accurate-no-smooth", 6],
+            ["fast-fancy", 4],
+            ["fast-no-smooth", 4]
+        ]
+    )
+    assert.equal(measured.directAbi.probed, false)
+    assert.equal(measured.productionDecoderEnabled, false)
+})
