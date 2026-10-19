@@ -1,6 +1,6 @@
-# JPEG cover decoding investigation
+# Bounded JPEG cover decoding and source evidence
 
-Production `freeshow-cover-images` remains PNG-only. The pinned Rust JPEG decoder does not reproduce the actual source pixels on ordinary baseline JPEGs. This evidence slice adds only a test candidate, an explicit packaged-source oracle, a small fixture receipt, and focused tests. It does not add a decoder dependency or change service policy, workers, reservations, cancellation, disposal, or joins.
+`freeshow-cover-images` now decodes a narrow baseline JPEG subset on verified Linux x64 GdkPixbuf 2.42.10. All fifteen actual source fixtures match decoded RGBA through real service sessions and PNG output. The existing Rust JPEG candidate remains a measured mismatch and is not used for decoding. PNG compressed bytes and the optional alternate resize/JPEG encoder retain their existing explicit differences. Fixed workers, whole-session quotas, context authority, cancellation, and joins remain unchanged.
 
 ## Actual source and result
 
@@ -26,9 +26,9 @@ On these actual nativeImage buffer calls, EXIF orientation 2/6/8 leaves 17×11 d
 
 The unchanged source writes the decoded image as PNG before formatting artwork. At or below 640×480, the artwork data URL retains the exact original JPEG bytes. For the 641×481 uniform input, it uses the actual source resize→JPEG90 output at 640×480 for that data URL, while the written PNG still has the original raster. The probe observes source title→cover path→PNG write→two formatting cover-path calls→text write order. It does not claim native resize or JPEG encoding parity.
 
-## Bounds and ownership
+## Evidence-only candidate bounds
 
-No production image code changes. The service retains two fixed workers, four whole sessions with 128 MiB reservations, a 4 MiB encoded limit, a 4M-pixel limit, and its existing accepted-work cancellation/retirement/actual-join contract. JPEG `create` still returns `cover_unsupported` under both existing policies; extracting and publishing raw embedded JPEG picture bytes remains supported independently.
+The first two evidence commits did not enable a production decoder. Their receipts intentionally retain `productionDecoderEnabled: false`. The subsequent native path described below uses their measured matching consumer, rather than changing source pixel expectations to fit the Rust candidate.
 
 `examples/cover-jpeg-candidate.rs` is a standalone controlled-corpus measurement program, never an app command or service codec. It caps input, baseline header count, 8-bit component forms and dimensions, uses the pinned real decoder, and projects opaque RGBA plus a real PNG. The example's upstream best-effort decoder allocation limit and whole-call work are **not** a production allocation/cancellation audit. Its temporary process/CPU ownership is test infrastructure; it does not add application threads or per-request subprocesses. Enabling a new codec would require its own allocation/CPU bounds and cancellation review on the existing fixed owners.
 
@@ -42,7 +42,7 @@ FREESHOW_JPEG_CANDIDATE=/absolute/target/debug/examples/cover-jpeg-candidate \
 node --test tests/parity/cover-jpeg.test.mjs
 ```
 
-The ordinary test suite needs no installed Electron. It verifies the committed original receipt/provenance, computes real current candidate pixels against that source, checks exact Linux x64 mismatch measurements without tolerance, exercises actual service JPEG rejection and real worker joins, and compares original/parser/native raw JPEG extraction from controlled tagged MP3/FLAC files. Other native platforms still exercise candidate dimensions/opacity and observable mismatch, without claiming an actual original runtime there. Existing PNG source/lifecycle suites remain required.
+The ordinary test suite needs no installed Electron. It verifies the original receipt/provenance, computes real current candidate pixels against that source, checks exact Linux x64 candidate mismatch measurements without tolerance, and independently checks encoded PNG pixels. On Linux x64 it exercises real service JPEG→PNG pixels under both policies and real parser MP3/FLAC→first-picture→create→PNG on the same session, including actual worker joins. Unsupported native platforms explicitly assert JPEG rejection. Other platforms still exercise candidate dimensions/opacity and observable mismatch, without claiming an original runtime there. Existing PNG source/lifecycle suites remain required.
 
 To regenerate the actual original receipt, use the explicit packaged oracle with isolated temporary profile/data/XDG paths:
 
@@ -77,4 +77,42 @@ Reproduce this bounded local experiment with:
   crates/freeshow-cover-images/fixtures/jpeg/system-linux.json
 ```
 
-Every controlled decoder invocation has a finite input corpus, dimensions/byte checks, and a subprocess deadline. The receipt pins the source receipt, probe code, loaded consumer/jpeg libraries, actual installed package versions, and CLI executable/library identities. The current positive evidence justifies investigating a maintained opaque GdkPixbuf binding inside existing workers, with strict format/resource preflight and actual service tests. Production remains unchanged in this commit; no system library or binary packaging is solved here.
+Every controlled decoder invocation has a finite input corpus, dimensions/byte checks, and a subprocess deadline. The receipt pins the source receipt, probe code, loaded consumer/jpeg libraries, actual installed package versions, and CLI executable/library identities. These consumer measurements preceded the bounded native path below. No system library or binary packaging is solved by a probe receipt.
+
+## Native supported subset
+
+`create` dispatches JPEG bytes to private `jpeg.rs`; all existing public session APIs stay the same. The legacy `ImagePolicy::VerifiedPngPixels` name now admits the checked JPEG subset as well as its existing PNG subset. JPEG admission does not opt into native alternate resize/JPEG encoding. Large covers still require that separate explicit policy for `resize_jpeg90`, and PNG replies still carry `native_png_encoding_differs`.
+
+Preflight occurs before constructing a native image loader. It enforces ≤4 MiB encoded data, ≤4096 per side, ≤4M pixels, ≤256 segments, one SOF0 frame, 8-bit grayscale or JFIF YCbCr 4:4:4/4:2:0, component/table identities from the actual corpus, 8-bit quantizers, bounded canonical Huffman tables, and one interleaved baseline scan. A bounded Huffman pass validates the exact declared MCU/block count, coefficient runs, byte stuffing, complete entropy, canonical pad bits and final EOI. This prevents Gdk's tolerated truncated-entropy recovery from being published as certified source pixels. Cooperative checks occur during marker scanning, every 64 KiB of entropy framing, and every 256 MCUs.
+
+Metadata is deliberately narrow: exactly the observed JFIF 1.01/1.02 no-thumbnail header, absent ICC or the exact single source-generated standard sRGB profile, absent EXIF or the exact measured minimal little-endian orientation 2/6/8 payload. No orientation transform is applied. Other ICC/P3, arbitrary EXIF, CMYK/YCCK/RGB component-ID variants, progressive/arithmetic/multiple scans, restart intervals, other sampling, 12/16-bit forms, comment/unknown metadata and malformed streams are explicit unsupported/invalid/resource errors. Some valid source JPEGs remain outside this subset. No tolerant empty-image success is substituted for an unsupported/corrupt input.
+
+Only Linux x86_64 is enabled. The native runtime version must be GdkPixbuf 2.42.10. Three immutable `const guint` version globals use the exact public scalar API from `gdk-pixbuf-features.h`; no native struct layout is guessed. The maintained pinned `gdk-pixbuf=0.18.5` binding owns all opaque loaders, images and pixel buffers. Each existing worker verifies two tiny source-reference JPEGs (textured 4:2:0 and grayscale) before its first decode; a missing/mismatching consumer returns `cover_unsupported`. Interrupted or resource-failed verification does not poison the worker capability. A genuine mismatch remains unavailable until that worker exits. These sample canaries guard an installed provider; they are not exhaustive pixel proof for every possible JPEG or another operating system.
+
+Bytes are fed in ≤32 KiB synchronous writes. An RAII guard closes the actual native loader on success, decode error and cooperative cancellation. The code copies bounded RGB rows from `read_pixel_bytes` into owned opaque RGBA, checking dimensions, rowstride, color/alpha and actual buffer length against preflight. GObject/image/pixel-buffer ownership stays on the same worker and ends before the operation returns. No task/thread/runtime or application image path is passed to Gdk. Its trusted module/loader cache and native resources may perform filesystem reads; this is not a zero-filesystem-read claim.
+
+## Native resources and cancellation
+
+The same two fixed owners and four whole 128 MiB reservations remain. JPEG preflight uses small fixed Huffman arrays; each entropy bit comes from the ≤4 MiB input and block/MCU work is bounded by dimensions and admitted sampling. The code checks actual rows and produces at most 16 MiB RGBA. At the maximum raster, old/new RGBA consume at most 32 MiB, native RGB plus a possible pixel-byte copy about 24 MiB, and encoded input ≤4 MiB. Admitted marker data is tiny; existing metadata/picture/output buffers remain within the original 128 MiB session reservation. Native allocator/module/global overhead is outside that reservation, as with the existing codec accounting.
+
+The upstream [Gdk 2.42.10 JPEG loader](https://raw.githubusercontent.com/GNOME/gdk-pixbuf/2.42.10/gdk-pixbuf/io-jpeg.c) has a 64 KiB input buffer and allocates output at decoded dimensions; stop destroys its decoder/context. Restricting one interleaved baseline scan avoids the full-image coefficient mode in [libjpeg-turbo 2.1.5](https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/2.1.5/jdcoefct.c). Source code also shows why truncated entropy must be rejected before native stop. The [loader lifecycle](https://raw.githubusercontent.com/GNOME/gdk-pixbuf/2.42.10/gdk-pixbuf/gdk-pixbuf-loader.c) remains synchronous.
+
+Cancellation/deadlines are cooperative between Rust preflight blocks, native writes and copied rows. A native write/close, module load, filesystem operation, allocator or final thread destructor cannot be forcibly preempted. Dropping an accepted caller does not release its native loader or whole reservation early. The focused lifecycle test holds a real Gdk loader after an actual accepted write and before close, cancels/drops the caller, observes shutdown timeout with the owner still active/reserved, releases the gate and requires real close, both OS-thread joins and reservation zero. The existing PNG/queued/caller-drop/panic/retirement tests remain intact. This is ownership and bounded-work evidence, not a whole-app performance or universal native-memory peak claim.
+
+## Dependency and host integration
+
+The only new dependency is target-specific `gdk-pixbuf = "=0.18.5"` for Linux x64 (cached sys 0.18.0, glib 0.18.5, gio 0.18.4). Linux build/runtime provision must supply its native GdkPixbuf/GLib libraries and JPEG consumer; Ubuntu's `libgdk-pixbuf-2.0-dev` provides the pkg-config build entries. The runtime gate remains stricter than the binding's minimum 2.36.8. Coordinator-owned workspace/native lockfiles and CI packages must be updated separately; no shared file is changed here.
+
+The verified distro/runtime is Ubuntu 24.04 with GdkPixbuf 2.42.10 (`2.42.10+dfsg-3ubuntu3.3` locally), GLib 2.80.0, and libjpeg-turbo 2.1.5. Linux CI exercising successful JPEG decoding must provide that runtime version and the development pkg-config package. A different GdkPixbuf version, missing JPEG module or differing source canaries returns explicit `cover_unsupported`; there is no approximate fallback to image/zune. Another security patch with the same API version still has to pass the real pixel canaries. Other Linux distributions/architectures are not automatically certified by these Ubuntu receipts.
+
+Local checks reuse the existing extracted native development files, without installs:
+
+```sh
+PKG_CONFIG_SYSROOT_DIR="$HOME/.local/share/freeshow-native" \
+PKG_CONFIG_PATH="$HOME/.local/share/freeshow-native/usr/lib/x86_64-linux-gnu/pkgconfig" \
+cargo test -p freeshow-cover-images --all-targets
+```
+
+The production driver keeps its original name. Worker verification uses a temporary standalone manifest naming the driver `freeshow-cover-jpeg-service-parity`, so it cannot overwrite the coordinator's pre-integration binary during concurrent source checks. The old `tools/electron-reference.mjs` now verifies its actual generated JPEG on the enabled platform instead of retaining the former expected JPEG rejection; historical receipts are not rewritten. Windows/macOS/other architectures remain buildable with explicit unavailable JPEG behavior and no new Gdk dependency there.
+
+Final focused validation: 18 Rust tests, ten repeated full native runs (180 passes), eight JPEG and ten existing cover/image Node suites, strict Clippy and all-target compilation for Linux/Windows GNU/macOS ARM, rustfmt/Prettier/diff checks. The actual packaged reference rerun preserves all nine previous PNG bitmap comparisons and verifies one additional genuinely generated 2×1 JPEG through native create→PNG with exact source bitmap equality. Its local receipt is `/tmp/freeshow-cover-jpeg-native-electron.json`; the committed fifteen-fixture immutable-source receipt remains unchanged.

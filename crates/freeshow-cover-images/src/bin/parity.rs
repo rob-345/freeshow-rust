@@ -32,6 +32,7 @@ async fn main() {
     let session = service.begin_session(&ctx).unwrap();
     assert!(data["ops"].as_array().unwrap().len() <= MAX_OPERATIONS);
     let mut results = vec![];
+    let mut first_cover = None;
     for op in data["ops"].as_array().unwrap() {
         let ticket = match op["op"].as_str().unwrap() {
             "covers" => service.covers(
@@ -49,6 +50,14 @@ async fn main() {
                 },
                 Cancel::default(),
             ),
+            "create_first_cover" => service.create(
+                &session,
+                first_cover
+                    .take()
+                    .expect("real covers operation must precede create_first_cover"),
+                ImagePolicy::VerifiedPngPixels,
+                Cancel::default(),
+            ),
             "png" => service.png(&session, Cancel::default()),
             "size" => service.size(&session, Cancel::default()),
             "jpeg" => service.resize_jpeg90(&session, Cancel::default()),
@@ -57,7 +66,12 @@ async fn main() {
         };
         let result = match ticket {
             Ok(t) => match t.finish().await {
-                Ok(o) => o.inspect(project),
+                Ok(o) => o.inspect(|reply| {
+                    if let Reply::Covers(pictures) = reply {
+                        first_cover = pictures.first().map(|p| p.data.clone());
+                    }
+                    project(reply)
+                }),
                 Err(e) => Err(e),
             },
             Err(e) => Err(e),

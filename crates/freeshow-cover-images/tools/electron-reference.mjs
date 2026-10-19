@@ -89,7 +89,7 @@ try {
             assert.deepEqual(f.resize.rust.diagnostics, ["native_lanczos3_jpeg90_differs"])
         }
     }
-    // Source-supported JPEG and partial-alpha are recorded as explicit backend gaps.
+    // Partial alpha remains a gap; the narrow Linux JPEG consumer is separate.
     const gapInputs = [
         { name: "partial-alpha", base64: png(2, 1, { partial: true }).toString("base64") },
         { name: "unknown-short", base64: Buffer.from([1, 2, 3]).toString("base64") }
@@ -103,9 +103,25 @@ try {
     }, gapInputs)
     response.unsupported = []
     for (const gap of gaps) {
-        const r = spawnSync(binary, [], { input: JSON.stringify({ ops: [{ op: "create", base64: gap.base64 }] }), encoding: "utf8", timeout: 20000 })
+        const r = spawnSync(binary, [], { input: JSON.stringify({ ops: [{ op: "create", base64: gap.base64 }, { op: "png" }] }), encoding: "utf8", timeout: 20000 })
         assert.equal(r.status, 0, r.stderr)
-        const actual = JSON.parse(r.stdout).results[0]
+        const results = JSON.parse(r.stdout).results
+        const actual = results[0]
+        if (gap.name === "source-jpeg" && process.platform === "linux" && process.arch === "x64") {
+            assert.deepEqual(actual, gap.size)
+            const pixels = await app.evaluate(
+                ({ nativeImage }, data) => {
+                    const source = nativeImage.createFromBuffer(Buffer.from(data.source, "base64"))
+                    const native = nativeImage.createFromBuffer(Buffer.from(data.native, "base64"))
+                    return { source: source.toBitmap().toString("base64"), native: native.toBitmap().toString("base64"), sourceSize: source.getSize(), nativeSize: native.getSize() }
+                },
+                { source: gap.base64, native: results[1].bytes.base64 }
+            )
+            assert.equal(pixels.source, pixels.native)
+            assert.deepEqual(pixels.sourceSize, pixels.nativeSize)
+            response.verifiedJpeg = { name: gap.name, size: actual, inputSha256: hash(Buffer.from(gap.base64, "base64")), bitmapSha256: hash(Buffer.from(pixels.source, "base64")), diagnostics: results[1].diagnostics }
+            continue
+        }
         assert.equal(actual.error.code, "cover_unsupported")
         response.unsupported.push({ name: gap.name, sourceSize: gap.size, inputBytes: Buffer.from(gap.base64, "base64").length, inputSha256: hash(Buffer.from(gap.base64, "base64")), nativeError: actual.error.code })
     }

@@ -141,6 +141,39 @@ async fn accepted_caller_drop_keeps_actual_worker_owned_and_terminal_timeout_ret
     assert_eq!(service.status().active, 0);
     assert_eq!(service.status().finished_workers, 2)
 }
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[tokio::test]
+async fn accepted_jpeg_loader_survives_caller_drop_and_cancel_until_real_close_and_join() {
+    let service = CoverImageService::new().unwrap();
+    let s = service.begin_session(&context()).unwrap();
+    let gate = Gate::new();
+    crate::jpeg::hold_after_native_write(gate.clone());
+    let cancel = Cancel::default();
+    let ticket = service
+        .create(
+            &s,
+            include_bytes!("../fixtures/jpeg/texture-17x11-no-icc.jpg").to_vec(),
+            ImagePolicy::VerifiedPngPixels,
+            cancel.clone(),
+        )
+        .unwrap();
+    // Held after an actual Gdk JPEG write, with its native loader still live.
+    gate.started().await;
+    cancel.cancel();
+    drop(ticket);
+    assert_eq!(
+        code(service.shutdown(Duration::from_millis(1)).await),
+        "cover_drain_timeout"
+    );
+    assert_eq!(service.status().active, 1);
+    assert_eq!(service.status().reserved_bytes, SESSION_RESERVATION);
+    assert_ne!(service.status().finished_workers, WORKERS);
+    gate.release();
+    service.shutdown(Duration::from_secs(2)).await.unwrap();
+    assert_eq!(service.status().finished_workers, WORKERS);
+    assert_eq!(service.status().reserved_bytes, 0);
+    assert_eq!(service.status().active, 0);
+}
 #[tokio::test]
 async fn retired_queued_job_is_really_removed_and_disposed_independent_of_blocked_workers() {
     let service = CoverImageService::new().unwrap();

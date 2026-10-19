@@ -208,11 +208,73 @@ test("pinned real Rust JPEG candidate has measured pixel mismatches without rela
     }
     assert.ok(mismatching >= 1, "ordinary JPEG candidate pixel mismatch remains observable")
 })
-test("actual cover service keeps JPEG unsupported under both policies, returns all leases and joins both workers", () => {
-    const ops = receipt.fixtures.flatMap((f) => [false, true].map((alternate) => ({ op: "create", base64: f.input.base64, alternate })))
+test("actual cover sessions verify all source JPEG pixels through PNG, with explicit unsupported platforms and both worker joins", () => {
+    const supported = process.platform === "linux" && process.arch === "x64"
+    const cases = receipt.fixtures.flatMap((f) => [false, true].map((alternate) => ({ f, alternate })))
+    const ops = cases.flatMap(({ f, alternate }) => (supported ? [{ op: "create", base64: f.input.base64, alternate }, { op: "png" }, { op: "size" }] : [{ op: "create", base64: f.input.base64, alternate }]))
+    ops.push({ op: "release" })
     const result = run(native, { ops })
-    assert.equal(result.results.length, 30)
-    for (const item of result.results) assert.equal(item.error?.code, "cover_unsupported")
+    assert.equal(result.results.length, (supported ? 90 : 30) + 1)
+    for (let i = 0; i < cases.length; i++) {
+        if (!supported) {
+            assert.equal(result.results[i].error?.code, "cover_unsupported")
+            continue
+        }
+        const f = cases[i].f,
+            image = result.results[i * 3],
+            encoded = result.results[i * 3 + 1],
+            size = result.results[i * 3 + 2]
+        assert.deepEqual(image, f.source.size)
+        assert.deepEqual(size, f.source.size)
+        assert.deepEqual(encoded.diagnostics, ["native_png_encoding_differs"])
+        const bytes = Buffer.from(encoded.bytes.base64, "base64")
+        assert.equal(hash(bytes), encoded.bytes.sha256)
+        assert.deepEqual(decodedPng(bytes).rgba, sourcePixels(f), f.name)
+        assert.notEqual(encoded.bytes.sha256, f.source.png.sha256, "no compressed PNG parity claim")
+    }
+    assert.deepEqual(result.results.at(-1), { released: true })
+    assert.equal(result.status.finished_workers, 2)
+    assert.equal(result.status.reserved_bytes, 0)
+})
+test("JPEG profile/component/scan/resource violations reject explicitly before native image success", () => {
+    const named = (name) => Buffer.from(receipt.fixtures.find((f) => f.name === name).input.base64, "base64")
+    const baseline = named("texture-17x11-no-icc"),
+        sof = baseline.indexOf(Buffer.from([255, 0xc0])),
+        sos = baseline.indexOf(Buffer.from([255, 0xda])),
+        dqt = baseline.indexOf(Buffer.from([255, 0xdb])),
+        dht = baseline.indexOf(Buffer.from([255, 0xc4]))
+    const mutate = (bytes, at, value) => {
+        const changed = Buffer.from(bytes)
+        changed[at] = value
+        return changed
+    }
+    const huge = Buffer.from(baseline)
+    huge.writeUInt16BE(65535, sof + 5)
+    const icc = named("texture-17x11"),
+        app2 = icc.indexOf(Buffer.from([255, 0xe2]))
+    const exif = named("texture-exif-2"),
+        app1 = exif.indexOf(Buffer.from([255, 0xe1]))
+    const scanStart = sos + 2 + baseline.readUInt16BE(sos + 2)
+    const cases = [
+        ["dimensions", huge, "cover_resource_limit"],
+        ["progressive", mutate(baseline, sof + 1, 0xc2), "cover_unsupported"],
+        ["component count", mutate(baseline, sof + 9, 4), "cover_unsupported"],
+        ["sampling", mutate(baseline, sof + 11, 0x21), "cover_unsupported"],
+        ["ICC", mutate(icc, app2 + 30, icc[app2 + 30] ^ 1), "cover_unsupported"],
+        ["unmeasured EXIF", mutate(exif, app1 + 28, 1), "cover_unsupported"],
+        ["split scan", mutate(baseline, sos + 4, 1), "cover_unsupported"],
+        ["16-bit quantizer", mutate(baseline, dqt + 4, 0x10), "cover_unsupported"],
+        ["zero quantizer", mutate(baseline, dqt + 5, 0), "cover_invalid"],
+        ["Huffman oversubscription", mutate(baseline, dht + 5, 255), "cover_invalid"],
+        ["truncation", baseline.subarray(0, baseline.length - 1), "cover_invalid"],
+        ["trailing bytes", Buffer.concat([baseline, Buffer.from([0])]), "cover_invalid"],
+        ["truncated entropy with EOI", Buffer.concat([baseline.subarray(0, scanStart + 2), Buffer.from([255, 217])]), "cover_invalid"],
+        ["extra entropy before EOI", Buffer.concat([baseline.subarray(0, baseline.length - 2), Buffer.from([0, 255, 217])]), "cover_invalid"],
+        ["header flood", Buffer.concat([baseline.subarray(0, 2), ...Array(257).fill(Buffer.from([255, 0xc4, 0, 2])), baseline.subarray(2)]), "cover_resource_limit"],
+        ["encoded cap", Buffer.alloc(4 * 1024 * 1024 + 1), "cover_resource_limit"]
+    ]
+    const result = run(native, { ops: cases.map(([, bytes]) => ({ op: "create", base64: bytes.toString("base64") })) })
+    for (let i = 0; i < cases.length; i++) assert.equal(result.results[i].error?.code, cases[i][2], cases[i][0])
     assert.equal(result.status.finished_workers, 2)
     assert.equal(result.status.reserved_bytes, 0)
 })
@@ -228,7 +290,7 @@ test("real tagged MP3/FLAC parsing retains original JPEG bytes independently of 
         fs.writeFileSync(file, bytes)
         const original = (await parseFile(file)).common.picture
         assert.equal(original.length, 2)
-        const result = run(native, { ops: [{ op: "covers", path: file }] })
+        const result = run(native, { ops: [{ op: "covers", path: file }, { op: "create_first_cover" }, { op: "png" }, { op: "size" }, { op: "release" }] })
         assert.equal(result.results[0].error, undefined)
         for (let i = 0; i < covers.length; i++) {
             assert.deepEqual(original[i].data, covers[i])
@@ -237,6 +299,12 @@ test("real tagged MP3/FLAC parsing retains original JPEG bytes independently of 
             assert.equal(item.data.sha256, hash(original[i].data))
             assert.equal(item.fields.format, original[i].format)
         }
+        if (process.platform === "linux" && process.arch === "x64") {
+            const f = receipt.fixtures.find((f) => f.name === "texture-17x11-no-icc")
+            assert.deepEqual(result.results[1], f.source.size)
+            assert.deepEqual(result.results[3], f.source.size)
+            assert.deepEqual(decodedPng(Buffer.from(result.results[2].bytes.base64, "base64")).rgba, sourcePixels(f))
+        } else assert.equal(result.results[1].error?.code, "cover_unsupported")
         assert.equal(result.status.finished_workers, 2)
         assert.equal(result.status.reserved_bytes, 0)
     }

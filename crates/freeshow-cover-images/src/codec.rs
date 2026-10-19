@@ -30,6 +30,15 @@ fn dimensions(w: u32, h: u32) -> Result<usize> {
 }
 pub(crate) fn create(bytes: Vec<u8>, policy: ImagePolicy, check: &Check) -> Result<Raster> {
     check.check()?;
+    if bytes.starts_with(&[255, 216]) {
+        let (width, height, rgba) = crate::jpeg::decode(&bytes, check)?;
+        return Ok(Raster {
+            width,
+            height,
+            rgba,
+            policy,
+        });
+    }
     if !bytes.starts_with(&[137, 80, 78, 71, 13, 10, 26, 10]) {
         if bytes.is_empty() {
             return Ok(Raster {
@@ -39,7 +48,7 @@ pub(crate) fn create(bytes: Vec<u8>, policy: ImagePolicy, check: &Check) -> Resu
                 policy,
             });
         }
-        return Err(unsupported("Only bounded 8-bit RGB/RGBA PNG decoding is certified; JPEG/GIF/WebP/etc are unavailable"));
+        return Err(unsupported("Only bounded certified PNG and Linux JPEG subsets are available; GIF/WebP/etc are unavailable"));
     }
     let mut p = 8usize;
     let mut count = 0;

@@ -1,6 +1,7 @@
 //! Trusted native cover/image ownership. No deserializable path or renderer API.
 mod codec;
 mod extract;
+mod jpeg;
 mod service;
 use serde::Serialize;
 use serde_json::Value;
