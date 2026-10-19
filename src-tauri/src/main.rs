@@ -31,6 +31,7 @@ mod now_playing_owner;
 mod now_playing_prepare;
 mod now_playing_schedule;
 mod output;
+mod provider_connections;
 mod remote_cover;
 mod remote_cover_publications;
 mod remotes;
@@ -84,6 +85,7 @@ struct AppState {
     browse: browse::NativeBrowse,
     system: SystemService,
     device_id: device_id::DeviceIdentity,
+    provider_connections: provider_connections::ProviderConnections,
     network_snapshots: network_snapshot::NetworkSnapshots,
     network_queries: network_queries::NativeNetworkQueries,
     api: api::NativeApi,
@@ -1054,6 +1056,13 @@ async fn dispatch_native(
             }
             return Ok(imported.events);
         }
+        if command == "PROVIDER_CONNECTIONS" {
+            let state = app.state::<AppState>();
+            return state
+                .provider_connections
+                .dispatch(&state.library, request, window.label())
+                .await;
+        }
         if command == "DEVICE_ID" {
             let state = app.state::<AppState>();
             return state
@@ -1197,6 +1206,7 @@ async fn dispatch_native(
             "CLOSE" => {
                 let state = app.state::<AppState>();
                 state.device_id.seal();
+                state.provider_connections.seal();
                 let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
                 let context = state.library.context().map_err(WireError::from)?;
                 state.cover_publications.retire(&context, true);
@@ -1953,6 +1963,7 @@ fn main() {
                 browse,
                 system,
                 device_id: device_id::DeviceIdentity::new(),
+                provider_connections: provider_connections::ProviderConnections::new(),
                 network_snapshots,
                 network_queries,
                 api,
