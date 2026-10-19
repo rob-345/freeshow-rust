@@ -34,7 +34,7 @@ freeshow-midi-ports = { path = "../crates/freeshow-midi-ports" }
 freeshow-files = { path = "../crates/freeshow-files" }
 freeshow-system = { path = "../crates/freeshow-system" }
 freeshow-ai-local = { path = "../crates/freeshow-ai-local" }
-freeshow-ai-status = { path = "../crates/freeshow-ai-status" }
+freeshow-ai-status = { path = "../crates/freeshow-ai-status", default-features = false }
 freeshow-spotify = { path = "../crates/freeshow-spotify" }
 freeshow-api = { path = "../crates/freeshow-api" }
 freeshow-imports = { path = "../crates/freeshow-imports" }
@@ -69,7 +69,7 @@ libc = "0.2"
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock", "Wdk_Foundation", "Wdk_Storage_FileSystem", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_WindowsProgramming"] }
 
 [dev-dependencies]
-freeshow-ai-status = { path = "../crates/freeshow-ai-status", features = ["test-harness"] }
+freeshow-ai-status = { path = "../crates/freeshow-ai-status", default-features = false, features = ["test-harness"] }
 freeshow-browse = { path = "../crates/freeshow-browse", features = ["test-harness"] }
 flate2 = "1"
 socket2 = "0.6"
