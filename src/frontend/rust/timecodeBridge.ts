@@ -128,6 +128,7 @@ function sourceBytes(value: unknown): Uint8Array {
     return output
 }
 type Job = { context: RuntimeContext } & ({ kind: "command"; message: TimecodeMessage } | { kind: "audio"; bytes: Uint8Array })
+type PreparedPublication = { context: RuntimeContext; id: string; message?: { channel: string; data: unknown } }
 
 /** Main-window adapter only. Native authority, codecs, IO and source global
  * state remain in NativeTimecode. All callbacks must be trusted bounded sinks. */
@@ -141,6 +142,7 @@ export function createTimecodeBridge(options: TimecodeBridgeOptions) {
         active = false,
         pump: Promise<void> | undefined
     let completion: Promise<void> | undefined,
+        nextPublication: PreparedPublication | undefined,
         publishing = false,
         lastSequence = 0n
     let terminal = false,
@@ -191,6 +193,7 @@ export function createTimecodeBridge(options: TimecodeBridgeOptions) {
         terminal ||= final
         if (cleanupRunning || (terminal && retiring && cleanup && !cleanupError)) return
         retiring = true
+        nextPublication = undefined
         for (const _job of queue) {
             accepted--
             report(new TimecodeBridgeError("timecode_context_closed", "Queued timecode canceled by retirement"))
@@ -250,6 +253,42 @@ export function createTimecodeBridge(options: TimecodeBridgeOptions) {
             waiter = false
         }
     }
+    function deliverPublication(publication: PreparedPublication) {
+        const { context: frozen, id, message } = publication
+        publishing = true
+        let delivered = false
+        try {
+            if (message && !terminal && !retiring && same(current, frozen) && same(options.getContext(), frozen)) {
+                options.deliver(message)
+                delivered = true
+            }
+        } catch (error) {
+            report(error)
+        }
+        try {
+            completion = Promise.resolve(options.complete(frozen, id, delivered))
+                .then(() => {})
+                .catch((error) => {
+                    if (!retiring && same(current, frozen) && same(options.getContext(), frozen)) {
+                        terminalError ??= report(error, "timecode_completion")
+                        beginRetirement(true)
+                    }
+                })
+                .finally(() => {
+                    completion = undefined
+                    const next = nextPublication
+                    nextPublication = undefined
+                    if (next && !terminal && !retiring) deliverPublication(next)
+                })
+        } catch (error) {
+            if (!retiring && same(current, frozen) && same(options.getContext(), frozen)) {
+                terminalError ??= report(error, "timecode_completion")
+                beginRetirement(true)
+            }
+        } finally {
+            publishing = false
+        }
+    }
     return {
         // Called only for a retained MAIN message. true means intercepted,
         // including an original source no-op/error; it is never a success ACK.
@@ -301,14 +340,14 @@ export function createTimecodeBridge(options: TimecodeBridgeOptions) {
                 sequence = BigInt(serial)
                 if (sequence <= lastSequence) fail("timecode_replay", "Timecode publication was already consumed or reordered")
                 frozen = context(field(delivery, "context") as RuntimeContext)
-                if (completion || publishing) fail("timecode_completion_busy", "A private timecode completion is still owned")
+                if (publishing || (completion && nextPublication)) fail("timecode_completion_busy", "The bounded private timecode handoff is full")
                 lastSequence = sequence
                 publishing = true
             } catch (error) {
                 report(error)
                 return
             }
-            let delivered = false
+            let preparedMessage: PreparedPublication["message"]
             try {
                 const event = field(publication, "event"),
                     message = field(event, "message"),
@@ -343,33 +382,21 @@ export function createTimecodeBridge(options: TimecodeBridgeOptions) {
                     } else if ((channel !== "TIMECODE_STATUS" && channel !== "ALERT") || typeof data !== "string" || data.length > 65536 || encoder.encode(data).length > 65536 || (channel === "TIMECODE_STATUS" && !["play", "pause", "stop"].includes(data))) fail("timecode_publication", "Unsupported native timecode event")
                     else if (field(publication, "bytes") !== undefined) fail("timecode_publication", "Unexpected native bytes")
                 }
-                if (!terminal && !retiring && same(current, frozen) && same(options.getContext(), frozen)) {
-                    options.deliver({ channel: channel as string, data })
-                    delivered = true
-                }
+                preparedMessage = { channel: channel as string, data }
             } catch (error) {
                 report(error)
             }
-            try {
-                completion = Promise.resolve(options.complete(frozen, id, delivered))
-                    .then(() => {})
-                    .catch((error) => {
-                        if (!retiring && same(current, frozen) && same(options.getContext(), frozen)) {
-                            terminalError ??= report(error, "timecode_completion")
-                            beginRetirement(true)
-                        }
-                    })
-                    .finally(() => {
-                        completion = undefined
-                    })
-            } catch (error) {
-                if (!retiring && same(current, frozen) && same(options.getContext(), frozen)) {
-                    terminalError ??= report(error, "timecode_completion")
-                    beginRetirement(true)
-                }
-            } finally {
+            if (terminal || retiring) {
                 publishing = false
+                return
             }
+            const prepared = { context: frozen, id, message: preparedMessage }
+            if (completion) {
+                // Native complete consumes its nonce before the invoke response
+                // reaches JS. Own one next hydrated event across that handoff.
+                nextPublication = prepared
+                publishing = false
+            } else deliverPublication(prepared)
         },
         contextChanged() {
             if (!retiring && same(current, options.getContext())) return Promise.resolve()
@@ -381,7 +408,7 @@ export function createTimecodeBridge(options: TimecodeBridgeOptions) {
             return waitCleanup()
         },
         status() {
-            return { accepted: accepted + Number(cleanupRunning), queued: queue.length, active, completion: !!completion, retiring, terminal, cleanupRunning, cleanupError: cleanupError?.code, terminalError: terminalError?.code, lastSequence: lastSequence.toString() }
+            return { accepted: accepted + Number(cleanupRunning), queued: queue.length, active, completion: !!completion, nextPublication: !!nextPublication, retiring, terminal, cleanupRunning, cleanupError: cleanupError?.code, terminalError: terminalError?.code, lastSequence: lastSequence.toString() }
         }
     }
 }

@@ -465,19 +465,108 @@ test("independent cleanup failure retries same context and close waiter cannot m
     await f.bridge.close()
 })
 
-test("blocked private completion remains bounded through drain timeout and rejects overlap/reentrant publications", async () => {
+test("one next native publication owns its hydrated snapshot until the previous invoke response resolves", async () => {
+    for (const variant of ["status", "negative-zero", "nan", "audio"]) {
+        const gate = deferred(),
+            calls = []
+        const f = fixture({
+            complete: async (context, id, accepted) => {
+                calls.push({ context, id, accepted })
+                if (calls.length === 1) await gate.promise
+            }
+        })
+        const next = publication(2, variant === "status" ? "TIMECODE_STATUS" : variant === "audio" ? "TIMECODE_AUDIO_DATA" : "TIMECODE_VALUE", variant === "status" ? "play" : null)
+        if (variant === "negative-zero" || variant === "nan") next.hydration.numbers.push({ path: "", number: { kind: variant === "nan" ? "NaN" : "NegativeZero" } })
+        if (variant === "audio") next.bytes = new Uint8Array([0, 128, 255])
+        const expectedId = next.delivery.id
+        f.bridge.publish(publication(1))
+        await tick()
+        // The actual NativeTimecode.complete sends its one-shot before Tauri's
+        // invocation response reaches JS. Model that independent response delay.
+        f.bridge.publish(next)
+        assert.equal(f.bridge.status().nextPublication, true)
+        assert.equal(f.bridge.status().lastSequence, "2")
+        assert.equal(f.deliveries.length, 1)
+        assert.equal(calls.length, 1)
+        next.event.message.data = "mutated"
+        next.event.message.channel = "ALERT"
+        next.delivery.context.dataPath = "/mutated"
+        next.delivery.sequence = "999"
+        if (next.bytes) next.bytes.fill(42)
+        if (next.hydration.numbers.length) next.hydration.numbers[0].number.kind = "PositiveInfinity"
+        f.bridge.publish(publication(2))
+        assert.equal(f.errors.at(-1).code, "timecode_replay")
+        f.bridge.publish(publication(3))
+        assert.equal(f.errors.at(-1).code, "timecode_completion_busy")
+        assert.equal(f.bridge.status().lastSequence, "2", "excess cannot consume another serial or lease")
+        gate.resolve()
+        await until(() => calls.length === 2 && !f.bridge.status().completion)
+        assert.equal(f.bridge.status().nextPublication, false)
+        assert.equal(f.deliveries.length, 2)
+        const message = f.deliveries[1]
+        assert.equal(message.channel, variant === "status" ? "TIMECODE_STATUS" : variant === "audio" ? "TIMECODE_AUDIO_DATA" : "TIMECODE_VALUE")
+        if (variant === "status") assert.equal(message.data, "play")
+        else if (variant === "audio") assert.deepEqual(message.data, new Uint8Array([0, 128, 255]))
+        else if (variant === "nan") assert.ok(Number.isNaN(message.data))
+        else assert.ok(Object.is(message.data, -0))
+        assert.deepEqual(
+            calls.map(({ id, context, accepted }) => ({ id, context, accepted })),
+            [
+                { id: publication(1).delivery.id, context: ctx(), accepted: true },
+                { id: expectedId, context: ctx(), accepted: true }
+            ]
+        )
+        assert.equal(f.commands.length + f.audio.length, 0, "private completion produces no original command-success ACK")
+        f.bridge.publish(publication(2))
+        assert.equal(f.errors.at(-1).code, "timecode_replay")
+        assert.equal(calls.length, 2)
+        await f.bridge.close()
+    }
+})
+
+test("a staged malformed or foreign-context notification is validated before handoff and completes false", async () => {
+    for (const stale of [false, true]) {
+        const gate = deferred(),
+            calls = []
+        const f = fixture({
+            complete: async (context, id, accepted) => {
+                calls.push({ context, id, accepted })
+                if (calls.length === 1) await gate.promise
+            }
+        })
+        f.bridge.publish(publication(1))
+        const next = publication(2, "TIMECODE_VALUE", null, stale ? ctx(2) : ctx())
+        next.hydration.numbers = [{ path: stale ? "" : "/nested", number: { kind: "NegativeZero" } }]
+        f.bridge.publish(next)
+        assert.equal(f.bridge.status().nextPublication, true)
+        gate.resolve()
+        await until(() => calls.length === 2 && !f.bridge.status().completion)
+        assert.equal(f.deliveries.length, 1)
+        assert.equal(calls[1].accepted, false)
+        assert.equal(f.bridge.status().terminal, false)
+        if (!stale) assert.equal(f.errors.at(-1).code, "timecode_publication")
+        await f.bridge.close()
+    }
+})
+
+test("blocked private completion bounds one staged event through timeout and rejects excess/reentrant publications", async () => {
     const wait = deferred(),
         f = fixture({ complete: () => wait.promise, drainTimeoutMs: 10 })
     f.bridge.publish(publication(1))
     f.bridge.publish(publication(2))
+    assert.equal(f.bridge.status().nextPublication, true)
+    f.bridge.publish(publication(3))
     assert.equal(f.deliveries.length, 1)
     assert.equal(f.errors.at(-1).code, "timecode_completion_busy")
     await assert.rejects(f.bridge.close(), { code: "timecode_drain_timeout" })
+    assert.equal(f.bridge.status().nextPublication, false, "retirement revokes the staged old native nonce")
+    assert.equal(f.retirements.length, 1, "actual native cleanup starts independently of the held completion")
     assert.equal(f.bridge.status().completion, true)
     const retry = f.bridge.close()
     wait.resolve()
     await retry
     assert.equal(f.bridge.status().completion, false)
+    assert.equal(f.deliveries.length, 1)
     let bridge
     const reentrant = fixture({ deliver: () => bridge.publish(publication(2)) })
     bridge = reentrant.bridge
@@ -486,6 +575,71 @@ test("blocked private completion remains bounded through drain timeout and rejec
     assert.equal(reentrant.errors.at(-1).code, "timecode_completion_busy")
     assert.equal(reentrant.completions.length, 1)
     await bridge.close()
+})
+
+test("context retirement drops a staged old event before adoption and preserves the next current generation", async () => {
+    const gate = deferred(),
+        calls = []
+    const f = fixture({
+        complete: async (context, id, accepted) => {
+            calls.push({ context, id, accepted })
+            if (calls.length === 1) await gate.promise
+        }
+    })
+    f.bridge.publish(publication(1))
+    f.bridge.publish(publication(2, "TIMECODE_STATUS", "play"))
+    f.setContext(ctx(2))
+    const retiring = f.bridge.contextChanged()
+    await until(() => f.retirements.length === 1)
+    assert.equal(f.bridge.status().nextPublication, false)
+    f.bridge.publish(publication(3))
+    assert.equal(f.errors.at(-1).code, "timecode_closed")
+    gate.resolve()
+    await retiring
+    assert.equal(calls.length, 1)
+    assert.equal(f.deliveries.length, 1)
+    f.bridge.publish(publication(4, "TIMECODE_VALUE", 2000, ctx(2)))
+    await until(() => calls.length === 2 && !f.bridge.status().completion)
+    assert.equal(calls[1].accepted, true)
+    assert.deepEqual(calls[1].context, ctx(2))
+    assert.deepEqual(f.deliveries, [
+        { channel: "TIMECODE_VALUE", data: 1000 },
+        { channel: "TIMECODE_VALUE", data: 2000 }
+    ])
+    await f.bridge.close()
+})
+
+test("a failed previous completion clears the staged event and retains independent terminal cleanup through timeout/retry", async () => {
+    const completion = deferred(),
+        cleanup = deferred(),
+        calls = []
+    const f = fixture({
+        drainTimeoutMs: 10,
+        complete: async (context, id, accepted) => {
+            calls.push({ context, id, accepted })
+            await completion.promise
+        },
+        retire: async (context) => {
+            f.retirements.push(context)
+            await cleanup.promise
+        }
+    })
+    f.bridge.publish(publication(1))
+    f.bridge.publish(publication(2, "TIMECODE_STATUS", "play"))
+    completion.reject(new Error("native nonce consumed but response failed"))
+    await until(() => f.retirements.length === 1)
+    assert.equal(f.bridge.status().terminal, true)
+    assert.equal(f.bridge.status().nextPublication, false)
+    assert.equal(f.bridge.status().cleanupRunning, true)
+    await assert.rejects(f.bridge.close(), { code: "timecode_drain_timeout" })
+    assert.equal(f.retirements.length, 1)
+    const retry = f.bridge.close()
+    cleanup.resolve()
+    await assert.rejects(retry, { code: "timecode_completion" })
+    await assert.rejects(f.bridge.close(), { code: "timecode_completion" })
+    assert.equal(f.retirements.length, 1)
+    assert.equal(calls.length, 1)
+    assert.equal(f.deliveries.length, 1)
 })
 
 test("real delivery exceptions complete false; completion transport failures stay sticky after terminal cleanup", async () => {
