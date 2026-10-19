@@ -27,6 +27,14 @@ pub const FORMATS: &[&str] = &[
     "txt",
     "chordpro",
     "csv",
+    "openlp",
+    "opensong",
+    "mediashout",
+    "quelea",
+    "songbeamer",
+    "easyslides",
+    "verseview",
+    "videopsalm",
 ];
 #[derive(Clone, Debug)]
 pub struct ImportConfig {
@@ -364,3 +372,5 @@ impl IoGuard {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod text_tests;

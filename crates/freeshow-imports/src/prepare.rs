@@ -75,7 +75,7 @@ fn extension_case(name: &str) -> &str {
 fn ext(name: &str) -> String {
     extension(name).trim_start_matches('.').into()
 }
-fn plain(path: &str, budget: &mut Budget) -> Result<Value> {
+fn plain(path: &str, id: &str, budget: &mut Budget) -> Result<Value> {
     #[cfg(windows)]
     let native_path = path.replace('\\', "/");
     #[cfg(windows)]
@@ -99,20 +99,23 @@ fn plain(path: &str, budget: &mut Budget) -> Result<Value> {
         })?
     };
     let extension = ext(basename);
-    if matches!(
-        extension.as_str(),
-        "pro"
-            | "probundle"
-            | "vpc"
-            | "qsp"
-            | "pdf"
-            | "ppt"
-            | "pptx"
-            | "doc"
-            | "docx"
-            | "sqlite"
-            | "mdb"
-    ) {
+    // .pro is ordinary text for ChordPro, but the source's ProPresenter
+    // branch decodes protobuf (and every ZIP .pro invokes checkSpecial).
+    if (extension == "pro" && id != "chordpro")
+        || matches!(
+            extension.as_str(),
+            "probundle"
+                | "vpc"
+                | "qsp"
+                | "pdf"
+                | "ppt"
+                | "pptx"
+                | "doc"
+                | "docx"
+                | "sqlite"
+                | "mdb"
+        )
+    {
         return Err(ImportError::new(
             "unsupported_format",
             "Special/binary import file requires its original converter",
@@ -508,6 +511,16 @@ pub(crate) fn prepare(
         if paths.is_empty() {
             return Ok(());
         }
+        // Source chooses and filters these case-sensitive suffixes BEFORE its
+        // ZIP branch. Never silently fall back to XML, including mixed input.
+        if (id == "openlp" && paths.iter().any(|path| path.ends_with(".sqlite")))
+            || (id == "mediashout" && paths.iter().any(|path| path.ends_with(".mdb")))
+        {
+            return Err(ImportError::new(
+                "unsupported_format",
+                "Selected files require the original SQLite/MDB import handler",
+            ));
+        }
         let specialized = match id {
             "freeshow_project" => Some("Projects"),
             "freeshow_template" => Some("Templates"),
@@ -528,7 +541,7 @@ pub(crate) fn prepare(
                 {
                     archives.push(path);
                 } else {
-                    let file = plain(path, &mut budget)?;
+                    let file = plain(path, id, &mut budget)?;
                     budget.charge_output(&file)?;
                     data.push(file);
                 }
@@ -559,7 +572,7 @@ pub(crate) fn prepare(
                 .collect();
             if archives.is_empty() {
                 for path in &paths {
-                    let file = plain(path, &mut budget)?;
+                    let file = plain(path, id, &mut budget)?;
                     budget.charge_output(&file)?;
                     data.push(file);
                 }
@@ -580,21 +593,30 @@ pub(crate) fn prepare(
                             continue;
                         }
                         let extension = ext(&name);
-                        if ![
-                            "show",
-                            "project",
-                            "fstemplate",
-                            "fsoverlay",
-                            "fstheme",
-                            "fsaction",
-                            "fsstage",
-                            "txt",
-                            "chordpro",
-                            "cho",
-                            "csv",
-                            "json",
-                        ]
-                        .contains(&extension.as_str())
+                        let retained_text_entry = match id {
+                            "openlp" | "mediashout" | "quelea" | "easyslides" | "verseview" => {
+                                extension == "xml" || (id == "mediashout" && extension == "ssc")
+                            }
+                            "opensong" => extension.is_empty() || extension == "xml",
+                            "songbeamer" => extension == "sng",
+                            _ => false,
+                        };
+                        if !retained_text_entry
+                            && ![
+                                "show",
+                                "project",
+                                "fstemplate",
+                                "fsoverlay",
+                                "fstheme",
+                                "fsaction",
+                                "fsstage",
+                                "txt",
+                                "chordpro",
+                                "cho",
+                                "csv",
+                                "json",
+                            ]
+                            .contains(&extension.as_str())
                         {
                             return Err(ImportError::new(
                                 "unsupported_format",
