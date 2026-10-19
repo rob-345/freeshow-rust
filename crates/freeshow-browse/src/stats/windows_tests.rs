@@ -278,6 +278,11 @@ fn real_windows_fractional_and_unsigned32_time_boundary_matches_node_f64_project
         (i32::MAX as u64 + 1, 500_100),
         (u32::MAX as u64, 500_100),
     ] {
+        assert_eq!(
+            nanos % 100,
+            0,
+            "fixture must align to native FILETIME ticks"
+        );
         let modified = UNIX_EPOCH + Duration::new(seconds, nanos);
         fs::OpenOptions::new()
             .write(true)
@@ -289,6 +294,17 @@ fn real_windows_fractional_and_unsigned32_time_boundary_matches_node_f64_project
                     .set_accessed(modified),
             )
             .unwrap();
+        let metadata = fs::metadata(&file).unwrap();
+        assert_eq!(
+            metadata.modified().unwrap(),
+            modified,
+            "the real filesystem must retain the requested boundary timestamp"
+        );
+        assert_eq!(
+            metadata.accessed().unwrap(),
+            modified,
+            "source/native equality after clamping is not boundary evidence"
+        );
         let value = compare(&[file.to_str().unwrap().into()]);
         eprintln!(
             "actual Windows Node time seconds={seconds} nanos={nanos}: {}",
@@ -312,6 +328,11 @@ fn real_windows_exceptional_times_are_explicit_unsupported_not_fabricated_null_o
             .unwrap()
             .set_times(FileTimes::new().set_modified(modified))
             .unwrap();
+        assert_eq!(
+            fs::metadata(&file).unwrap().modified().unwrap(),
+            modified,
+            "the exceptional date must actually exist before testing rejection"
+        );
         let source = oracle(&[file.to_str().unwrap().into()]);
         assert!(
             !source["values"][0]["value"].is_null(),

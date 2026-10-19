@@ -77,6 +77,15 @@ substitutes a synthetic success. Actual attribute-denial/filter/API-failure
 runtime evidence remains open; this followup does not add ACL manipulation,
 injected API errors or expand the production fallback contract.
 
+The coordinator's final review strengthened the time fixtures before first
+native execution: every fractional/u32 boundary now verifies that actual
+filesystem modification and access times equal the requested 100ns-aligned
+SystemTime. Exceptional dates likewise require the real requested modification
+time before source observation/native rejection. Equal source/native values
+after filesystem clamping cannot pass as boundary evidence. These assertions
+compile under strict root Windows GNU all-target Clippy; actual execution is
+still required.
+
 ## Coordinator wiring
 
 The exact suggested patch is separately available at

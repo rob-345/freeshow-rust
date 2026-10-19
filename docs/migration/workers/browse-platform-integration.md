@@ -23,6 +23,9 @@ Review corrected two test assumptions before integration: exclusive data-read
 sharing can still allow metadata access, and Darwin filesystems may backdate
 creation time with modification time. Windows now proves the real data-read
 sharing failure while comparing successful attribute access against Node.
+Windows date fixtures additionally require actual retained filesystem times
+before comparing or rejecting fractional, u32-boundary and exceptional dates;
+source/native equality after a clamp cannot masquerade as boundary evidence.
 Darwin retains the complete source IEEE-bit comparison and a synthetic fixture
 with distinct timestamps, without imposing an unsupported real-filesystem
 inequality. Both source oracles normalize CRLF and reject actual source edits.
