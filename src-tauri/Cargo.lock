@@ -1416,6 +1416,7 @@ dependencies = [
  "freeshow-icecast",
  "freeshow-import-effects",
  "freeshow-imports",
+ "freeshow-ltc",
  "freeshow-media",
  "freeshow-media-copy",
  "freeshow-media-copy-effects",
@@ -1428,6 +1429,7 @@ dependencies = [
  "freeshow-system",
  "freeshow-thumbnail-effects",
  "freeshow-thumbnails",
+ "freeshow-timecode",
  "glib",
  "libc",
  "png 0.18.1",
@@ -1565,6 +1567,18 @@ dependencies = [
  "tokio",
  "tokio-util",
  "zip",
+]
+
+[[package]]
+name = "freeshow-ltc"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
 ]
 
 [[package]]
@@ -1717,6 +1731,15 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tokio-util",
+]
+
+[[package]]
+name = "freeshow-timecode"
+version = "0.1.0"
+dependencies = [
+ "freeshow-midi",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

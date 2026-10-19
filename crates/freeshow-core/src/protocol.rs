@@ -60,6 +60,9 @@ pub struct Event {
     /// Private native audio status restoration and synchronous delivery receipt.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub native_audio: Option<Value>,
+    /// Private timecode bytes/IEEE restoration and one bounded delivery receipt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_timecode: Option<Value>,
 }
 
 impl Event {
@@ -79,6 +82,7 @@ impl Event {
             native_remote: None,
             native_midi: None,
             native_audio: None,
+            native_timecode: None,
         }
     }
 }

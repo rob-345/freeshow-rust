@@ -64,7 +64,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["audio-stream.json", "midi.json", "network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["timecode.json", "audio-stream.json", "midi.json", "network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     (ARTIFACTS / "ffmpeg-download.json").unlink(missing_ok=True)
@@ -150,6 +150,10 @@ def run():
                    XDG_CONFIG_HOME=str(temp / "xdg-config"), GSETTINGS_BACKEND="memory",
                    TAURI_WEBVIEW_AUTOMATION="true", WEBKIT_DISABLE_COMPOSITING_MODE="1",
                    LANG=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"), LC_ALL=os.environ.get("FREESHOW_TEST_LOCALE", "C.UTF-8"))
+        # Native launch authority only; renderer fields cannot choose codecs.
+        ltc_library = ROOT / "node_modules/libltc-wrapper/libltc/bin/libltc.so.11"
+        assert hashlib.sha256(ltc_library.read_bytes()).hexdigest() == "f02c75f982fe01d16f345875d2b09404b8b326bb847f2b5456616f6d0227d09f"
+        env["FREESHOW_RUST_LTC_LIBRARY"] = str(ltc_library)
         env.pop("FREESHOW_RUST_DATA_DIR", None)
         env["FREESHOW_RUST_FFMPEG_DOWNLOAD_LOOPBACK_URL"] = "http://127.0.0.1:" + str(download_server.server_port) + "/inert-ffmpeg.gz"
         # Exercise the real native OS Documents authority in this private profile.
@@ -838,6 +842,20 @@ def run():
                 return observed
             probe_audio_stream("normal")
             steps.append("Real transferred AUDIO port and raw PCM/CAPTURE preserve exact source Opus/Ogg bytes, own undefined statuses and void commands over a joined loopback stream")
+            timecode_phases = []
+            def probe_timecode(phase, fps):
+                observed = script((ROOT / "tests/desktop/timecode_probe.js").read_text(), {"phase":phase,"fps":fps})
+                assert observed["context"] == observed["current"] == invoke("runtime_context"), observed
+                assert observed["sourceAcks"] == observed["errors"] == [], observed
+                timecode_phases.append(observed)
+                source = subprocess.run([os.environ.get("FREESHOW_TEST_NODE", "node"),"tests/desktop/timecode_desktop_oracle.mjs"],input=json.dumps({"phases":timecode_phases}),text=True,capture_output=True,cwd=ROOT,timeout=20)
+                assert source.returncode == 0, source.stderr
+                oracle = json.loads(source.stdout)
+                assert len(oracle["phases"]) == len(timecode_phases) and all(item["nativeCompared"] and item["rawAudioBytesMatched"] for item in oracle["phases"]), oracle
+                (ARTIFACTS / "timecode.json").write_text(json.dumps({"phases":timecode_phases,"oracle":oracle},ensure_ascii=False,indent=2))
+                return observed
+            probe_timecode("normal", 25)
+            steps.append("Retained LTC START/STOP/reopen and actual typed audio/decode callbacks match original addon bytes, own envelopes and void commands")
             encoder_check = invoke("ipc_dispatch", {"request":{"channel":"MAIN","context":invoke("runtime_context"),"data":{"channel":"FFMPEG_CHECK"}}})[0]["message"]["data"]
             assert encoder_check["installed"] is True
             encoder_receipts = {}
@@ -1170,6 +1188,10 @@ def run():
             probe_api("switched", "Second library lyric")
             steps.append("Native API automatically restarts for the selected library and returns its same-ID show")
             probe_remotes('switched','Second library lyric')
+            timecode_retired = invoke("timecode_status")
+            assert timecode_retired["lastRetired"]["allPortOwnersJoined"] and timecode_retired["lastRetired"]["ltcJoined"], timecode_retired
+            probe_timecode("switched", 29.97)
+            steps.append("Library selection joins obsolete timecode owners and retains source global mode/framerate semantics for exact LTC callbacks")
             probe_audio_stream("switched")
             steps.append("Library selection retains the process Opus encoder while new-context AUDIO bytes match one continuous original source encoder")
             probe_download("switched")
@@ -1325,6 +1347,10 @@ def run():
                 audio_backup_status = invoke("library_status")
                 assert audio_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and audio_backup_status["activeJob"]["phase"] == "backupCompression", audio_backup_status
                 steps.append("Real port, PCM/CAPTURE, native Opus and joined TCP/Ogg stream remain independent during the same actual ZIP compression with continuous source codec state")
+                probe_timecode("backup", 25)
+                timecode_backup_status = invoke("library_status")
+                assert timecode_backup_status["activeJob"]["listenerId"] == "backup-responsiveness" and timecode_backup_status["activeJob"]["phase"] == "backupCompression", timecode_backup_status
+                steps.append("LTC typed callbacks and exact original codec bytes remain independent during the same actual ZIP compression")
                 api_during_backup = probe_api("backup", "Second library lyric")
                 assert api_during_backup["elapsedMs"] < 2500, api_during_backup
                 api_backup_status = invoke("library_status")

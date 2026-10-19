@@ -11,6 +11,8 @@ members = [
     "crates/freeshow-midi",
     "crates/freeshow-midi-ports",
     "crates/freeshow-timecode",
+    "crates/freeshow-ltc",
+    "crates/freeshow-now-playing",
     "crates/freeshow-files",
     "crates/freeshow-system",
     "crates/freeshow-api",

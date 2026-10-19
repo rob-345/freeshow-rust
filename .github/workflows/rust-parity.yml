@@ -52,6 +52,11 @@ jobs:
       - if: runner.os == 'Linux'
         run: |
           python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles
+          node crates/freeshow-ltc/tools/build-original.mjs
+          echo "FREESHOW_LTC_ORACLE_ADDON=$GITHUB_WORKSPACE/target/ltc-original/ltc-native.node" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_LTC=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_TIMECODE_ORACLE=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_TIMECODE_NODE=$(command -v node)" >> "$GITHUB_ENV"
           echo "FREESHOW_OPUS_ORACLE_DIR=$GITHUB_WORKSPACE/target/opus-oracles" >> "$GITHUB_ENV"
           echo "FREESHOW_REQUIRE_OPUS=1" >> "$GITHUB_ENV"
           echo "FREESHOW_REQUIRE_OPUS_ORACLE=1" >> "$GITHUB_ENV"
@@ -95,7 +100,7 @@ jobs:
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --locked
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets --locked -- -D warnings
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery --test network_queries --test ffmpeg_download --test midi --test audio_pipeline --test audio_input --test audio_ingress --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --tests --locked
 
   desktop-linux:
     runs-on: ubuntu-24.04
@@ -120,6 +125,11 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: |
           python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles
+          node crates/freeshow-ltc/tools/build-original.mjs
+          echo "FREESHOW_LTC_ORACLE_ADDON=$GITHUB_WORKSPACE/target/ltc-original/ltc-native.node" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_LTC=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_TIMECODE_ORACLE=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_TIMECODE_NODE=$(command -v node)" >> "$GITHUB_ENV"
           echo "FREESHOW_OPUS_ORACLE_DIR=$GITHUB_WORKSPACE/target/opus-oracles" >> "$GITHUB_ENV"
           echo "FREESHOW_REQUIRE_OPUS=1" >> "$GITHUB_ENV"
           echo "FREESHOW_REQUIRE_NATIVE_AUDIO_ORACLE=1" >> "$GITHUB_ENV"
@@ -132,7 +142,7 @@ jobs:
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets -- -D warnings
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --test menu --test drop --test files --test system --test api --test imports --test browse --test assets --test thumbnails --test file_reads --test remotes --test encoders --test scriptures --test media_copy --test discovery --test network_queries --test ffmpeg_download --test midi --test audio_pipeline --test audio_input --test audio_ingress
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --tests --locked
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
       - run: cargo build --workspace --all-targets

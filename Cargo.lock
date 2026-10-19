@@ -757,6 +757,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-ltc"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "freeshow-media"
 version = "0.1.0"
 dependencies = [
@@ -822,6 +835,18 @@ dependencies = [
 name = "freeshow-network"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "freeshow-now-playing"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "freeshow-audio",
+ "ryu-js",
  "serde",
  "serde_json",
  "tokio",

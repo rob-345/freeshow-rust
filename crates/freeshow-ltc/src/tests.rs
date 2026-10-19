@@ -22,10 +22,12 @@ impl Gate {
             state = self.wake.wait(state).unwrap();
         }
     }
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     fn release(&self) {
         lock(&self.state).1 = true;
         self.wake.notify_all();
     }
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     fn entered(&self) -> bool {
         lock(&self.state).0
     }

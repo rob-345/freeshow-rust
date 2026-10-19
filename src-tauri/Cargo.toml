@@ -25,6 +25,8 @@ freeshow-audio-pipeline = { path = "../crates/freeshow-audio-pipeline" }
 freeshow-icecast = { path = "../crates/freeshow-icecast" }
 freeshow-opus = { path = "../crates/freeshow-opus" }
 freeshow-midi = { path = "../crates/freeshow-midi" }
+freeshow-timecode = { path = "../crates/freeshow-timecode" }
+freeshow-ltc = { path = "../crates/freeshow-ltc" }
 freeshow-midi-ports = { path = "../crates/freeshow-midi-ports" }
 freeshow-files = { path = "../crates/freeshow-files" }
 freeshow-system = { path = "../crates/freeshow-system" }

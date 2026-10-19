@@ -28,6 +28,10 @@ const audioPort = ts.transpileModule(fs.readFileSync(path.join(root, "src/fronte
 const audioPortModule = `data:text/javascript;base64,${Buffer.from(audioPort).toString("base64")}`
 const audioRaw = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/audioRaw.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
 const audioRawModule = `data:text/javascript;base64,${Buffer.from(audioRaw).toString("base64")}`
+const timecodeBridge = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/timecodeBridge.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+const timecodeBridgeModule = `data:text/javascript;base64,${Buffer.from(timecodeBridge).toString("base64")}`
+const timecodeWire = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/timecodeWire.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+const timecodeWireModule = `data:text/javascript;base64,${Buffer.from(timecodeWire).toString("base64")}`
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -43,8 +47,162 @@ const javascript = ts
     .replace('from "./midi"', `from "${midiModule}"`)
     .replace('from "./audioPortBridge"', `from "${audioPortModule}"`)
     .replace('from "./audioRaw"', `from "${audioRawModule}"`)
+    .replace('from "./timecodeBridge"', `from "${timecodeBridgeModule}"`)
+    .replace('from "./timecodeWire"', `from "${timecodeWireModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("installed retained timecode sends typed numbers and exact reused views through private raw IPC without source ACKs", async () => {
+    const context = { runtimeId: "timecode-raw", libraryGeneration: 0, dataPath: "/library" },
+        calls = [],
+        errors = [],
+        replies = []
+    const target = {
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent: (event) => errors.push(event.detail),
+        __TAURI__: {
+            core: {
+                invoke: async (name, args) => {
+                    calls.push({ name, args })
+                    return name === "runtime_context" ? context : []
+                }
+            },
+            webviewWindow: { getCurrentWebviewWindow: () => ({ label: "main" }) },
+            event: { listen: async () => () => {} }
+        }
+    }
+    await installRustBridge(target)
+    target.api.receive("MAIN", (...reply) => replies.push(reply))
+    const start = { channel: "TIMECODE_START", data: { type: "send", mode: "LTC", framerate: -0, data: { first: "雪", second: 1 } } }
+    target.api.send("MAIN", start, "must-stay-void")
+    start.data.data.first = "mutated"
+    await tick()
+    for (const value of [NaN, Infinity, -Infinity, -0]) {
+        target.api.send("MAIN", { channel: "TIMECODE_VALUE", data: value })
+        await tick()
+    }
+    target.api.send("MAIN", { channel: "TIMECODE_STATUS", data: undefined })
+    const storage = new Uint8Array([99, 1, 2, 3, 98])
+    target.api.send("MAIN", { channel: "TIMECODE_AUDIO_DATA", data: { mode: "LTC", buffer: storage.subarray(1, 4) } })
+    storage.fill(77)
+    target.api.send("MAIN", { channel: "TIMECODE_AUDIO_DATA", data: new Uint8Array([5, 6]) })
+    await tick()
+    const commands = calls.filter((call) => call.name === "timecode_command").map((call) => JSON.parse(new TextDecoder().decode(call.args)))
+    assert.equal(commands.length, 6)
+    assert.deepEqual(commands[0].context, context)
+    assert.equal(commands[0].command.framerate.value.kind, "NegativeZero")
+    assert.deepEqual(commands[0].command.data, { kind: "json", value: { first: "雪", second: 1 } })
+    assert.deepEqual(
+        commands.slice(1, 5).map((command) => command.command.value.kind),
+        ["NaN", "PositiveInfinity", "NegativeInfinity", "NegativeZero"]
+    )
+    assert.deepEqual(commands[5].command, { kind: "status", data: { kind: "undefined" } })
+    const audio = calls.filter((call) => call.name === "timecode_audio")
+    assert.equal(audio.length, 1, "original raw-worklet route remains its no-op")
+    const body = audio[0].args,
+        prefixLength = new DataView(body.buffer, body.byteOffset, 4).getUint32(0, true)
+    assert.deepEqual(JSON.parse(new TextDecoder().decode(body.subarray(4, 4 + prefixLength))), { version: 1, context, mode: "LTC", byteLength: 3 })
+    assert.deepEqual([...body.subarray(4 + prefixLength)], [1, 2, 3])
+    assert.equal(
+        calls.some((call) => call.name === "ipc_dispatch"),
+        false
+    )
+    assert.deepEqual(replies, [])
+    assert.deepEqual(errors, [])
+})
+
+test("shared runtime timecode restores genuine source callbacks with private completions and rejects foreign/replayed delivery", async () => {
+    const context = { runtimeId: "timecode-events", libraryGeneration: 1, dataPath: "/one" },
+        messages = [],
+        completions = [],
+        errors = []
+    const bridge = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {
+            command: async () => {},
+            audio: async () => {},
+            retire: async () => {},
+            complete: async (frozen, id, accepted) => completions.push({ frozen, id, accepted })
+        }
+    )
+    bridge.api.receive("MAIN", (message, listenerId) => messages.push({ message, listenerId }))
+    const event = (sequence, channel, data, extra = {}) => ({
+        channel: "MAIN",
+        context,
+        message: { channel, data },
+        nativeTimecode: {
+            hydration: { undefinedPaths: [], numbers: [] },
+            delivery: { id: "timecode-00000000-0000-0000-0000-" + String(sequence).padStart(12, "0"), context, run: 1, sequence: String(sequence) },
+            ...extra
+        }
+    })
+    bridge.dispatch(event(1, "TIMECODE_VALUE", null, { hydration: { undefinedPaths: [], numbers: [{ path: "", number: { kind: "NaN" } }] } }))
+    await tick()
+    assert.ok(Number.isNaN(messages[0].message.data))
+    bridge.dispatch(event(2, "TIMECODE_AUDIO_DATA", null, { bytes: [1, 128, 255] }))
+    await tick()
+    assert.ok(messages[1].message.data instanceof Uint8Array)
+    assert.deepEqual([...messages[1].message.data], [1, 128, 255])
+    assert.ok(messages.every(({ message, listenerId }) => listenerId === undefined && Object.keys(message).join() === "channel,data"))
+    bridge.dispatch(event(2, "TIMECODE_AUDIO_DATA", null, { bytes: [1, 128, 255] }))
+    const foreign = event(3, "TIMECODE_VALUE", 9)
+    foreign.context = { ...context, dataPath: "/foreign" }
+    bridge.dispatch(foreign)
+    await tick()
+    assert.equal(messages.length, 2)
+    assert.deepEqual(
+        completions.map((item) => item.accepted),
+        [true, true, false]
+    )
+    assert.ok(errors.some((error) => error.code === "timecode_replay"))
+    assert.ok(errors.some((error) => error.code === "timecode_publication"))
+})
+
+test("shared runtime retires obsolete timecode and still invokes native CLOSE after terminal frontend cleanup fails", async () => {
+    const old = { runtimeId: "timecode-lifecycle", libraryGeneration: 1, dataPath: "/one" },
+        next = { ...old, libraryGeneration: 2, dataPath: "/two" },
+        retirements = [],
+        requests = [],
+        errors = []
+    const bridge = createRustApi(
+        async (request) => {
+            requests.push(request)
+            return request.data.channel === "UPDATE_DATA_PATH" ? [{ channel: "MAIN", context: next, message: { channel: "DATA_PATH", data: next.dataPath } }] : []
+        },
+        (error) => errors.push(error),
+        old,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {
+            command: async () => {},
+            audio: async () => {},
+            complete: async () => {},
+            retire: async (context, terminal) => {
+                retirements.push({ context, terminal })
+                if (terminal) throw new Error("retained real owner still draining")
+            }
+        }
+    )
+    bridge.api.send("MAIN", { channel: "UPDATE_DATA_PATH", data: next.dataPath })
+    await tick()
+    await tick()
+    assert.deepEqual(retirements, [{ context: old, terminal: false }])
+    bridge.api.send("MAIN", { channel: "CLOSE" })
+    await tick()
+    await tick()
+    assert.deepEqual(retirements[1], { context: next, terminal: true })
+    assert.equal(requests.at(-1).data.channel, "CLOSE")
+    assert.ok(errors.length > 0)
+})
 
 test("native AUDIO status retains the original fields and owns a private completion through rejection and listener errors", async () => {
     const context = { runtimeId: "audio", libraryGeneration: 1, dataPath: "/one" },
@@ -302,7 +460,10 @@ test("native CLOSE still attempts independent owners after a frontend audio drai
     assert.equal(calls.length, 1)
     assert.equal(calls[0].data.channel, "CLOSE")
     assert.deepEqual(calls[0].context, context)
-    assert.ok(errors.some((error) => error.code === "audio_cleanup"), "failed frontend drain remains explicit while native cleanup proceeds")
+    assert.ok(
+        errors.some((error) => error.code === "audio_cleanup"),
+        "failed frontend drain remains explicit while native cleanup proceeds"
+    )
 })
 
 test("native MIDI dispatch restores source fields only after exact context/provenance acceptance and completes private receipts", async () => {

@@ -6,7 +6,6 @@ license = "GPL-3.0-only"
 description = "Bounded verified libltc capability and owned source-compatible codecs"
 build = "build.rs"
 
-[workspace]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -24,7 +23,3 @@ tempfile = "3"
 [[bin]]
 name = "freeshow-ltc-parity"
 path = "src/bin/parity.rs"
-
-[profile.dev]
-debug = 0
-incremental = false

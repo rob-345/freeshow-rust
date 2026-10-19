@@ -27,6 +27,8 @@ mod remotes;
 mod scriptures;
 mod system;
 mod thumbnails;
+mod timecode;
+mod timecode_input;
 
 use freeshow_audio::{AudioConfig, AudioService};
 use freeshow_core::{
@@ -60,6 +62,8 @@ struct AppState {
     audio_ingress: audio_ingress::AudioIngress,
     audio_last_receipt: std::sync::Mutex<serde_json::Value>,
     midi: midi::NativeMidi,
+    timecode: timecode::NativeTimecode,
+    timecode_observers: tokio::sync::Semaphore,
     files: files::NativeFiles,
     file_reads: file_reads::NativeFileReads,
     imports: imports::NativeImports,
@@ -308,6 +312,152 @@ fn audio_status_complete(
         .map_err(WireError::from)
 }
 
+fn consume_timecode_receipt(receipt: timecode::TimecodeReceipt) {
+    // Source TIMECODE_STATUS only logs. These private observations never become
+    // retained source ACKs, and the whole result lease lives through consumption.
+    for observation in receipt.observations() {
+        match observation {
+            timecode::Observation::LogStatus { data } => {
+                println!("Timecode status [{:?}]: {data:?}", receipt.context());
+            }
+            timecode::Observation::Diagnostic { code, message } => {
+                eprintln!("Timecode [{:?}]: {code}: {message}", receipt.context());
+            }
+            timecode::Observation::Scheduled { .. } => (),
+        }
+    }
+}
+
+#[tauri::command]
+async fn timecode_command(
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(WireError::new(
+            "timecode_raw_body",
+            "Timecode requires its bounded typed frame",
+        ));
+    };
+    let input =
+        timecode_input::parse_command(bytes).map_err(|e| WireError::new(e.code, e.message))?;
+    let state = window.app_handle().state::<AppState>();
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let receipt = match input.command {
+        freeshow_timecode::Command::Value(value) => {
+            state.timecode.value(&input.context, value, cancel).await?
+        }
+        command => {
+            state
+                .timecode
+                .command(&input.context, command, cancel)
+                .await?
+        }
+    };
+    consume_timecode_receipt(receipt);
+    Ok(())
+}
+
+#[tauri::command]
+async fn timecode_audio(
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(WireError::new(
+            "timecode_raw_body",
+            "LTC requires its bounded raw frame",
+        ));
+    };
+    let input = timecode_input::parse_ltc(bytes).map_err(|e| WireError::new(e.code, e.message))?;
+    let receipt = window
+        .app_handle()
+        .state::<AppState>()
+        .timecode
+        .audio(
+            &input.context,
+            input.mode,
+            input.bytes,
+            input.bytes.len(),
+            tokio_util::sync::CancellationToken::new(),
+        )
+        .await?;
+    consume_timecode_receipt(receipt);
+    Ok(())
+}
+
+#[tauri::command]
+fn timecode_complete(
+    window: tauri::WebviewWindow,
+    context: RuntimeContext,
+    id: String,
+    accepted: bool,
+) -> Result<(), WireError> {
+    window.app_handle().state::<AppState>().timecode.complete(
+        window.label(),
+        &context,
+        &id,
+        accepted,
+    )
+}
+
+#[tauri::command]
+fn timecode_status(window: tauri::WebviewWindow) -> Result<serde_json::Value, WireError> {
+    audio_window(&window)?;
+    Ok(window.app_handle().state::<AppState>().timecode.status())
+}
+
+#[tauri::command]
+async fn timecode_retire(
+    window: tauri::WebviewWindow,
+    context: RuntimeContext,
+    terminal: bool,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    let state = window.app_handle().state::<AppState>();
+    let current = state.library.context().map_err(WireError::from)?;
+    // A nonterminal hint cannot select a native run: native current-context
+    // checks choose retirement. Terminal close deliberately drains the process.
+    if context.runtime_id != current.runtime_id
+        || context.library_generation > current.library_generation
+        || (context.library_generation == current.library_generation && context != current)
+        || context.data_path.as_os_str().as_encoded_bytes().len() > 32768
+        || context
+            .data_path
+            .as_os_str()
+            .as_encoded_bytes()
+            .contains(&0)
+    {
+        return Err(WireError::new(
+            "stale_library",
+            "Foreign timecode retirement context",
+        ));
+    }
+    let _observer = state.timecode_observers.try_acquire().map_err(|_| {
+        WireError::new(
+            "timecode_control_busy",
+            "Timecode lifecycle observers are full",
+        )
+    })?;
+    if terminal {
+        state.timecode.shutdown().await
+    } else {
+        state.timecode.context_changed().await
+    }
+}
+
+fn timecode_event(publication: timecode::NativeTimecodePublication) -> Event {
+    let mut event = publication.event;
+    let mut metadata = json!({"hydration":publication.hydration,"delivery":publication.delivery});
+    if let Some(bytes) = publication.bytes {
+        metadata["bytes"] = json!(bytes);
+    }
+    event.native_timecode = Some(metadata);
+    event
+}
+
 #[tauri::command]
 fn midi_delivery_complete(
     window: tauri::WebviewWindow,
@@ -433,6 +583,25 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if timecode::COMMANDS.contains(&command) {
+            if command == "TIMECODE_AUDIO_DATA" {
+                return Err(WireError::new(
+                    "timecode_raw_body",
+                    "LTC input requires the main-window raw adapter",
+                ));
+            }
+            let receipt = app
+                .state::<AppState>()
+                .timecode
+                .dispatch(
+                    &request,
+                    window.label(),
+                    tokio_util::sync::CancellationToken::new(),
+                )
+                .await?;
+            consume_timecode_receipt(receipt);
+            return Ok(vec![]);
+        }
         if midi::COMMANDS.contains(&command) {
             return app
                 .state::<AppState>()
@@ -720,6 +889,7 @@ async fn dispatch_native(
                     network_queries_result,
                     ffmpeg_downloads_result,
                     midi_result,
+                    timecode_result,
                     audio_runtime_result,
                 ) = tokio::join!(
                     state.media.shutdown(),
@@ -740,6 +910,7 @@ async fn dispatch_native(
                     state.network_queries.shutdown(),
                     state.ffmpeg_downloads.shutdown(),
                     state.midi.shutdown(),
+                    state.timecode.shutdown(),
                     async {
                         let ingress = state.audio_ingress.shutdown().await;
                         let pipeline = state.audio_pipeline.shutdown().await;
@@ -773,6 +944,7 @@ async fn dispatch_native(
                 network_snapshots_result?;
                 ffmpeg_downloads_result?;
                 midi_result?;
+                timecode_result?;
                 audio_runtime_result.0.map_err(WireError::from)?;
                 audio_runtime_result.1.map_err(WireError::from)?;
                 audio_runtime_result.2.map_err(WireError::from)?;
@@ -888,6 +1060,19 @@ async fn dispatch_native(
                 "ALERT",
                 json!(format!(
                     "The library changed, but audio input cleanup failed: {}",
+                    error.message
+                )),
+                None,
+            );
+            alert.context = Some(context.clone());
+            events.push(alert);
+        }
+        if let Err(error) = state.timecode.context_changed().await {
+            let mut alert = Event::reply(
+                "MAIN",
+                "ALERT",
+                json!(format!(
+                    "The library changed, but timecode cleanup failed: {}",
                     error.message
                 )),
                 None,
@@ -1286,6 +1471,17 @@ fn main() {
             let audio_ingress = tauri::async_runtime::block_on(async {
                 audio_ingress::AudioIngress::new(library.clone(), audio_pipeline.clone())
             }).map_err(std::io::Error::other)?;
+            // Launch environment and packaged resources are native authority.
+            // The verified Linux codec is not yet a distributed application resource.
+            let ltc_path = std::env::var_os("FREESHOW_RUST_LTC_LIBRARY").map(PathBuf::from)
+                .unwrap_or(app.path().resource_dir()?.join("codecs/libltc.so.11"));
+            let ltc_source = freeshow_ltc::TrustedLibrary::from_host(ltc_path)?;
+            let timecode_app = app.handle().clone();
+            let timecode = tauri::async_runtime::block_on(async {
+                timecode::NativeTimecode::new(library.clone(), timecode::TimecodeHostConfig::default(), ltc_source,
+                    || Ok(Box::new(freeshow_midi_ports::NativeBackend)),
+                    move |publication| timecode_app.emit_to("main", "freeshow://ipc", timecode_event(publication)).map_err(|e|e.to_string()))
+            }).map_err(|error| std::io::Error::other(error.message))?;
             let midi_app = app.handle().clone();
             let midi = tauri::async_runtime::block_on(async {
                 midi::NativeMidi::new(
@@ -1412,6 +1608,8 @@ fn main() {
                 audio_ingress,
                 audio_last_receipt: std::sync::Mutex::new(serde_json::Value::Null),
                 midi,
+                timecode,
+                timecode_observers: tokio::sync::Semaphore::new(4),
                 files,
                 imports,
                 browse,
@@ -1475,6 +1673,11 @@ fn main() {
             audio_capability,
             audio_status,
             audio_status_complete,
+            timecode_command,
+            timecode_audio,
+            timecode_complete,
+            timecode_retire,
+            timecode_status,
             remote_delivery_complete,
             imports_status,
             assets_status,

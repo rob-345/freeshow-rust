@@ -580,6 +580,10 @@ impl NativeTimecode {
         })?
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "headless integration tests import this owner independently of the desktop test binary"
+    )]
     pub fn test_hold_supervisor_exit(&self) -> Arc<SupervisorExitGate> {
         let gate = Arc::new(SupervisorExitGate {
             entered: AtomicBool::new(false),

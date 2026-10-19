@@ -2,13 +2,43 @@
 
 Status: **active, incomplete**. Full feature parity and application performance improvement have not been demonstrated. The complete parity gate intentionally fails.
 
+Retained timecode now has production main-window typed/raw IPC, exact native
+Uint8Array/IEEE hydration and a verified Linux LTC backend. One fixed supervisor
+owns bounded MIDI/LTC effects and real joins; four shared lifecycle observers and
+one bounded next-publication handoff handle caller cancellation, terminal
+failures and invoke-response ordering. Source STOP remains reopenable and native
+library retirement preserves process-global source mode/framerate/failure state.
+[Contracts, source quirks and remaining gaps](native-timecode.md).
+
+The latest local integration passes **390 Rust + 419 pinned-Node + 20 frontend
+checks** (829), with four existing OS/capability skips, plus **246 native test
+executions**: 236 host integration executions and ten desktop binary unit cases,
+including shared cases repeated across importing targets. Strict workspace and
+native all-target Clippy, focused bridge TypeScript, formatting and snapshot
+checks pass. Native CI now discovers all unit/integration targets rather than a
+hand-maintained test list. The full parity gate deliberately remains incomplete.
+
+The rebuilt **156-step real Linux editor**, four native menus and both drop
+scales pass. Three timecode phases match one original source VM/addon across 39
+encoded audio and 33 decoded callbacks, at 25/29.97/25 fps. They verify poisoned,
+reused offset views, actual STOP resource frees, void commands and old codec
+owner joins after library selection. One phase runs during the same real 64 MiB
+ZIP compression. All three have zero timecode runtime/browser errors or source
+ACKs; the full desktop receipt retains expected other-feature diagnostics.
+Native hardware/capture/playback, packaged codecs, complete timeline workflows,
+Windows/macOS GUI and an overall performance improvement remain open. This local
+timecode milestone still requires its own complete remote CI run.
+
+The following audio-only numbers describe the previously published milestone.
+
+
 The retained AUDIO API now reaches a real bounded Rust pipeline through transferred MessagePorts and raw binary IPC. A native parser preserves precise typed-view ranges, full context, missing/null metadata and negative zero. One fixed ingress pump retains entered native work after its caller drops; four whole packet/result leases and four lifecycle waiters bound owned work. Shared bridge tests exercise actual transferred ports, raw invoke bodies, independent context retirement, stale status rejection and native CLOSE after frontend drain failure. [Contracts and evidence](native-audio.md).
 
 The complete local workspace run passes **371 Rust + 375 pinned-Node + 20 frontend tests** (766), with four existing OS/capability skips. The latest complete native run passes **206 Linux host test executions**, including shared OS tests repeated across importing targets. Strict workspace/native all-target Clippy, focused bridge TypeScript, formatting and snapshot/report checks pass. The full feature-parity gate intentionally remains incomplete.
 
 The **153-step Linux editor**, four native menu checks and both actual file-drop scales pass. Normal, post-library-selection and real ZIP-compression audio phases match one continuously retained original addon encoder across twelve encoded inputs. Each actual TCP/Ogg capture validates raw CRC/sequence/granule before documented serial/idle-page normalization, ends with EOS and joins its peer thread. The retained MAIN statuses preserve `connected,connecting,error`, own undefined and void command behavior. This is controlled PCM through WebKit, not physical capture/playback or an application performance result. Connected-idle context cleanup now belongs to the fixed ingress pump through caller Drop: it waits for actual guards, consumes a reserved native socket-retirement receipt and gates replacement on that proof. Real-peer tests require valid EOS/EOF without another PCM or terminal shutdown. Native retirement races preserve the genuine new run and process-global codec; terminal retries retain precise failures. A direct child cancellation token also closes a pre-acceptance forwarding race, with sixteen consecutive executions of that regression passing.
 
-The latest published MIDI/prepared-AUDIO CI [39173396880](https://github.com/rob-345/freeshow-rust/actions/runs/39173396880) on `9ab2472b` passed **five of six jobs**: Linux/Windows core, both native OS jobs and the complete Linux desktop workflow. Downloaded artifacts verify150editor steps, two actual denied-ALSA MIDI phases with void CLOSE/drained leases, four menus and both drops. macOS core exposed a deadline fixture asserting terminal shutdown before the actual owner observed expiration. The fixture now waits for that observed terminal state while retaining exact timeout/late-completion assertions; the corrected full local workspace run passes. These new changes still require their own complete remote run.
+The published AUDIO milestone on `53480cd5` passed [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39209732148): core on Linux/Windows/macOS, native on Windows/macOS and the full Linux desktop workflow. The preceding audio run passed five jobs but Windows core read CRLF bytes in a pinned-source test. The isolated correction normalizes line endings before both the unchanged LF hash assertion and original-source execution. Its actual CRLF checkout reproduction passes all ten audio-port suites. Downloaded prior audio receipts independently verify 153 editor steps, exact source bytes across all three continuous-encoder phases, raw CRC/EOS, actual peer joins, four menus and both drop scales. Unsupported/stale/capability diagnostics remain in the raw receipts; this is not a zero-error/full-parity claim.
 
 Previous foundations preserve actual live-IP snapshots, source-exact discovery records for current ports and inert loopback FFmpeg installation. Earlier CI [39172404781](https://github.com/rob-345/freeshow-rust/actions/runs/39172404781) passed five jobs and exposed a Windows fixture equating one logical address capture with one OS syscall; actual buffer sizing takes two. The corrected one-to-three Windows bound and exact Unix one-call assertion subsequently passed both native jobs in39173396880. No failure was skipped. Opus comparisons retain same-build equality and measured cross-version differences; native timecode/LTC and now-playing foundations are prepared independently and are not included in the production/audio milestone above.
 
