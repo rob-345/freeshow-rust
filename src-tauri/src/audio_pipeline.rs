@@ -227,6 +227,23 @@ impl std::fmt::Debug for AudioReceipt {
             .finish()
     }
 }
+/// Native cleanup evidence, never an original AUDIO success acknowledgement.
+/// Keeping an uncollected receipt retains the single reserved control lease.
+pub struct AudioRetirementReceipt {
+    pub context: RuntimeContext,
+    pub run: Option<u64>,
+    pub disconnected: bool,
+    _lease: OwnedSemaphorePermit,
+}
+impl std::fmt::Debug for AudioRetirementReceipt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AudioRetirementReceipt")
+            .field("context", &self.context)
+            .field("run", &self.run)
+            .field("disconnected", &self.disconnected)
+            .finish()
+    }
+}
 pub struct AudioStatusDelivery {
     event: Event,
     id: String,
@@ -258,6 +275,11 @@ struct PendingDelivery {
     id: String,
     reply: oneshot::Sender<bool>,
 }
+#[derive(Clone)]
+struct StreamBinding {
+    context: RuntimeContext,
+    run: u64,
+}
 struct Shared {
     library: LibraryService,
     closed: AtomicBool,
@@ -272,6 +294,7 @@ struct Shared {
     terminal: Mutex<Option<AudioError>>,
     pending: Mutex<Option<PendingDelivery>>,
     runs: Mutex<BTreeMap<u64, RuntimeContext>>,
+    stream: Mutex<Option<StreamBinding>>,
     publication: tokio::sync::Mutex<()>,
     stale: AtomicU64,
     delivered: AtomicU64,
@@ -327,10 +350,17 @@ struct Job {
     reply: oneshot::Sender<Result<AudioReceipt>>,
     lease: OwnedSemaphorePermit,
 }
+struct RetirementJob {
+    context: RuntimeContext,
+    reply: oneshot::Sender<Result<AudioRetirementReceipt>>,
+    lease: OwnedSemaphorePermit,
+}
 struct Handle {
     shared: Arc<Shared>,
     sender: Mutex<Option<mpsc::Sender<Job>>>,
+    retire_sender: Mutex<Option<mpsc::Sender<RetirementJob>>>,
     slots: Arc<Semaphore>,
+    retire_slot: Arc<Semaphore>,
     limits: AudioLimits,
     worker: Mutex<Option<JoinHandle<()>>>,
 }
@@ -338,6 +368,10 @@ impl Drop for Handle {
     fn drop(&mut self) {
         self.shared.closed.store(true, Ordering::Release);
         self.sender.lock().unwrap_or_else(|e| e.into_inner()).take();
+        self.retire_sender
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take();
         self.shared.stop.cancel();
     }
 }
@@ -403,6 +437,7 @@ impl NativeAudioPipeline {
             terminal: Mutex::new(None),
             pending: Mutex::new(None),
             runs: Mutex::new(BTreeMap::new()),
+            stream: Mutex::new(None),
             publication: tokio::sync::Mutex::new(()),
             stale: AtomicU64::new(0),
             delivered: AtomicU64::new(0),
@@ -413,6 +448,7 @@ impl NativeAudioPipeline {
             after_accept: Mutex::new(None),
         });
         let (sender, receiver) = mpsc::channel(limits.queued);
+        let (retire_sender, retire_receiver) = mpsc::channel(1);
         let state = shared.clone();
         let config = limits.clone();
         let sink = Arc::new(sink);
@@ -424,9 +460,15 @@ impl NativeAudioPipeline {
                     .enable_all()
                     .build()
                 {
-                    Ok(runtime) => {
-                        runtime.block_on(owner(state, receiver, source, config, epoch, sink))
-                    }
+                    Ok(runtime) => runtime.block_on(owner(
+                        state,
+                        receiver,
+                        retire_receiver,
+                        source,
+                        config,
+                        epoch,
+                        sink,
+                    )),
                     Err(e) => state.fail(AudioError::new("audio_host_runtime", e)),
                 }
             })
@@ -438,7 +480,9 @@ impl NativeAudioPipeline {
             handle: Arc::new(Handle {
                 shared,
                 sender: Mutex::new(Some(sender)),
+                retire_sender: Mutex::new(Some(retire_sender)),
                 slots: Arc::new(Semaphore::new(limits.retained)),
+                retire_slot: Arc::new(Semaphore::new(1)),
                 limits,
                 worker: Mutex::new(Some(worker)),
             }),
@@ -476,18 +520,7 @@ impl NativeAudioPipeline {
         }
     }
     fn check(&self, context: &RuntimeContext, cancel: &CancellationToken) -> Result<()> {
-        if context.runtime_id.len() > 256 || context.data_path.as_os_str().len() > 32768 {
-            return Err(AudioError::new(
-                "audio_input_limit",
-                "Full runtime context exceeds bounds",
-            ));
-        }
-        if context.data_path.to_str().is_none() {
-            return Err(AudioError::new(
-                "audio_unsupported_path",
-                "Runtime context path is not Unicode",
-            ));
-        }
+        context_bounds(context)?;
         if self.handle.shared.closed.load(Ordering::Acquire) {
             return Err(self.handle.shared.error().unwrap_or_else(|| {
                 AudioError::new("audio_host_closed", "Native AUDIO admission is closed")
@@ -600,6 +633,80 @@ impl NativeAudioPipeline {
     ) -> Result<AudioReceipt> {
         self.submit(context, cancel, || Operation::Disconnect).await
     }
+    /// Call after this context's accepted ingress guards drain. Admission is
+    /// synchronous and independent of ordinary AUDIO quotas. Dropping/timing out
+    /// the returned future never cancels an accepted socket cleanup.
+    pub fn retire_context(
+        &self,
+        context: &RuntimeContext,
+    ) -> impl Future<Output = Result<AudioRetirementReceipt>> + Send + 'static {
+        let admitted = (|| {
+            context_bounds(context)?;
+            let current = self
+                .handle
+                .shared
+                .library
+                .context()
+                .map_err(|e| AudioError::new("audio_context_unavailable", e))?;
+            if context.runtime_id != current.runtime_id
+                || context.library_generation > current.library_generation
+                || (context.library_generation == current.library_generation && *context != current)
+            {
+                return Err(AudioError::new(
+                    "stale_library",
+                    "Retirement belongs to a foreign runtime context",
+                ));
+            }
+            let sender = self
+                .handle
+                .retire_sender
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            if self.handle.shared.closed.load(Ordering::Acquire) {
+                return Err(self.handle.shared.error().unwrap_or_else(|| {
+                    AudioError::new(
+                        "audio_host_closed",
+                        "AUDIO retirement admission closed; terminal drain owns cleanup",
+                    )
+                }));
+            }
+            let sender = sender.as_ref().ok_or_else(|| {
+                AudioError::new("audio_host_closed", "AUDIO retirement queue closed")
+            })?;
+            let lease = self
+                .handle
+                .retire_slot
+                .clone()
+                .try_acquire_owned()
+                .map_err(|_| {
+                    AudioError::new(
+                        "audio_retirement_busy",
+                        "One accepted or uncollected AUDIO retirement remains owned",
+                    )
+                })?;
+            let slot = sender.try_reserve().map_err(|_| {
+                AudioError::new(
+                    "audio_retirement_busy",
+                    "AUDIO retirement queue full or closed",
+                )
+            })?;
+            let (reply, receive) = oneshot::channel();
+            slot.send(RetirementJob {
+                context: context.clone(),
+                reply,
+                lease,
+            });
+            Ok(receive)
+        })();
+        let handle = self.handle.clone();
+        async move {
+            let receive = admitted?;
+            tokio::time::timeout(handle.limits.shutdown_timeout, receive)
+                .await
+                .map_err(|_| AudioError::new("audio_retirement_timeout", "Actual socket cleanup remains owned; retry after the reserved control lease drains"))?
+                .map_err(|_| handle.shared.error().unwrap_or_else(|| AudioError::new("audio_host_worker", "AUDIO owner ended without retirement evidence")))?
+        }
+    }
     /// Full-context retirement gates callbacks; it does not reset source-global DSP/codec.
     pub fn context_changed(&self) -> Result<()> {
         let current = self
@@ -658,7 +765,7 @@ impl NativeAudioPipeline {
         current
     }
     pub fn status(&self) -> Value {
-        serde_json::json!({"closing":self.handle.shared.closed.load(Ordering::Acquire),"done":self.handle.shared.done.load(Ordering::Acquire),"joined":self.handle.shared.joined.load(Ordering::Acquire),"retained":self.handle.limits.retained-self.handle.slots.available_permits(),"staleStatuses":self.handle.shared.stale.load(Ordering::Acquire),"deliveredStatuses":self.handle.shared.delivered.load(Ordering::Acquire),"drainedOwners":self.handle.shared.drained.load(Ordering::Acquire),"terminal":self.handle.shared.error()})
+        serde_json::json!({"closing":self.handle.shared.closed.load(Ordering::Acquire),"done":self.handle.shared.done.load(Ordering::Acquire),"joined":self.handle.shared.joined.load(Ordering::Acquire),"retained":self.handle.limits.retained-self.handle.slots.available_permits(),"retiring":1-self.handle.retire_slot.available_permits(),"staleStatuses":self.handle.shared.stale.load(Ordering::Acquire),"deliveredStatuses":self.handle.shared.delivered.load(Ordering::Acquire),"drainedOwners":self.handle.shared.drained.load(Ordering::Acquire),"terminal":self.handle.shared.error()})
     }
     #[cfg(test)]
     #[allow(dead_code)] // Used when this module is included by the focused integration test.
@@ -680,6 +787,11 @@ impl NativeAudioPipeline {
             let mut sender = self.handle.sender.lock().unwrap_or_else(|e| e.into_inner());
             self.handle.shared.closed.store(true, Ordering::Release);
             sender.take();
+            self.handle
+                .retire_sender
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .take();
             self.handle.shared.stop.cancel();
         }
         if tokio::runtime::Handle::try_current().is_err() {
@@ -735,6 +847,22 @@ impl NativeAudioPipeline {
             })?;
         self.handle.shared.error().map_or(Ok(()), Err)
     }
+}
+
+fn context_bounds(context: &RuntimeContext) -> Result<()> {
+    if context.runtime_id.len() > 256 || context.data_path.as_os_str().len() > 32768 {
+        return Err(AudioError::new(
+            "audio_input_limit",
+            "Full runtime context exceeds bounds",
+        ));
+    }
+    if context.data_path.to_str().is_none() {
+        return Err(AudioError::new(
+            "audio_unsupported_path",
+            "Runtime context path is not Unicode",
+        ));
+    }
+    Ok(())
 }
 
 fn bounded_meta(meta: &pipe::AudioMetadata, max: usize) -> Result<()> {
@@ -850,6 +978,69 @@ async fn bind_run(shared: &Shared, context: &RuntimeContext, receipt: &ice::Rece
     }
     runs.entry(receipt.run()).or_insert_with(|| context.clone());
     Ok(())
+}
+// Caller holds publication. Ownership follows the actual connect/run, never an
+// arbitrary newest context or metadata-only operation.
+fn bind_stream(shared: &Shared, context: &RuntimeContext, receipt: &ice::Receipt) -> Result<()> {
+    let mut stream = shared.stream.lock().unwrap_or_else(|e| e.into_inner());
+    match receipt.disposition() {
+        ice::Disposition::ConnectingDropped | ice::Disposition::Written => {
+            if stream
+                .as_ref()
+                .is_some_and(|s| s.run == receipt.run() && s.context != *context)
+            {
+                return Err(AudioError::new(
+                    "audio_stream_context",
+                    "An existing Icecast run cannot change full-context ownership",
+                ));
+            }
+            *stream = Some(StreamBinding {
+                context: context.clone(),
+                run: receipt.run(),
+            });
+        }
+        ice::Disposition::Disabled
+        | ice::Disposition::Disconnected
+        | ice::Disposition::CooldownDropped => *stream = None,
+        ice::Disposition::Ignored | ice::Disposition::Updated => {}
+    }
+    Ok(())
+}
+// Caller holds publication; successful completion means EOS/shutdown was
+// attempted with bounded writes and the actual old TcpStream has been dropped.
+async fn disconnect_stream(
+    shared: &Shared,
+    icecast: &ice::IcecastService,
+    epoch: u64,
+    stream: &StreamBinding,
+) -> Result<()> {
+    let receipt = icecast
+        .disconnect(ice::ContextId(epoch, 0), CancellationToken::new())
+        .await
+        .map_err(ie)?;
+    bind_run(shared, &stream.context, &receipt).await?;
+    *shared.stream.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    Ok(())
+}
+async fn retire_stream(
+    shared: &Shared,
+    icecast: &ice::IcecastService,
+    epoch: u64,
+    context: &RuntimeContext,
+) -> Result<Option<u64>> {
+    let _gate = shared.publication.lock().await;
+    let stream = shared
+        .stream
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone();
+    match stream {
+        Some(stream) if stream.context == *context => {
+            disconnect_stream(shared, icecast, epoch, &stream).await?;
+            Ok(Some(stream.run))
+        }
+        _ => Ok(None),
+    }
 }
 async fn status_pump(
     shared: Arc<Shared>,
@@ -1049,6 +1240,7 @@ async fn process(
                 .await
                 .map_err(ie)?;
             bind_run(shared, &job.context, &receipt).await?;
+            bind_stream(shared, &job.context, &receipt)?;
             Ok((vec![], vec![], None))
         }
         Operation::Pcm { bytes, meta, sinks } => {
@@ -1123,17 +1315,36 @@ async fn process(
                 });
                 let sent = {
                     let _gate = shared.publication.lock().await;
-                    let sent = icecast
-                        .send_audio(
-                            ice::ContextId(epoch, 0),
-                            packet_bytes,
-                            accepted.icecast_config(),
-                            CancellationToken::new(),
-                        )
-                        .await
-                        .map_err(ie);
+                    // A new group may be admitted after old guards drain but
+                    // before the reserved retirement is selected. It must create
+                    // a genuine new run, rather than adopt the still-live socket.
+                    let old = shared
+                        .stream
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .clone();
+                    let sent = async {
+                        if let Some(old) = old.filter(|s| s.context != job.context) {
+                            disconnect_stream(shared, icecast, epoch, &old).await?;
+                        }
+                        icecast
+                            .send_audio(
+                                ice::ContextId(epoch, 0),
+                                packet_bytes,
+                                accepted.icecast_config(),
+                                CancellationToken::new(),
+                            )
+                            .await
+                            .map_err(ie)
+                    }
+                    .await;
                     if let Ok(receipt) = &sent {
-                        if let Err(error) = bind_run(shared, &job.context, receipt).await {
+                        if let Err(error) = async {
+                            bind_run(shared, &job.context, receipt).await?;
+                            bind_stream(shared, &job.context, receipt)
+                        }
+                        .await
+                        {
                             effects.push(Effect::Icecast {
                                 index,
                                 disposition: receipt.disposition(),
@@ -1227,6 +1438,7 @@ fn bounded_wire(event: &Event) -> bool {
 async fn owner(
     shared: Arc<Shared>,
     mut receiver: mpsc::Receiver<Job>,
+    mut retire_receiver: mpsc::Receiver<RetirementJob>,
     source: opus::LibrarySource,
     limits: AudioLimits,
     epoch: u64,
@@ -1308,10 +1520,32 @@ async fn owner(
         _ => None,
     };
     let mut draining = false;
+    let mut ordinary_done = false;
+    let mut retire_done = false;
     let mut sequence = 0u64;
-    loop {
-        let job = tokio::select! {_=shared.fault.cancelled(),if !draining=>{draining=true;receiver.close();continue;},job=receiver.recv()=>job};
-        let Some(job) = job else { break };
+    while !ordinary_done || !retire_done {
+        let job = tokio::select! {
+            biased;
+            _=shared.fault.cancelled(),if !draining=>{draining=true;receiver.close();retire_receiver.close();continue;},
+            retirement=retire_receiver.recv(),if !retire_done=>{
+                let Some(job) = retirement else {retire_done=true;continue};
+                // Even a faulted ordinary pipeline must attempt accepted socket
+                // cleanup; terminal drain subsequently joins every owner too.
+                let result = if let Some(icecast) = &icecast {
+                    match Catch::new(retire_stream(&shared, icecast, epoch, &job.context)).await {
+                        Ok(Ok(run)) => Ok(AudioRetirementReceipt {context:job.context,run,disconnected:run.is_some(),_lease:job.lease}),
+                        Ok(Err(e)) | Err(e) => {shared.fail(e.clone());Err(e)},
+                    }
+                } else {Err(shared.error().unwrap_or_else(||AudioError::new("audio_host_closed","Actual Icecast owner unavailable")))};
+                let _ = job.reply.send(result);
+                continue;
+            },
+            job=receiver.recv(),if !ordinary_done=>job
+        };
+        let Some(job) = job else {
+            ordinary_done = true;
+            continue;
+        };
         let result = if let Some(e) = shared.error() {
             Err(e)
         } else if let (Some(pipeline), Some(codec), Some(icecast)) = (&pipeline, &codec, &icecast) {

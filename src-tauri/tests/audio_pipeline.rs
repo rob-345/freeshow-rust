@@ -165,6 +165,40 @@ async fn capture() -> Capture {
     });
     Capture { port, bytes }
 }
+// Two actual connections to the SAME endpoint/config expose accidental context
+// retagging that a source config/port change would otherwise hide.
+async fn capture_two() -> (
+    u16,
+    oneshot::Receiver<Vec<u8>>,
+    tokio::task::JoinHandle<Vec<u8>>,
+) {
+    async fn read(socket: tokio::net::TcpStream) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        tokio::time::timeout(
+            Duration::from_secs(5),
+            socket.take(1024 * 1024 + 1).read_to_end(&mut bytes),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        assert!(bytes.len() <= 1024 * 1024);
+        bytes
+    }
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let (send_first, first) = oneshot::channel();
+    let second = tokio::spawn(async move {
+        let (socket, _) = listener.accept().await.unwrap();
+        let first = tokio::spawn(async move {
+            let _ = send_first.send(read(socket).await);
+        });
+        let (socket, _) = listener.accept().await.unwrap();
+        let bytes = read(socket).await;
+        first.await.unwrap();
+        bytes
+    });
+    (port, first, second)
+}
 fn parse(bytes: &[u8]) -> (String, Vec<Vec<u8>>) {
     let split = bytes.windows(4).position(|w| w == b"\r\n\r\n").unwrap() + 4;
     let header = String::from_utf8(bytes[..split].to_vec()).unwrap();
@@ -219,6 +253,338 @@ async fn switch(setup: &Setup, old: &RuntimeContext) -> RuntimeContext {
     setup.library.dispatch(request, "main").await.unwrap();
     setup.native.context_changed().unwrap();
     setup.library.context().unwrap()
+}
+
+async fn connected(setup: &Setup, context: &RuntimeContext) {
+    wait_for(|| {
+        setup.events.lock().unwrap().iter().any(|e| {
+            e.context.as_ref() == Some(context)
+                && e.message.data.as_ref().unwrap()["connected"] == true
+        })
+    })
+    .await;
+}
+fn stream_run(receipt: &AudioReceipt) -> u64 {
+    receipt
+        .effects()
+        .iter()
+        .find_map(|e| match e {
+            Effect::Icecast { run, .. } => Some(*run),
+            _ => None,
+        })
+        .unwrap()
+}
+
+#[tokio::test]
+async fn context_retirement_closes_idle_real_stream_despite_full_ordinary_receipts() {
+    let _serial = SERIAL.lock().await;
+    let setup = setup(LibrarySource::system(), AudioLimits::default());
+    if !require_codec(&setup).await {
+        setup.native.shutdown().await.unwrap();
+        return;
+    }
+    let tcp = capture().await;
+    let old = setup.library.context().unwrap();
+    let first = send(&setup, &old, &frame(0), &meta(tcp.port)).await;
+    connected(&setup, &old).await;
+    let second = send(&setup, &old, &frame(960), &meta(tcp.port)).await;
+    let run = stream_run(&second);
+    let third = send(&setup, &old, &[], &AudioMetadata::default()).await;
+    let fourth = send(&setup, &old, &[], &AudioMetadata::default()).await;
+    assert_eq!(setup.native.status()["retained"], 4);
+    let current = switch(&setup, &old).await;
+    assert_ne!(old, current);
+    // No PCM, shutdown or ordinary disconnect follows the library switch.
+    let receipt = setup.native.retire_context(&old).await.unwrap();
+    assert_eq!(receipt.context, old);
+    assert_eq!(receipt.run, Some(run));
+    assert!(receipt.disconnected);
+    let bytes = tokio::time::timeout(Duration::from_secs(2), tcp.bytes)
+        .await
+        .unwrap()
+        .unwrap();
+    let (_, pages) = parse(&bytes);
+    assert_eq!(
+        pages.last().unwrap()[5],
+        4,
+        "actual EOS followed by peer EOF"
+    );
+    assert_eq!(setup.native.status()["retained"], 4);
+    assert_eq!(setup.native.status()["retiring"], 1);
+    assert_eq!(
+        setup.native.retire_context(&old).await.unwrap_err().code,
+        "audio_retirement_busy"
+    );
+    drop(receipt);
+    let noop = setup.native.retire_context(&old).await.unwrap();
+    assert!(!noop.disconnected);
+    assert_eq!(noop.run, None);
+    drop((noop, first, second, third, fourth));
+    let mut foreign = old.clone();
+    foreign.runtime_id.push('x');
+    assert_eq!(
+        setup
+            .native
+            .retire_context(&foreign)
+            .await
+            .unwrap_err()
+            .code,
+        "stale_library"
+    );
+    let mut future = current.clone();
+    future.library_generation += 1;
+    assert_eq!(
+        setup.native.retire_context(&future).await.unwrap_err().code,
+        "stale_library"
+    );
+    let mut wrong_path = current.clone();
+    wrong_path.data_path.push("wrong");
+    assert_eq!(
+        setup
+            .native
+            .retire_context(&wrong_path)
+            .await
+            .unwrap_err()
+            .code,
+        "stale_library"
+    );
+    let mut oversized = old.clone();
+    oversized.runtime_id = "x".repeat(257);
+    assert_eq!(
+        setup
+            .native
+            .retire_context(&oversized)
+            .await
+            .unwrap_err()
+            .code,
+        "audio_input_limit"
+    );
+    setup.native.shutdown().await.unwrap();
+    assert_eq!(setup.native.status()["joined"], true);
+    setup.delivery.await.unwrap();
+}
+
+#[tokio::test]
+async fn new_context_pcm_racing_old_retirement_creates_new_run_and_preserves_global_codec() {
+    let _serial = SERIAL.lock().await;
+    let setup = setup(LibrarySource::system(), AudioLimits::default());
+    if !require_codec(&setup).await {
+        setup.native.shutdown().await.unwrap();
+        return;
+    }
+    let (port, old_bytes, mut new_bytes) = capture_two().await;
+    let old = setup.library.context().unwrap();
+    send(&setup, &old, &frame(0), &meta(port)).await;
+    connected(&setup, &old).await;
+    let old_run = stream_run(&send(&setup, &old, &frame(960), &meta(port)).await);
+    // Explicit disconnect preserves source's global three-second reconnect
+    // cooldown. Let that real clock expire without changing the endpoint/config.
+    tokio::time::sleep(Duration::from_millis(3010)).await;
+    let new = switch(&setup, &old).await;
+    let (entered, ready) = oneshot::channel();
+    let (release, gate) = oneshot::channel();
+    setup.native.test_gate(true, entered, gate);
+    let host = setup.native.clone();
+    let context = new.clone();
+    let pcm = tokio::spawn(async move {
+        let bytes = frame(1920);
+        host.pcm(
+            &context,
+            &bytes,
+            bytes.len(),
+            &meta(port),
+            &SinkAvailability::default(),
+            cancel(),
+        )
+        .await
+    });
+    ready.await.unwrap();
+    // Synchronously accepted control is behind the already accepted new PCM.
+    let retire_old = setup.native.retire_context(&old);
+    assert_eq!(setup.native.status()["retiring"], 1);
+    release.send(()).unwrap();
+    let first_new = pcm.await.unwrap().unwrap();
+    let new_run = stream_run(&first_new);
+    assert!(
+        new_run > old_run,
+        "new context cannot adopt/retag the old live run"
+    );
+    let receipt = retire_old.await.unwrap();
+    assert!(
+        !receipt.disconnected,
+        "PCM already closed the old socket before genuine new connect"
+    );
+    drop(receipt);
+    let bytes = tokio::time::timeout(Duration::from_secs(2), old_bytes)
+        .await
+        .unwrap()
+        .unwrap();
+    let (_, pages) = parse(&bytes);
+    assert_eq!(pages.last().unwrap()[5], 4);
+    connected(&setup, &new).await;
+    let written = send(&setup, &new, &frame(2880), &meta(port)).await;
+    assert!(matches!(
+        written.effects(),
+        [
+            Effect::Encoded { sequence: 4, .. },
+            Effect::Icecast {
+                disposition: Disposition::Written,
+                ..
+            }
+        ]
+    ));
+    assert_eq!(stream_run(&written), new_run);
+    let late = setup.native.retire_context(&old).await.unwrap();
+    assert!(!late.disconnected);
+    drop(late);
+    assert!(
+        tokio::time::timeout(Duration::from_millis(30), &mut new_bytes)
+            .await
+            .is_err(),
+        "delayed old cleanup leaves new real socket open"
+    );
+    let closed = setup.native.retire_context(&new).await.unwrap();
+    assert_eq!(closed.run, Some(new_run));
+    assert!(closed.disconnected);
+    drop(closed);
+    let bytes = tokio::time::timeout(Duration::from_secs(2), new_bytes)
+        .await
+        .unwrap()
+        .unwrap();
+    let (_, pages) = parse(&bytes);
+    assert_eq!(pages.last().unwrap()[5], 4);
+    setup.native.shutdown().await.unwrap();
+    setup.delivery.await.unwrap();
+}
+
+#[tokio::test]
+async fn retirement_is_owned_even_when_its_future_is_dropped_without_polling() {
+    let _serial = SERIAL.lock().await;
+    let absent = std::env::temp_dir().join("freeshow-native-audio-absent-opus-a3710.so");
+    let setup = setup(
+        unsafe { LibrarySource::trusted_path(&absent) }.unwrap(),
+        AudioLimits::default(),
+    );
+    let context = setup.library.context().unwrap();
+    let (entered, ready) = oneshot::channel();
+    let (release, gate) = oneshot::channel();
+    setup.native.test_gate(false, entered, gate);
+    let host = setup.native.clone();
+    let c = context.clone();
+    let pcm = tokio::spawn(async move {
+        host.pcm(
+            &c,
+            &[0],
+            1,
+            &AudioMetadata::default(),
+            &SinkAvailability::default(),
+            cancel(),
+        )
+        .await
+    });
+    ready.await.unwrap();
+    drop(setup.native.retire_context(&context));
+    assert_eq!(setup.native.status()["retiring"], 1);
+    assert_eq!(
+        setup
+            .native
+            .retire_context(&context)
+            .await
+            .unwrap_err()
+            .code,
+        "audio_retirement_busy"
+    );
+    release.send(()).unwrap();
+    pcm.await.unwrap().unwrap();
+    wait_for(|| setup.native.status()["retiring"] == 0).await;
+    let proof = setup.native.retire_context(&context).await.unwrap();
+    assert_eq!(proof.context, context);
+    assert!(!proof.disconnected);
+    drop(proof);
+    setup.native.shutdown().await.unwrap();
+    setup.delivery.await.unwrap();
+}
+
+#[tokio::test]
+async fn dropped_timed_out_retirement_stays_owned_and_terminal_retry_joins_actual_cleanup() {
+    let _serial = SERIAL.lock().await;
+    let setup = setup(
+        LibrarySource::system(),
+        AudioLimits {
+            shutdown_timeout: Duration::from_millis(80),
+            ..AudioLimits::default()
+        },
+    );
+    if !require_codec(&setup).await {
+        setup.native.shutdown().await.unwrap();
+        return;
+    }
+    let tcp = capture().await;
+    let context = setup.library.context().unwrap();
+    send(&setup, &context, &frame(0), &meta(tcp.port)).await;
+    connected(&setup, &context).await;
+    send(&setup, &context, &frame(960), &meta(tcp.port)).await;
+    let (entered, ready) = oneshot::channel();
+    let (release, gate) = oneshot::channel();
+    setup.native.test_gate(true, entered, gate);
+    let host = setup.native.clone();
+    let old = context.clone();
+    let port = tcp.port;
+    let pcm = tokio::spawn(async move {
+        let bytes = frame(1920);
+        host.pcm(
+            &old,
+            &bytes,
+            bytes.len(),
+            &meta(port),
+            &SinkAvailability::default(),
+            cancel(),
+        )
+        .await
+    });
+    ready.await.unwrap();
+    assert_eq!(
+        setup
+            .native
+            .retire_context(&context)
+            .await
+            .unwrap_err()
+            .code,
+        "audio_retirement_timeout"
+    );
+    assert_eq!(
+        setup.native.status()["retiring"],
+        1,
+        "timeout is not actual cleanup completion"
+    );
+    assert_eq!(
+        setup
+            .native
+            .retire_context(&context)
+            .await
+            .unwrap_err()
+            .code,
+        "audio_retirement_busy"
+    );
+    assert_eq!(
+        setup.native.shutdown().await.unwrap_err().code,
+        "audio_shutdown_timeout"
+    );
+    assert_eq!(setup.native.status()["joined"], false);
+    pcm.abort();
+    release.send(()).unwrap();
+    wait_for(|| setup.native.status()["done"] == true).await;
+    setup.native.shutdown().await.unwrap();
+    assert_eq!(setup.native.status()["retiring"], 0);
+    assert_eq!(setup.native.status()["drainedOwners"], 15);
+    assert_eq!(setup.native.status()["joined"], true);
+    let bytes = tokio::time::timeout(Duration::from_secs(2), tcp.bytes)
+        .await
+        .unwrap()
+        .unwrap();
+    let (_, pages) = parse(&bytes);
+    assert_eq!(pages.last().unwrap()[5], 4);
+    setup.delivery.await.unwrap();
 }
 
 #[tokio::test]
@@ -515,14 +881,21 @@ async fn queued_and_accepted_context_boundaries_and_caller_drop_preserve_owned_e
     let _ = held.await;
     release.send(()).unwrap();
     wait_for(|| setup.native.status()["staleStatuses"].as_u64().unwrap() >= 2).await;
-    let next = send(&setup, &newest, &frame(1920), &meta(tcp.port)).await;
+    let new_peer = capture().await;
+    let next = send(&setup, &newest, &frame(1920), &meta(new_peer.port)).await;
     assert!(matches!(
         next.effects()[0],
         Effect::Encoded { sequence: 2, .. }
     ));
+    // The accepted old callback still encoded/connected after caller drop, but
+    // new-context audio now closes that old socket and makes a genuine new run.
+    connected(&setup, &newest).await;
+    send(&setup, &newest, &frame(2880), &meta(new_peer.port)).await;
     setup.native.shutdown().await.unwrap();
     setup.delivery.await.unwrap();
     let (_, pages) = parse(&tcp.bytes.await.unwrap());
+    assert_eq!(pages.last().unwrap()[5], 4);
+    let (_, pages) = parse(&new_peer.bytes.await.unwrap());
     assert!(pages
         .iter()
         .any(|p| !payload(p).starts_with(b"Opus") && !payload(p).is_empty()));
