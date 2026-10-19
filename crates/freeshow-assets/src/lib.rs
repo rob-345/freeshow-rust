@@ -1,6 +1,10 @@
+mod access;
 mod io;
 pub mod spec;
 mod transport;
+pub use access::{
+    AuthorizedMediaRead, MediaAuthority, MediaObservation, RegisteredMedia, NATIVE_READ_LIMIT,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -267,6 +271,8 @@ pub struct Status {
     pub buffered_bytes: usize,
     pub peak_buffered_bytes: usize,
     pub rejected_connections: u64,
+    pub native_reads: usize,
+    pub file_workers_joined: bool,
 }
 #[derive(Clone)]
 pub(crate) struct Entry {
@@ -304,6 +310,7 @@ pub(crate) struct Shared {
     pub stop: CancellationToken,
     pub done: watch::Sender<bool>,
     pub next_connection: AtomicU64,
+    pub native_reads: Arc<access::ReadState>,
 }
 struct Inner {
     shared: Arc<Shared>,
@@ -314,6 +321,7 @@ impl Inner {
         self.shared.closing.store(true, Ordering::Release);
         self.shared.stop.cancel();
         self.shared.pool.close();
+        self.shared.native_reads.close();
         if let Ok(mut registry) = self.shared.registry.lock() {
             registry.epoch.cancel();
             for connection in registry.connections.values() {
@@ -402,6 +410,7 @@ impl AssetServer {
             stop: CancellationToken::new(),
             done,
             next_connection: AtomicU64::new(1),
+            native_reads: access::ReadState::new(),
         });
         tokio::spawn(transport::serve(listener, shared.clone()));
         Ok(Self(Arc::new(Inner { shared, completion })))
@@ -762,6 +771,8 @@ impl AssetServer {
             buffered_bytes: stats.buffered.load(Ordering::Acquire),
             peak_buffered_bytes: stats.peak_buffered.load(Ordering::Acquire),
             rejected_connections: stats.rejected_connections.load(Ordering::Relaxed),
+            native_reads: self.0.shared.native_reads.count(),
+            file_workers_joined: self.0.shared.pool.joined(),
         }
     }
     pub async fn shutdown(&self) -> Result<(), Error> {
@@ -773,7 +784,9 @@ impl AssetServer {
                     Error::new("assets_worker", "Asset listener completion channel closed")
                 })?;
             }
-            self.0.shared.pool.drain().await
+            let pool = self.0.shared.pool.drain().await;
+            let native_reads = self.0.shared.native_reads.drain().await;
+            pool.and(native_reads)
         };
         tokio::time::timeout(self.0.shared.config.shutdown_timeout, wait)
             .await
@@ -786,5 +799,7 @@ impl AssetServer {
     }
 }
 
+#[cfg(test)]
+mod access_tests;
 #[cfg(test)]
 mod tests;

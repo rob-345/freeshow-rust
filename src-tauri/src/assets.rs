@@ -428,6 +428,59 @@ impl NativeAssets {
         self.server.shutdown().await.map_err(failed)
     }
 
+    /// Native consumer of an EXISTING grant only. Renderer NOW_PLAYING text is
+    /// never native selection/drop/committed-library provenance.
+    pub async fn open_registered_media(
+        &self,
+        library: &LibraryService,
+        captured: &RuntimeContext,
+        source_key: &str,
+        control: Control,
+    ) -> Result<freeshow_assets::AuthorizedMediaRead, WireError> {
+        if library.context().map_err(WireError::from)? != *captured {
+            return Err(WireError::new(
+                "stale_library",
+                "Native media read belongs to an obsolete full context",
+            ));
+        }
+        let read = self
+            .server
+            .open_registered_media(
+                &context(captured)?,
+                freeshow_assets::RegisteredMedia::SourceKey(source_key),
+                control,
+            )
+            .await
+            .map_err(|error| {
+                let code = match error.code.as_str() {
+                    "assets_unregistered" => "assets_unregistered",
+                    "assets_stale_context" => "assets_stale_context",
+                    "assets_revoked" => "assets_revoked",
+                    "assets_changed" => "assets_changed",
+                    "assets_protected" => "assets_protected",
+                    "assets_busy" => "assets_busy",
+                    "assets_shutdown" => "assets_shutdown",
+                    "assets_cancelled" => "assets_cancelled",
+                    "assets_deadline" => "assets_deadline",
+                    "assets_invalid" => "assets_invalid",
+                    "assets_limit" => "assets_limit",
+                    "assets_missing" => "assets_missing",
+                    "assets_permission" => "assets_permission",
+                    "assets_unsupported" => "assets_unsupported",
+                    "assets_worker" => "assets_worker",
+                    _ => "assets_io",
+                };
+                WireError::new(code, error.message)
+            })?;
+        if library.context().map_err(WireError::from)? != *captured {
+            return Err(WireError::new(
+                "stale_library",
+                "Native media context changed during file admission",
+            ));
+        }
+        Ok(read)
+    }
+
     /// Only live native preparation or an actual cache result is accepted;
     /// arbitrary renderer SAVE_IMAGE paths never pass through this boundary.
     pub async fn thumbnail_grants(

@@ -1,3 +1,4 @@
+use crate::access::{MediaObservation, ReadLease, Registration, Stamp};
 use crate::{Control, Error, Stats};
 use std::{
     collections::HashMap,
@@ -32,7 +33,22 @@ pub(crate) struct Opened {
     pub identity: Identity,
     pub length: u64,
 }
+pub(crate) struct NativeOpened {
+    pub file: File,
+    pub handle: Handle,
+    pub observation: MediaObservation,
+}
 enum Operation {
+    NativeOpen {
+        registration: Arc<Registration>,
+        lease: Arc<ReadLease>,
+    },
+    NativeCheck {
+        registration: Arc<Registration>,
+        handle: Handle,
+        expected: Stamp,
+        lease: Arc<ReadLease>,
+    },
     Open {
         path: PathBuf,
         expected: Option<Identity>,
@@ -44,6 +60,8 @@ enum Operation {
     },
 }
 enum Answer {
+    NativeOpen(NativeOpened),
+    NativeCheck(MediaObservation),
     Open(Opened),
     Read(Vec<u8>),
 }
@@ -58,14 +76,24 @@ struct TestPause {
     entered: oneshot::Sender<()>,
     release: mpsc::Receiver<()>,
 }
+#[cfg(test)]
+struct TestExitPause {
+    entered: oneshot::Sender<()>,
+    release: mpsc::Receiver<()>,
+    panic: bool,
+}
 struct PoolInner {
     #[cfg(test)]
     pause: Arc<Mutex<Option<TestPause>>>,
+    #[cfg(test)]
+    exit_pause: Arc<Mutex<Option<TestExitPause>>>,
     senders: Mutex<Option<Vec<SyncSender<Work>>>>,
     closing: Arc<AtomicBool>,
     next: AtomicUsize,
     done: watch::Receiver<usize>,
     stats: Arc<Stats>,
+    workers: Mutex<Vec<std::thread::JoinHandle<()>>>,
+    failure: Mutex<Option<Error>>,
 }
 impl PoolInner {
     fn close(&self) {
@@ -83,7 +111,7 @@ impl Drop for PoolInner {
 #[derive(Clone)]
 pub(crate) struct Pool(Arc<PoolInner>);
 
-fn identity(file: &File, metadata: &std::fs::Metadata) -> Result<Identity, Error> {
+pub(crate) fn identity(file: &File, metadata: &std::fs::Metadata) -> Result<Identity, Error> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;
@@ -133,8 +161,12 @@ impl Pool {
         let (completed, done) = watch::channel(workers);
         let id = Arc::new(AtomicU64::new(1));
         let mut senders = Vec::new();
+        let mut threads = Vec::new();
+        let startup_stop = closing.clone();
         #[cfg(test)]
         let pause = Arc::new(Mutex::new(None::<TestPause>));
+        #[cfg(test)]
+        let exit_pause = Arc::new(Mutex::new(None::<TestExitPause>));
         for worker in 0..workers {
             let (sender, receiver) = mpsc::sync_channel::<Work>(capacity);
             senders.push(sender);
@@ -144,9 +176,14 @@ impl Pool {
             let id = id.clone();
             #[cfg(test)]
             let pause = pause.clone();
-            std::thread::Builder::new().name(format!("freeshow-assets-{worker}")).spawn(move || {
-                // Only this native worker owns File values, including their
-                // eventual close. Async consumers hold lightweight tickets.
+            #[cfg(test)]
+            let exit_pause = exit_pause.clone();
+            let spawned = std::thread::Builder::new().name(format!("freeshow-assets-{worker}")).spawn(move || {
+                struct Completed(watch::Sender<usize>);
+                impl Drop for Completed { fn drop(&mut self) { self.0.send_modify(|left| *left = left.saturating_sub(1)); } }
+                let _completed = Completed(completed);
+                // The fixed worker owns HTTP files and native anchor descriptors.
+                // Exported native duplicates retain a separate whole-result lease.
                 let mut files = HashMap::<u64, (File, Arc<AtomicBool>)>::new();
                 loop {
                     files.retain(|_, (_, released)| { if released.load(Ordering::Acquire) { stats.open_files.fetch_sub(1, Ordering::AcqRel); false } else { true } });
@@ -158,13 +195,33 @@ impl Pool {
                     stats.queued_io.fetch_sub(1, Ordering::AcqRel);
                     stats.active_io.fetch_add(1, Ordering::AcqRel);
                     #[cfg(test)]
-                    if let Operation::Open { path, .. } = &work.operation {
-                        let held = { let mut held = pause.lock().unwrap(); if held.as_ref().is_some_and(|held| &held.path == path) { held.take() } else { None } };
+                    {
+                        let path = match &work.operation { Operation::Open { path, .. } => Some(path.as_path()), Operation::NativeOpen { registration, .. } | Operation::NativeCheck { registration, .. } => Some(registration.path()), _ => None };
+                        if let Some(path) = path {
+                        let held = { let mut held = pause.lock().unwrap(); if held.as_ref().is_some_and(|held| held.path.as_path() == path) { held.take() } else { None } };
                         if let Some(held) = held { let _ = held.entered.send(()); let _ = held.release.recv(); }
+                        }
                     }
                     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                         work.control.check(&closing)?;
                         match work.operation {
+                            Operation::NativeOpen { registration, lease } => {
+                                if files.len() >= handles_per_worker { return Err(Error::new("assets_busy", "File handle budget exhausted")); }
+                                let (file, stamp) = registration.open(&work.control)?;
+                                let duplicate = file.try_clone().map_err(Error::os)?;
+                                registration.check(&work.control)?;
+                                let number = id.fetch_add(1, Ordering::Relaxed);
+                                let released = Arc::new(AtomicBool::new(false));
+                                let handle = Handle(Arc::new(HandleInner { worker, id: number, released: released.clone() }));
+                                files.insert(number, (file, released));
+                                stats.open_files.fetch_add(1, Ordering::AcqRel);
+                                Ok(Answer::NativeOpen(NativeOpened { file: duplicate, handle, observation: MediaObservation { stamp, lease } }))
+                            }
+                            Operation::NativeCheck { registration, handle, expected, lease } => {
+                                let file = &files.get(&handle.0.id).ok_or_else(|| Error::new("assets_closed", "Native media anchor expired"))?.0;
+                                let stamp = registration.revalidate(file, &expected, &work.control)?;
+                                Ok(Answer::NativeCheck(MediaObservation { stamp, lease }))
+                            }
                             Operation::Open { path, expected } => {
                                 if files.len() >= handles_per_worker { return Err(Error::new("assets_busy", "File handle budget exhausted")); }
                                 let path = if expected.is_none() { std::fs::canonicalize(path).map_err(Error::os)? } else { path };
@@ -219,17 +276,39 @@ impl Pool {
                 }
                 stats.open_files.fetch_sub(files.len(), Ordering::AcqRel);
                 drop(files);
-                completed.send_modify(|left| *left = left.saturating_sub(1));
-            }).map_err(Error::os)?;
+                drop(_completed);
+                #[cfg(test)]
+                {
+                    // A real thread can remain alive after its body announces
+                    // logical completion (e.g. final native/TLS destruction).
+                    let held = exit_pause.lock().unwrap().take();
+                    if let Some(held) = held { let _ = held.entered.send(()); let _ = held.release.recv(); assert!(!held.panic, "controlled actual asset worker exit panic"); }
+                }
+            });
+            match spawned {
+                Ok(worker) => threads.push(worker),
+                Err(error) => {
+                    startup_stop.store(true, Ordering::Release);
+                    drop(senders);
+                    for worker in threads {
+                        let _ = worker.join();
+                    }
+                    return Err(Error::os(error));
+                }
+            }
         }
         Ok(Self(Arc::new(PoolInner {
             #[cfg(test)]
             pause,
+            #[cfg(test)]
+            exit_pause,
             senders: Mutex::new(Some(senders)),
             closing,
             next: AtomicUsize::new(0),
             done,
             stats,
+            workers: Mutex::new(threads),
+            failure: Mutex::new(None),
         })))
     }
     async fn submit(
@@ -315,6 +394,60 @@ impl Pool {
             _ => unreachable!(),
         }
     }
+    pub(crate) async fn native_open(
+        &self,
+        registration: Arc<Registration>,
+        lease: Arc<ReadLease>,
+        control: Control,
+    ) -> Result<NativeOpened, Error> {
+        let worker = self.0.next.fetch_add(1, Ordering::Relaxed);
+        match self
+            .submit(
+                worker,
+                Operation::NativeOpen {
+                    registration,
+                    lease,
+                },
+                control,
+            )
+            .await?
+        {
+            Answer::NativeOpen(opened) => Ok(opened),
+            _ => unreachable!(),
+        }
+    }
+    pub(crate) async fn native_check(
+        &self,
+        registration: Arc<Registration>,
+        handle: Handle,
+        expected: Stamp,
+        lease: Arc<ReadLease>,
+        control: Control,
+    ) -> Result<MediaObservation, Error> {
+        match self
+            .submit(
+                handle.0.worker,
+                Operation::NativeCheck {
+                    registration,
+                    handle,
+                    expected,
+                    lease,
+                },
+                control,
+            )
+            .await?
+        {
+            Answer::NativeCheck(observation) => Ok(observation),
+            _ => unreachable!(),
+        }
+    }
+    pub(crate) fn joined(&self) -> bool {
+        self.0
+            .workers
+            .lock()
+            .map(|workers| workers.is_empty())
+            .unwrap_or(false)
+    }
     #[cfg(test)]
     pub(crate) fn pause_for(&self, path: PathBuf) -> (oneshot::Receiver<()>, mpsc::SyncSender<()>) {
         let (entered, waiting) = oneshot::channel();
@@ -323,6 +456,17 @@ impl Pool {
             path,
             entered,
             release: held,
+        });
+        (waiting, release)
+    }
+    #[cfg(test)]
+    pub(crate) fn pause_exit(&self, panic: bool) -> (oneshot::Receiver<()>, mpsc::SyncSender<()>) {
+        let (entered, waiting) = oneshot::channel();
+        let (release, held) = mpsc::sync_channel(1);
+        *self.0.exit_pause.lock().unwrap() = Some(TestExitPause {
+            entered,
+            release: held,
+            panic,
         });
         (waiting, release)
     }
@@ -337,6 +481,44 @@ impl Pool {
                 Error::new("assets_worker", "Native media completion channel closed")
             })?;
         }
-        Ok(())
+        loop {
+            if self
+                .0
+                .workers
+                .lock()
+                .map_err(|_| Error::new("assets_worker", "Native worker join lock poisoned"))?
+                .iter()
+                .all(std::thread::JoinHandle::is_finished)
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+        // No await after taking handles: canceling an observer cannot detach an
+        // actual join. OS/TLS final thread teardown is not preemptible.
+        for worker in std::mem::take(
+            &mut *self
+                .0
+                .workers
+                .lock()
+                .map_err(|_| Error::new("assets_worker", "Native worker join lock poisoned"))?,
+        ) {
+            if worker.join().is_err() {
+                *self
+                    .0
+                    .failure
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner()) = Some(Error::new(
+                    "assets_worker",
+                    "Native media worker panicked during teardown",
+                ));
+            }
+        }
+        self.0
+            .failure
+            .lock()
+            .map_err(|_| Error::new("assets_worker", "Native worker failure lock poisoned"))?
+            .clone()
+            .map_or(Ok(()), Err)
     }
 }
