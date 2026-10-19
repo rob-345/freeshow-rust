@@ -146,8 +146,12 @@ controlled root/parent/leaf swaps, later ENOENT open failure, preserved mkdir
 failure after cancellation/replacement, held-inode versus in-place changed reads,
 symlinks/FIFO/directory rejection, real permission failures, work/deadline bounds
 and validation guard lifetime through queued/collected/caller-dropped receipts.
-Permission cases require the ordinary non-root CI user; they explicitly skip
-when the process is root. No sleep is used to manufacture timestamp changes.
+Permission cases require the ordinary non-root CI user; they fail explicitly
+when the process is root so a bypassed permission check cannot count as proof.
+The in-place change regression preserves the same inode and three-byte length,
+sets and checks two explicit real mtimes, verifies the held descriptor observes
+the replacement bytes, and requires before-header revalidation to reject the
+changed version. No sleep is used to manufacture timestamp changes.
 
 A private temporary harness copies the unchanged parent and applies only the
 wiring above, selecting the actual new module by absolute path. It points to
@@ -172,6 +176,11 @@ test compilation, not successful macOS execution. After parent wiring, run the
 dedicated target on native macOS (`cargo test --manifest-path src-tauri/Cargo.toml
 --test now_playing_cover_file_macos`) and then the coordinator's real route/body
 and GUI evidence before expanding the platform parity statement.
+
+The test-only peer-review follow-up also passed strict Apple ARM all-target
+Clippy in `/tmp/freeshow-native-cover-macos-peercheck`, using a copy of the
+current coordinator parent with the supplied wiring and the actual owned
+backend/tests. This remains cross-compilation evidence, not macOS execution.
 
 Primary references: Apple's pinned XNU `xnu-12377.121.6`
 [open/openat manual](https://github.com/apple-oss-distributions/xnu/blob/xnu-12377.121.6/bsd/man/man2/open.2),

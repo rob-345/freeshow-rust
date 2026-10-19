@@ -409,11 +409,34 @@ async fn before_header_revalidation_detects_changes_but_held_reads_are_not_immut
     assert_eq!(&out, b"old");
     drop(checked);
     drop(old);
+    let writable = fs::OpenOptions::new().write(true).open(f.leaf()).unwrap();
+    let original_modified = std::time::UNIX_EPOCH + Duration::from_secs(1_700_000_000);
+    writable
+        .set_times(fs::FileTimes::new().set_modified(original_modified))
+        .unwrap();
     let current = f.prepare(&phase).await;
-    // Same held inode can change after successful preparation: no byte snapshot.
-    fs::write(f.leaf(), b"x").unwrap();
+    let expected = file(&current).stat().clone();
+    assert_eq!(expected.length(), 3);
+    assert_eq!(expected.modified_seconds(), 1_700_000_000);
+    // Keep both identity and length unchanged: this regression must exercise
+    // the version guard rather than pass solely because the body got shorter.
+    // Explicit real mtime changes avoid any assumption about clock resolution.
+    fs::write(f.leaf(), b"xyz").unwrap();
+    writable
+        .set_times(fs::FileTimes::new().set_modified(original_modified + Duration::from_secs(2)))
+        .unwrap();
+    let modified = fs::metadata(f.leaf()).unwrap();
+    assert_eq!(modified.dev(), expected.device());
+    assert_eq!(modified.ino(), expected.inode());
+    assert_eq!(modified.len(), expected.length());
+    assert_eq!(modified.mtime(), 1_700_000_002);
+    assert_ne!(
+        (modified.mtime(), modified.mtime_nsec()),
+        (expected.modified_seconds(), expected.modified_nanoseconds())
+    );
+    // The held descriptor still exposes the actual in-place write, not a copy.
     let count = file(&current).read_at(0, &mut out).unwrap();
-    assert_eq!(&out[..count], b"x");
+    assert_eq!(&out[..count], b"xyz");
     let changed = file(&current)
         .revalidate(&phase, Control::default())
         .unwrap()
@@ -484,9 +507,11 @@ async fn symlink_ancestors_parents_leaves_and_nonregular_variants_are_never_foll
 async fn actual_read_permission_failures_are_failed_not_missing_and_do_not_claim_source_parity() {
     let _serial = SERIAL.lock().await;
     // SAFETY: read-only process credential observation; no identity changes.
-    if unsafe { libc::geteuid() } == 0 {
-        return;
-    }
+    assert_ne!(
+        unsafe { libc::geteuid() },
+        0,
+        "Darwin permission evidence requires a non-root user; root must not count as a verified permission test"
+    );
     let f = Fixture::new();
     f.write(b"cannot read after exists-true");
     let phase = f.phase().await;
