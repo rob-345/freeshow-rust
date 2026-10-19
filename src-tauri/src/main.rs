@@ -37,6 +37,7 @@ mod remote_cover;
 mod remote_cover_publications;
 mod remotes;
 mod scriptures;
+mod spotify;
 mod system;
 mod thumbnails;
 mod timecode;
@@ -86,6 +87,7 @@ struct AppState {
     browse: browse::NativeBrowse,
     system: SystemService,
     ai_local: ai_local::NativeInventory,
+    spotify: spotify::NativeSpotify,
     device_id: device_id::DeviceIdentity,
     provider_connections: provider_connections::ProviderConnections,
     network_snapshots: network_snapshot::NetworkSnapshots,
@@ -1058,6 +1060,13 @@ async fn dispatch_native(
             }
             return Ok(imported.events);
         }
+        if command == "SPOTIFY_GET_STATE" {
+            let state = app.state::<AppState>();
+            return state
+                .spotify
+                .dispatch(&state.library, request, window.label())
+                .await;
+        }
         if command == "AI_GET_BIN" {
             let state = app.state::<AppState>();
             return state
@@ -1216,6 +1225,7 @@ async fn dispatch_native(
                 let state = app.state::<AppState>();
                 state.device_id.seal();
                 state.ai_local.seal();
+                state.spotify.seal();
                 state.provider_connections.seal();
                 let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
                 let context = state.library.context().map_err(WireError::from)?;
@@ -1241,6 +1251,7 @@ async fn dispatch_native(
                     files_result,
                     system_result,
                     ai_local_result,
+                    spotify_result,
                     api_result,
                     imports_result,
                     browse_result,
@@ -1263,6 +1274,7 @@ async fn dispatch_native(
                     state.files.shutdown(),
                     state.system.shutdown(),
                     state.ai_local.shutdown(),
+                    state.spotify.shutdown(),
                     state.api.shutdown(),
                     state.imports.shutdown(),
                     state.browse.shutdown(),
@@ -1297,6 +1309,7 @@ async fn dispatch_native(
                 system_result
                     .map_err(|error| WireError::new("system_worker", error.to_string()))?;
                 ai_local_result?;
+                spotify_result?;
                 api_result?;
                 imports_result?;
                 browse_result?;
@@ -1417,6 +1430,7 @@ async fn dispatch_native(
         let context = library.context().map_err(WireError::from)?;
         let state = app.state::<AppState>();
         state.ai_local.context_changed(&context);
+        state.spotify.context_changed(&context);
         if let Some(previous) = previous_cover_context.filter(|previous| previous != &context) {
             state.cover_publications.retire(&previous, false);
         }
@@ -1755,6 +1769,7 @@ fn main() {
                 freeshow_browse::BrowseConfig::default(),
             )?);
             let library = LibraryService::start(runtime)?;
+            let spotify = spotify::NativeSpotify::new(&library.context()?);
             let network_snapshots = network_snapshot::NetworkSnapshots::start(
                 network_snapshot::SnapshotLimits::default(),
             )
@@ -1978,6 +1993,7 @@ fn main() {
                 browse,
                 system,
                 ai_local,
+                spotify,
                 device_id: device_id::DeviceIdentity::new(),
                 provider_connections: provider_connections::ProviderConnections::new(),
                 network_snapshots,

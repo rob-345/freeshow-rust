@@ -90,6 +90,9 @@ pub struct Event {
     /// Private fixed-cover folder notification; source callback stays unchanged.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub native_cover: Option<Value>,
+    /// Private exact Spotify undefined/IEEE restoration, paired with this reply.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_spotify: Option<Value>,
 }
 
 impl Event {
@@ -113,6 +116,7 @@ impl Event {
             native_timecode: None,
             native_now_playing: None,
             native_cover: None,
+            native_spotify: None,
         }
     }
 }

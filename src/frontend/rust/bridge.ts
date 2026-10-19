@@ -1,3 +1,4 @@
+import { hydrateSpotify, type SpotifyRestoration } from "./spotify"
 // Preserve the existing preload API while the runtime moves to Rust.
 // This module has no dependency on Electron or on the Svelte app.
 import { hydrateFileBrowse } from "./fileStats"
@@ -24,6 +25,7 @@ export type RuntimeEvent = {
     message: any
     listenerId?: string
     context?: RuntimeContext
+    nativeSpotify?: SpotifyRestoration
     nativeAssets?: LocalAssetGrant[]
     nativeCapture?: { id: string }
     nativeExif?: ExifHydration
@@ -122,7 +124,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
         return true
     }
 
-    function dispatch(event: RuntimeEvent, origin?: { channel: string; data?: any }) {
+    function dispatch(event: RuntimeEvent, origin?: { channel: string; data?: any; listenerId?: string }) {
         if (event.nativeCover) {
             if (!covers) {
                 reportError({ code: "cover_unavailable", message: "Native cover notifications are unavailable in this window" }, event)
@@ -190,6 +192,19 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
             }
             return
         }
+        if (event.nativeSpotify) {
+            // Global OS metadata keeps a process-lifetime native owner. The
+            // reply still belongs only to its actual frozen request context.
+            if (!context || !event.context || event.context.runtimeId !== context.runtimeId || event.context.libraryGeneration !== context.libraryGeneration || event.context.dataPath !== context.dataPath) return
+            try {
+                if (event.channel !== "MAIN" || event.message.channel !== "SPOTIFY_GET_STATE" || origin?.channel !== "MAIN" || origin.data?.channel !== "SPOTIFY_GET_STATE" || event.listenerId !== origin.listenerId) throw new Error("Unexpected native Spotify envelope")
+                const data = hydrateSpotify(event.message.data, event.nativeSpotify)
+                deliver("MAIN", { channel: "SPOTIFY_GET_STATE", data }, event.listenerId)
+            } catch (error) {
+                reportError({ code: "spotify_publication", message: String(error) }, event)
+            }
+            return
+        }
         if (event.nativeMidi) {
             const metadata = event.nativeMidi
             const delivery = metadata.delivery
@@ -227,6 +242,10 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                     remoteCompletion(event.nativeRemote.deliveryId, accepted).catch((error) => reportError(error, { channel: "native-remote-completion" }))
                 }
             }
+            return
+        }
+        if (event.channel === "MAIN" && event.message.channel === "SPOTIFY_GET_STATE") {
+            reportError({ code: "spotify_publication", message: "Native Spotify reply lacks restoration" }, event)
             return
         }
         if (event.context) {
