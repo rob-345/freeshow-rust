@@ -185,3 +185,38 @@ fence is described as ordered-work completion, never as a joined library thread.
 Actual Windows fixture execution, HTTP route/header behavior through the gated
 Source, and native client coverage remain coordinator CI obligations. No LAN,
 GUI, immutable-file, or full remote-route parity claim follows from this slice.
+
+## Actual Windows CI diagnosis at `90fda94e`
+
+The genuine Windows native job executed 16 tests: 14 passed and two failed.
+The real Node stat/ETag fixture, byte reads, identity/namespace guards, resource
+retention, sharing, cancellation/disposal, and junction cases passed. This is
+partial native evidence, not a green backend or full HTTP claim.
+
+The absent-Audio case returned Missing but did not create Audio. The original
+assertion did not print its already-retained FolderFailure diagnostic, so the
+actual mkdir NTSTATUS is not yet observed in that log. The diagnostic follow-up
+prints bounded actual outcome, folder error, OS code and at most four bounded
+diagnostics if either the initial preparation or real directory assertion fails.
+It also reports any unexpected regular-Audio-parent continuation outcome. No
+Missing status is added and no failed mkdir is hidden.
+
+The creation call currently inherits `FILE_OPEN_REPARSE_POINT` and
+`FILE_OPEN_NO_RECALL` from ordinary opens. The primary NtCreateFile directory
+options contract restricts compatible options; this is a concrete candidate,
+not proof of the unreported native error. This diagnostic-first follow-up leaves
+production options/access unchanged until the next actual Windows receipt.
+Metadata/traverse handles are not speculatively widened to add-child rights.
+Any subsequent create-option change must separately test a junction raced after
+the real absent probe and before FILE_CREATE, including an absent external
+target, and an unchanged ordinary collision. Reparse rejection at the initial
+probe does not certify that seam.
+
+The other failure was test setup: renaming a parent containing the held regular
+Audio child returned native AccessDenied5. The corrected deterministic fixture
+pauses after the actual failed mkdir, replaces the blocker before Audio opens,
+then replaces the genuinely held Audio directory at the existing Audio pause.
+This preserves an actual folder failure followed by identity Changed without
+requiring parent rename or guessing a nondirectory RootDirectory failure. The
+former blocker bytes are checked unchanged. It uses the single bounded test
+pause slot sequentially and introduces no product task or behavior.

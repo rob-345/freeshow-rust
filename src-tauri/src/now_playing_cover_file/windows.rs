@@ -435,6 +435,8 @@ pub(super) fn prepare(
             }
         }
     }
+    #[cfg(test)]
+    pause(Stage::AfterMkdir);
     control.check()?;
     let audio_probe = match open_at(&held_root, &audio_name, METADATA, FILE_OPEN, 0) {
         Ok(file) => file,
@@ -572,6 +574,7 @@ pub(super) fn read_at(file: &File, offset: u64, buffer: &mut [u8]) -> io::Result
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Stage {
     Root,
+    AfterMkdir,
     Audio,
     BeforeLeaf,
     Leaf,
@@ -622,6 +625,15 @@ impl CoverFiles {
     )]
     pub fn test_pause_windows_root(&self) -> (oneshot::Receiver<()>, std::sync::mpsc::Sender<()>) {
         install_pause(Stage::Root)
+    }
+    #[allow(
+        dead_code,
+        reason = "Dedicated Windows fixtures exercise this bounded actual-IO hook"
+    )]
+    pub fn test_pause_windows_after_mkdir(
+        &self,
+    ) -> (oneshot::Receiver<()>, std::sync::mpsc::Sender<()>) {
+        install_pause(Stage::AfterMkdir)
     }
     #[allow(
         dead_code,

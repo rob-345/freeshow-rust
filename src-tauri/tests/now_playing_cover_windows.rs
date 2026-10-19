@@ -89,6 +89,30 @@ fn failed(value: &Prepared) -> &Failure {
         _ => panic!("Explicit native failure required"),
     }
 }
+fn observation_evidence(value: &Prepared) -> String {
+    let diagnostic =
+        |error: &Failure| format!("{} os={:?} {}", error.code(), error.os_code, error.message);
+    let outcome = match value.outcome() {
+        Outcome::Missing => "Missing".into(),
+        Outcome::File(_) => "File".into(),
+        Outcome::Failed(error) => format!("Failed({})", diagnostic(error)),
+    };
+    let folder = value
+        .observation()
+        .folder_failure()
+        .map(|failure| diagnostic(failure.diagnostic()))
+        .unwrap_or_else(|| "none".into());
+    let diagnostics = value.observation().diagnostics();
+    format!(
+        "outcome={outcome}; folder_failure={folder}; diagnostics={} {:?}",
+        diagnostics.len(),
+        diagnostics
+            .iter()
+            .take(4)
+            .map(diagnostic)
+            .collect::<Vec<_>>()
+    )
+}
 async fn entered(value: tokio::sync::oneshot::Receiver<()>) {
     tokio::time::timeout(Duration::from_secs(5), value)
         .await
@@ -202,8 +226,16 @@ async fn windows_real_mkdir_missing_and_regular_audio_blocker_preserve_actual_ob
     let f = Fixture::new();
     let phase = f.phase().await;
     let missing = f.prepare(&phase).await;
-    assert!(matches!(missing.outcome(), Outcome::Missing));
-    assert!(f.audio().is_dir());
+    assert!(
+        matches!(missing.outcome(), Outcome::Missing),
+        "{}",
+        observation_evidence(&missing)
+    );
+    assert!(
+        f.audio().is_dir(),
+        "Real Audio mkdir did not create a directory: {}",
+        observation_evidence(&missing)
+    );
     assert!(missing.observation().folder_failure().is_none());
     assert_eq!(
         missing.observation().context(),
@@ -222,7 +254,11 @@ async fn windows_real_mkdir_missing_and_regular_audio_blocker_preserve_actual_ob
     fs::remove_dir(f.audio()).unwrap();
     fs::write(f.audio(), b"original blocker bytes").unwrap();
     let blocker = f.prepare(&phase).await;
-    assert!(matches!(blocker.outcome(), Outcome::Missing));
+    assert!(
+        matches!(blocker.outcome(), Outcome::Missing),
+        "Actual regular-Audio parent continuation: {}",
+        observation_evidence(&blocker)
+    );
     let actual = blocker.observation().folder_failure().unwrap();
     assert_eq!(actual.folder(), f.audio());
     assert_eq!(actual.diagnostic().code(), "now_playing_cover_io");
@@ -505,22 +541,42 @@ async fn windows_held_identity_survives_replacement_but_inplace_and_foreign_vali
 }
 
 #[tokio::test]
-async fn windows_actual_folder_error_survives_later_root_change() {
+async fn windows_actual_folder_error_survives_later_audio_namespace_change() {
     let _serial = SERIAL.lock().await;
     let f = Fixture::new();
     fs::write(f.audio(), b"blocker").unwrap();
     let phase = f.phase().await;
-    let (ready, release) = f.files.test_pause_windows_audio();
+    let (attempted, continue_after_mkdir) = f.files.test_pause_windows_after_mkdir();
     let ticket = f.files.submit(&phase, Control::default()).unwrap();
+    entered(attempted).await;
+    // The genuine failed mkdir happened against this regular blocker. Replace
+    // it before the continuation opens Audio: no held regular child or parent
+    // rename is needed, and no unknown nondirectory RootDirectory status is
+    // used as evidence of source Missing.
+    fs::rename(f.audio(), f.root().join("previous-blocker")).unwrap();
+    fs::create_dir(f.audio()).unwrap();
+    let (ready, release) = f.files.test_pause_windows_audio();
+    continue_after_mkdir.send(()).unwrap();
     entered(ready).await;
-    fs::rename(f.root(), f.temp.path().join("previous-root")).unwrap();
-    fs::create_dir(f.root()).unwrap();
+    // A held directory and actual Audio replacement exercise the identity
+    // branch already supported by the native directory-swap regression.
+    fs::rename(f.audio(), f.root().join("previous-audio")).unwrap();
+    fs::create_dir(f.audio()).unwrap();
     release.send(()).unwrap();
     let value = ticket.finish().await.unwrap();
-    assert_eq!(failed(&value).kind, FailureKind::Changed);
+    assert_eq!(
+        failed(&value).kind,
+        FailureKind::Changed,
+        "{}",
+        observation_evidence(&value)
+    );
     let folder = value.observation().folder_failure().unwrap();
     assert_eq!(folder.folder(), f.audio());
     assert!(folder.diagnostic().os_code.is_some());
+    assert_eq!(
+        fs::read(f.root().join("previous-blocker")).unwrap(),
+        b"blocker"
+    );
     drop(value);
     f.done(phase).await;
 }
