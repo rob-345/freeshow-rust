@@ -1238,3 +1238,124 @@ async fn context_change_after_clean_terminal_shutdown_is_closed_and_never_renews
     }
     f.native.shutdown().await.unwrap();
 }
+
+#[tokio::test]
+async fn four_shared_lifecycle_observers_reject_excess_and_never_own_the_actual_drain() {
+    let f = Fixture::new(
+        TimecodeHostConfig {
+            lifecycle_timeout: Duration::from_millis(500),
+            ports: freeshow_midi_ports::Config {
+                shutdown_timeout: Duration::from_secs(3),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        false,
+    );
+    f.start("receive", "MTC", 25.0).await;
+    wait(|| f.native.status()["router"]["ownedListeners"] == 1).await;
+    let control = f.controls()[0].clone();
+    control.block("close");
+    let gate = f.native.test_hold_supervisor_exit();
+    struct ReleaseOnExit(controlled::Controlled, Arc<SupervisorExitGate>);
+    impl Drop for ReleaseOnExit {
+        fn drop(&mut self) {
+            self.0.release();
+            self.1.release.cancel();
+        }
+    }
+    let _release = ReleaseOnExit(control.clone(), gate.clone());
+    let mut observers = Vec::new();
+    for index in 0..4 {
+        let native = f.native.clone();
+        observers.push(tokio::spawn(async move {
+            if index % 2 == 0 {
+                native.shutdown().await
+            } else {
+                native.context_changed().await
+            }
+        }));
+        if index == 0 {
+            wait(|| control.entered()).await;
+        }
+    }
+    wait(|| f.native.status()["lifecycleObservers"] == 4).await;
+    assert_eq!(f.native.status()["lifecycleCapacity"], 4);
+    for context_change in [false, true] {
+        let result = timeout(Duration::from_millis(50), async {
+            if context_change {
+                f.native.context_changed().await
+            } else {
+                f.native.shutdown().await
+            }
+        })
+        .await
+        .expect("lifecycle admission has no waiting queue")
+        .unwrap_err();
+        assert_eq!(result.code, "timecode_lifecycle_busy");
+    }
+    assert_eq!(f.active.load(Ordering::Acquire), 1);
+    assert_eq!(f.native.status()["lifecycleObservers"], 4);
+    let dropped = observers.pop().unwrap();
+    dropped.abort();
+    assert!(dropped.await.unwrap_err().is_cancelled());
+    assert_eq!(f.native.status()["lifecycleObservers"], 3);
+    let native = f.native.clone();
+    observers.push(tokio::spawn(async move { native.context_changed().await }));
+    wait(|| f.native.status()["lifecycleObservers"] == 4).await;
+    for observer in observers {
+        observer.abort();
+        assert!(observer.await.unwrap_err().is_cancelled());
+    }
+    assert_eq!(f.native.status()["lifecycleObservers"], 0);
+    assert_eq!(f.active.load(Ordering::Acquire), 1);
+    // No public observer remains. Accepted real cleanup must still progress.
+    control.release();
+    wait(|| gate.entered.load(Ordering::Acquire)).await;
+    assert_eq!(f.active.load(Ordering::Acquire), 0);
+    assert_eq!(
+        f.native.status()["lastRetired"]["allPortOwnersJoined"],
+        true
+    );
+    assert_eq!(
+        f.native.shutdown().await.unwrap_err().code,
+        "timecode_shutdown_timeout"
+    );
+    assert_eq!(f.native.status()["lifecycleObservers"], 0);
+    assert_eq!(
+        f.native.context_changed().await.unwrap_err().code,
+        "timecode_retirement_timeout"
+    );
+    assert_eq!(f.native.status()["lifecycleObservers"], 0);
+    let mut retries = Vec::new();
+    for index in 0..4 {
+        let native = f.native.clone();
+        retries.push((
+            index,
+            tokio::spawn(async move {
+                if index % 2 == 0 {
+                    native.shutdown().await
+                } else {
+                    native.context_changed().await
+                }
+            }),
+        ));
+    }
+    wait(|| f.native.status()["lifecycleObservers"] == 4).await;
+    assert!(retries.iter().all(|(_, task)| !task.is_finished()));
+    assert_eq!(
+        f.native.shutdown().await.unwrap_err().code,
+        "timecode_lifecycle_busy"
+    );
+    gate.release.cancel();
+    for (index, task) in retries {
+        let result = task.await.unwrap();
+        if index % 2 == 0 {
+            result.unwrap();
+        } else {
+            assert_eq!(result.unwrap_err().code, "timecode_shutdown");
+        }
+    }
+    assert_eq!(f.native.status()["lifecycleObservers"], 0);
+    f.native.shutdown().await.unwrap();
+}

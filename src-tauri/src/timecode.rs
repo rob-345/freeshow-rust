@@ -25,6 +25,7 @@ use tokio::sync::{mpsc, oneshot, watch, OwnedSemaphorePermit, Semaphore};
 use tokio_util::sync::CancellationToken;
 pub const COMMANDS: &[&str] = route::COMMANDS;
 const JOBS: usize = 16;
+const LIFECYCLE_OBSERVERS: usize = 4;
 const PORTS: usize = 16;
 const PUBLICATIONS: usize = 16;
 const PUBLICATION_BYTES: usize = 1024 * 1024;
@@ -209,6 +210,7 @@ struct Inner {
     jobs: mpsc::Sender<Job>,
     control: mpsc::Sender<Change>,
     slots: Arc<Semaphore>,
+    lifecycle_slots: Arc<Semaphore>,
     done: watch::Receiver<Progress>,
     worker: tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>,
 }
@@ -281,6 +283,7 @@ impl NativeTimecode {
                 jobs,
                 control,
                 slots: Arc::new(Semaphore::new(JOBS)),
+                lifecycle_slots: Arc::new(Semaphore::new(LIFECYCLE_OBSERVERS)),
                 done,
                 worker: tokio::sync::Mutex::new(Some(worker)),
             }),
@@ -445,6 +448,9 @@ impl NativeTimecode {
     pub fn status(&self) -> Value {
         let mut state = lock(&self.inner.shared.state).clone();
         state["retained"] = json!(JOBS - self.inner.slots.available_permits());
+        state["lifecycleObservers"] =
+            json!(LIFECYCLE_OBSERVERS - self.inner.lifecycle_slots.available_permits());
+        state["lifecycleCapacity"] = json!(LIFECYCLE_OBSERVERS);
         state["closing"] = json!(self.inner.shared.closing.load(Ordering::Acquire));
         state["terminal"] = self
             .inner
@@ -455,6 +461,7 @@ impl NativeTimecode {
         state
     }
     pub async fn context_changed(&self) -> Result<()> {
+        let _observer = self.lifecycle_observer()?;
         tokio::time::timeout(self.inner.shared.config.lifecycle_timeout, async {
             let complete = self.inner.done.borrow().complete;
             if self.inner.shared.closing.load(Ordering::Acquire) && complete {
@@ -493,7 +500,8 @@ impl NativeTimecode {
         .map_err(|_| context_timeout_error())?
     }
     async fn terminal_context_change(&self) -> Result<()> {
-        self.shutdown().await.map_err(|e| {
+        self.request_shutdown();
+        self.await_shutdown().await.map_err(|e| {
             if e.code == "timecode_shutdown_timeout" {
                 context_timeout_error()
             } else {
@@ -503,9 +511,29 @@ impl NativeTimecode {
         Err(closed_context_error())
     }
     pub async fn shutdown(&self) -> Result<()> {
+        // Drain is process-owned even if this particular observer has no slot.
+        self.request_shutdown();
+        let _observer = self.lifecycle_observer()?;
+        self.await_shutdown().await
+    }
+    fn lifecycle_observer(&self) -> Result<OwnedSemaphorePermit> {
+        self.inner
+            .lifecycle_slots
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| {
+                error(
+                    "timecode_lifecycle_busy",
+                    "Four native lifecycle observers are retained",
+                )
+            })
+    }
+    fn request_shutdown(&self) {
         self.inner.shared.closing.store(true, Ordering::Release);
         self.inner.shared.stop.cancel();
         lock(&self.inner.shared.pending).take();
+    }
+    async fn await_shutdown(&self) -> Result<()> {
         let before = self.inner.done.borrow().attempt;
         let (reply, _) = oneshot::channel();
         let _ = self.inner.control.try_send(Change { reply });
