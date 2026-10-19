@@ -1,4 +1,8 @@
 import assert from "node:assert/strict"
+import fs from "node:fs"
+import os from "node:os"
+import path from "node:path"
+import Conf from "conf"
 import { test } from "node:test"
 import { execute, fixtureUuid, sourcePlan, sourceExpose } from "./lib/device-id-oracle.mjs"
 
@@ -27,4 +31,19 @@ test("actual pinned node-machine-id handles empty provider output and exact mark
     assert.deepEqual(sourceExpose("win32", "header REG_SZ ABcd\r\n\t\uFEFF"), linux)
     assert.deepEqual(sourceExpose("darwin", 'header IOPlatformUUID = "ABcd"\nignored'), linux)
     assert.equal(execute({ mode: "plans", cases: [{}] }).length, 1)
+})
+
+test("actual Conf accepts a valid deep unrelated configuration and source retains its existing identity", () => {
+    const folder = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-device-id-depth-"))
+    try {
+        const store = new Conf({ cwd: folder, configName: "config", projectName: "freeshow-device-id-parity" })
+        const raw = '{"machineId":"synthetic-retained-id","nested":' + "[".repeat(130) + "0" + "]".repeat(130) + "}"
+        fs.writeFileSync(store.path, raw)
+        const value = store.get("machineId")
+        assert.equal(value, "synthetic-retained-id")
+        assert.deepEqual(sourcePlan({ value }), { reply: value, writes: [], calls: ["get"] })
+        assert.equal(fs.readFileSync(store.path, "utf8"), raw)
+    } finally {
+        fs.rmSync(folder, { recursive: true, force: true })
+    }
 })

@@ -25,6 +25,9 @@ Unix uses nonblocking open so a FIFO cannot hang at that boundary. A conservativ
 punctuation inside strings can also count toward this resource limit. Native
 open/read/write/flush/rename calls are not forcibly interruptible. The identity
 value additionally has the preparation module's 8KiB/depth-eight/256-node bounds.
+The locked JSON parser recursion limit is explicitly a resource error, including
+valid deep unrelated configuration accepted by the actual source Conf getter.
+The locked parser diagnostic is classified before the source fallback policy.
 Unsupported representations and resource/cancellation/deadline errors remain
 explicit; they are not converted into the legacy fallback literal.
 
@@ -55,10 +58,11 @@ accepted caller-Drop ownership and terminal drain. Existing `commit` still
 refreshes media settings. The new entrypoint is trusted native code only and
 requires callers to preserve `mediaFolderPath`.
 
-Seven real native-host tests cover global persistence/unknown fields, library
+Eight real native-host tests cover global persistence/unknown fields, library
 selection, truthy JSON and exact fractional/negative-zero bits, role/stale/resource
 and actual parser failures, pretty-output expansion rejected before any write,
-real read-only setter failure, four actually queued jobs through observer abort/seal/drain, and the real observer deadline retaining
+valid deep configuration parser-limit rejection, real read-only setter failure,
+four actually queued jobs through observer abort/seal/drain, and the real observer deadline retaining
 its accepted queued job. A separate core test makes the actual configuration
 unreadable, verifies the narrow commit leaves the cached media snapshot intact,
 then verifies ordinary commit still refreshes it. These and strict native

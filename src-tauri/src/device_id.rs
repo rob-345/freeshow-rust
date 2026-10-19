@@ -166,6 +166,12 @@ fn identity_value(
     }
 }
 
+// serde_json's locked parser reports its finite recursion budget as a syntax
+// category. That native work limit is not a genuine Conf/JSON.parse read failure.
+fn depth_limit(error: &serde_json::Error) -> bool {
+    error.to_string().starts_with("recursion limit exceeded")
+}
+
 // Open/read the actual owner-selected global file once, under the same serial
 // owner used by SET_STORE_VALUE. Never precheck then reread an unbounded file.
 fn config(
@@ -229,6 +235,7 @@ fn config(
     }
     let fields: RawFields<'_> = match serde_json::from_slice(&bytes) {
         Ok(fields) => fields,
+        Err(error) if depth_limit(&error) => return Err(resource()),
         Err(_) => return Ok(None),
     };
     let raw = fields
@@ -240,10 +247,11 @@ fn config(
     let identity = raw
         .map(|raw| identity_value(raw, 0, &mut 0, control))
         .transpose()?;
-    Ok(serde_json::from_slice::<Value>(&bytes)
-        .ok()
-        .filter(Value::is_object)
-        .map(|value| (value, identity)))
+    match serde_json::from_slice::<Value>(&bytes) {
+        Ok(value) if value.is_object() => Ok(Some((value, identity))),
+        Err(error) if depth_limit(&error) => Err(resource()),
+        _ => Ok(None),
+    }
 }
 struct Count(usize);
 impl Write for Count {

@@ -221,6 +221,30 @@ async fn stale_role_resource_and_real_config_read_failures_are_distinct() {
 }
 
 #[tokio::test]
+async fn valid_deep_configuration_is_an_explicit_resource_error_instead_of_a_legacy_fallback() {
+    let (temp, library, device) = fixture();
+    let path = temp.path().join("app/config.json");
+    // This is valid JSON accepted by the actual Conf/JSON.parse source getter.
+    let bytes = format!(
+        "{{\"machineId\":\"synthetic-retained-id\",\"nested\":{}0{}}}",
+        "[".repeat(130),
+        "]".repeat(130)
+    );
+    fs::write(&path, bytes.as_bytes()).unwrap();
+    assert_eq!(
+        device
+            .dispatch(&library, request(&library), "main")
+            .await
+            .take_error()
+            .code,
+        "device_id_resource_limit"
+    );
+    assert_eq!(fs::read(&path).unwrap(), bytes.as_bytes());
+    device.seal();
+    library.finish_writes().await.unwrap();
+}
+
+#[tokio::test]
 async fn pretty_persistence_limit_rejects_before_write_and_preserves_near_cap_input() {
     let (temp, library, device) = fixture();
     let path = temp.path().join("app/config.json");
