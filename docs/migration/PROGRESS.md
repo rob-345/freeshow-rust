@@ -15,9 +15,8 @@ captures only the selected library and an actual per-run emitter; the fixed
 `Audio/NowPlayingCover.png` path never comes from HTTP or renderer input. Two
 existing file workers retain preparation, pre-header validation, streaming and
 independent notification cleanup through actual body disposition and thread
-joins. Linux and the tested Darwin subset have actual native runtime evidence.
-The Windows backend is integrated but its first native run exposed directory
-creation and fixture failures under correction. Other systems remain explicitly
+joins. Linux, the tested Darwin subset and all eighteen dedicated Windows cover
+cases now have actual native runtime evidence. Other systems remain explicitly
 unsupported.
 [Native contract and gaps](native-remote-covers.md).
 
@@ -36,8 +35,8 @@ survives actual consumer destruction; its Windows CI fixture waits for real
 reply-frame disposal. Controlled negative tests detect the old behavior.
 No whole-application CPU improvement is claimed.
 
-The current JPEG/parser integration passes **493 Rust + 563 pinned-Node + 20 frontend
-checks** (1,076), plus **352 native executions** (339 host integration and thirteen
+The current JPEG/parser integration passes **493 Rust + 573 pinned-Node + 20 frontend
+checks** (1,086), plus **352 native executions** (339 host integration and thirteen
 desktop binary unit cases, including shared cases repeated by importing targets).
 Five ignored Rust subprocess entry fixtures are driven by supervisor tests;
 four source suites retain existing platform/capability skips. Strict workspace
@@ -136,8 +135,19 @@ eight Darwin and eleven Windows stat/workflow cases. The first browsing CI run
 passes Linux core/desktop and macOS core, but both native jobs stop at a stale
 non-Linux host assertion and Windows core later fails a raw CRLF source hash.
 Both test-oracle corrections pass focused local checks; the corrected full
-source run passes 573 tests with four existing skips. Corrected complete CI and
-the eighteen Windows cover cases remain pending. [Local receipt](baselines/browse-platforms-linux-local.json).
+source run passes 573 tests with four existing skips. Follow-up `a3cbb911`
+[passes five of six jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39255050656),
+including both native jobs and Windows core. All eighteen Windows cover cases,
+three Source cases and the actual TCP/STOP lifetime test pass; Darwin retains its
+twelve dedicated cases and Source/TCP checks. Windows core now passes the asset
+worker-exit fixtures using actual retained thread completion. The remaining
+macOS core failure is a separate download shutdown fixture: its 20ms observer
+returns `download_shutdown_timeout` before the expected sticky `download_worker`.
+The correction remains under investigation with production policy unchanged.
+Downloaded Linux receipts independently validate all 187 editor steps, exact
+JPEG/metadata/HTTP values, menus/drops and real quit, with 54 expected diagnostics.
+[Actual native CI receipt](baselines/platform-cover-native-ci.json).
+[Local receipt](baselines/browse-platforms-linux-local.json).
 [Integration scope](workers/browse-platform-integration.md).
 
 Now-playing remains partial: broader image/metadata/resize fidelity, root

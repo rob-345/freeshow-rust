@@ -53,9 +53,12 @@ passes. Windows core later fails only the separate lexical source oracle's CRLF
 hash. Both native desktop jobs stop at a stale host assertion that expects
 all non-Linux systems to be unsupported; actual replies have the correct Null,
 context and listener. The coordinator corrected that assertion and added strict
-CRLF/mutation controls, with focused local checks. A complete corrected CI run
-remains required, and the eighteen corrected Windows cover fixtures have not
-yet been reached. Existing shared Linux source/native checks pass in the main integration.
+CRLF/mutation controls, with focused local checks. Follow-up `a3cbb911` passes
+both native jobs, Windows core and Linux core/desktop. All eighteen Windows cover
+cases, three Source cases and the actual TCP/STOP test pass. A separate macOS
+core download shutdown fixture still fails, so complete corrected CI remains
+required. [Native CI receipt](../baselines/platform-cover-native-ci.json).
+Existing shared Linux source/native checks pass in the main integration.
 Foreign GUI/IPC behavior, physical media,
 unrestricted Windows paths/volumes, external mutation races and performance
 improvement are not established here.

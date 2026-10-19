@@ -63,7 +63,11 @@ create-option correction is now integrated with a creation-only object-parser
 no-reparse guard. Two new native fixtures race an absent-target junction and an
 ordinary file between the actual absent probe and FILE_CREATE, checking exact
 entry identities and filesystem effects. All eighteen test bodies compile with
-strict Windows GNU lint; their actual corrected Windows execution is pending.
+strict Windows GNU lint. Their genuine Windows execution now passes all eighteen
+cases at `a3cbb911`, including actual mkdir and both collision races. Both native
+platform jobs, Source subsets and actual TCP/STOP lifetime checks pass. Five of
+six jobs are green; a separate macOS core download shutdown fixture remains.
+[Actual native CI receipt](../baselines/platform-cover-native-ci.json).
 These checks do not
 establish foreign browser, physical delivery,
 immutable file snapshots, forced cancellation of synchronous OS calls, arbitrary

@@ -1,0 +1,180 @@
+{
+    "schemaVersion": 1,
+    "run": 39255050656,
+    "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39255050656",
+    "commit": "a3cbb911872eb324aa8727eb56a90c52be1443ba",
+    "conclusion": "failure",
+    "jobs": [
+        {
+            "name": "desktop-linux",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39255050656/job/118068146833"
+        },
+        {
+            "name": "core (ubuntu-24.04)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39255050656/job/118068147270"
+        },
+        {
+            "name": "native (macos-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39255050656/job/118068147336"
+        },
+        {
+            "name": "native (windows-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39255050656/job/118068147366"
+        },
+        {
+            "name": "core (macos-latest)",
+            "conclusion": "failure",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39255050656/job/118068147527"
+        },
+        {
+            "name": "core (windows-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39255050656/job/118068147536"
+        }
+    ],
+    "windows": {
+        "dedicatedCases": [
+            "cover::backend::tests::native_epoch_conversion_keeps_signed_subseconds",
+            "cover::backend::tests::only_proven_namespace_failure_can_become_missing",
+            "cover::backend::tests::unsupported_namespaces_fail_before_attempting_remote_or_device_opens",
+            "cover::backend::tests::ambiguous_relative_components_are_explicitly_unsupported",
+            "windows_actual_folder_error_survives_later_audio_namespace_change",
+            "windows_exists_true_then_actual_open_failure_never_turns_into_missing",
+            "windows_dropped_caller_and_timeout_keep_blocked_ordered_io_until_real_return",
+            "windows_actual_node_stat_etag_matches_ordinary_times_and_records_gated_exceptional_times",
+            "windows_global_four_slots_follow_descriptors_and_ready_revalidation_not_phase_fences",
+            "windows_held_bytes_explicit_offsets_signed_native_times_and_resource_bounds",
+            "windows_held_identity_survives_replacement_but_inplace_and_foreign_validation_fail",
+            "windows_missing_is_an_observed_guard_result_not_a_promise_of_later_absence",
+            "windows_raced_broken_junction_after_absent_probe_is_not_followed_or_replaced",
+            "windows_raced_regular_collision_after_absent_probe_preserves_identity_and_bytes",
+            "windows_real_junctions_and_symlink_leaf_are_never_followed",
+            "windows_real_mkdir_missing_and_regular_audio_blocker_preserve_actual_observation",
+            "windows_real_sharing_failure_is_explicit_not_an_unproven_exists_false",
+            "windows_root_audio_and_opened_leaf_swaps_fail_actual_handle_revalidation"
+        ],
+        "sourceCases": ["held_opaque_bytes_and_posix_stat_survive_until_actual_header_validation_and_disposal", "actual_folder_alert_precedes_missing_http_continuation_but_completion_owns_its_private_lease", "native_source_reports_actual_platform_capability_and_settles_file_ownership"],
+        "tcpLifetimeCase": "configured_native_start_serves_real_selected_covers_and_stop_drains_independent_alert_delivery",
+        "logSha256": "21e1c1f7ce921c8dd31ec01393b6ab8c3550018ca5b4d3d2404f7975685fd7d7",
+        "result": "pass"
+    },
+    "macos": {
+        "dedicatedCases": [
+            "accepted_caller_drop_does_not_cancel_actual_ordered_preparation_or_release_early",
+            "absent_audio_is_created_and_real_regular_blocker_keeps_one_mkdir_failure_and_missing",
+            "actual_read_permission_failures_are_failed_not_missing_and_do_not_claim_source_parity",
+            "before_header_revalidation_detects_changes_but_held_reads_are_not_immutable_snapshots",
+            "cancellation_deadline_and_root_work_bounds_do_not_dispose_accepted_results_early",
+            "completed_uncollected_results_keep_all_four_leases_until_real_receipt_disposal",
+            "global_four_leases_span_contexts_and_held_descriptor_outlives_discarded_observation",
+            "opaque_empty_and_limit_files_use_positional_reads_and_raw_signed_darwin_times",
+            "real_mkdir_failure_is_preserved_when_later_parent_check_or_cancellation_fails",
+            "root_parent_leaf_swaps_and_exists_true_then_unlink_never_return_false_missing",
+            "symlink_ancestors_parents_leaves_and_nonregular_variants_are_never_followed",
+            "validation_queued_active_ready_and_collected_receipts_keep_one_real_continuation_guard"
+        ],
+        "sourceCases": ["held_opaque_bytes_and_posix_stat_survive_until_actual_header_validation_and_disposal", "actual_folder_alert_precedes_missing_http_continuation_but_completion_owns_its_private_lease", "native_source_reports_actual_platform_capability_and_settles_file_ownership"],
+        "tcpLifetimeCase": "configured_native_start_serves_real_selected_covers_and_stop_drains_independent_alert_delivery",
+        "logSha256": "8f1224d575ed38ce86a23e7a81d8c9483e901bb397a7aee874733f9dfab3fc54",
+        "result": "pass"
+    },
+    "windowsCore": {
+        "result": "pass",
+        "assetWorkerExitFixtures": "Both previously failing tests pass with actual retained thread-exit observation before strict terminal joins",
+        "logSha256": "2aec0b51b6af9acbc9cf773a7c22bfa1d488e6fbe6d73f79120d1266df56cc8b"
+    },
+    "remainingFailure": {
+        "job": "core (macos-latest)",
+        "case": "shutdown_timeout_and_abandoned_retry_retain_the_real_remaining_join_and_sticky_fault",
+        "observed": "download_shutdown_timeout",
+        "expected": "download_worker",
+        "logSha256": "d28e6da2f7babf6e11c00536341a1428184428715ffb99da804f26fda3be51fd",
+        "correction": "Pending fixture investigation; production timeout and shutdown order unchanged"
+    },
+    "linuxDesktop": {
+        "now-playing": {
+            "run": 39255050656,
+            "sha": "a3cbb911872eb324aa8727eb56a90c52be1443ba",
+            "editorSteps": 187,
+            "ordinaryNowPlaying": 6,
+            "folderPhases": 3,
+            "metadataAndFolderCounts": [
+                [1, 4, 0],
+                [0, 2, 0],
+                [0, 1, 1]
+            ],
+            "nativeMenus": 4,
+            "dropScales": [1, 2],
+            "processExited": true,
+            "fullEditorDiagnostics": 54,
+            "scope": "Downloaded actual Linux receipts: exact source/native typed values excluding root picture position, exact folder callback/visible text, unchanged blocker hash, actual admitted/completed advances, ordinary idle and no reveal advance. No PNG encoded parity, global zero-error or per-operation terminal join claimed."
+        },
+        "cover": {
+            "editorSteps": 187,
+            "menus": 4,
+            "dropScales": [1, 2],
+            "coverPhases": 14,
+            "httpRequests": 141,
+            "httpStatusCounts": {
+                "200": 60,
+                "404": 63,
+                "206": 9,
+                "304": 9
+            },
+            "exactOriginalFolderAlerts": 3,
+            "coverRuntimeErrors": 0,
+            "coverBrowserErrors": 0,
+            "sourceAcks": 0,
+            "finalRetentionVerifiedZero": true,
+            "unchangedBlockerAndOldLibraryCoverHashesVerified": true,
+            "fullEditorDiagnostics": 54,
+            "processExited": true,
+            "scope": "Actual rebuilt Linux desktop, independent HTTP/file-byte checks and retained original UI callbacks/visible message. Zero counters are observed ordinary disposal, not per-operation IO-thread join or peer-receipt proof; separate native STOP/Weak test checks actual source lifetime. Full parity/performance remains unproven."
+        },
+        "pixel": {
+            "recordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+            "cases": [
+                {
+                    "id": "jpeg-apic",
+                    "width": 17,
+                    "height": 11,
+                    "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+                    "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+                    "nativePngBytes": 518,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                },
+                {
+                    "id": "jpeg-flac",
+                    "width": 64,
+                    "height": 48,
+                    "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+                    "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+                    "nativePngBytes": 8138,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                }
+            ],
+            "scope": "Actual migrated WebKit metadata/counters/filesystem receipts checked against actual packaged Electron recording; exact RGBA, not compressed bytes or unrestricted format support."
+        },
+        "receiptSha256": {
+            "desktop/receipt.json": "06b5593be91285ccb8e5d6b78e6f04cfbe9daa4ad21a7eef9912e2975a4e445b",
+            "desktop/now-playing.json": "5a9041c1c22fd9eda75f14408ded27a9b25ad8335ce21b7c79603af2a49dfab8",
+            "desktop/now-playing-folder-alerts.json": "e0eacaac8b2cae46937324fa05acfad08e81788f11042833ec926ba9dd2450b4",
+            "desktop/remote-covers.json": "748482106bf404f111e2f538802ca03a0353d1be1c87d75632bade0498123934",
+            "desktop/close-drain.json": "b2ef66b530627bb21dd7ab4a8957d25901d477e9a5d551de997efa457ec80942",
+            "native-menu/receipt.json": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98",
+            "native-drop/receipt-1x.json": "6d41bcf25f06959c939c1b1ff01419e3a8abbedbed8fdbaa32a7ee8a1c54d022",
+            "native-drop/receipt-2x.json": "253a979adcc3ce04f843ffd02ead5894601c7f8a5828b4ff0e8df3c64f7285d8"
+        }
+    },
+    "scope": "Five of six jobs pass. Genuine native Windows18 and Darwin12 dedicated cover cases plus Source/TCP subset pass; Windows core asset exit fixtures pass. Actual Linux187-step editor and JPEG/HTTP/menu/drop/quit receipts independently validated. The macOS core download shutdown fixture still fails. No whole-application parity or performance gain established."
+}
