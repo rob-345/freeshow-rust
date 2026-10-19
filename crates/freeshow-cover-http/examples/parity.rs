@@ -1,5 +1,7 @@
 //! Bounded test-only JSON adapter, not application IPC or file authority.
-use freeshow_cover_http::{plan, ErrorRendering, Headers, Method, SourceFileStat, SourceState};
+use freeshow_cover_http::{
+    match_route, options_plan, plan, ErrorRendering, Headers, Method, SourceFileStat, SourceState,
+};
 use serde::Deserialize;
 use serde_json::{json, value::RawValue};
 use std::io::{self, Read};
@@ -15,6 +17,8 @@ struct Input {
     mtime_ms: Box<RawValue>,
     #[serde(default)]
     production: bool,
+    #[serde(default)]
+    route_target: Option<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,6 +33,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let mut output = Vec::with_capacity(cases.len());
     for input in cases {
+        if let Some(target) = input.route_target.as_ref() {
+            output.push(match match_route(&input.method, target) {
+                Ok(route) => json!({"ok":true,"route":route,"options":options_plan()}),
+                Err(err) => json!({"ok":false,"code":err.code}),
+            });
+            continue;
+        }
         let result = (|| {
             let method = match input.method.as_str() {
                 "GET" => Method::Get,

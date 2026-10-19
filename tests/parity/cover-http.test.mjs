@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url"
 import { test } from "node:test"
 import express from "express"
 import finalhandler from "finalhandler"
+import { Server } from "socket.io"
 import ts from "typescript"
 
 const root = fileURLToPath(new URL("../../", import.meta.url))
@@ -31,6 +32,18 @@ visit(ast)
 assert.ok(callback)
 const handlerJS = ts.transpileModule(`const handler = ${callback};`, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
 const actualHandler = new Function("getNowPlayingMediaPath", "doesPathExist", handlerJS + "\nreturn handler")
+const createDeclaration = ast.statements.find((node) => ts.isFunctionDeclaration(node) && node.name?.text === "createServerInstance")
+assert.ok(createDeclaration)
+const createJS = ts.transpileModule(
+    `
+const servers = {}, ioServers = {}, serverPorts = { REMOTE:5510 };
+let stageStreamSubscribers = {};
+function initialize() { throw new Error('no Socket.IO test clients admitted in HTTP route fixture'); }
+${createDeclaration.getText(ast)}
+createServerInstance('REMOTE');`,
+    { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }
+).outputText
+const actualCreate = new Function("express", "http", "Server", "join", "__dirname", "getNowPlayingMediaPath", "doesPathExist", createJS + "\nreturn servers.REMOTE")
 // Actual Node fs Date constructor, not an independently copied Math.round
 // oracle. This supplements real files when OS timestamp resolution cannot
 // express half-millisecond ties. No internal Node capability ships in product.
@@ -58,6 +71,8 @@ function expectedBody(plan, bytes) {
             return bytes.subarray(plan.body.offset, plan.body.offset + plan.body.length)
         case "production_error":
             return Buffer.from(plan.body.html)
+        case "options":
+            return Buffer.from("GET,HEAD")
         default:
             throw new Error("deferred errors are not complete HTTP representations")
     }
@@ -71,38 +86,51 @@ function compare(native, actual, bytes, label) {
     assert.deepEqual(expectedBody(native.plan, bytes), actual.body, label)
 }
 
-async function oracle(env, run) {
+async function oracle(env, run, { fullSourceRoutes = false } = {}) {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-cover-http-"))
     const file = path.join(directory, "NowPlayingCover.png")
     fs.writeFileSync(file, fixtureBytes)
     fs.utimesSync(file, new Date(1_700_000_000_123), new Date(1_700_000_000_123))
-    const app = express()
-    app.set("env", env) // Explicit actual finalhandler policy, not release inference.
     const requests = new Map()
     const sockets = new Set()
     let sequence = 0,
-        disappear = false
-    app.use((req, _res, next) => {
-        requests.set(req.headers["x-fixture-id"], { ...req.headers })
-        next()
-    })
-    app.get(
-        "/nowplayingcover",
-        actualHandler(
-            () => file,
-            (value) => {
-                const exists = fs.existsSync(value)
-                if (exists && disappear) {
-                    disappear = false
-                    fs.unlinkSync(value)
-                }
-                return exists
-            }
-        )
-    )
-    // Same genuine finalhandler renderer and env as Express's default done
-    // callback. Only its stderr logging boundary is quiet for this corpus.
-    const server = http.createServer((req, res) => app.handle(req, res, finalhandler(req, res, { env, onerror() {} })))
+        disappear = false,
+        lookups = 0,
+        io
+    const coverPath = () => {
+        lookups++
+        return file
+    }
+    const exists = (value) => {
+        const exists = fs.existsSync(value)
+        if (exists && disappear) {
+            disappear = false
+            fs.unlinkSync(value)
+        }
+        return exists
+    }
+    const createHTTP = (app) => {
+        app.set("env", env) // Explicit actual finalhandler policy, not release inference.
+        app.use((req, _res, next) => {
+            requests.set(req.headers["x-fixture-id"], { ...req.headers })
+            next()
+        })
+        // Genuine finalhandler renderer; only stderr logging is quiet.
+        return http.createServer((req, res) => app.handle(req, res, finalhandler(req, res, { env, onerror() {} })))
+    }
+    let server
+    if (fullSourceRoutes) {
+        fs.mkdirSync(path.join(directory, "remote"))
+        fs.writeFileSync(path.join(directory, "remote/index.html"), "PRIVATE TEST INDEX FIXTURE")
+        fs.writeFileSync(path.join(directory, "remote/nowplayingcover"), "PRIVATE STATIC FALLBACK FIXTURE")
+        const actual = actualCreate(express, { createServer: createHTTP }, Server, path.join, directory, coverPath, exists)
+        server = actual.server
+        io = actual.io
+    } else {
+        const app = express()
+        server = createHTTP(app)
+        app.get("/nowplayingcover", actualHandler(coverPath, exists))
+    }
     server.on("connection", (socket) => {
         assert.ok(sockets.size < 8, "bounded sequential fixture sockets")
         sockets.add(socket)
@@ -159,6 +187,7 @@ async function oracle(env, run) {
         await run({
             file,
             request,
+            lookups: () => lookups,
             disappear: () => {
                 disappear = true
             }
@@ -166,7 +195,8 @@ async function oracle(env, run) {
     } finally {
         const closed = Promise.all([...sockets].map((socket) => new Promise((resolve) => socket.once("close", resolve))))
         server.closeAllConnections()
-        if (server.listening) await new Promise((resolve) => server.close(resolve))
+        if (io) await new Promise((resolve) => io.close(resolve))
+        else if (server.listening) await new Promise((resolve) => server.close(resolve))
         await closed // Server close callback alone is not a socket close barrier.
         assert.equal(sockets.size, 0, "all controlled loopback sockets closed")
         assert.equal(requests.size, 0)
@@ -391,4 +421,100 @@ test("finite capability limits and V8 date spelling gaps are explicit, with sour
         }
     })
     t.diagnostic(`actual pinned handler: ${completedRequests} completed sequential loopback HTTP exchanges; all fixture sockets joined`)
+})
+
+test("actual full createServerInstance routes: raw matching, HEAD, automatic OPTIONS and static/method fallthrough", async (t) => {
+    const before = completedRequests
+    await oracle(
+        "production",
+        async ({ file, request, lookups }) => {
+            const stat = fs.statSync(file)
+            const targets = ["/nowplayingcover", "/NOWPLAYINGCOVER", "/NowPlayingCover/", "/nowplayingcover?cache=1", "/nowplayingcover/?path=/foreign&x=%2F"]
+            for (const method of ["GET", "HEAD", "OPTIONS"])
+                for (const url of targets) {
+                    const start = lookups()
+                    const response = await request({ range: "bytes=0-3", "if-none-match": '"wrong"' }, { method, url })
+                    const [native] = rust([input(stat, {}, { method, route_target: url })])
+                    assert.equal(native.ok, true)
+                    if (method === "OPTIONS") {
+                        assert.deepEqual(native.route, { kind: "automatic_options" })
+                        assert.equal(lookups(), start, "OPTIONS never calls fixed cover path helper")
+                        compare({ ok: true, plan: native.options }, response, Buffer.alloc(0), `full source OPTIONS ${url}`)
+                        assert.equal(response.headers.allow, "GET,HEAD")
+                    } else {
+                        assert.deepEqual(native.route, { kind: "read", method })
+                        assert.equal(lookups(), start + 1)
+                        const [plan] = rust([input(stat, response.requestHeaders, { method })])
+                        compare(plan, response, fixtureBytes, `full source ${method} ${url}`)
+                        if (method === "HEAD") assert.equal(response.body.length, 0)
+                    }
+                }
+            const optionsTag = require("etag")("GET,HEAD", { weak: true })
+            const start = lookups()
+            // OPTIONS ignores all file conditions and still works when cover is gone.
+            fs.unlinkSync(file)
+            const options = await request({ "if-none-match": optionsTag, "if-match": '"wrong"', range: "bytes=999-" }, { method: "OPTIONS" })
+            const [nativeOptions] = rust([input(stat, {}, { method: "OPTIONS", route_target: "/nowplayingcover" })])
+            compare({ ok: true, plan: nativeOptions.options }, options, Buffer.alloc(0), "OPTIONS ignores file presence and conditionals")
+            assert.equal(lookups(), start)
+            fs.writeFileSync(file, fixtureBytes)
+
+            const nonmatches = ["/%6eowplayingcover", "/nowplaying%63over", "/%6Eowplayingcover", "/nowplayingcover%2f", "/nowplayingcover%2F", "//nowplayingcover", "/nowplayingcover//", "/nowplayingcover.png", "/nowplayingcover/more", "/x/../nowplayingcover", "/%2e/nowplayingcover", "/%2e%2e/nowplayingcover", "/nowplayingcover%3Fx", "/nowplayingcover%00", "/nowplayingcover\\", "/?path=/nowplayingcover"]
+            for (const url of nonmatches)
+                for (const method of ["GET", "HEAD", "OPTIONS"]) {
+                    const count = lookups()
+                    const response = await request({}, { method, url })
+                    const [native] = rust([input(stat, {}, { method, route_target: url })])
+                    assert.deepEqual(native.route, { kind: "fallthrough" }, `${method} ${url}`)
+                    assert.equal(lookups(), count, `no privileged lookup for ${method} ${url}`)
+                    if (method === "HEAD") assert.equal(response.body.length, 0)
+                    if (method === "GET" && url === "/%6eowplayingcover") assert.equal(response.body.toString(), "PRIVATE STATIC FALLBACK FIXTURE", "source static may decode after cover route did NOT match")
+                }
+            for (const method of ["POST", "PUT", "PATCH", "DELETE", "TRACE"]) {
+                const count = lookups()
+                const response = await request({}, { method })
+                const [native] = rust([input(stat, {}, { method, route_target: "/nowplayingcover" })])
+                assert.deepEqual(native.route, { kind: "fallthrough" })
+                assert.equal(lookups(), count)
+                assert.equal(response.status, 404)
+                assert.match(response.body.toString(), new RegExp(`Cannot ${method} /nowplayingcover`))
+                assert.equal(response.headers.allow, undefined, "unsupported method is not automatic OPTIONS")
+            }
+            // Other original app routes remain the caller's fallback responsibility.
+            const rootOptions = await request({}, { method: "OPTIONS", url: "/" })
+            assert.equal(rootOptions.status, 200)
+            assert.equal(rootOptions.headers.allow, "GET,HEAD")
+            assert.deepEqual(rust([input(stat, {}, { method: "OPTIONS", route_target: "/" })])[0].route, { kind: "fallthrough" })
+        },
+        { fullSourceRoutes: true }
+    )
+    t.diagnostic(`full original createServerInstance: ${completedRequests - before} real loopback requests; actual Socket.IO/server and socket closes joined`)
+})
+
+test("bounded route inputs explicitly reject legacy URL parser capabilities without inventing normalization", async (t) => {
+    const stat = { size: 0, mtimeMs: 0 }
+    const cases = [
+        ["GET", "/nowplayingcover#fragment", "cover_route_unsupported"],
+        ["GET", "http://example.invalid/nowplayingcover", "cover_route_unsupported"],
+        ["GET", "/nowplayingcover ", "cover_route_unsupported"],
+        ["GET", "/nowplayingcover?x=\u00a0", "cover_route_unsupported"],
+        ["GET", "/" + "x".repeat(8192), "cover_route_limit"],
+        ["A".repeat(33), "/nowplayingcover", "cover_route_limit"],
+        ["GET\r\n", "/nowplayingcover", "cover_route_method"],
+        ["get", "/nowplayingcover", "cover_route_method"]
+    ]
+    const actual = rust(cases.map(([method, route_target]) => input(stat, {}, { method, route_target })))
+    actual.forEach((result, index) => assert.deepEqual(result, { ok: false, code: cases[index][2] }))
+    await oracle(
+        "production",
+        async ({ request, lookups }) => {
+            const start = lookups()
+            const response = await request({}, { url: "/nowplayingcover#fragment" })
+            assert.equal(response.status, 200, "original legacy parser accepts a deliberately unsupported raw spelling")
+            assert.equal(lookups(), start + 1)
+            assert.deepEqual(rust([input(stat, {}, { route_target: "/nowplayingcover#fragment" })])[0], { ok: false, code: "cover_route_unsupported" })
+        },
+        { fullSourceRoutes: true }
+    )
+    t.diagnostic(`total ${completedRequests} completed real HTTP exchanges; every fixture listener, Socket.IO instance and socket joined`)
 })

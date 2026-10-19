@@ -13,6 +13,8 @@ pub const MAX_HEADERS: usize = 32;
 pub const MAX_HEADER_BYTES: usize = 16 * 1024;
 pub const MAX_VALUE_BYTES: usize = 8192;
 pub const MAX_RANGES: usize = 64;
+pub const MAX_RAW_TARGET_BYTES: usize = 8192;
+pub const MAX_METHOD_BYTES: usize = 32;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Error {
@@ -87,10 +89,91 @@ pub enum SourceState {
     Failed,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Method {
     Get,
     Head,
+}
+
+/// Recognition only: fallthrough retains authority with the original remaining
+/// index/static/router chain. OPTIONS must NOT invoke any fixed-file lookup.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum Route {
+    Read { method: Method },
+    AutomaticOptions,
+    Fallthrough,
+}
+
+/// Original case-insensitive, non-strict route on an untouched origin-form
+/// request target. No percent decoding, slash normalization or file selection.
+/// The native HTTP parser must already have validated the uppercase method.
+/// Legacy URL-parser inputs are explicit unsupported capabilities.
+pub fn match_route(method: &str, raw_target: &str) -> Result<Route, Error> {
+    if method.len() > MAX_METHOD_BYTES || raw_target.len() > MAX_RAW_TARGET_BYTES {
+        return Err(error(
+            "cover_route_limit",
+            "method or raw request target exceeds limit",
+        ));
+    }
+    if method.is_empty()
+        || !method.bytes().all(|b| {
+            b.is_ascii_uppercase() || b.is_ascii_digit() || b"!#$%&'*+-.^_`|~".contains(&b)
+        })
+    {
+        return Err(error(
+            "cover_route_method",
+            "requires native HTTP-parsed uppercase method token",
+        ));
+    }
+    if !raw_target.starts_with('/')
+        || !raw_target
+            .bytes()
+            .all(|b| (0x21..=0x7e).contains(&b) && b != b'#')
+    {
+        return Err(error(
+            "cover_route_unsupported",
+            "requires visible ASCII origin-form target without fragment or legacy URL parsing",
+        ));
+    }
+    let pathname = raw_target
+        .split_once('?')
+        .map(|(path, _)| path)
+        .unwrap_or(raw_target);
+    if !(pathname.eq_ignore_ascii_case("/nowplayingcover")
+        || pathname.eq_ignore_ascii_case("/nowplayingcover/"))
+    {
+        return Ok(Route::Fallthrough);
+    }
+    Ok(match method {
+        "GET" => Route::Read {
+            method: Method::Get,
+        },
+        "HEAD" => Route::Read {
+            method: Method::Head,
+        },
+        "OPTIONS" => Route::AutomaticOptions,
+        _ => Route::Fallthrough,
+    })
+}
+
+/// Original automatic OPTIONS for this route, after later index/static
+/// middleware falls through. Independent of file existence, range/conditions,
+/// path helper side effects and PNG descriptor preparation.
+pub fn options_plan() -> Plan {
+    Plan {
+        status: 200,
+        headers: BTreeMap::from([
+            ("x-powered-by".into(), "Express".into()),
+            ("allow".into(), "GET,HEAD".into()),
+            ("content-type".into(), "text/html; charset=utf-8".into()),
+            ("content-length".into(), "8".into()),
+            // Default Express weak etag1.8.1 of the fixed UTF8 GET,HEAD body.
+            ("etag".into(), "W/\"8-ZRAf8oNBS3Bjb/SU2GYZCmbtmXg\"".into()),
+        ]),
+        body: Body::Options,
+    }
 }
 
 /// Already normalized incoming headers (lowercase names, Node duplicate joining
@@ -162,6 +245,8 @@ pub enum ErrorRendering {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Body {
     Empty,
+    /// Exactly the eight ASCII bytes GET,HEAD (not a source command ACK).
+    Options,
     File {
         offset: u64,
         length: u64,
@@ -641,5 +726,89 @@ mod tests {
         assert!(no_cache("max-age=0,\u{a0}no-cache\t"));
         assert!(!no_cache("No-Cache"));
         assert!(!no_cache("no-cache=\"x\""));
+    }
+
+    #[test]
+    fn raw_route_boundaries_do_not_decode_or_normalize() {
+        for target in [
+            "/nowplayingcover",
+            "/NOWPLAYINGCOVER/",
+            "/nowplayingcover?path=/foreign",
+            "/nowplayingcover/?x=%2f",
+        ] {
+            assert_eq!(
+                match_route("GET", target).unwrap(),
+                Route::Read {
+                    method: Method::Get
+                }
+            );
+            assert_eq!(
+                match_route("HEAD", target).unwrap(),
+                Route::Read {
+                    method: Method::Head
+                }
+            );
+            assert_eq!(
+                match_route("OPTIONS", target).unwrap(),
+                Route::AutomaticOptions
+            );
+            assert_eq!(match_route("POST", target).unwrap(), Route::Fallthrough);
+        }
+        for target in [
+            "/%6eowplayingcover",
+            "/nowplayingcover%2f",
+            "//nowplayingcover",
+            "/nowplayingcover//",
+            "/x/../nowplayingcover",
+            "/nowplayingcover.png",
+            "/nowplayingcover\\",
+            "/?path=/nowplayingcover",
+        ] {
+            assert_eq!(
+                match_route("GET", target).unwrap(),
+                Route::Fallthrough,
+                "{target}"
+            );
+        }
+        for target in [
+            "http://example.invalid/nowplayingcover",
+            "/nowplayingcover#fragment",
+            "/nowplayingcover ",
+            "/nowplayingcover?x=\u{a0}",
+        ] {
+            assert_eq!(
+                match_route("GET", target).unwrap_err().code,
+                "cover_route_unsupported"
+            );
+        }
+        assert_eq!(
+            match_route("get", "/nowplayingcover").unwrap_err().code,
+            "cover_route_method"
+        );
+        assert_eq!(
+            match_route("GET\r\n", "/nowplayingcover").unwrap_err().code,
+            "cover_route_method"
+        );
+        assert_eq!(
+            match_route(&"A".repeat(MAX_METHOD_BYTES + 1), "/nowplayingcover")
+                .unwrap_err()
+                .code,
+            "cover_route_limit"
+        );
+        assert_eq!(
+            match_route("GET", &format!("/{}", "a".repeat(MAX_RAW_TARGET_BYTES)))
+                .unwrap_err()
+                .code,
+            "cover_route_limit"
+        );
+        assert!(matches!(
+            match_route("GET", &format!("/{}", "a".repeat(MAX_RAW_TARGET_BYTES - 1))).unwrap(),
+            Route::Fallthrough
+        ));
+        let options = options_plan();
+        assert_eq!(options.status, 200);
+        assert_eq!(options.body, Body::Options);
+        assert_eq!(options.headers["allow"], "GET,HEAD");
+        assert!(!options.headers.contains_key("last-modified"));
     }
 }

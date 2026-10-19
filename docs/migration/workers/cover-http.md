@@ -2,7 +2,7 @@
 
 This slice is a pure response planner. It opens no file, starts no listener, and
 creates no threads, tasks, timers, registrations, renderer grants or source ACKs.
-It does not establish native `/nowplayingcover` endpoint or full route parity.
+It does not establish a native `/nowplayingcover` endpoint or full route parity.
 Native file preparation, folder ALERTs, authority and descriptor/body ownership
 remain separate from this crate.
 
@@ -31,6 +31,7 @@ match representation.body {
     Body::Empty => { /* HEAD / 304 / zero body */ }
     Body::DeferredError { .. } => { /* actual host finalhandler rendering needed */ }
     Body::ProductionError { .. } => unreachable!("only explicit production policy"),
+    Body::Options => unreachable!("separate options_plan only"),
 }
 ```
 
@@ -90,11 +91,50 @@ Content-Length. Query/path selection is absent from this API.
   collection/scan/sort/output is bounded; no queue, worker or cancellation owner
   is needed for this synchronous computation. Caller retains all real IO work.
 
-Optional route matching was deliberately left to the host. Tests verify actual
-case/trailing-slash/query variants that reach this callback, but do not supply a
-Rust route matcher, OPTIONS/default routing, static fallback, disappearing-file
-HTML, symlink policy, directory behavior or post-header IO recovery. These must
-remain explicit integration gaps.
+## Raw route recognition followup
+
+`match_route(method, raw_target)` returns `Route::Read { method:Get|Head }`,
+`AutomaticOptions` or `Fallthrough`. It recognizes the original case-insensitive
+fixed route, optional single trailing slash and ignored query. It performs no
+percent decoding, slash/dot normalization, filesystem access or query-based
+selection. At most8192 bytes of target and32 bytes of native HTTP-parsed uppercase
+method are accepted; byte bounds are checked before scanning. Native method
+framing/parser validity remains the caller's obligation. Header/value/body limits
+above still apply separately to representation preparation.
+
+Only matched GET/HEAD may run the trusted fixed-file/folder preparation. OPTIONS
+has a separate `options_plan()` with status200, Allow:`GET,HEAD`, exact eight-byte
+body, Content-Length:8, source Content-Type and the default weak body ETag.
+`Body::Options` means exactly `GET,HEAD`; it is not a file body or source command
+ACK. Original Express's OPTIONS path ignores file presence, range/preconditions,
+and does not invoke the cover callback. The actual subsequent index/static
+middleware falls through for this OPTIONS target before Express responds.
+
+The route tests execute the **actual complete createServerInstance declaration**
+with real Express, original index/static registrations and a real Socket.IO
+instance, once for REMOTE. Native/Electron/capture client handling is not invoked.
+The fixed current cover and temporary public index/static paths are injected test
+boundaries; these fixture files are not fabricated production client bundles.
+Actual Socket.IO/server closure and socket close events are joined.
+
+Encoded spellings/slashes, doubled slash, suffix and traversal-like targets do
+not match the privileged callback. `Fallthrough` must continue to the existing
+chain, never imply empty404: the test proves encoded `/%6eowplayingcover`
+can serve an independent public static fixture, while `/` can produce index
+OPTIONS, both without invoking the cover path helper. POST/PUT/PATCH/DELETE/TRACE
+fall through without cover effects; the tested original chain produces normal
+finalhandler404 for those fixed-cover targets.
+
+Raw origin-form visible ASCII is the supported route capability. Fragments,
+absolute-form targets, literal whitespace/control/non-ASCII and lowercase method
+inputs return explicit errors. Some of these spellings can enter Node's legacy
+URL parser and match the source: a genuine fragment request is tested as source
+200 versus `cover_route_unsupported`. This avoids silently emulating URL
+canonicalization or claiming full raw HTTP/parser parity. Percent-encoded bytes
+remain raw and supported; no untested OS path or URI authority is introduced.
+Static fallback body/status, general OPTIONS routing, disappearing-file HTML,
+symlink policy, directory behavior and post-header IO recovery remain integration
+responsibilities beyond this bounded route/representation component.
 
 ## Focused evidence and integration
 
@@ -105,9 +145,10 @@ Windows/macOS native filesystem evidence is claimed from this Linux run. The
 suite runs real files on each host OS; only actual pre-epoch filesystem mtime
 capability failures are diagnosed/skipped individually.
 
-Six Rust tests cover source rounding, pre-epoch dates, type/header/aggregate/
+Seven Rust tests cover source rounding, pre-epoch dates, type/header/aggregate/
 range/body budgets, ordering, deferred error distinction and conditional
-precedence. Six Node tests execute the original callback using actual Express,
+precedence, raw route boundaries and method/target budgets. Eight Node tests
+execute the original callback and server-instance routes using actual Express,
 send and finalhandler on sequential controlled127.0.0.1 listeners. The only
 injected source boundaries are fixed path lookup/existence (and finalhandler
 stderr logging); temporary bytes, fs.Stats, HTTP parser, response renderer and
@@ -126,8 +167,9 @@ development error Content-Length is explicitly unknown in the deferred outcome.
 The fixture waits for actual socket close events, not just server.close callback.
 All listeners/files are bounded and closed; no external endpoints are used.
 
-Final local receipt:6 Rust tests and6 Node tests passed, with304 completed real
-loopback HTTP exchanges and all fixture socket joins. No filesystem pre-epoch
+Final local receipt:7 Rust tests and8 Node tests passed, with375 completed real
+loopback HTTP exchanges (304 representation,70 full-source route and1 explicit
+legacy-parser gap) and all fixture socket joins. No filesystem pre-epoch
 case was skipped on this Linux run. Strict Clippy for all targets, rustfmt,
 Prettier and diff whitespace checks passed.
 
