@@ -7,12 +7,15 @@ import { createHash } from "node:crypto"
 import { fileURLToPath } from "node:url"
 import ts from "typescript"
 import { oracle as aiOracle } from "../parity/lib/ai-local-oracle.mjs"
+import { oracle as aiStatusOracle } from "../parity/ai-status-oracle.mjs"
 import { sourceOracle as spotifyOracle } from "../parity/spotify-oracle.mjs"
 
 assert.equal(process.versions.node, "22.21.1", "Pinned source oracle requires Node22.21.1")
 assert.equal(process.platform, "linux", "This desktop null-state corpus requires actual Linux D-Bus")
-const [userData, phase] = process.argv.slice(2)
+const [userData, phase, ignoredRoot = "/ignored-renderer-root", ...extra] = process.argv.slice(2)
+assert.equal(extra.length, 0, "Expected USER_DATA PHASE [IGNORED_ROOT]")
 assert.ok(userData && path.isAbsolute(userData) && Buffer.byteLength(userData) <= 32768)
+assert.ok(path.isAbsolute(ignoredRoot) && Buffer.byteLength(ignoredRoot) <= 32768)
 assert.ok(["normal", "restarted", "switched", "source-check"].includes(phase), "Unknown desktop fixture phase")
 assert.ok(process.env.DBUS_SESSION_BUS_ADDRESS?.startsWith("unix:") && !process.env.DBUS_SESSION_BUS_ADDRESS.includes(";"), "Existing private single Unix session bus required")
 const dbus = "/usr/bin/dbus-send"
@@ -97,15 +100,39 @@ const listener = "ai-spotify-probe-" + phase + "-AI_GET_BIN"
 const replies = await ai.dispatch({ path: "/ignored-renderer-root", engine: "ignored", userData: "/ignored-renderer-root" }, listener)
 assert.deepEqual(replies, [["MAIN", { channel: "AI_GET_BIN", data: rows }, listener]])
 assert.deepEqual(ai.calls, ["userData"], "Actual manager captures only its native userData authority once")
+const aiStatus = aiStatusOracle(userData)
+const statusPayload = { engineId: "nemotron", customPath: ignoredRoot }
+const statusListener = "ai-spotify-probe-" + phase + "-AI_GET_STATUS"
+const statusReplies = await aiStatus.dispatch(statusPayload, statusListener)
+const status = { nemotron: { ready: false, error: "The local model is missing" } }
+assert.deepEqual(JSON.parse(JSON.stringify(statusReplies)), [["MAIN", { channel: "AI_GET_STATUS", data: status }, statusListener]])
+assert.equal(statusReplies.length, 1)
+assert.equal(statusReplies[0].length, 3)
+const statusData = statusReplies[0][1].data
+assert.deepEqual(Object.keys(statusData), ["nemotron"])
+assert.deepEqual(Object.keys(statusData.nemotron), ["ready", "error"])
+assert.equal(statusData.nemotron.ready, false)
+assert.equal(typeof statusData.nemotron.ready, "boolean")
+assert.equal(statusData.nemotron.error, "The local model is missing")
+assert.deepEqual(Object.keys(statusReplies[0][1]), ["channel", "data"])
+assert.deepEqual(Object.keys(statusPayload), ["engineId", "customPath"])
+assert.equal(Object.hasOwn(statusPayload, "modelId"), false)
+assert.deepEqual(aiStatus.calls, ["userData"])
+assert.deepEqual(aiStatus.evidence, { hashed: [], stats: [] }, "Missing first pinned file must not enter hashing or successful stat observation")
+assert.deepEqual(aiStatus.errors, [], "Status fixture must not attempt a stamp write")
 process.stdout.write(
     JSON.stringify({
         phase,
         ai: { data: rows, rowKeys: rows.map(Object.keys), messageKeys: Object.keys(replies[0][1]), outer: replies[0][0], listener },
+        aiStatus: { data: statusData, dataKeys: Object.keys(statusData), engineKeys: Object.keys(statusData.nemotron), messageKeys: Object.keys(statusReplies[0][1]), outer: statusReplies[0][0], listener: statusListener, sourceReplyArgs: statusReplies[0].length, payload: statusPayload, evidence: aiStatus.evidence },
         spotify: { data: state, messageKeys: Object.keys(spotifyReplies[0][1]), outer: spotifyReplies[0][0], listener: spotifyListener, sourceNullReason: "ServiceUnknown", callbackCount, sourceConsoleErrors: original.calls.errors, sourceShellWaited: true, processExit, before, after },
         provenance: {
             sourceCommit,
             node: process.versions.node,
             managerSha256: "8f015d524d7f14ac536033530a15407989033556be3ac1c21ca3f0c265b1f80b",
+            aiStatusSha256: "6831bd633a87ea383c45ade3b62d13bab81d17d0145b4c232fa7c38852b161b9",
+            nemotronSha256: "6bfe1a15603986f83f6295a1df9a030de0ee7c017f5bf6e09203ee116db5154c",
+            downloadManagerSha256: "a38ae48d33ac85610383635f36ff6a1da10b0d13615109ec7f65d718925d7245",
             folderFunctionSha256: "5d68a709d96083c42805dd8649af0ea30e03ddb377227224db852ab19db2109a",
             spotifyHelperSha256: "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
             dbusSendSha256: createHash("sha256").update(fs.readFileSync(dbus)).digest("hex")

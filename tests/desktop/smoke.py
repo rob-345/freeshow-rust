@@ -288,40 +288,48 @@ def run():
         def probe_ai_spotify(phase):
             def archive():
                 (ARTIFACTS / "ai-spotify.json").write_text(json.dumps({"fixture":{"userData":str(temp / "app"),"files":ai_fixture_receipt},"phases":ai_spotify_receipts,"rawIdentityArchived":False,"spotifyStateCorpus":"actual private Linux bus ServiceUnknown only"},ensure_ascii=False,indent=2))
-            for relative, content in ai_fixture_files.items():
-                assert (ai_engine / relative).read_bytes() == content, "Global AI fixture changed across actual editor lifecycle"
+            def assert_fixture_unchanged():
+                assert {entry.relative_to(ai_engine).as_posix() for entry in ai_engine.rglob("*")} == {"README","models","models/模型.bin"}, "Status/inventory query created unexpected global model/stamp entries"
+                for relative, content in ai_fixture_files.items():
+                    assert (ai_engine / relative).read_bytes() == content, "Global AI fixture changed across actual editor lifecycle"
+            assert_fixture_unchanged()
             context = invoke("runtime_context")
             selected_decoy = Path(context["dataPath"]) / "bin/nemotron"
             assert selected_decoy != ai_engine
             selected_decoy.mkdir(parents=True, exist_ok=True)
             (selected_decoy / "not-global").write_bytes(b"selected library decoy " * 19)
-            oracle_args = [os.environ.get("FREESHOW_TEST_NODE", "node"),"tests/desktop/ai_spotify_oracle.mjs",str(temp / "app"),phase]
+            oracle_args = [os.environ.get("FREESHOW_TEST_NODE", "node"),"tests/desktop/ai_spotify_oracle.mjs",str(temp / "app"),phase,str(ai_ignored_root)]
             expected = json.loads(subprocess.check_output(oracle_args,cwd=ROOT,env=env,text=True,timeout=15))
             assert expected["ai"]["data"] == [{"path":str(ai_engine),"name":"nemotron","size":sum(map(len,ai_fixture_files.values()))}]
             assert expected["spotify"]["data"] is None and expected["spotify"]["sourceNullReason"] == "ServiceUnknown"
+            assert expected["aiStatus"]["data"] == {"nemotron":{"ready":False,"error":"The local model is missing"}}
+            assert expected["aiStatus"]["payload"] == {"engineId":"nemotron","customPath":str(ai_ignored_root)}
+            assert expected["aiStatus"]["sourceReplyArgs"] == 3 and expected["aiStatus"]["evidence"] == {"hashed":[],"stats":[]}
             ai_spotify_receipts[phase] = {"sourceBefore":expected,"pending":True}
             archive()
             runtime_before = script("return (window.__testRuntimeErrors || []).length")
             observed = script((ROOT / "tests/desktop/ai_spotify_probe.js").read_text(), {"phase":phase,"ignoredRoot":str(ai_ignored_root)})
             assert observed["context"] == observed["current"] == context == invoke("runtime_context"), observed
-            assert sorted(observed["callbacks"]) == ["AI_GET_BIN","SPOTIFY_GET_STATE"], observed
-            assert observed["sendUndefined"] == {"AI_GET_BIN":True,"SPOTIFY_GET_STATE":True}, observed
-            for command, key in [("AI_GET_BIN","ai"),("SPOTIFY_GET_STATE","spotify")]:
+            assert sorted(observed["callbacks"]) == ["AI_GET_BIN","AI_GET_STATUS","SPOTIFY_GET_STATE"], observed
+            assert observed["sendUndefined"] == {"AI_GET_BIN":True,"AI_GET_STATUS":True,"SPOTIFY_GET_STATE":True}, observed
+            assert observed["rawIdentityArchived"] is False, observed
+            for command, key in [("AI_GET_BIN","ai"),("AI_GET_STATUS","aiStatus"),("SPOTIFY_GET_STATE","spotify")]:
                 actual, original = observed[key], expected[key]
                 assert actual["data"] == original["data"], (command,actual,original)
                 assert actual["messageKeys"] == original["messageKeys"] == ["channel","data"], actual
                 assert actual["listener"] == original["listener"] and actual["args"] == 2, actual
                 assert actual["callbackContext"] == context, actual
             assert observed["ai"]["rowKeys"] == expected["ai"]["rowKeys"] == [["path","name","size"]]
+            assert observed["aiStatus"]["dataKeys"] == expected["aiStatus"]["dataKeys"] == ["nemotron"]
+            assert observed["aiStatus"]["engineKeys"] == expected["aiStatus"]["engineKeys"] == ["ready","error"]
             confirmed = json.loads(subprocess.check_output(oracle_args,cwd=ROOT,env=env,text=True,timeout=15))
             assert confirmed == expected, "Actual original source or private bus changed around native callbacks"
-            command_errors = script("return (window.__testRuntimeErrors || []).slice(arguments[0]).filter(entry=>['AI_GET_BIN','SPOTIFY_GET_STATE'].includes(entry.request?.data?.channel || entry.request?.message?.channel))", runtime_before)
+            command_errors = script("return (window.__testRuntimeErrors || []).slice(arguments[0]).filter(entry=>['AI_GET_BIN','AI_GET_STATUS','SPOTIFY_GET_STATE'].includes(entry.request?.data?.channel || entry.request?.message?.channel))", runtime_before)
             assert command_errors == [], command_errors
-            for relative, content in ai_fixture_files.items():
-                assert (ai_engine / relative).read_bytes() == content
+            assert_fixture_unchanged()
             ai_spotify_receipts[phase] = {"sourceBefore":expected,"nativeCallbacks":observed,"sourceAfter":confirmed,"fixtureBytesUnchanged":True,"commandRuntimeErrors":0,"pending":False}
             archive()
-            steps.append("Retained AI inventory and genuine Linux Spotify service-null match immutable source callbacks, native global root, void send and current context: " + phase)
+            steps.append("Retained AI inventory, explicit Nemotron missing status and genuine Linux Spotify service-null match immutable source callbacks, native global root, void send and current context: " + phase)
 
         def output_handle(output_id):
             registry = invoke("output_status")
