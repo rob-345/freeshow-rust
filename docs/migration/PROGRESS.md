@@ -156,8 +156,17 @@ the actual OS enumeration order; the held directory's actual volume is checked.
 No worker, Node sidecar or file authority is added. Thirteen new Windows tests
 cover real source comparisons, multibatch Unicode listing, capture/depth/ties,
 locking/junctions, malformed records and retained worker cleanup. Strict Linux,
-Windows GNU and macOS ARM lint and nineteen focused source suites pass; genuine
-Windows listing execution remains pending the next complete CI run.
+Windows GNU and macOS ARM lint and nineteen focused source suites pass. Actual
+Windows core CI at `5a5ba2c5` runs all33 browsing cases:29 pass and4 fail because
+the tests compare equal JavaScript Numbers using distinct serde integer/f64
+storage. The new multibatch native-order, similarity, lock, junction-lifetime,
+cancellation and resource cases already pass; complete record cases require a
+test-only correction preserving every original pre-JSON IEEE bit and all
+non-numeric shape/order checks. Both native jobs, Linux core/desktop and macOS
+core pass, including the corrected download owner-exit fixture. Independently
+validated downloaded Linux receipts preserve the187-step/141-response/JPEG
+workflow with54 expected other-feature diagnostics.
+[Actual diagnostic CI receipt](baselines/windows-listing-diagnostic-ci.json).
 [Listing integration and limits](workers/browse-windows-integration.md).
 
 The full retained application exposed silent Web Audio for native HTTP assets:
