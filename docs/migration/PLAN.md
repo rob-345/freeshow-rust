@@ -50,6 +50,22 @@ not a performance measurement. The ChurchApps show-builder foundation performs
 bounded pure preparation without creating a worker or provider connection.
 [Native contracts and current verification scope](native-ai-spotify.md).
 
+Linux Spotify playback now admits up to four concurrent controls on that same
+fixed runtime, sharing the complete state/command lease budget. Source-global
+accepted controls survive library selection; original-origin early replies never
+retag the current UI. Primitive finite numbers pass through one bounded raw
+Request, preserving exact binary64 tokens before shared source rounding.
+CLOSE retains actual child kill/wait and native joins. This is bounded
+concurrency and compatibility evidence, not measured application speedup.
+[Control contract and tests](native-spotify-commands.md).
+
+Import shutdown separates preparation close from the ordinary cleanup fence and
+the final cleanup-thread join. The host drains its actual queued plans before
+joining cleanup, including after errors. Four whole lifecycle observers include
+serialized waiters; dropping an observer cannot dispose the native owners.
+[Retained import cleanup composition](workers/import-cleanup-host.md).
+
+
 Media lookup runs on two fixed filesystem threads with eight queued slots and bounded input/enumeration work. The native host additionally caps ten whole requests through their ordered effect commits, cancels old-library scans and rejects stale commits. Committed media configuration/context comes from a short atomic snapshot. Existing-file replies and media-folder queries can complete during compression; lookup misses with cache effects wait for their ordered commit before replying. Folder setting/query order is retained separately from long library saves. The packaged Electron Unicode 15.1 corpus supplies filename-folding behavior. Actual playback, public change-time existence checks, universal nested duplicate winners and Windows/macOS filesystem/GUI checks remain pending. [Detailed limits and evidence](workers/media-locate.md).
 
 ## Development

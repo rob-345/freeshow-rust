@@ -89,9 +89,13 @@ Quit waits its pending save, backup and writes;49 other editor diagnostics remai
 [desktop fixture](workers/ai-spotify-desktop.md).
 
 Windows and macOS state backends return explicit unsupported capability errors.
-The bounded concurrent playback-command foundation is integrated into the workspace
-but is not yet bound to native IPC. [Foundation and limits](workers/spotify-commands.md).
-Playback commands through the application, OAuth, account providers, real Spotify sessions, broad
+All six bounded Linux playback controls now have native raw IPC and retained
+bridge routing. Accepted controls remain global across library selection;
+their early callbacks retain the original context without retagging the UI.
+Normal desktop command verification is still pending.
+[Native control contract](native-spotify-commands.md) and
+[foundation limits](workers/spotify-commands.md).
+OAuth, account providers, real Spotify sessions, actual audio playback, broad
 album-art/media behavior and whole-feature parity remain open.
 [Source, supervision and limits](workers/spotify-linux.md) and
 [hydration contract](workers/spotify-hydration.md).

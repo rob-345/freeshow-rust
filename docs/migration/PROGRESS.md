@@ -2,6 +2,32 @@
 
 Status: **active, incomplete**. Full feature parity and application performance improvement have not been demonstrated. The complete parity gate intentionally fails.
 
+The next integrated slice wires all six bounded Linux Spotify controls through
+exact raw numeric IPC. Accepted global effects survive library selection, while
+original-context early callbacks never retag the selected library. Terminal CLOSE
+retains actual child waits and owner joins. Five host entries, six parser cases
+and four added bridge cases pass; three real bridge mutations fail and the
+restored 51-case suite passes. A fresh normal binary from `a37f555e` is frozen
+before broader test builds. Its new GUI fixture and full integration verification
+are still pending. [Native control contract](native-spotify-commands.md).
+
+Native import shutdown now releases the real queued host plans between preparation
+close and terminal cleanup-thread join. Four bounded shutdown observers can be
+abandoned and retried without losing stages or native handles. The 28 foundation
+and eight host cases pass, including a genuine fence-only regression control.
+[Actual host composition and initial weak-control correction](workers/import-cleanup-host.md).
+
+Published `5434778f` CI completed with **three successes, two failures and one
+unexecuted cancellation**. Linux core/desktop and Windows native passed. Windows
+core exposed an immediate test observation before real inventory-frame release;
+macOS core exposed an actual invalid-filename `EILSEQ` and an unexplained null
+provider subprocess status. Current fixture corrections preserve production,
+comparisons and budgets. macOS native never acquired a hosted runner; there is
+no sixth execution log. [Sealed run and artifact observations](ai-status-imports-ci.md).
+
+The following counts and normal GUI evidence describe the preceding published
+AI-status/text-import milestone. They do not certify the new playback route.
+
 `MAIN.AI_GET_STATUS` now supports the pinned explicit Nemotron/no-selected-model
 branch through one separate fixed filesystem owner and four whole jobs. Original
 stat-stamp shortcuts, ordered hashes and source-caught stamp-write failure remain
@@ -16,8 +42,8 @@ converters. Nine actual Linux WebKit requests create ten additional Unicode
 shows; all fifteen imported shows are saved with real Ctrl+S and archived as
 actual `.show` bytes. Independent pinned-source/raw IMPORT2/file/key/lyric/unknown
 field checks pass. SQLite/MDB, special containers and documented filename/suffix
-cases remain unsupported. The existing cleanup fence does not certify its
-thread's actual exit/join. [Transport](workers/imports-text.md) and
+cases remain unsupported. Its original cleanup-fence gap is addressed by the new retained terminal
+join composition described above; foreign lifecycle execution remains pending. [Transport](workers/imports-text.md) and
 [desktop evidence](workers/imports-text-desktop.md).
 
 The Linux Spotify command foundation now permits four concurrent command futures
@@ -25,8 +51,8 @@ on the same fixed runtime thread while preserving its sequential state lane and
 shared four-job budget. Early true means scheduling acceptance. Actual child
 kill/wait, retained effects after receipt Drop and real owner joins are tested.
 A reproduced stale-capability race now updates cached/public observations
-together and recovers through an actual reprobe. Application command IPC remains
-unwired. [Foundation](workers/spotify-commands.md) and
+together and recovers through an actual reprobe. The new application command IPC above is integrated locally; its normal
+desktop command verification remains pending. [Foundation](workers/spotify-commands.md) and
 [race reproduction](workers/spotify-capability-race.md).
 
 The full local milestone passes **593 workspace Rust checks, 678 required-source
@@ -61,7 +87,7 @@ historical normal binary also lacks the new before-test freeze proof.
 and [fixture corrections](workers/ai-local-fixtures.md).
 
 No whole-application speedup is claimed. Full feature parity, foreign GUI/hardware,
-usable models, provider accounts and application playback commands remain open.
+usable models, provider accounts and actual account/audio playback remain open.
 
 `MAIN.GET_CONTENT_PROVIDERS` now returns all five pinned provider declarations
 through the retained desktop bridge without library, credential or network IO.
