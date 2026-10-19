@@ -356,7 +356,26 @@ async fn ordered_root_preparation_waits_for_owner_and_close_timeout_retains_then
     assert!(f.library.status().unwrap().accepting_requests);
     release.send(()).unwrap();
     barrier.await.unwrap().unwrap();
-    f.native.shutdown().await.unwrap();
+    // Releasing the library barrier does not bound OS cleanup/join scheduling to
+    // this fixture's 30ms observer deadline. Drive only its documented timeout
+    // retry until actual owners join; every other failure remains an error.
+    timeout(Duration::from_secs(5), async {
+        loop {
+            match f.native.shutdown().await {
+                Ok(()) => break,
+                Err(error) => {
+                    assert_eq!(error.code, "download_shutdown_timeout", "{error:?}");
+                    tokio::time::sleep(Duration::from_millis(1)).await;
+                }
+            }
+        }
+    })
+    .await
+    .expect("actual download cleanup and joins must settle after barrier release");
+    let actual = f.native.status();
+    assert_eq!(actual["foundation"]["admitted"], 0);
+    assert_eq!(actual["foundation"]["active"], 0);
+    assert_eq!(actual["foundation"]["workers"], 0);
     assert!(first.finish().await.is_err());
     assert!(second.finish().await.is_err());
     assert_eq!(f.native.status()["admittedRequests"], 0);

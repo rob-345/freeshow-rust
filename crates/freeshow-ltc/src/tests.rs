@@ -52,6 +52,7 @@ fn library() -> TrustedLibrary {
     )
     .unwrap()
 }
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 async fn wait(mut check: impl FnMut() -> bool) {
     tokio::time::timeout(Duration::from_secs(5), async {
         while !check() {
