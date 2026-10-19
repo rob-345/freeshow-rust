@@ -26,6 +26,8 @@ pub(crate) struct Shared {
     scheduling: watch::Sender<TestScheduling>,
     #[cfg(test)]
     exit_gates: Mutex<[Option<TestExitGate>; 2]>,
+    #[cfg(test)]
+    file_exit_gate: Mutex<Option<TestFileExitGate>>,
 }
 #[cfg(test)]
 #[derive(Clone, Debug, Default)]
@@ -37,6 +39,20 @@ pub(crate) struct TestScheduling {
 struct TestExitGate {
     entered: oneshot::Sender<()>,
     release: oneshot::Receiver<bool>,
+}
+#[cfg(test)]
+struct TestFileExitGate {
+    index: usize,
+    entered: oneshot::Sender<()>,
+    release: mpsc::Receiver<()>,
+}
+#[cfg(test)]
+#[derive(Debug)]
+pub(crate) struct TestOwnerExit {
+    pub network_retained: usize,
+    pub network_finished: usize,
+    pub files_retained: usize,
+    pub files_finished: usize,
 }
 pub(crate) struct Job {
     pub plan: HostDownloadPlan,
@@ -251,20 +267,43 @@ impl DownloadService {
             scheduling: watch::channel(TestScheduling::default()).0,
             #[cfg(test)]
             exit_gates: Mutex::new([None, None]),
+            #[cfg(test)]
+            file_exit_gate: Mutex::new(None),
         });
         let (send_io, receive_io) = mpsc::sync_channel(4);
         let receive_io = Arc::new(Mutex::new(receive_io));
         let mut threads = Vec::new();
         for index in 0..2 {
             let receive = receive_io.clone();
+            #[cfg(test)]
+            let exit_state = shared.clone();
             match std::thread::Builder::new()
                 .name(format!("freeshow-ffmpeg-files-{index}"))
-                .spawn(move || loop {
-                    let work = locked(&receive).recv();
-                    let Ok(work) = work else {
-                        break;
-                    };
-                    io::run(work);
+                .spawn(move || {
+                    loop {
+                        let work = locked(&receive).recv();
+                        let Ok(work) = work else {
+                            break;
+                        };
+                        io::run(work);
+                    }
+                    #[cfg(test)]
+                    {
+                        // One fixture-local real native thread can remain alive
+                        // after queue work ends. Never hold the queue mutex here.
+                        let gate = {
+                            let mut gate = locked(&exit_state.file_exit_gate);
+                            if gate.as_ref().is_some_and(|gate| gate.index == index) {
+                                gate.take()
+                            } else {
+                                None
+                            }
+                        };
+                        if let Some(gate) = gate {
+                            let _ = gate.entered.send(());
+                            let _ = gate.release.recv();
+                        }
+                    }
                 }) {
                 Ok(thread) => threads.push(thread),
                 Err(_) => {
@@ -493,6 +532,36 @@ impl DownloadService {
     #[cfg(test)]
     pub(crate) async fn retained_network_joins(&self) -> usize {
         self.inner.network.lock().await.len()
+    }
+    #[cfg(test)]
+    pub(crate) fn hold_file_exit(
+        &self,
+        index: usize,
+    ) -> (oneshot::Receiver<()>, mpsc::SyncSender<()>) {
+        assert!(index < 2);
+        let (entered, observed) = oneshot::channel();
+        let (release, held) = mpsc::sync_channel(1);
+        assert!(locked(&self.inner.shared.file_exit_gate)
+            .replace(TestFileExitGate {
+                index,
+                entered,
+                release: held,
+            })
+            .is_none());
+        (observed, release)
+    }
+    #[cfg(test)]
+    pub(crate) async fn owner_exit_observation(&self) -> TestOwnerExit {
+        // Read actual retained handles only. This never joins/removes them,
+        // closes an owner, publishes a fault, or substitutes a logical counter.
+        let network = self.inner.network.lock().await;
+        let files = locked(&self.inner.threads);
+        TestOwnerExit {
+            network_retained: network.len(),
+            network_finished: network.iter().filter(|owner| owner.is_finished()).count(),
+            files_retained: files.len(),
+            files_finished: files.iter().filter(|owner| owner.is_finished()).count(),
+        }
     }
     pub async fn shutdown(&self) -> Result<()> {
         self.inner.shared.cancel.cancel();

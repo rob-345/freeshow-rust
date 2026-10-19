@@ -63,6 +63,22 @@ async fn until(mut condition: impl FnMut() -> bool) {
         tokio::time::sleep(Duration::from_millis(1)).await;
     }
 }
+async fn owner_exit_until(
+    service: &DownloadService,
+    condition: impl Fn(&service::TestOwnerExit) -> bool,
+) -> service::TestOwnerExit {
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let observed = service.owner_exit_observation().await;
+            if condition(&observed) {
+                return observed;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .expect("Actual retained download owner did not reach the fixture boundary")
+}
 
 async fn scheduled_until(
     state: &mut tokio::sync::watch::Receiver<service::TestScheduling>,
@@ -160,6 +176,7 @@ async fn shutdown_timeout_and_abandoned_retry_retain_the_real_remaining_join_and
         })
         .unwrap();
         let (entered, release) = service.hold_network_exit(1);
+        let (file_entered, file_release) = service.hold_file_exit(1);
         let shutdown = service.shutdown();
         tokio::pin!(shutdown);
         tokio::select! {
@@ -183,12 +200,56 @@ async fn shutdown_timeout_and_abandoned_retry_retain_the_real_remaining_join_and
             // Dropping this observer must not drop the actual pending JoinHandle.
         }
         assert_eq!(service.retained_network_joins().await, 1);
+        let held = service.owner_exit_observation().await;
+        assert_eq!(held.network_retained, 1);
+        assert_eq!(held.network_finished, 0);
+        assert_eq!(held.files_retained, 2);
+        assert_eq!(held.files_finished, 0);
         assert_eq!(
             service.status().workers,
             2,
             "FS owners stay alive until network drain"
         );
         release.send(panic).unwrap();
+        let network_done = owner_exit_until(&service, |state| state.network_finished == 1).await;
+        assert_eq!(network_done.network_retained, 1);
+        assert_eq!(network_done.files_retained, 2);
+        assert_eq!(network_done.files_finished, 0);
+        assert!(
+            service.status().failure.is_none(),
+            "An observation cannot consume a join or publish its fault"
+        );
+
+        // Network completion is not full cleanup. Drive the actual unchanged
+        // shutdown through its joins/sender close, deliberately hold one native
+        // exit, and require the original 20ms observer to time out truthfully.
+        assert_eq!(
+            service.shutdown().await.unwrap_err().code,
+            "download_shutdown_timeout"
+        );
+        tokio::time::timeout(Duration::from_secs(5), file_entered)
+            .await
+            .expect("Actual file owner never reached the native exit gate")
+            .unwrap();
+        let files_held = owner_exit_until(&service, |state| state.files_finished == 1).await;
+        assert_eq!(files_held.network_retained, 0);
+        assert_eq!(
+            files_held.files_retained, 2,
+            "A timeout cannot discard either native join handle"
+        );
+        assert_eq!(service.status().workers, 1);
+        if panic {
+            assert_eq!(service.status().failure.unwrap().code, "download_worker");
+        } else {
+            assert!(service.status().failure.is_none());
+        }
+        file_release.send(()).unwrap();
+        let files_done = owner_exit_until(&service, |state| state.files_finished == 2).await;
+        assert_eq!(files_done.network_retained, 0);
+        assert_eq!(
+            files_done.files_retained, 2,
+            "Finished observation must leave actual joins owned"
+        );
         let result = service.shutdown().await;
         if panic {
             let error = result.unwrap_err();
@@ -200,6 +261,7 @@ async fn shutdown_timeout_and_abandoned_retry_retain_the_real_remaining_join_and
             service.shutdown().await.unwrap();
         }
         assert_eq!(service.retained_network_joins().await, 0);
+        assert_eq!(service.owner_exit_observation().await.files_retained, 0);
         assert_eq!(service.status().workers, 0);
     }
 }
