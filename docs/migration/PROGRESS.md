@@ -10,32 +10,39 @@ retained across context replacement. Raw duration, typed picture buffers,
 NaN/own undefined and void source commands are preserved on the tested corpus.
 [Contracts, evidence and explicit gaps](native-now-playing.md).
 
-The latest local integration passes **459 Rust + 485 pinned-Node + 20 frontend
-checks** (964), plus **307 native executions** (297 host integration and ten
+The latest local integration passes **460 Rust + 494 pinned-Node + 20 frontend
+checks** (974), plus **314 native executions** (304 host integration and ten
 desktop binary unit cases, including shared cases repeated by importing targets).
 Five ignored Rust subprocess entry fixtures are driven by their supervisor tests;
 four source suites have existing platform/capability skips. Strict workspace and
 native all-target Clippy, focused TypeScript, formatting and snapshot checks pass.
-The actual **160-step Linux editor**, four GTK menus and both native drop scales
-pass. Four new WebView SET/UNSET cases compare actual WAV/FLAC/MP3 metadata and
-formatting with pinned source, prove real file effects/cleanup, typed callbacks,
-send-time snapshots and explicit post-metadata unsupported-image rejection.
-The complete receipt retains 54 expected/capability/stale diagnostic entries,
-including the deliberately unsupported image; no global zero-error claim is made.
-Published `634515a5` passes five jobs in [CI 39223737677](https://github.com/rob-345/freeshow-rust/actions/runs/39223737677):
-Linux/macOS core, Windows/macOS native and Linux desktop. Downloaded artifacts
-independently confirm all 160 editor steps, four new real source/native now-playing
-SET/UNSET receipts, four menus and both drop scales. Windows core reaches tests
-and exposes a fixture assuming an open child permits its parent directory rename.
-The correction verifies the refused mutation still yields only permitted bytes,
-then waits for actual descriptor disposal and a successful real rename before
-checking the protected target. All 17 asset tests and strict Linux/Windows-target
-lint pass locally; complete CI for that isolated fixture correction is pending.
 
-Now-playing remains partial: caught folder-creation ALERT ordering, remote cover
-HTTP, broader image/metadata/resize fidelity, root common-picture insertion
-position, physical audio/reveal and Windows/macOS GUI remain open. These changes
-establish no new performance gain.
+The new caught-folder-failure slice retains up to five independent publications
+per source operation and twenty completion promises across context replacement.
+Its three real Linux WebView cases verify metadata then four SET alerts, two
+UNSET alerts, and OPEN's folder then missing-text alert. Exact callback envelopes,
+visible final popup text, actual admitted/completed advances, settled work and
+independently unchanged regular-file blocker bytes pass. No trusted native reveal
+callback is invoked. The complete **169-step Linux editor**, four GTK menus and
+both native drop scales pass; the full receipt retains the expected other-feature
+and deliberate capability diagnostics.
+
+Published `c889317f` passes Windows/macOS core, Windows/macOS native and Linux
+desktop in [CI 39225346104](https://github.com/rob-345/freeshow-rust/actions/runs/39225346104).
+The Windows parent-directory lifetime fixture now passes. Linux core instead
+exposes the media test's initial executable selection. A controlled local
+ETXTBSY reproduction matches a writable-executable fixture hazard, though CI's
+original errno is unknown. The correction uses committed immutable scripts,
+actual child gates and a direct pending-invalidation check; production resolution
+is unchanged. It passes local workspace tests and strict lint, plus twenty-five
+consecutive focused runs. A full CI run for that correction and the folder-alert
+integration is pending.
+
+Now-playing remains partial: remote cover HTTP, broader image/metadata/resize
+fidelity, root common-picture insertion position, physical audio/reveal and
+Windows/macOS GUI remain open. The recorded failure counts apply to valid tested
+formatter inputs; earlier formatter failures can stop before all lookups.
+These changes establish no new performance gain.
 
 Retained timecode now has production main-window typed/raw IPC, exact native
 Uint8Array/IEEE hydration and a verified Linux LTC backend. One fixed supervisor

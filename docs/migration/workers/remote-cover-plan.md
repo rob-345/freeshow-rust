@@ -1,8 +1,9 @@
 # Remote now-playing cover: source contract and implementation seam
 
-Investigation only. No listener, HTTP client, build, native route, shared file,
-or image generator was started/changed. Native `/nowplayingcover` still returns
-501; no LAN/cover support or HTTP parity is established by this note.
+Source investigation and implementation plan. The local folder-failure repair
+is now integrated and verified independently; see
+[the native now-playing evidence](../native-now-playing.md). The HTTP route still
+returns501. No LAN/cover support or HTTP parity is established by this note.
 
 ## Immutable source and present gap
 
@@ -125,11 +126,13 @@ UNSET has two lookups (text, then cover); OPEN has one lookup plus its independe
 missing-file notification. HTTP GET/HEAD has one lookup, then existence/sendFile.
 writeFile/deleteFile's ordinary actionComplete log path does not add this ALERT.
 
-Current integrated now_playing_files exposes EnsureFolder false/diagnostics but
-omits that source ALERT; current NativeNowPlaying retains only one publication
-per operation, and its bridge only accepts the missing-OPEN alert. Source path,
+At the time of this investigation, integrated now_playing_files exposed
+EnsureFolder false/diagnostics but omitted that source ALERT; NativeNowPlaying
+retained one publication per operation and the bridge accepted only the
+missing-OPEN alert. Source path,
 false-helper and text continuation tests do not certify caught folder ALERTs.
-This is a remaining parity gap, not repaired by this investigation.
+The separate folder-alert slice now repairs this gap on the documented corpus;
+the following design records its source-derived requirements.
 
 Minimum separate fix: add at most one typed `FolderCreationFailed` observation
 per actual EnsureFolder job, carrying the fixed trusted Audio path and exact
