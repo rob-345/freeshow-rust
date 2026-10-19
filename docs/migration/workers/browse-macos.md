@@ -122,10 +122,14 @@ while the synthetic projection retains deliberately distinct field values.
 The backend does not substitute one timestamp for another or require their
 inequality.
 
-Native macOS execution remains pending. Local strict Apple ARM all-target
-Clippy verifies the actual new module/tests against a private copy of the
-existing crate plus the proposed shared wiring. The real macOS runner must
-execute all six fixtures and both module tests before claiming this corpus.
+Actual [macOS core CI at d0e88f3b](https://github.com/rob-345/freeshow-rust/actions/runs/39251699143/job/118056813501)
+passes all six native fixtures and both private module tests, including real
+permission failures, sparse metadata, signed/fractional timestamps, symlinks,
+folder/similarity shapes and exact source IEEE bits. The native desktop job
+stopped earlier at a stale host assertion expecting all non-Linux browsing to
+be Unsupported; its actual reply was the correct FILE_INFO Null/context/listener.
+That assertion is corrected separately. Local strict Apple ARM all-target
+Clippy also verifies the actual new module/tests with shared wiring.
 Required test environment: Node 22.21.1, project npm dependencies, ordinary
 non-root user, local filesystem with exact fixture timestamps and sparse-file
 support. No official Electron executable is required for these tests.
@@ -141,7 +145,7 @@ node --test tests/parity/browse-macos-source.test.mjs
 Local private harness: `/tmp/freeshow-browse-macos-check/Cargo.toml`, with
 `CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0`, debug0 and the existing worker-private
 external target. No root Cargo or GUI run. The two portable Node suites pass.
-Shared wiring, native GUI/IPC, packaged macOS Electron transport, TCC/sandbox,
+Complete native host verification, GUI/IPC, packaged macOS Electron transport, TCC/sandbox,
 network/unusual filesystems, non-Unicode names and races during external mutation
 remain outside this runtime evidence. Async original Map insertion order is
 deliberately excluded; exact array order, nested values and stat field order are

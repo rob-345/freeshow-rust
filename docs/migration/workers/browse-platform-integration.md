@@ -31,12 +31,12 @@ with distinct timestamps, without imposing an unsupported real-filesystem
 inequality. Both source oracles normalize CRLF and reject actual source edits.
 
 The private integrated worktree passes strict all-target Clippy for Linux,
-Windows GNU and macOS ARM, nine existing Linux Rust tests, and eighteen focused
+Windows GNU and macOS ARM, nine existing Linux Rust tests, and nineteen focused
 pinned-Node source suites with no skips. The Node suites include 8,192 generated
 Windows lexical cases; they execute the actual pure Rust helper, not a Windows
 filesystem simulation. Both native target lockfile resolutions succeed.
 
-Main integration passes 493 Rust, 572 pinned-Node and twenty frontend checks,
+Main integration passes 493 Rust, 573 pinned-Node and twenty frontend checks,
 plus all 352 Linux native executions across 36 targets. Five ignored Rust entry
 fixtures remain driven by supervisor tests, and four existing source capability
 skips remain explicit. Strict workspace and native all-target Clippy pass. The
@@ -47,11 +47,15 @@ HTTP responses, blocker/old-library sentinel bytes and real process exit.
 The complete editor retains 55 expected other-feature diagnostics.
 [Durable local receipt](../baselines/browse-platforms-linux-local.json).
 
-Actual macOS and Windows execution remains pending. The new platform fixtures
-must run under their real native CI jobs before their filesystem corpora are
-claimed: six Darwin integration fixtures plus two module tests, and eleven
-Windows module tests. Cross-compilation is compilation evidence only. The
-existing shared Linux source/native checks pass in the main integration.
+Actual core CI at `d0e88f3b` passes all six Darwin integration fixtures/two
+module tests and all eleven Windows stat cases. The complete macOS core job
+passes. Windows core later fails only the separate lexical source oracle's CRLF
+hash. Both native desktop jobs stop at a stale host assertion that expects
+all non-Linux systems to be unsupported; actual replies have the correct Null,
+context and listener. The coordinator corrected that assertion and added strict
+CRLF/mutation controls, with focused local checks. A complete corrected CI run
+remains required, and the eighteen corrected Windows cover fixtures have not
+yet been reached. Existing shared Linux source/native checks pass in the main integration.
 Foreign GUI/IPC behavior, physical media,
 unrestricted Windows paths/volumes, external mutation races and performance
 improvement are not established here.

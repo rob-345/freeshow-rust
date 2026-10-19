@@ -66,7 +66,7 @@ PATH=/home/rob-admin/.local/share/freeshow-oracle-node/node-v22.21.1-linux-x64/b
   node --test tests/parity/windows-paths.test.mjs
 ```
 
-Seven Node tests pass, including 8,192 deterministic generated parse/join cases,
+Eight Node tests pass, including 8,192 deterministic generated parse/join cases,
 crafted dot/root/trailing/Unicode cases, explicit capability errors, byte/output/
 component limits, and three actual Rust unit tests. Each expected supported
 string comes from actual Node path.win32 or the immutable retained source
@@ -74,6 +74,13 @@ function, not a second hand-written model. The source helper verifies SHA256
 `98e563c55026d2dbbdd217ee9b94962ed7fc8b82d893795355bd7dc0f54fc5de`
 against upstream commit `2d94defcf98175e4f5c9504e7f4fd1d33c35c975` before
 extracting and executing the real TypeScript functions in one realm.
+
+The first genuine Windows core run exposed checkout CRLF in this lexical
+oracle. Source certification now normalizes CRLF on both checkout and Git text
+before its immutable and fixed-SHA checks. One portable control exercises all
+four LF/CRLF combinations and rejects mutations on either side, both sides, and
+a lone carriage return. It uses the exact gate used before AST extraction.
+The real source functions, fixtures and expected lexical outputs are unchanged.
 
 The Node test builds the std-only driver from the actual new module with rustc
 in its private temporary directory. It also runs the native unit binary and

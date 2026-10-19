@@ -4,7 +4,7 @@ import os from "node:os"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { test, after } from "node:test"
-import { root, sourceFunctions, sourceSha256, win32 } from "./lib/windows-paths-oracle.mjs"
+import { root, sourceFunctions, sourceSha256, certifySource, win32 } from "./lib/windows-paths-oracle.mjs"
 
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-win-paths-pure-"))
 after(() => fs.rmSync(temporary, { recursive: true, force: true }))
@@ -52,6 +52,18 @@ function compare(cases) {
         }
     }
 }
+
+test("actual immutable source certification accepts LF/CRLF transport and rejects other mutations", () => {
+    const checkedOut = fs.readFileSync(path.join(root, "src/electron/utils/files.ts"), "utf8"),
+        normalized = checkedOut.replace(/\r\n/g, "\n"),
+        crlf = normalized.replace(/\n/g, "\r\n")
+    for (const working of [normalized, crlf]) for (const immutable of [normalized, crlf]) assert.equal(certifySource(working, immutable), normalized)
+    const mutated = normalized + "\n// non-line-ending mutation control\n"
+    assert.throws(() => certifySource(mutated, normalized), /must match immutable/)
+    assert.throws(() => certifySource(normalized, mutated), /must match immutable/)
+    assert.throws(() => certifySource(mutated, mutated), /must retain its pinned SHA/)
+    assert.throws(() => certifySource(normalized + "\r", normalized), /must match immutable/)
+})
 
 test("actual Node and immutable retained source preserve ordinary drive/relative roots, trailing and repeated separators, dots and Unicode", () => {
     const bases = ["", ".", "..", "...", "....", ".hidden", "..hidden", ".hidden.", "name.", "name..", "multi.part.PNG", "音楽 🙌.FLAC", "e\u0301.İ", "Σ.ẞ", "__proto__", " leading space .x", "tail "]

@@ -124,15 +124,20 @@ the Missing status set is unchanged.
 Reviewed browsing backends are integrated locally: Darwin uses the existing
 POSIX FILE_INFO/READ_FOLDER/GET_SIMILAR engine; Windows supports ordinary-drive
 FILE_INFO only. Both reuse the existing two filesystem owners. Strict
-Linux/Windows GNU/macOS ARM compilation and eighteen focused source suites pass.
-Main integration also passes **493 Rust + 572 pinned-Node + 20 frontend checks**
-(1,085), **352 native executions**, and strict workspace/native all-target
+Linux/Windows GNU/macOS ARM compilation and nineteen focused source suites pass.
+Main integration also passes **493 Rust + 573 pinned-Node + 20 frontend checks**
+(1,086), **352 native executions**, and strict workspace/native all-target
 Clippy. Five ignored Rust subprocess entry fixtures remain supervisor-driven;
 four existing source capability/platform skips remain explicit. The rebuilt
 187-step Linux editor, four menus and both native drop scales pass again;
 independent receipt validation preserves all JPEG/metadata/HTTP/blocker/quit
-checks and 55 expected other-feature diagnostics. Actual new foreign filesystem
-execution remains pending. [Local receipt](baselines/browse-platforms-linux-local.json).
+checks and 55 expected other-feature diagnostics. Actual core CI passes all
+eight Darwin and eleven Windows stat/workflow cases. The first browsing CI run
+passes Linux core/desktop and macOS core, but both native jobs stop at a stale
+non-Linux host assertion and Windows core later fails a raw CRLF source hash.
+Both test-oracle corrections pass focused local checks; the corrected full
+source run passes 573 tests with four existing skips. Corrected complete CI and
+the eighteen Windows cover cases remain pending. [Local receipt](baselines/browse-platforms-linux-local.json).
 [Integration scope](workers/browse-platform-integration.md).
 
 Now-playing remains partial: broader image/metadata/resize fidelity, root

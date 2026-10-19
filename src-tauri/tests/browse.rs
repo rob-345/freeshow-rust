@@ -88,8 +88,17 @@ async fn role_context_platform_limits_and_terminal_shutdown_are_explicit() {
             "main",
         )
         .await;
-    if cfg!(target_os = "linux") {
-        assert_eq!(reply.unwrap()[0].message.data, Some(Value::Null));
+    if cfg!(any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "windows"
+    )) {
+        let events = reply.unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].message.channel, "FILE_INFO");
+        assert_eq!(events[0].message.data, Some(Value::Null));
+        assert_eq!(events[0].listener_id.as_deref(), Some("native-browse"));
+        assert_eq!(events[0].context.as_ref(), Some(&context));
     } else {
         assert_eq!(reply.unwrap_err().code, "unsupported_platform");
     }

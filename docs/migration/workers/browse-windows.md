@@ -166,12 +166,17 @@ The followup independently cross-lints the actual updated native test bodies
 using `/tmp/freeshow-browse-windows-evidence-check/Cargo.toml` with the same
 suggested parent wiring, a private target and Windows GNU all-target strict
 Clippy. Production Windows stat implementation and shared files stay unchanged.
-Actual Windows execution, including exclusive-lock success and the new native
-transport comparison, still requires the command above in native CI.
+Actual [Windows core CI at d0e88f3b](https://github.com/rob-345/freeshow-rust/actions/runs/39251699143/job/118056813347)
+passes all eleven native stat cases, including verified exclusive data lock,
+strict CRLF transport and actual retained timestamp boundaries. That core job
+later fails only the separate lexical-path oracle's unnormalized CRLF hash;
+the normalization/negative controls are corrected separately. The native
+desktop job stops at a stale host capability assertion, so later native targets
+are not reached. A complete corrected CI run remains required.
 
 Its bounded receipts include exact Number bits,
 not a duplicated expected-stat algorithm or a tolerance comparison. Child
 fixtures are sequential per invocation, deadline-bound, and killed/reaped on
 failure; pipe buffering cannot deadlock the test because receipts use private
-files. The production backend creates no child. No native Windows runtime,
-full browse, GUI, or application parity is claimed before actual CI execution.
+files. The production backend creates no child. The observed Windows stat corpus
+does not establish full browse, foreign GUI, mounted-volume or application parity.
