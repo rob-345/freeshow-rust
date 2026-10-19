@@ -30,7 +30,7 @@ use freeshow_core::{
 };
 use freeshow_cover_images::CoverImageService;
 use freeshow_opus::LibrarySource;
-use now_playing::{Callbacks, Command, Dependencies, HostError, Publication, Ticket};
+use now_playing::{Callbacks, Command, Config, Dependencies, HostError, Publication, Ticket};
 use now_playing_owner::Owner;
 use serde_json::json;
 use std::{
@@ -65,6 +65,9 @@ struct Fixture {
 }
 impl Fixture {
     async fn new() -> Self {
+        Self::with_config(Config::default()).await
+    }
+    async fn with_config(config: Config) -> Self {
         let temp = tempfile::tempdir().unwrap();
         let library = LibraryService::start(
             Runtime::new(temp.path().join("app"), temp.path().join("library")).unwrap(),
@@ -106,13 +109,16 @@ impl Fixture {
             }
         });
         let owner = Arc::new(
-            Owner::new(Dependencies {
-                library: library.clone(),
-                assets: assets.clone(),
-                audio: audio.clone(),
-                covers: covers.clone(),
-                pipeline: pipeline.clone(),
-            })
+            Owner::with_config(
+                Dependencies {
+                    library: library.clone(),
+                    assets: assets.clone(),
+                    audio: audio.clone(),
+                    covers: covers.clone(),
+                    pipeline: pipeline.clone(),
+                },
+                config,
+            )
             .unwrap(),
         );
         let (send, events) = mpsc::channel(4);
@@ -206,9 +212,19 @@ impl Fixture {
         self.context()
     }
     async fn finish(self) {
+        self.finish_with_error(None).await;
+    }
+    async fn finish_with_error(self, expected: Option<HostError>) {
         let (drained, owner) = self.owner.retire(None, true).await;
         assert!(drained);
-        owner.unwrap();
+        match expected {
+            Some(expected) => {
+                let actual = error(owner);
+                assert_eq!(actual.code, expected.code);
+                assert_eq!(actual.message, expected.message);
+            }
+            None => owner.unwrap(),
+        }
         // Each actual dependency is attempted before reporting one failure.
         let pipeline = self.pipeline.shutdown().await;
         self.audio.shutdown().await;
@@ -476,4 +492,64 @@ async fn terminal_retirement_keeps_dropped_callers_blocked_callback_and_dependen
         "context readiness cannot reopen terminal admission"
     );
     f.finish().await;
+}
+
+#[tokio::test]
+async fn joined_terminal_delivery_failure_survives_receipt_disposal_and_no_host_retry() {
+    let _serial = SERIAL.lock().await;
+    let mut f = Fixture::with_config(Config {
+        operation_timeout: Duration::from_millis(200),
+        shutdown_timeout: Duration::from_secs(3),
+    })
+    .await;
+    let context = f.context();
+    let ticket = f.open(&context);
+    let event = f.next_event().await;
+    assert_eq!(event.event().message.channel, "ALERT");
+    assert_eq!(
+        event.event().message.data,
+        Some(json!("This does not exist!"))
+    );
+    // Intentionally withhold the real private completion. Only the host's
+    // actual delivery deadline can retire this operation and issue its receipt.
+    let receipt = tokio::time::timeout(Duration::from_secs(10), ticket.finish())
+        .await
+        .unwrap()
+        .unwrap();
+    let observed = receipt.failure().unwrap();
+    assert_eq!(observed.code, "now_playing_delivery_timeout");
+    assert_eq!(receipt.context(), &context);
+    assert!(f.owner.complete(&context, event.id(), true).is_err());
+    let (drained, first) = f.owner.retire(Some(&context), true).await;
+    assert!(
+        drained,
+        "terminal error is observed after the real supervisor join"
+    );
+    let first = error(first);
+    assert_eq!(first.code, observed.code);
+    assert_eq!(first.message, observed.message);
+    assert!(f.owner.status()["host"].is_null());
+    assert_eq!(f.owner.status()["lastRetired"]["drained"], true);
+    assert_eq!(f.owner.status()["lastRetired"]["supervisorJoined"], true);
+    drop(receipt);
+    assert_eq!(f.owner.status()["retained"], 0);
+    let (drained, retry) = f.owner.retire(None, true).await;
+    assert!(drained);
+    let retry = error(retry);
+    assert_eq!(retry.code, first.code);
+    assert_eq!(retry.message, first.message);
+    assert!(f.owner.status()["host"].is_null());
+    assert_eq!(f.owner.status()["closed"], true);
+    assert_eq!(
+        error(f.owner.submit(
+            &context,
+            Command::Open,
+            CancellationToken::new(),
+            f.callbacks(None).0,
+        ))
+        .code,
+        "now_playing_shutdown",
+    );
+    // Sticky diagnostics never prevent attempting all actual dependency joins.
+    f.finish_with_error(Some(first)).await;
 }
