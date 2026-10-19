@@ -401,6 +401,7 @@ async fn source_null_empty_and_real_parser_failure_continue_but_authority_does_n
 async fn open_alert_is_source_string_then_actual_exists_reveals_without_ack() {
     let _serial = SERIAL.lock().await;
     let mut f = Fixture::new(Config::default()).await;
+    assert_eq!(f.host.status()["revealCalls"], "0");
     let open = f
         .host
         .submit(&f.ctx, Command::Open, CancellationToken::new())
@@ -413,6 +414,8 @@ async fn open_alert_is_source_string_then_actual_exists_reveals_without_ack() {
     );
     f.ack(&event, true);
     drop(open.finish().await.unwrap());
+    assert_eq!(f.host.status()["revealCalls"], "0");
+    assert!(f.revealed.lock().unwrap().is_empty());
     fs::write(f.text(), "exists").unwrap();
     let open = f
         .host
@@ -423,6 +426,7 @@ async fn open_alert_is_source_string_then_actual_exists_reveals_without_ack() {
         .unwrap();
     assert!(open.failure().is_none());
     assert_eq!(*f.revealed.lock().unwrap(), [f.text()]);
+    assert_eq!(f.host.status()["revealCalls"], "1");
     drop(open);
     assert!(f.events.try_recv().is_err());
     f.close().await;
@@ -1115,6 +1119,8 @@ async fn real_folder_obstruction_matches_pinned_set_unset_open_alerts_and_indepe
     assert!(receipt.failure().is_none());
     drop(receipt);
     let open_events = vec![folder, missing];
+    assert_eq!(f.host.status()["revealCalls"], "0");
+    assert!(f.revealed.lock().unwrap().is_empty());
     assert_eq!(
         fs::read(f.ctx.data_path.join("Audio")).unwrap(),
         b"regular file blocks source mkdir"

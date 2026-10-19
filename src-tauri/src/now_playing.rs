@@ -382,6 +382,7 @@ struct Shared {
     retained: AtomicU64,
     admitted: AtomicU64,
     completed: AtomicU64,
+    reveal_calls: AtomicU64,
     joined: AtomicBool,
     phase_active: AtomicBool,
     preparing: AtomicU64,
@@ -501,6 +502,7 @@ impl NativeNowPlaying {
             retained: AtomicU64::new(0),
             admitted: AtomicU64::new(0),
             completed: AtomicU64::new(0),
+            reveal_calls: AtomicU64::new(0),
             joined: AtomicBool::new(false),
             phase_active: AtomicBool::new(false),
             preparing: AtomicU64::new(0),
@@ -620,7 +622,7 @@ impl NativeNowPlaying {
         Ok(())
     }
     pub fn status(&self) -> Value {
-        json!({"context":self.handle.shared.context,"closing":self.handle.shared.closing.load(Ordering::Acquire),"retained":4-self.handle.slots.available_permits(),"admitted":self.handle.shared.admitted.load(Ordering::Acquire).to_string(),"completed":self.handle.shared.completed.load(Ordering::Acquire).to_string(),"activeOperations":self.handle.shared.retained.load(Ordering::Acquire),"publications":self.handle.shared.publications.lock().unwrap_or_else(|e|e.into_inner()).len(),"lifecycleObservers":4-self.handle.observers.available_permits(),"complete":self.handle.progress.borrow().complete,"supervisorJoined":self.handle.shared.joined.load(Ordering::Acquire),"drained":self.handle.progress.borrow().complete && self.handle.shared.joined.load(Ordering::Acquire),"currentPhase":self.handle.shared.phase_active.load(Ordering::Acquire),"preparations":self.handle.shared.preparing.load(Ordering::Acquire),"cleanups":self.handle.shared.cleaning.load(Ordering::Acquire),"error":self.handle.shared.error()})
+        json!({"context":self.handle.shared.context,"closing":self.handle.shared.closing.load(Ordering::Acquire),"retained":4-self.handle.slots.available_permits(),"admitted":self.handle.shared.admitted.load(Ordering::Acquire).to_string(),"completed":self.handle.shared.completed.load(Ordering::Acquire).to_string(),"revealCalls":self.handle.shared.reveal_calls.load(Ordering::Acquire).to_string(),"activeOperations":self.handle.shared.retained.load(Ordering::Acquire),"publications":self.handle.shared.publications.lock().unwrap_or_else(|e|e.into_inner()).len(),"lifecycleObservers":4-self.handle.observers.available_permits(),"complete":self.handle.progress.borrow().complete,"supervisorJoined":self.handle.shared.joined.load(Ordering::Acquire),"drained":self.handle.progress.borrow().complete && self.handle.shared.joined.load(Ordering::Acquire),"currentPhase":self.handle.shared.phase_active.load(Ordering::Acquire),"preparations":self.handle.shared.preparing.load(Ordering::Acquire),"cleanups":self.handle.shared.cleaning.load(Ordering::Acquire),"error":self.handle.shared.error()})
     }
     /// Called before shared dependency retirement. This host is context-scoped;
     /// process-global audio state belongs to NativeAudioPipeline and is not reset.
@@ -1230,7 +1232,20 @@ async fn execute(
         | E::ImageResizeJpeg { .. } => image(shared, op, effect).await,
         E::Reveal { path } => {
             AssertUnwindSafe(async {
-                (callbacks.reveal)(PathBuf::from(path), op.id.context().clone()).await
+                let path = PathBuf::from(path);
+                let context = op.id.context().clone();
+                // Count only actual trusted callback invocation after authority
+                // revalidation, never an intent or successful OS reveal claim.
+                shared
+                    .reveal_calls
+                    .try_update(Ordering::AcqRel, Ordering::Acquire, |n| n.checked_add(1))
+                    .map_err(|_| {
+                        HostError::new(
+                            "now_playing_limit",
+                            "Native reveal invocation counter exhausted",
+                        )
+                    })?;
+                (callbacks.reveal)(path, context).await
             })
             .catch_unwind()
             .await

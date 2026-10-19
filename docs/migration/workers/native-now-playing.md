@@ -230,3 +230,11 @@ escapes after retirement, while real Session cleanup and supervisor join remain
 required. Earlier filesystem diagnostics are collected before awaiting a later
 source-alert callback, so callback rejection cannot erase the actual mkdir
 failure evidence.
+
+`status().revealCalls` is a monotonic decimal-u64 per scoped host. It increments
+only at actual trusted reveal callback invocation, after authority revalidation,
+and checks exhaustion without wrapping. It counts attempts, including a later
+callback error/panic, and makes no successful OS reveal claim. Missing-text OPEN
+and regular-file Audio failure OPEN leave it at zero; a real existing text path
+invokes the supplied callback once and records one. It resets with the scoped
+host/context, independently of the process-wide publication sequence.
