@@ -21,6 +21,8 @@ use std::{
 };
 use tokio::sync::{oneshot, OwnedSemaphorePermit, Semaphore};
 static OWNER_ACTIVE: AtomicBool = AtomicBool::new(false);
+#[cfg(test)]
+use std::sync::atomic::AtomicUsize;
 type Failure = (&'static str, &'static str);
 fn error(e: freeshow_ai_status::Error) -> WireError {
     WireError::new(e.code, e.message)
@@ -42,6 +44,17 @@ fn check(control: &Control) -> Result<(), WireError> {
     } else {
         Ok(())
     }
+}
+async fn observe<T>(
+    control: &Control,
+    operation: impl std::future::Future<Output = Result<T, WireError>>,
+) -> Result<T, WireError> {
+    check(control)?;
+    let result=tokio::time::timeout_at(control.deadline.into(),async {
+        tokio::select! {result=operation=>result,_=control.cancel.cancelled()=>Err(WireError::new("ai_status_cancelled","Native status observer cancelled"))}
+    }).await.map_err(|_|WireError::new("ai_status_deadline","Native status observation deadline elapsed; accepted work remains owned"))?;
+    check(control)?;
+    result
 }
 struct Shared {
     cancel: CancelToken,
@@ -147,6 +160,10 @@ impl FilesystemOwner {
                                     !hooks.panic.swap(false, Ordering::AcqRel),
                                     "Controlled actual status worker panic"
                                 );
+                            }
+                            #[cfg(test)]
+                            if hooks.fixed_tiny.load(Ordering::Acquire) {
+                                return job.prepare_fixed_tiny_fixture();
                             }
                             job.prepare()
                         }))
@@ -339,6 +356,18 @@ impl NativeStatus {
             cancel: self.0.cancel.child_token(),
             ..Control::default()
         };
+        #[cfg(test)]
+        let control = Control {
+            deadline: self
+                .0
+                .hooks
+                .deadline
+                .lock()
+                .unwrap()
+                .map(|timeout| Instant::now() + timeout)
+                .unwrap_or(control.deadline),
+            ..control
+        };
         let job = checker
             .try_begin(query, Platform::native(), control.clone())
             .map_err(error)?;
@@ -408,6 +437,35 @@ impl NativeStatus {
     #[allow(dead_code)]
     pub fn test_panic_next(&self) {
         self.0.hooks.panic.store(true, Ordering::Release);
+    }
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn test_fixed_tiny(&self) {
+        self.0.hooks.fixed_tiny.store(true, Ordering::Release);
+    }
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn test_deadline(&self, duration: Duration) {
+        *self.0.hooks.deadline.lock().unwrap() = Some(duration);
+    }
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn test_stamp_observation(&self) -> (usize, bool) {
+        (
+            self.0.hooks.stamp_attempts.load(Ordering::Acquire),
+            self.0.hooks.last_write_failed.load(Ordering::Acquire),
+        )
+    }
+    #[cfg(test)]
+    #[allow(dead_code)]
+    pub fn test_shutdown_observers(&self) -> usize {
+        self.0
+            .owner
+            .lock()
+            .unwrap()
+            .as_ref()
+            .map(|owner| 4 - owner.0.observers.available_permits())
+            .unwrap_or(0)
     }
     pub fn seal(&self) {
         {
@@ -497,10 +555,10 @@ impl NativeStatus {
         }
         let (response, caller) = self.begin(request.context.clone().unwrap(), query)?;
         let control = caller.control.clone();
-        let envelope=tokio::time::timeout_at(control.deadline.into(),async {
-            tokio::select! {result=response=>result.map_err(|_|worker_error()),_=control.cancel.cancelled()=>Err(WireError::new("ai_status_cancelled","Native status observer cancelled"))}
-        }).await.map_err(|_|WireError::new("ai_status_deadline","Native status observation deadline elapsed; work remains owned"))??;
-        check(&control)?;
+        let envelope = observe(&control, async {
+            response.await.map_err(|_| worker_error())
+        })
+        .await?;
         let Envelope { result, lease } = envelope;
         let mut events = match result.map_err(error)? {
             Prepared::Ready(read) => vec![event(&request, read, lease)?],
@@ -518,23 +576,36 @@ impl NativeStatus {
                     listener_id: request.listener_id.clone(),
                     context: request.context.clone(),
                 };
-                library
-                    .commit_without_media_refresh(reply_request, window, move |runtime| {
-                        check(&commit_control).map_err(core_error)?;
-                        // Opaque intent root must still equal the trusted native
-                        // app-data authority; renderer/library paths never select it.
-                        if intent.user_data() != runtime.stores.app_data {
-                            return Err(freeshow_core::Error::NativeOperation {
-                                code: "ai_status_owner",
-                                message: "Native model stamp authority changed".into(),
-                            });
-                        }
-                        let read = intent.apply().map_err(|e| core_error(error(e)))?;
-                        check(&commit_control).map_err(core_error)?;
-                        Ok(vec![event(&event_request, read, lease).map_err(core_error)?])
-                    })
-                    .await
-                    .map_err(WireError::from)?
+                #[cfg(test)]
+                let commit_hooks = self.0.hooks.clone();
+                observe(&control, async move {
+                    library
+                        .commit_without_media_refresh(reply_request, window, move |runtime| {
+                            check(&commit_control).map_err(core_error)?;
+                            // Opaque intent root must still equal the trusted native
+                            // app-data authority; renderer/library paths never select it.
+                            if intent.user_data() != runtime.stores.app_data {
+                                return Err(freeshow_core::Error::NativeOperation {
+                                    code: "ai_status_owner",
+                                    message: "Native model stamp authority changed".into(),
+                                });
+                            }
+                            let read = intent.apply().map_err(|e| core_error(error(e)))?;
+                            #[cfg(test)]
+                            {
+                                commit_hooks.stamp_attempts.fetch_add(1, Ordering::AcqRel);
+                                commit_hooks
+                                    .last_write_failed
+                                    .store(read.write_diagnostic().is_some(), Ordering::Release);
+                            }
+
+                            check(&commit_control).map_err(core_error)?;
+                            Ok(vec![event(&event_request, read, lease).map_err(core_error)?])
+                        })
+                        .await
+                        .map_err(WireError::from)
+                })
+                .await?
             }
         };
         check(&control)?;
@@ -547,6 +618,10 @@ impl NativeStatus {
 #[cfg(test)]
 #[derive(Default)]
 struct Hooks {
+    fixed_tiny: AtomicBool,
+    deadline: Mutex<Option<Duration>>,
+    stamp_attempts: AtomicUsize,
+    last_write_failed: AtomicBool,
     processing: Mutex<Option<Gate>>,
     after_result: Mutex<Option<Gate>>,
     exit: Mutex<Option<Gate>>,

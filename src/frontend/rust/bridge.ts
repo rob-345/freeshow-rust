@@ -321,12 +321,28 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                     return
                 }
                 if (channel === "MAIN" && data?.channel === "SAVE_IMAGE" && captures.complete(data.data)) return
+                if (channel === "MAIN" && data?.channel === "AI_GET_STATUS") {
+                    // Capture once using Electron's clone semantics, then
+                    // decide the branch before JSON can turn truthy values null.
+                    try {
+                        data = structuredClone(data)
+                    } catch {
+                        reportError({ code: "ai_status_unsupported", message: "Model status payload cannot be cloned" }, { channel, data, listenerId })
+                        return
+                    }
+                    const model = data.data?.modelId
+                    const noModel = model === undefined || model === null || model === false || model === "" || (typeof model === "number" && (model === 0 || Number.isNaN(model)))
+                    if (data.data?.engineId !== "nemotron" || !noModel) {
+                        reportError({ code: "ai_status_unsupported", message: "Only explicit Nemotron status without a selected model is supported" }, { channel, data, listenerId })
+                        return
+                    }
+                }
                 const mediaCopy = channel === "MAIN" && ["BUNDLE_MEDIA_FILES", "MEDIA_FOLDER_COPY"].includes(data?.channel)
                 // Electron serializes at send time. Output updates often reuse
                 // mutable Svelte objects; queued cues must keep their snapshot.
                 // Pure catalogue requests also retain the original command;
                 // Spotify validates this origin after its native wait.
-                if (mediaCopy || channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && (["SPOTIFY_GET_STATE", "GET_CONTENT_PROVIDERS", "AI_GET_STATUS"].includes(data?.channel) || remoteCommands.has(data?.channel) || midiCommands.has(data?.channel)))) data = structuredClone(data)
+                if (mediaCopy || channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && (["SPOTIFY_GET_STATE", "GET_CONTENT_PROVIDERS"].includes(data?.channel) || remoteCommands.has(data?.channel) || midiCommands.has(data?.channel)))) data = structuredClone(data)
                 // SAVE snapshots its context before its deferred send. Other
                 // requests belong to the library visible when send is called.
                 const captured = channel === "MAIN" && data?.channel === "SAVE" ? data.data?.runtimeContext || context : context

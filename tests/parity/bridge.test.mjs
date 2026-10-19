@@ -191,6 +191,97 @@ test("AI status rejects missing or mismatched full contexts, wrong origin/listen
     assert.deepEqual(bridge.api.getRuntimeContext(), context)
 })
 
+test("AI status distinguishes source truthiness before real JSON coercion of nonfinite and boxed model selectors", { timeout: 15000 }, async () => {
+    const userData = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-ai-status-json-"))
+    try {
+        const context = { runtimeId: "ai-selection", libraryGeneration: 0, dataPath: "/selected" }
+        for (const modelId of [Infinity, -Infinity, new Number(Infinity), new Number(0), new Boolean(false), new String(""), new Date(NaN), { toJSON: () => null }]) {
+            const payload = { engineId: "nemotron", modelId, customPath: "/source-selected-model" },
+                source = aiStatusOracle(userData),
+                original = await source.status(payload),
+                json = JSON.parse(JSON.stringify(payload)),
+                projected = await aiStatusOracle(userData).status(json),
+                requests = [],
+                replies = [],
+                errors = [],
+                bridge = createRustApi(
+                    async (request) => {
+                        requests.push(JSON.parse(JSON.stringify(request)))
+                        return []
+                    },
+                    (...error) => errors.push(error),
+                    context
+                )
+            assert.deepEqual(Object.keys(original.nemotron), ["ready", "localPath"])
+            assert.equal(Object.hasOwn(original.nemotron, "ready"), true)
+            assert.equal(original.nemotron.ready, undefined, "Actual source chose the unsupported truthy model branch")
+            assert.equal(projected.nemotron.ready, false, "JSON incorrectly selects the no-model branch without the bridge guard")
+            bridge.api.receive("MAIN", (...args) => replies.push(args))
+            assert.equal(bridge.api.send("MAIN", { channel: "AI_GET_STATUS", data: payload }, "unsupported-selector"), undefined)
+            await tick()
+            assert.deepEqual(requests, [])
+            assert.deepEqual(replies, [])
+            assert.equal(errors.length, 1)
+            assert.equal(errors[0][0].code, "ai_status_unsupported")
+            assert.deepEqual(bridge.api.getRuntimeContext(), context)
+        }
+        for (const modelId of [NaN, -0, 0, null, false, "", undefined]) {
+            const payload = { engineId: "nemotron", modelId },
+                source = aiStatusOracle(userData),
+                original = await source.dispatch(payload, "falsy"),
+                expected = JSON.parse(JSON.stringify(original[0])),
+                replies = [],
+                errors = [],
+                requests = []
+            let complete
+            const delivered = new Promise((resolve) => {
+                complete = resolve
+            })
+            const bridge = createRustApi(
+                async (request) => {
+                    const wire = JSON.parse(JSON.stringify(request))
+                    requests.push(wire)
+                    const replay = JSON.parse(JSON.stringify(await aiStatusOracle(userData).dispatch(wire.data.data, wire.listenerId)))
+                    return [{ channel: replay[0][0], message: replay[0][1], listenerId: replay[0][2], context }]
+                },
+                (...error) => {
+                    errors.push(error)
+                    complete()
+                },
+                context
+            )
+            bridge.api.receive("MAIN", (...args) => {
+                replies.push(args)
+                complete()
+            })
+            assert.equal(bridge.api.send("MAIN", { channel: "AI_GET_STATUS", data: payload }, "falsy"), undefined)
+            await delivered
+            assert.equal(requests.length, 1)
+            assert.deepEqual(replies, [expected.slice(1)])
+            assert.deepEqual(errors, [])
+        }
+        const sourceEngine = await aiStatusOracle(userData).status({ engineId: new String("nemotron") })
+        assert.deepEqual(Object.keys(sourceEngine), [], "Source requires the literal primitive engine selector")
+        const calls = [],
+            errors = [],
+            bridge = createRustApi(
+                async (request) => {
+                    calls.push(request)
+                    return []
+                },
+                (...error) => errors.push(error),
+                context
+            )
+        for (const data of [{ engineId: new String("nemotron") }, { engineId: "nemotron", modelId: 0n }]) assert.equal(bridge.api.send("MAIN", { channel: "AI_GET_STATUS", data }), undefined)
+        await tick()
+        assert.deepEqual(calls, [])
+        assert.equal(errors.length, 2)
+        assert.ok(errors.every(([error]) => error.code === "ai_status_unsupported"))
+    } finally {
+        fs.rmSync(userData, { recursive: true, force: true })
+    }
+})
+
 function spotifyEvent(context, listenerId, wire, extra = {}) {
     return {
         channel: "MAIN",

@@ -346,3 +346,219 @@ async fn genuine_worker_panic_keeps_cleanup_frame_owned_and_shutdown_retries_act
     assert_eq!(status.test_snapshot(), (0, 0, true, true));
     library.finish_writes().await.unwrap();
 }
+
+#[cfg(not(all(target_os = "macos", target_arch = "x86_64")))]
+fn fixed_tiny(user_data: &Path) -> std::path::PathBuf {
+    let models = user_data.join("bin/nemotron/models");
+    fs::create_dir_all(&models).unwrap();
+    for (name, _) in freeshow_ai_status::FILES {
+        fs::write(models.join(name), name).unwrap();
+    }
+    models.join("model.json")
+}
+#[cfg(not(all(target_os = "macos", target_arch = "x86_64")))]
+async fn held_library(
+    library: &LibraryService,
+) -> (
+    mpsc::Sender<()>,
+    tokio::task::JoinHandle<freeshow_core::Result<Vec<Event>>>,
+) {
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+    let owner = library.clone();
+    let r = request(library);
+    let commit = tokio::spawn(async move {
+        owner
+            .commit_without_media_refresh(r, "main", move |_| {
+                entered_tx.send(()).unwrap();
+                let _ = release_rx.recv();
+                Ok(vec![])
+            })
+            .await
+    });
+    entered(entered_rx).await;
+    (release_tx, commit)
+}
+#[cfg(not(all(target_os = "macos", target_arch = "x86_64")))]
+#[tokio::test]
+async fn real_fixed_fixture_preparation_waits_for_ordered_stamp_attempt_and_preserves_source_write_failure_ready(
+) {
+    let _serial = SERIAL.lock().await;
+    for fail_write in [false, true] {
+        let (temp, library, status) = fixture();
+        let stamp = fixed_tiny(&temp.path().join("app"));
+        status.test_fixed_tiny();
+        if fail_write {
+            fs::create_dir(&stamp).unwrap();
+        }
+        let (release, commit) = held_library(&library).await;
+        let host = status.clone();
+        let source = library.clone();
+        let caller =
+            tokio::spawn(async move { host.dispatch(&source, request(&source), "main").await });
+        until(|| library.status().unwrap().queued_jobs == 1).await;
+        assert!(!caller.is_finished());
+        assert_eq!(status.test_snapshot().0, 1);
+        assert_eq!(status.test_stamp_observation(), (0, false));
+        assert_eq!(
+            stamp.exists(),
+            fail_write,
+            "Filesystem preparation cannot install the ordered stamp"
+        );
+        drop(release);
+        timeout(WAIT, commit).await.unwrap().unwrap().unwrap();
+        let events = timeout(WAIT, caller).await.unwrap().unwrap().unwrap();
+        assert_eq!(status.test_stamp_observation(), (1, fail_write));
+        assert_eq!(
+            events[0].message.data.as_ref().unwrap()["nemotron"],
+            json!({"ready":true,"localPath":temp.path().join("app/bin/nemotron/models")})
+        );
+        assert_eq!(
+            events[0].context.as_ref(),
+            Some(&library.context().unwrap())
+        );
+        assert!(events[0].native_lifetime.is_some());
+        assert_eq!(status.test_snapshot().0, 1);
+        if fail_write {
+            assert!(stamp.is_dir());
+        } else {
+            let body: serde_json::Value =
+                serde_json::from_slice(&fs::read(&stamp).unwrap()).unwrap();
+            assert_eq!(body["revision"], freeshow_ai_status::REVISION);
+            for (name, digest) in freeshow_ai_status::FILES {
+                assert_eq!(body["files"][name]["sha256"], digest);
+                assert_eq!(body["files"][name]["size"], name.len());
+            }
+        }
+        drop(events);
+        assert_eq!(status.test_snapshot().0, 0);
+        status.shutdown().await.unwrap();
+        library.finish_writes().await.unwrap();
+    }
+}
+#[cfg(not(all(target_os = "macos", target_arch = "x86_64")))]
+#[tokio::test]
+async fn original_deadline_and_caller_abort_leave_queued_stamp_owned_until_the_real_library_fence()
+{
+    let _serial = SERIAL.lock().await;
+    for expire in [false, true] {
+        let (temp, library, status) = fixture();
+        let stamp = fixed_tiny(&temp.path().join("app"));
+        status.test_fixed_tiny();
+        if expire {
+            status.test_deadline(Duration::from_millis(100));
+        }
+        let (release, commit) = held_library(&library).await;
+        let host = status.clone();
+        let source = library.clone();
+        let caller =
+            tokio::spawn(async move { host.dispatch(&source, request(&source), "main").await });
+        until(|| library.status().unwrap().queued_jobs == 1).await;
+        if expire {
+            assert_eq!(
+                timeout(WAIT, caller)
+                    .await
+                    .unwrap()
+                    .unwrap()
+                    .unwrap_err()
+                    .code,
+                "ai_status_deadline"
+            );
+        } else {
+            caller.abort();
+            assert!(caller.await.unwrap_err().is_cancelled());
+        }
+        assert!(!stamp.exists());
+        assert_eq!(status.test_snapshot().0, 1);
+        assert_eq!(status.test_stamp_observation(), (0, false));
+        drop(release);
+        timeout(WAIT, commit).await.unwrap().unwrap().unwrap();
+        library.finish_writes().await.unwrap();
+        assert!(!stamp.exists());
+        assert_eq!(status.test_snapshot().0, 0);
+        assert_eq!(status.test_stamp_observation(), (0, false));
+        status.shutdown().await.unwrap();
+    }
+}
+#[cfg(not(all(target_os = "macos", target_arch = "x86_64")))]
+#[tokio::test]
+async fn actual_queued_library_replacement_rejects_old_stamp_before_io_and_new_context_can_apply_it(
+) {
+    let _serial = SERIAL.lock().await;
+    let (temp, library, status) = fixture();
+    let stamp = fixed_tiny(&temp.path().join("app"));
+    status.test_fixed_tiny();
+    let (release, commit) = held_library(&library).await;
+    let old = library.context().unwrap();
+    let next = temp.path().join("next model library");
+    fs::create_dir(&next).unwrap();
+    let change=serde_json::from_value(json!({"channel":"MAIN","data":{"channel":"UPDATE_DATA_PATH","data":{"oldPath":old.data_path,"newPath":next}},"context":old})).unwrap();
+    let change_owner = library.clone();
+    let change = tokio::spawn(async move { change_owner.dispatch(change, "main").await });
+    until(|| library.status().unwrap().queued_jobs == 1).await;
+    let host = status.clone();
+    let source = library.clone();
+    let caller =
+        tokio::spawn(async move { host.dispatch(&source, request(&source), "main").await });
+    until(|| library.status().unwrap().queued_jobs == 2).await;
+    assert!(!stamp.exists());
+    drop(release);
+    timeout(WAIT, commit).await.unwrap().unwrap().unwrap();
+    timeout(WAIT, change).await.unwrap().unwrap().unwrap();
+    status.context_changed(&library.context().unwrap());
+    let error = timeout(WAIT, caller).await.unwrap().unwrap().unwrap_err();
+    assert!(["stale_library", "ai_status_cancelled"].contains(&error.code));
+    until(|| status.test_snapshot().0 == 0).await;
+    assert!(!stamp.exists());
+    assert_eq!(status.test_stamp_observation(), (0, false));
+    let events = query(&status, &library).await;
+    assert_eq!(
+        events[0].context.as_ref(),
+        Some(&library.context().unwrap())
+    );
+    assert!(stamp.is_file());
+    assert_eq!(status.test_stamp_observation(), (1, false));
+    drop(events);
+    status.shutdown().await.unwrap();
+    library.finish_writes().await.unwrap();
+}
+#[tokio::test]
+async fn internal_shutdown_timeout_and_four_observers_retain_then_retry_the_actual_native_join() {
+    let _serial = SERIAL.lock().await;
+    let (_temp, library, status) = fixture();
+    drop(query(&status, &library).await);
+    let (observed, release) = status.test_hold("exit");
+    status.seal();
+    entered(observed).await;
+    assert_eq!(
+        status.shutdown().await.unwrap_err().code,
+        "ai_status_shutdown_timeout"
+    );
+    assert!(!status.test_snapshot().3);
+    let mut observers = Vec::new();
+    for _ in 0..4 {
+        let owner = status.clone();
+        observers.push(tokio::spawn(async move { owner.shutdown().await }));
+    }
+    until(|| status.test_shutdown_observers() == 4).await;
+    assert_eq!(
+        status.shutdown().await.unwrap_err().code,
+        "ai_status_observer_busy"
+    );
+    let dropped = observers.pop().unwrap();
+    dropped.abort();
+    assert!(dropped.await.unwrap_err().is_cancelled());
+    until(|| status.test_shutdown_observers() == 3).await;
+    let owner = status.clone();
+    observers.push(tokio::spawn(async move { owner.shutdown().await }));
+    until(|| status.test_shutdown_observers() == 4).await;
+    assert!(!status.test_snapshot().3);
+    release.send(()).unwrap();
+    for observer in observers {
+        timeout(WAIT, observer).await.unwrap().unwrap().unwrap();
+    }
+    assert_eq!(status.test_shutdown_observers(), 0);
+    assert!(status.test_snapshot().3);
+    status.shutdown().await.unwrap();
+    library.finish_writes().await.unwrap();
+}
