@@ -38,11 +38,15 @@ async fn query(service: &InventoryService) -> Result<Vec<BinFile>> {
 async fn real_empty_missing_nested_files_and_engine_file_match_source_shape() {
     let (dir, service) = fixture(Limits::default());
     assert!(query(&service).await.unwrap().is_empty());
-    let engine = dir.path().join("bin/nemotron");
-    fs::create_dir_all(engine.join("models/nested")).unwrap();
+    let engine = dir.path().join("bin").join("nemotron");
+    fs::create_dir_all(engine.join("models").join("nested")).unwrap();
     fs::write(engine.join("zero"), []).unwrap();
     assert!(query(&service).await.unwrap().is_empty());
-    fs::write(engine.join("models/nested/音.bin"), [1, 2, 3, 4]).unwrap();
+    fs::write(
+        engine.join("models").join("nested").join("音.bin"),
+        [1, 2, 3, 4],
+    )
+    .unwrap();
     let rows = query(&service).await.unwrap();
     assert_eq!(
         rows,
@@ -83,9 +87,9 @@ async fn actual_budget_failures_are_explicit_and_reclaim_whole_slots() {
         },
     ] {
         let (dir, service) = fixture(limits);
-        let engine = dir.path().join("bin/nemotron");
+        let engine = dir.path().join("bin").join("nemotron");
         fs::create_dir_all(engine.join("child")).unwrap();
-        fs::write(engine.join("child/a"), [1]).unwrap();
+        fs::write(engine.join("child").join("a"), [1]).unwrap();
         fs::write(engine.join("b"), [2]).unwrap();
         assert_eq!(query(&service).await.err().unwrap().code, "ai_local_limit");
         assert_eq!(service.status().retained, 0);
@@ -112,20 +116,29 @@ fn exact_number_sum_and_native_root_limits_never_round_or_guess() {
     ] {
         assert!(TrustedUserData::from_host(root).is_err());
     }
-    assert!(InventoryService::start(
-        TrustedUserData::from_host(std::env::temp_dir()).unwrap(),
-        Limits {
-            capacity: 5,
-            ..Limits::default()
-        }
-    )
-    .is_err());
+    // A platform temp-directory provider may include a trailing separator.
+    // This test exercises the capacity bound, using a genuine supported root.
+    let dir = tempfile::tempdir().unwrap();
+    let root = TrustedUserData::from_host(dir.path()).unwrap();
+    assert_eq!(
+        InventoryService::start(
+            root,
+            Limits {
+                capacity: 5,
+                ..Limits::default()
+            }
+        )
+        .err()
+        .unwrap()
+        .code,
+        "ai_local_invalid"
+    );
 }
 #[tokio::test]
 async fn four_ready_uncollected_and_borrowed_results_retain_whole_capacity_until_actual_drop() {
     let (dir, service) = fixture(Limits::default());
-    fs::create_dir_all(dir.path().join("bin/nemotron")).unwrap();
-    fs::write(dir.path().join("bin/nemotron/a"), [1]).unwrap();
+    fs::create_dir_all(dir.path().join("bin").join("nemotron")).unwrap();
+    fs::write(dir.path().join("bin").join("nemotron").join("a"), [1]).unwrap();
     let mut tickets = Vec::new();
     for _ in 0..4 {
         tickets.push(service.try_submit(Control::default()).unwrap());

@@ -28,13 +28,17 @@ fn request(library: &LibraryService) -> Request {
 async fn native_global_root_reply_and_original_order_survive_selected_library_changes() {
     let (temp, library, inventory) = fixture();
     assert!(inventory.status().is_none());
-    let engine = temp.path().join("app/bin/nemotron");
+    let engine = temp.path().join("app").join("bin").join("nemotron");
     fs::create_dir_all(engine.join("模型")).unwrap();
     fs::write(engine.join("README"), b"123").unwrap();
-    fs::write(engine.join("模型/weights"), b"45678").unwrap();
-    fs::create_dir_all(temp.path().join("library/bin/nemotron")).unwrap();
+    fs::write(engine.join("模型").join("weights"), b"45678").unwrap();
+    fs::create_dir_all(temp.path().join("library").join("bin").join("nemotron")).unwrap();
     fs::write(
-        temp.path().join("library/bin/nemotron/fake"),
+        temp.path()
+            .join("library")
+            .join("bin")
+            .join("nemotron")
+            .join("fake"),
         b"untrusted selected library",
     )
     .unwrap();
@@ -270,7 +274,7 @@ async fn abort_after_real_admission_cancels_registered_parent_and_drains_actual_
 #[tokio::test]
 async fn actual_library_switch_cancels_admitted_old_observer_without_releasing_its_whole_ticket() {
     let (temp, library, inventory) = fixture();
-    let engine = temp.path().join("app/bin/nemotron");
+    let engine = temp.path().join("app").join("bin").join("nemotron");
     fs::create_dir_all(&engine).unwrap();
     fs::write(engine.join("actual-inventory"), b"12345").unwrap();
     let (entered, release) = inventory.test_hold_after_begin();
@@ -320,7 +324,7 @@ async fn actual_library_switch_cancels_admitted_old_observer_without_releasing_i
 #[tokio::test]
 async fn real_inventory_returns_while_the_actual_ordered_library_commit_is_still_blocked() {
     let (temp, library, inventory) = fixture();
-    let engine = temp.path().join("app/bin/nemotron");
+    let engine = temp.path().join("app").join("bin").join("nemotron");
     fs::create_dir_all(&engine).unwrap();
     fs::write(engine.join("actual-inventory"), b"1234567").unwrap();
     let (entered, entered_owner) = tokio::sync::oneshot::channel();
