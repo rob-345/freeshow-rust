@@ -167,6 +167,14 @@ core pass, including the corrected download owner-exit fixture. Independently
 validated downloaded Linux receipts preserve the187-step/141-response/JPEG
 workflow with54 expected other-feature diagnostics.
 [Actual diagnostic CI receipt](baselines/windows-listing-diagnostic-ci.json).
+The corrected test comparator now requires all14 original pre-JSON IEEE values,
+strict non-Stats shapes/order and exact numeric field types. It also preserves
+a real decimal-transport control: source bits for1792415704000.0015 differ from
+serde's reparsed decimal by one ULP, and substituting the latter must fail.
+Three independently rerun portable comparator controls pass; production and
+all original Windows test bodies remain unchanged. The next actual Windows run
+will include these three additional controls alongside the original33 cases.
+[Number comparison](workers/browse-windows-number-comparison.md).
 [Listing integration and limits](workers/browse-windows-integration.md).
 
 The full retained application exposed silent Web Audio for native HTTP assets:
