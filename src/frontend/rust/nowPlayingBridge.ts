@@ -12,6 +12,8 @@ export type NowPlayingPublication = {
     id: string
     sequence: string
     hydration?: AudioMetadataHydration
+    alertKind?: "missingText" | "folderCreationFailed"
+    alertFolder?: string
 }
 type Options = {
     transport: NowPlayingTransport
@@ -22,6 +24,35 @@ type Options = {
 }
 const same = (a: RuntimeContext | undefined, b: RuntimeContext | undefined) => !!a && !!b && a.runtimeId === b.runtimeId && a.libraryGeneration === b.libraryGeneration && a.dataPath === b.dataPath
 const failure = (code: string, message: string) => Object.assign(new Error(message), { code })
+const FOLDER_PREFIX = "Error: Could not create folder at: "
+const MAX_COMPLETIONS = 20
+
+function boundedUtf8(value: unknown, maximum: number): value is string {
+    if (typeof value !== "string" || value.length > maximum) return false
+    let bytes = 0
+    for (let i = 0; i < value.length; i++) {
+        const code = value.charCodeAt(i)
+        if (code === 0) return false
+        if (code < 128) bytes++
+        else if (code < 2048) bytes += 2
+        else if (code >= 0xd800 && code <= 0xdbff) {
+            const low = value.charCodeAt(++i)
+            if (!(low >= 0xdc00 && low <= 0xdfff)) return false
+            bytes += 4
+        } else if (code >= 0xdc00 && code <= 0xdfff) return false
+        else bytes += 3
+        if (bytes > maximum) return false
+    }
+    return true
+}
+function originalAlert(publication: NowPlayingPublication, data: unknown): boolean {
+    if (Object.hasOwn(publication, "hydration")) return false
+    if (publication.alertKind === "missingText") return !Object.hasOwn(publication, "alertFolder") && data === "This does not exist!"
+    // The native sealed EnsureFolder observation supplies this diagnostic path.
+    // It is never filesystem authority and is not normalized/joined in the UI.
+    const folder = publication.alertFolder
+    return publication.alertKind === "folderCreationFailed" && boundedUtf8(folder, 32774) && (folder.endsWith("/Audio") || folder.endsWith("\\Audio")) && boundedUtf8(data, 32814) && data === `${FOLDER_PREFIX}${folder}!`
+}
 
 /** One UI owner; all entered native promises remain charged until settlement. */
 export function createNowPlayingBridge(options: Options) {
@@ -84,15 +115,15 @@ export function createNowPlayingBridge(options: Options) {
             const next = BigInt(publication.sequence)
             if (next <= sequence) return
             // Reserve before restoration/callbacks, including reentrant input.
-            if (completionSlots === 4) throw failure("now_playing_completion_busy", "Four entered native completion promises remain owned")
+            if (completionSlots === MAX_COMPLETIONS) throw failure("now_playing_completion_busy", "Twenty entered native completion promises remain owned")
             completionSlots++
             reserved = true
             lastContext = frozen
             if (event.message.channel === "AUDIO_METADATA") {
-                if (!publication.hydration) throw failure("now_playing_publication", "Missing native metadata restoration")
+                if (!publication.hydration || Object.hasOwn(publication, "alertKind") || Object.hasOwn(publication, "alertFolder")) throw failure("now_playing_publication", "Invalid native metadata restoration")
                 hydrateAudioMetadata(event.message.data, publication.hydration)
             } else if (event.message.channel === "ALERT") {
-                if (publication.hydration !== undefined || event.message.data !== "This does not exist!") throw failure("now_playing_publication", "Invalid original now-playing alert")
+                if (!originalAlert(publication, event.message.data)) throw failure("now_playing_publication", "Invalid original now-playing alert")
             } else throw failure("now_playing_publication", "Unexpected original now-playing callback")
             // Commit before callback invocation so a reentrant replay cannot
             // deliver the same original message twice.

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import fs from "node:fs"
+import { spawnSync } from "node:child_process"
 import { test } from "node:test"
 import ts from "typescript"
 
@@ -83,7 +84,14 @@ function harness({ timeoutMs = 100, deliver } = {}) {
     }
 }
 function alert(n, ctx = context()) {
-    return { event: { channel: "MAIN", message: { channel: "ALERT", data: "This does not exist!" }, context: { ...ctx } }, id: id(n), sequence: String(n) }
+    return { event: { channel: "MAIN", message: { channel: "ALERT", data: "This does not exist!" }, context: { ...ctx } }, id: id(n), sequence: String(n), alertKind: "missingText" }
+}
+function folderAlert(n, folder, ctx = context()) {
+    const publication = alert(n, ctx)
+    publication.alertKind = "folderCreationFailed"
+    publication.alertFolder = folder
+    publication.event.message.data = `Error: Could not create folder at: ${folder}!`
+    return publication
 }
 function metadata(n, ctx = context()) {
     return {
@@ -254,18 +262,18 @@ test("malformed callback/hydration rejects with private negative receipt and ato
     assert.equal(h.completions.length, 3, "invalid authority/schema never enters an ACK")
 })
 
-test("four command leases remain occupied through real settlement, independently of four completion leases", async () => {
+test("four command leases remain occupied through real settlement, independently of twenty completion leases", async () => {
     const h = harness()
-    for (let n = 1; n <= 4; n++) {
-        h.bridge.handle({ channel: "NOW_PLAYING_UNSET" })
+    for (let n = 1; n <= 20; n++) {
+        if (n <= 4) h.bridge.handle({ channel: "NOW_PLAYING_UNSET" })
         h.bridge.publish(alert(n))
     }
     h.bridge.handle({ channel: "OPEN_NOW_PLAYING" })
-    h.bridge.publish(alert(5))
+    h.bridge.publish(alert(21))
     await tick()
     assert.equal(h.commands.length, 4)
-    assert.equal(h.completions.length, 4)
-    assert.equal(h.delivered.length, 4)
+    assert.equal(h.completions.length, 20)
+    assert.equal(h.delivered.length, 20)
     assert.deepEqual(
         h.errors.map((e) => e.code),
         ["now_playing_busy", "now_playing_completion_busy"]
@@ -273,15 +281,15 @@ test("four command leases remain occupied through real settlement, independently
     h.commands[0].resolve()
     h.completions[0].resolve()
     h.bridge.handle({ channel: "OPEN_NOW_PLAYING" })
-    h.bridge.publish(alert(5))
-    assert.equal(h.delivered.length, 4, "merely resolving a promise does not synchronously release its lease")
+    h.bridge.publish(alert(21))
+    assert.equal(h.delivered.length, 20, "merely resolving a promise does not synchronously release its lease")
     await tick()
     h.bridge.handle({ channel: "OPEN_NOW_PLAYING" })
-    h.bridge.publish(alert(5))
+    h.bridge.publish(alert(21))
     await tick()
     assert.equal(h.commands.length, 5)
-    assert.equal(h.completions.length, 5)
-    assert.equal(h.delivered.length, 5)
+    assert.equal(h.completions.length, 21)
+    assert.equal(h.delivered.length, 21)
     await settle(h.commands)
     await settle(h.completions)
     assert.equal(h.bridge.status().commands, 0)
@@ -294,16 +302,16 @@ test("reentrant callbacks reserve completion capacity and commit replay identity
         deliver(_message, bridge) {
             const n = h.delivered.length
             bridge.publish(alert(n)) // replay from within the original callback
-            if (n <= 4) bridge.publish(alert(n + 1))
+            if (n <= 20) bridge.publish(alert(n + 1))
         }
     })
     h.bridge.publish(alert(1))
     await tick()
-    assert.equal(h.delivered.length, 4)
-    assert.equal(h.completions.length, 4)
+    assert.equal(h.delivered.length, 20)
+    assert.equal(h.completions.length, 20)
     assert.deepEqual(
         h.completions.map((v) => v.id),
-        [id(4), id(3), id(2), id(1)]
+        Array.from({ length: 20 }, (_, i) => id(20 - i))
     )
     assert.ok(h.completions.every((v) => v.accepted))
     assert.equal(h.errors[0].code, "now_playing_completion_busy")
@@ -475,4 +483,203 @@ test("missing live context cannot make close report drained while previously ent
         assert.equal(h.bridge.status().commands, 0)
         assert.equal(h.bridge.status().completionSlots, 0)
     }
+})
+
+test("actual pinned makeDir error messages preserve native folder spelling across platforms and exact UTF8 boundary", async () => {
+    const source = spawnSync("git", ["show", "2d94defcf98175e4f5c9504e7f4fd1d33c35c975:src/electron/utils/files.ts"], { cwd: new URL("../../", import.meta.url), encoding: "utf8", timeout: 10000 })
+    assert.equal(source.status, 0, source.stderr)
+    const ast = ts.createSourceFile("files.ts", source.stdout, ts.ScriptTarget.Latest, true)
+    const declaration = ast.statements.find((s) => ts.isFunctionDeclaration(s) && s.name?.text === "makeDir").getText(ast)
+    const compiled = ts.transpileModule(declaration + ";return makeDir", { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText
+    const cases = [
+        ["/library/音楽 🎵", "/library/音楽 🎵/Audio"],
+        ["/literal\\Linux-name", "/literal\\Linux-name/Audio"],
+        ["/names/with!bang\nline", "/names/with!bang\nline/Audio"],
+        ["/", "/Audio"],
+        ["C:\\Library\\音楽", "C:\\Library\\音楽\\Audio"],
+        ["C:/Library", "C:/Library\\Audio"],
+        ["\\\\server\\share\\Library", "\\\\server\\share\\Library\\Audio"],
+        ["\\\\?\\C:\\Library", "\\\\?\\C:\\Library\\Audio"],
+        ["/" + "é".repeat(16383) + "x", "/" + "é".repeat(16383) + "x/Audio"]
+    ]
+    assert.equal(Buffer.byteLength(cases.at(-1)[0]), 32768)
+    assert.equal(Buffer.byteLength(cases.at(-1)[1]), 32774)
+    for (const [dataPath, folder] of cases) {
+        const ctx = { ...context(), dataPath },
+            h = harness(),
+            events = []
+        h.setContext(ctx)
+        const makeDir = new Function("exports", "fs", "sendToMain", "ToMain", "console", compiled)(
+            {},
+            {
+                mkdirSync(path, options) {
+                    assert.equal(path, folder)
+                    assert.deepEqual(options, { recursive: true })
+                    throw new Error("controlled filesystem failure")
+                }
+            },
+            (channel, data) => events.push({ channel, data }),
+            { ALERT: "ALERT" },
+            { error() {} }
+        )
+        makeDir(folder)
+        assert.equal(events.length, 1)
+        const publication = folderAlert(1, folder, ctx)
+        assert.deepEqual(publication.event.message, events[0], "message comes from actual source, not a copied reference algorithm")
+        h.bridge.publish(publication)
+        await tick()
+        assert.equal(h.delivered.length, 1)
+        assert.equal(h.delivered[0], publication.event.message)
+        assert.equal(h.completions[0].accepted, true)
+        assert.equal(h.errors.length, 0)
+        await settle(h.completions)
+    }
+})
+
+test("typed alerts reject wrong kinds, malformed native folder receipts and source message substitutions before delivery", async () => {
+    const invalid = [
+        (p) => delete p.alertKind,
+        (p) => (p.alertKind = "other"),
+        (p) => {
+            p.alertKind = "missingText"
+            delete p.alertFolder
+        },
+        (p) => delete p.alertFolder,
+        (p) => (p.alertFolder = 42),
+        (p) => {
+            p.alertFolder = "/bad/Other"
+            p.event.message.data = `Error: Could not create folder at: ${p.alertFolder}!`
+        },
+        (p) => {
+            p.alertFolder = "/bad/Audio/"
+            p.event.message.data = `Error: Could not create folder at: ${p.alertFolder}!`
+        },
+        ...["/bad\u0000/Audio", "/bad\ud800/Audio", "/bad\udc00/Audio", "/" + "x".repeat(32768) + "/Audio", "/" + "é".repeat(16384) + "/Audio"].map((folder) => (p) => {
+            p.alertFolder = folder
+            p.event.message.data = `Error: Could not create folder at: ${folder}!`
+        }),
+        (p) => (p.event.message.data = `Error: Could not create folder at: /another/Audio!`),
+        (p) => (p.event.message.data += "extra"),
+        (p) => (p.event.message.data = p.event.message.data.slice(0, -1)),
+        (p) => (p.event.message.data = "x".repeat(32815)),
+        (p) => (p.hydration = undefined)
+    ]
+    const h = harness()
+    for (const modify of invalid) {
+        const publication = folderAlert(1, "/library/Audio")
+        modify(publication)
+        h.bridge.publish(publication)
+        await tick()
+        assert.equal(h.delivered.length, 0)
+        assert.equal(h.completions.at(-1).accepted, false)
+        assert.equal(h.errors.at(-1).code, "now_playing_publication")
+        await settle(h.completions)
+    }
+    for (const privateFields of [{ alertKind: undefined }, { alertFolder: undefined }, { alertKind: "folderCreationFailed", alertFolder: "/library/Audio" }]) {
+        const publication = Object.assign(metadata(1), privateFields)
+        h.bridge.publish(publication)
+        await tick()
+        assert.equal(publication.event.message.data.metadata.year, null, "forbidden alert fields reject before hydration")
+        assert.equal(h.completions.at(-1).accepted, false)
+        await settle(h.completions)
+    }
+    const missing = alert(1)
+    missing.alertFolder = undefined
+    h.bridge.publish(missing)
+    await tick()
+    assert.equal(h.completions.at(-1).accepted, false)
+    await settle(h.completions)
+    h.bridge.publish(alert(1))
+    await tick()
+    assert.equal(h.delivered.length, 1, "rejections did not commit source sequence")
+    assert.equal(h.completions.at(-1).accepted, true)
+    await settle(h.completions)
+})
+
+test("four pending source commands each deliver metadata plus four folder alerts in source order without leaking private fields or awaiting ACK", async () => {
+    const h = harness(),
+        expected = []
+    for (let operation = 0; operation < 4; operation++) {
+        h.bridge.handle({ channel: "NOW_PLAYING", data: { filePath: `/audio/${operation}.mp3`, name: "Title", unknownLang: ["Artist", "Title", "Album"], duration: 1 } })
+        const first = operation * 5 + 1
+        const publications = [metadata(first), ...Array.from({ length: 4 }, (_, i) => folderAlert(first + i + 1, `${context().dataPath}/Audio`))]
+        for (const publication of publications) {
+            expected.push(publication.event.message)
+            h.bridge.publish(publication)
+        }
+    }
+    await tick()
+    assert.equal(h.commands.length, 4)
+    assert.equal(h.completions.length, 20)
+    assert.equal(h.bridge.status().commands, 4, "source effects did not require command promise completion")
+    assert.equal(h.bridge.status().completionSlots, 20, "metadata ACK remains pending while following source alerts deliver")
+    assert.deepEqual(
+        h.delivered.map((message) => message.channel),
+        Array.from({ length: 4 }, () => ["AUDIO_METADATA", "ALERT", "ALERT", "ALERT", "ALERT"]).flat()
+    )
+    for (let n = 0; n < 20; n++) {
+        assert.equal(h.delivered[n], expected[n])
+        assert.deepEqual(Object.keys(h.delivered[n]), ["channel", "data"])
+        assert.deepEqual(Object.keys(h.delivered[n].data).includes("alertFolder"), false)
+        assert.equal(h.completions[n].id, id(n + 1))
+        assert.equal(h.completions[n].accepted, true)
+    }
+    h.bridge.publish(folderAlert(21, `${context().dataPath}/Audio`))
+    await tick()
+    assert.equal(h.delivered.length, 20)
+    assert.equal(h.completions.length, 20)
+    assert.equal(h.errors.at(-1).code, "now_playing_completion_busy")
+    await settle(h.commands)
+    await settle(h.completions)
+})
+
+test("twenty lost completion responses remain charged across context retirement and terminal timeout/retry until real settlement", async () => {
+    const h = harness(),
+        old = context(),
+        next = context(4)
+    for (let n = 1; n <= 20; n++) {
+        if (n <= 4) h.bridge.handle({ channel: "NOW_PLAYING_UNSET" })
+        h.bridge.publish(n % 5 === 1 ? metadata(n, old) : folderAlert(n, `${old.dataPath}/Audio`, old))
+    }
+    await tick()
+    h.setContext(next)
+    h.bridge.publish(alert(21, next))
+    await tick()
+    assert.equal(h.delivered.length, 20)
+    assert.equal(h.completions.length, 20)
+    const first = h.bridge.contextChanged(old)
+    await tick()
+    h.retirements[0].resolve()
+    await assert.rejects(first, { code: "now_playing_retirement_timeout" })
+    assert.equal(h.bridge.status().completionSlots, 20)
+    const retry = h.bridge.contextChanged(old)
+    for (const pending of h.commands) pending.resolve()
+    h.completions[0].resolve()
+    await tick()
+    h.bridge.publish(alert(21, next))
+    await tick()
+    assert.equal(h.completions.length, 21)
+    for (const pending of h.completions.slice(1, 20)) pending.resolve()
+    await retry
+    assert.equal(h.retirements.length, 1, "old lost native retirement was not replaced")
+    assert.equal(h.bridge.status().completionSlots, 1, "new context ACK is outside old retirement scope")
+    for (let n = 22; n <= 40; n++) h.bridge.publish(folderAlert(n, `${next.dataPath}/Audio`, next))
+    await tick()
+    assert.equal(h.bridge.status().completionSlots, 20)
+    const close = h.bridge.close()
+    await tick()
+    assert.equal(h.retirements[1].terminal, true)
+    h.bridge.publish(alert(41, next))
+    h.bridge.handle({ channel: "OPEN_NOW_PLAYING" })
+    assert.equal(h.errors.at(-1).code, "now_playing_closed")
+    h.retirements[1].resolve()
+    await assert.rejects(close, { code: "now_playing_retirement_timeout" })
+    assert.equal(h.bridge.status().completionSlots, 20)
+    const terminalRetry = h.bridge.close()
+    for (const pending of h.completions) pending.resolve()
+    await terminalRetry
+    assert.equal(h.retirements.length, 2)
+    assert.equal(h.delivered.length, 40)
+    assert.equal(h.bridge.status().completionSlots, 0)
+    assert.equal(h.bridge.status().control, false)
 })
