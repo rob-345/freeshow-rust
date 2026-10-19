@@ -3,7 +3,10 @@
     reason = "Serializes the mandatory process-global native owner tests"
 )]
 use super::*;
-use std::{sync::Mutex, time::Instant};
+use std::{
+    sync::{mpsc, Mutex},
+    time::Instant,
+};
 static TEST_OWNER: Mutex<()> = Mutex::new(());
 fn owner() -> Owner {
     Owner::new("native-test", 1, Path::new("/fixture")).unwrap()
@@ -17,6 +20,37 @@ fn unavailable() -> Backend {
             "Controlled unavailable capability",
         )),
     }
+}
+fn new_gate() -> (Gate, mpsc::Receiver<()>, mpsc::Sender<()>) {
+    let (entered, observed) = mpsc::channel();
+    let (release, held) = mpsc::channel();
+    (
+        Gate {
+            entered,
+            release: held,
+        },
+        observed,
+        release,
+    )
+}
+fn gate(slot: &Mutex<Option<Gate>>) -> (mpsc::Receiver<()>, mpsc::Sender<()>) {
+    let (native, observed, release) = new_gate();
+    *slot.lock().unwrap() = Some(native);
+    (observed, release)
+}
+// An independent, owned bounded test releaser prevents the deliberately broken
+// synchronous-join control from hanging the runtime that observes its timeout.
+fn watchdog(release: mpsc::Sender<()>) -> (mpsc::Sender<()>, std::thread::JoinHandle<bool>) {
+    let (now, wait) = mpsc::channel();
+    let thread = std::thread::spawn(move || {
+        let expired = matches!(
+            wait.recv_timeout(Duration::from_secs(2)),
+            Err(mpsc::RecvTimeoutError::Timeout)
+        );
+        let _ = release.send(());
+        expired
+    });
+    (now, thread)
 }
 
 #[test]
@@ -179,11 +213,108 @@ async fn actual_lost_result_sender_keeps_whole_ticket_quota_until_collected_afte
     next.shutdown().await.unwrap();
 }
 
+#[tokio::test(flavor = "current_thread")]
+async fn post_done_native_frame_preserves_timeout_observer_drop_and_sticky_actual_join_failure() {
+    let _serial = TEST_OWNER.lock().unwrap();
+    let s = SpotifyService::start(owner(), unavailable(), Limits::default()).unwrap();
+    s.ready().await.unwrap();
+    let (entered, release) = gate(&s.0.shared.post_done_gate);
+    s.0.shared.panic_after_done.store(true, Ordering::Release);
+    s.close();
+    entered.recv_timeout(Duration::from_secs(5)).unwrap();
+    let (release_now, releaser) = watchdog(release);
+    assert!(s.0.shared.done.load(Ordering::Acquire));
+    assert!(!s.status().running);
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), s.shutdown())
+            .await
+            .is_err(),
+        "done cannot make a synchronous native join defeat the observer timeout"
+    );
+    assert!(!s.status().joined);
+    assert!(!s.status().drained);
+    assert_eq!(s.status().observers, 0);
+    assert_eq!(
+        SpotifyService::start(owner(), unavailable(), Limits::default())
+            .err()
+            .unwrap()
+            .code,
+        "spotify_owner_busy"
+    );
+    let copy = s.clone();
+    let observer = tokio::spawn(async move { copy.shutdown().await });
+    tokio::time::timeout(Duration::from_secs(1), async {
+        while s.status().observers == 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    observer.abort();
+    assert!(observer.await.unwrap_err().is_cancelled());
+    assert_eq!(s.status().observers, 0);
+    assert!(!s.status().joined);
+    release_now.send(()).unwrap();
+    assert!(
+        !releaser.join().unwrap(),
+        "positive case released explicitly"
+    );
+    let error = s.shutdown().await.unwrap_err();
+    assert_eq!(error.code, "spotify_owner_panicked");
+    assert!(s.status().drained);
+    assert_eq!(s.status().terminal_error, Some(error.clone()));
+    assert_eq!(s.shutdown().await.unwrap_err(), error);
+    let next = SpotifyService::start(owner(), unavailable(), Limits::default()).unwrap();
+    next.shutdown().await.unwrap();
+}
+
+#[test]
+fn no_runtime_pending_post_done_exit_retains_handle_and_finished_exit_can_join() {
+    use std::{
+        future::Future,
+        task::{Context as TaskContext, Poll, Waker},
+    };
+    let _serial = TEST_OWNER.lock().unwrap();
+    let s = SpotifyService::start(owner(), unavailable(), Limits::default()).unwrap();
+    let (entered, release) = gate(&s.0.shared.post_done_gate);
+    s.close();
+    entered.recv_timeout(Duration::from_secs(5)).unwrap();
+    let (release_now, releaser) = watchdog(release);
+    let mut context = TaskContext::from_waker(Waker::noop());
+    assert!(matches!(
+        std::pin::pin!(s.shutdown()).as_mut().poll(&mut context),
+        Poll::Ready(Err(Error {
+            code: "spotify_runtime",
+            ..
+        }))
+    ));
+    assert!(!s.status().joined);
+    assert_eq!(s.status().observers, 0);
+    release_now.send(()).unwrap();
+    assert!(!releaser.join().unwrap());
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while s
+        .0
+        .thread
+        .lock()
+        .unwrap()
+        .as_ref()
+        .is_some_and(|thread| !thread.is_finished())
+    {
+        assert!(Instant::now() < deadline);
+        std::thread::yield_now();
+    }
+    assert!(matches!(
+        std::pin::pin!(s.shutdown()).as_mut().poll(&mut context),
+        Poll::Ready(Ok(()))
+    ));
+    assert!(s.status().drained);
+}
+
 #[cfg(target_os = "linux")]
 mod linux {
     use super::*;
-    use crate::service::Gate;
-    use std::sync::{atomic::Ordering, mpsc};
+    use std::sync::atomic::Ordering;
     struct Fixture(std::path::PathBuf);
     impl Fixture {
         fn new(name: &str) -> Self {
@@ -201,14 +332,165 @@ mod linux {
             }
         }
     }
-    fn gate(slot: &Mutex<Option<Gate>>) -> (mpsc::Receiver<()>, mpsc::Sender<()>) {
-        let (entered, observed) = mpsc::channel();
-        let (release, held) = mpsc::channel();
-        *slot.lock().unwrap() = Some(Gate {
-            entered,
-            release: held,
-        });
-        (observed, release)
+    #[tokio::test(flavor = "current_thread")]
+    async fn startup_help_panic_keeps_accepted_queued_lease_until_actual_child_wait() {
+        let _serial = TEST_OWNER.lock().unwrap();
+        let own = owner();
+        let (after_spawn, entered, continue_probe) = new_gate();
+        let (reap, reaping, release_reap) = new_gate();
+        let s = SpotifyService::start_configured(
+            own.clone(),
+            Fixture::new("probe-hold.sh").backend(),
+            Limits::default(),
+            StartHooks {
+                after_spawn: Some(after_spawn),
+                reap: Some(reap),
+                panic_after_spawn: true,
+            },
+        )
+        .unwrap();
+        entered.recv_timeout(Duration::from_secs(5)).unwrap();
+        let ticket = s
+            .begin_state(&own, Instant::now() + Duration::from_secs(2))
+            .unwrap();
+        assert_eq!(s.status().retained, 1);
+        continue_probe.send(()).unwrap();
+        reaping.recv_timeout(Duration::from_secs(5)).unwrap();
+        let held = s.status();
+        assert_eq!(held.spawned, 1);
+        assert_eq!(held.reaped, 0);
+        assert_eq!(held.retained, 1);
+        assert_ne!(held.active_pid, 0);
+        assert!(Path::new(&format!("/proc/{}", held.active_pid)).exists());
+        assert_eq!(s.ready().await.unwrap_err().code, "spotify_owner_panicked");
+        drop(ticket);
+        assert_eq!(
+            s.status().retained,
+            1,
+            "queued work owns the failed-send lease"
+        );
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), s.shutdown())
+                .await
+                .is_err()
+        );
+        assert!(!s.status().joined);
+        release_reap.send(()).unwrap();
+        let error = s.shutdown().await.unwrap_err();
+        assert_eq!(error.code, "spotify_owner_panicked");
+        let finished = s.status();
+        assert!(finished.drained);
+        assert_eq!((finished.spawned, finished.reaped), (1, 1));
+        assert_eq!(
+            (finished.queries, finished.completed, finished.retained),
+            (1, 1, 0)
+        );
+        assert!(!Path::new(&format!("/proc/{}", held.active_pid)).exists());
+        assert_eq!(s.shutdown().await.unwrap_err(), error);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn request_reprobe_help_panic_keeps_active_lease_until_actual_child_wait() {
+        let _serial = TEST_OWNER.lock().unwrap();
+        let own = owner();
+        let s = SpotifyService::start(
+            own.clone(),
+            Fixture::new("probe-hold.sh").backend(),
+            Limits {
+                query_timeout: Duration::from_millis(50),
+                ..Limits::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            s.ready().await.unwrap(),
+            Capability::Unavailable {
+                code: "spotify_timeout"
+            }
+        );
+        assert_eq!((s.status().spawned, s.status().reaped), (1, 1));
+        let (reaping, release_reap) = gate(&s.0.shared.reap_gate);
+        s.0.shared.panic_after_spawn.store(true, Ordering::Release);
+        let ticket = s
+            .begin_state(&own, Instant::now() + Duration::from_secs(2))
+            .unwrap();
+        reaping.recv_timeout(Duration::from_secs(5)).unwrap();
+        let held = s.status();
+        assert_eq!((held.spawned, held.reaped, held.retained), (2, 1, 1));
+        assert_ne!(held.active_pid, 0);
+        assert!(Path::new(&format!("/proc/{}", held.active_pid)).exists());
+        drop(ticket);
+        assert_eq!(
+            s.status().retained,
+            1,
+            "active HELP continuation still owns its lease"
+        );
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), s.shutdown())
+                .await
+                .is_err()
+        );
+        assert!(!s.status().joined);
+        release_reap.send(()).unwrap();
+        let error = s.shutdown().await.unwrap_err();
+        assert_eq!(error.code, "spotify_owner_panicked");
+        let finished = s.status();
+        assert!(finished.drained);
+        assert_eq!((finished.spawned, finished.reaped), (2, 2));
+        assert_eq!(
+            (finished.queries, finished.completed, finished.retained),
+            (1, 1, 0)
+        );
+        assert!(!Path::new(&format!("/proc/{}", held.active_pid)).exists());
+        assert_eq!(s.shutdown().await.unwrap_err(), error);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn borrowed_reply_keeps_actual_result_quota_and_checks_foreign_and_retired_owner() {
+        let _serial = TEST_OWNER.lock().unwrap();
+        let own = owner();
+        let s = SpotifyService::start(
+            own.clone(),
+            Fixture::new("stdout.sh").backend(),
+            Limits::default(),
+        )
+        .unwrap();
+        assert_eq!(s.ready().await.unwrap(), Capability::Available);
+        let mut receipts = Vec::new();
+        for _ in 0..JOB_CAPACITY {
+            receipts.push(
+                s.begin_state(&own, Instant::now() + Duration::from_secs(2))
+                    .unwrap()
+                    .finish()
+                    .await
+                    .unwrap(),
+            );
+        }
+        for receipt in &receipts {
+            assert_eq!(
+                receipt.reply(&own).unwrap().wire().data,
+                serde_json::Value::Null
+            );
+            assert_eq!(s.status().retained, JOB_CAPACITY);
+            assert_eq!(receipt.reply(&owner()).err().unwrap().code, "spotify_stale");
+            assert_eq!(s.status().retained, JOB_CAPACITY);
+        }
+        assert_eq!(
+            s.begin_state(&own, Instant::now()).err().unwrap().code,
+            "spotify_busy"
+        );
+        s.shutdown().await.unwrap();
+        assert!(s.status().drained);
+        assert_eq!(s.status().retained, JOB_CAPACITY);
+        let borrowed = receipts[0].reply(&own).err().unwrap();
+        assert_eq!(borrowed.code, "spotify_shutdown");
+        assert_eq!(
+            receipts.pop().unwrap().into_reply(&own).err().unwrap(),
+            borrowed
+        );
+        assert_eq!(s.status().retained, JOB_CAPACITY - 1);
+        drop(receipts);
+        assert_eq!(s.status().retained, 0);
     }
     #[tokio::test(flavor = "current_thread")]
     async fn observed_real_process_panic_cleanup_retains_lease_then_sticky_shutdown_joins() {

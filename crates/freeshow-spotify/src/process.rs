@@ -80,6 +80,8 @@ pub(crate) async fn run(
     );
     shared.notify_spawn();
     #[cfg(test)]
+    shared.hold_after_spawn();
+    #[cfg(test)]
     if shared
         .panic_after_spawn
         .swap(false, std::sync::atomic::Ordering::AcqRel)

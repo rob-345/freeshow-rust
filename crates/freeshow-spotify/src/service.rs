@@ -40,7 +40,13 @@ pub(crate) struct Shared {
     #[cfg(test)]
     reap_gate: Mutex<Option<Gate>>,
     #[cfg(test)]
+    after_spawn_gate: Mutex<Option<Gate>>,
+    #[cfg(test)]
     exit_gate: Mutex<Option<Gate>>,
+    #[cfg(test)]
+    post_done_gate: Mutex<Option<Gate>>,
+    #[cfg(test)]
+    panic_after_done: AtomicBool,
     #[cfg(test)]
     pub(crate) panic_after_spawn: AtomicBool,
     #[cfg(test)]
@@ -50,6 +56,13 @@ pub(crate) struct Shared {
 struct Gate {
     entered: std::sync::mpsc::Sender<()>,
     release: std::sync::mpsc::Receiver<()>,
+}
+#[cfg(test)]
+#[derive(Default)]
+struct StartHooks {
+    after_spawn: Option<Gate>,
+    reap: Option<Gate>,
+    panic_after_spawn: bool,
 }
 impl Shared {
     pub(crate) fn notify_spawn(&self) {
@@ -77,6 +90,10 @@ impl Shared {
     #[cfg(test)]
     pub(crate) fn hold_reap(&self) {
         Self::gate(&self.reap_gate);
+    }
+    #[cfg(test)]
+    pub(crate) fn hold_after_spawn(&self) {
+        Self::gate(&self.after_spawn_gate);
     }
     #[cfg(test)]
     fn gate(slot: &Mutex<Option<Gate>>) {
@@ -108,9 +125,21 @@ impl Inner {
         self.sender.lock().unwrap_or_else(|e| e.into_inner()).take();
     }
     fn join(&self) {
-        // No await between taking and joining: observer cancellation cannot
-        // detach this handle. Final thread TLS/destructors are nonpreemptible.
         let mut handle = self.thread.lock().unwrap_or_else(|e| e.into_inner());
+        self.join_locked(&mut handle);
+    }
+    fn join_finished(&self) -> bool {
+        let mut handle = self.thread.lock().unwrap_or_else(|e| e.into_inner());
+        if handle.as_ref().is_some_and(|thread| !thread.is_finished()) {
+            return false;
+        }
+        self.join_locked(&mut handle);
+        true
+    }
+    fn join_locked(&self, handle: &mut Option<JoinHandle<()>>) {
+        // The named handle guard remains held through actual join. Observers
+        // never see a taken-but-unjoined handle, nor take an unfinished handle.
+        // Emergency last-owner Drop alone may synchronously wait for live IO.
         if let Some(thread) = handle.take() {
             if thread.join().is_err() {
                 self.shared.fail(Error::new(
@@ -177,7 +206,7 @@ impl Receipt {
     pub fn context(&self) -> &Context {
         self.owner.context()
     }
-    pub fn into_reply(self, owner: &Owner) -> Result<Outcome> {
+    fn validate(&self, owner: &Owner) -> Result<()> {
         if !self.owner.matches(owner) {
             return Err(Error::new("spotify_stale", "Foreign native result owner"));
         }
@@ -187,11 +216,35 @@ impl Receipt {
                 .error()
                 .unwrap_or_else(|| Error::new("spotify_shutdown", "Native query owner retired")));
         }
+        Ok(())
+    }
+    /// Borrow while retaining the whole native result/publication permit.
+    pub fn reply(&self, owner: &Owner) -> Result<&Outcome> {
+        self.validate(owner)?;
+        self.result.as_ref().map_err(Clone::clone)
+    }
+    /// Consuming handoff: the caller must independently bound the returned data.
+    pub fn into_reply(self, owner: &Owner) -> Result<Outcome> {
+        self.validate(owner)?;
         self.result
     }
 }
 impl SpotifyService {
     pub fn start(owner: Owner, backend: Backend, limits: Limits) -> Result<Self> {
+        Self::start_configured(
+            owner,
+            backend,
+            limits,
+            #[cfg(test)]
+            StartHooks::default(),
+        )
+    }
+    fn start_configured(
+        owner: Owner,
+        backend: Backend,
+        limits: Limits,
+        #[cfg(test)] hooks: StartHooks,
+    ) -> Result<Self> {
         limits.validate()?;
         if OWNER_ACTIVE
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
@@ -216,11 +269,17 @@ impl SpotifyService {
             notify: Notify::new(),
             cancel: CancellationToken::new(),
             #[cfg(test)]
-            reap_gate: Mutex::new(None),
+            reap_gate: Mutex::new(hooks.reap),
+            #[cfg(test)]
+            after_spawn_gate: Mutex::new(hooks.after_spawn),
             #[cfg(test)]
             exit_gate: Mutex::new(None),
             #[cfg(test)]
-            panic_after_spawn: AtomicBool::new(false),
+            post_done_gate: Mutex::new(None),
+            #[cfg(test)]
+            panic_after_done: AtomicBool::new(false),
+            #[cfg(test)]
+            panic_after_spawn: AtomicBool::new(hooks.panic_after_spawn),
             #[cfg(test)]
             abandon_reply: AtomicBool::new(false),
         });
@@ -260,6 +319,14 @@ impl SpotifyService {
                 state.closed.store(true, Ordering::Release);
                 state.done.store(true, Ordering::Release);
                 state.notify.notify_waiters();
+                #[cfg(test)]
+                {
+                    Shared::gate(&state.post_done_gate);
+                    assert!(
+                        !state.panic_after_done.load(Ordering::Acquire),
+                        "controlled native owner frame panic after done notification"
+                    );
+                }
             })
             .map_err(|_| {
                 OWNER_ACTIVE.store(false, Ordering::Release);
@@ -373,12 +440,22 @@ impl SpotifyService {
             let notified = self.0.shared.notify.notified();
             tokio::pin!(notified);
             notified.as_mut().enable();
-            if self.0.shared.done.load(Ordering::Acquire) {
+            let done = self.0.shared.done.load(Ordering::Acquire);
+            if done && self.0.join_finished() {
                 break;
             }
-            notified.await;
+            if tokio::runtime::Handle::try_current().is_err() {
+                return Err(Error::new(
+                    "spotify_runtime",
+                    "Pending native thread exit requires Tokio; join ownership retained",
+                ));
+            }
+            if done {
+                tokio::time::sleep(Duration::from_millis(1)).await;
+            } else {
+                notified.await;
+            }
         }
-        self.0.join();
         self.0.shared.error().map_or(Ok(()), Err)
     }
     pub async fn retire(&self, owner: &Owner) -> Result<()> {

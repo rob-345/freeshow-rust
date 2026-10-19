@@ -16,8 +16,11 @@ let backend = Backend::capture(trusted_absolute_dbus_send_path)?;
 let service = SpotifyService::start(owner.clone(), backend, Limits::default())?;
 let capability = service.ready().await?;
 let ticket = service.begin_state(&owner, Instant::now() + Duration::from_secs(2))?;
-let outcome = ticket.finish().await?.into_reply(&owner)?;
-let wire = outcome.wire();
+let receipt = ticket.finish().await?;
+let wire = receipt.reply(&owner)?.wire();
+// Keep receipt in the host's native publication lifetime through serialization
+// and actual delivery. Projection alone does not release its whole-job permit.
+// publish_original_main_reply(wire, receipt)?;
 ```
 
 `Owner` captures all three RuntimeContext fields and a private Arc identity seal.
@@ -61,6 +64,13 @@ the same trusted path allows a request-driven reprobe. No background retry runs.
 ServiceUnknown and ordinary process failure internally. Unavailable binary or
 session, unsupported platform/encoding, cancellation, deadline and resource
 rejection remain explicit native errors. They never become fake successful nulls.
+
+`Receipt::reply(&Owner) -> Result<&Outcome>` borrows the observation while retaining
+its whole native job/result permit. It shares the exact owner/retirement validation
+with the compatible consuming `into_reply`. The consuming API releases that
+permit; its caller must independently bound any retained Outcome/wire buffers.
+The host should use the borrowed form and retain the actual Receipt through event
+clones and serialization, not merely retain a copied payload or provenance token.
 
 `Outcome::wire() -> WireState` has public fields:
 
@@ -151,8 +161,16 @@ The four reads are not an atomic Spotify snapshot in either implementation.
   old-context results. `running` reports owner-body completion, not a join proof.
   Status is diagnostic, not a reservation.
 
-Final thread join is synchronous only after the owner body has settled real IO;
-final TLS/destructors remain nonpreemptible. Last-Service Drop closes and joins
+The owner-body `done` notification is not native thread return. Shutdown keeps
+the named handle lock and joins only after `JoinHandle::is_finished`; while a
+post-done frame is still live it polls cooperatively at 1ms, preserving external
+observer timeout/Drop and the same actual handle for retry. This polling occurs
+only during terminal shutdown, never idle Spotify operation. A pending shutdown
+outside Tokio returns `spotify_runtime`, retaining ownership; an already-finished
+thread can still join without Tokio. Use Tokio with time enabled for pending
+shutdown. Rust documents a possible brief final native interval even after
+`is_finished`; final native join/TLS teardown is not forcibly preemptible.
+Last-Service Drop closes and joins
 as an emergency fallback and can block: the host should explicitly await
 shutdown before releasing dependencies. No await occurs after taking the sole
 JoinHandle, so observer cancellation cannot detach it. OS spawn/kill/wait and
@@ -168,7 +186,7 @@ process, a process-tree kill guarantee, physical playback or server acceptance.
 
 ## Evidence and integration prerequisites
 
-Nine Rust tests include portable parser/configuration/unavailable-owner tests
+Fourteen Rust tests include portable parser/configuration/unavailable-owner tests
 that require no dbus installation. Linux controls use immutable executable shell
 fixtures as real process fixtures, not a production backend substitute. They
 exercise stdout/stderr caps, deadline/cancel, startup-probe cancellation, a
@@ -176,6 +194,36 @@ witnessed post-spawn panic held before real wait, caller drop, source-context
 retirement, old ready or lost-sender results/global quota, four observer saturation
 and aborted shutdown retry held before genuine owner exit. There are no ignored
 test cases.
+
+New HELP controls install a fault/gates before the startup thread can race its
+first spawn, accept a genuine queued request, then panic after the actual child
+is anchored. The independently held kill/wait continuation retains both its
+direct child and queued whole-job lease after caller Drop. A separate actual
+startup HELP timeout makes the next admitted request reprobe HELP; its post-spawn
+panic likewise retains the active request lease until real wait. Both assert
+PID disappearance, exact waited counters, zero final retained jobs, actual join
+and sticky repeated failure. Existing owned shell/sleep fixtures suffice; there
+is no new model/account/bus/process-tree authority.
+
+A portable post-done control holds and then panics the real owner frame after
+its notification but before native return. A separately owned test releaser has
+a 2s watchdog, so the broken blocking-join control fails without hanging the suite.
+The positive case times out one observer, aborts another, rejects replacement,
+then explicitly releases and joins; the real join error remains identical on
+retry. This is an owner-frame panic, **not** a TLS-destructor panic or a claim of
+recovering a double-panic process abort. A no-runtime control retains the held
+handle, then joins the genuinely finished thread without Tokio. An actual
+four-query child fixture proves borrowing/projecting four Receipts keeps all
+four permits, including foreign/retired rejection and explicit actual Drop.
+
+The temporary negative control removed only the `is_finished` admission check.
+The post-done test failed at its timeout assertion after the watchdog released
+the blocked join at 2s; the corrected source was restored and the full suite
+rerun. The ignored external log is
+`/mnt/data/cache/freeshow-rust-build/provider-shows/spotify-evidence/post-done-unfinished-join-negative.log`.
+Production adds no owner, runtime, task or per-request thread. The private parity
+driver now creates one fixed time-enabled observer runtime at startup and reuses
+it, allowing its shutdown executor to observe the same cooperative finish poll.
 
 Six Node22 suites run the actual immutable TS helper, plus real native children,
 on a private Gio/GDBus MPRIS service. They cover nine actual media/error profiles,
@@ -199,7 +247,7 @@ Rust1.99.1. Linux source tests require `/usr/bin/dbus-send`, `dbus-daemon`, and
 tests; they do not silently become parity skips. Mac/Windows skip only the four
 explicit Linux real-bus suites and still run the portable source/parser and
 explicit unsupported-backend suites. No native macOS/Windows runtime is claimed.
-Final focused checks: nine Rust tests, six Node22 suites with no Linux skips,
+Final focused checks: fourteen Rust tests, six Node22 suites with no Linux skips,
 and warnings-denied all-target Clippy on Linux, aarch64-apple-darwin and
 x86_64-pc-windows-gnu. The latter two are compile evidence only.
 

@@ -3,33 +3,10 @@ use freeshow_spotify::*;
 use serde_json::{json, Value};
 use std::{
     collections::HashMap,
-    future::Future,
     io::{self, BufRead, Read, Write},
     path::Path,
-    pin::pin,
-    sync::Arc,
-    task::{Context as TaskContext, Poll, Wake, Waker},
     time::{Duration, Instant},
 };
-struct ThreadWake(std::thread::Thread);
-impl Wake for ThreadWake {
-    fn wake(self: Arc<Self>) {
-        self.0.unpark()
-    }
-    fn wake_by_ref(self: &Arc<Self>) {
-        self.0.unpark()
-    }
-}
-fn wait<F: Future>(future: F) -> F::Output {
-    let w = Waker::from(Arc::new(ThreadWake(std::thread::current())));
-    let mut f = pin!(future);
-    loop {
-        match f.as_mut().poll(&mut TaskContext::from_waker(&w)) {
-            Poll::Ready(v) => return v,
-            Poll::Pending => std::thread::park(),
-        }
-    }
-}
 fn invalid() -> Error {
     Error {
         code: "spotify_invalid",
@@ -37,6 +14,12 @@ fn invalid() -> Error {
     }
 }
 fn main() {
+    // One fixed observer runtime for the private driver, reused for every wait.
+    // The product service still owns its own single native IO runtime/thread.
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_time()
+        .build()
+        .unwrap();
     let mut service = None;
     let owner = Owner::new("spotify-test", 1, Path::new("/fixture/library")).unwrap();
     let mut tickets = HashMap::<u64, Ticket>::new();
@@ -75,7 +58,7 @@ fn main() {
                         .unwrap_or_else(|| "/usr/bin/dbus-send".into());
                     let backend = Backend::capture(Path::new(&binary))?;
                     let started = SpotifyService::start(owner.clone(), backend, limits)?;
-                    let capability = wait(started.ready())?;
+                    let capability = runtime.block_on(started.ready())?;
                     service = Some(started);
                     Ok(json!(capability))
                 }
@@ -92,7 +75,7 @@ fn main() {
                     let ticket = tickets
                         .remove(&input["id"].as_u64().ok_or_else(invalid)?)
                         .ok_or_else(invalid)?;
-                    let outcome = wait(ticket.finish())?.into_reply(&owner)?;
+                    let outcome = runtime.block_on(ticket.finish())?.into_reply(&owner)?;
                     let null_reason = match &outcome {
                         Outcome::SourceNull(reason) => Some(reason),
                         _ => None,
@@ -114,7 +97,7 @@ fn main() {
                 }
                 "status" => Ok(json!(service.as_ref().ok_or_else(invalid)?.status())),
                 "close" => {
-                    wait(service.as_ref().ok_or_else(invalid)?.shutdown())?;
+                    runtime.block_on(service.as_ref().ok_or_else(invalid)?.shutdown())?;
                     Ok(Value::Null)
                 }
                 _ => Err(invalid()),
@@ -129,6 +112,6 @@ fn main() {
     }
     tickets.clear();
     if let Some(service) = service {
-        let _ = wait(service.shutdown());
+        let _ = runtime.block_on(service.shutdown());
     }
 }
