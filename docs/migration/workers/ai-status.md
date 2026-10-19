@@ -181,8 +181,63 @@ hashes here. That remains an explicit evidence gap.
 
 The injection is private `engine::prepare(job, Some(FILES.map(|f| f.1)))`, only
 called by crate unit tests. Public `Job::prepare()` always uses actual hashing.
-A future native composition test may expose that same seam under an explicit
-test-harness-only feature; no production digest override is shipped here.
+There is no public arbitrary digest override.
+
+### Fixed native-composition harness (separate followup)
+
+The standalone crate has `default = []`. Only explicit `test-harness` enables
+`Job::prepare_fixed_tiny_fixture(self) -> Result<Prepared>`. Its only input is the
+already admitted sealed Job. Each fixed leaf's test bytes are its own ASCII name,
+with **no newline**: `encoder.int8.onnx`, `decoder.int8.onnx`, `joiner.int8.onnx`,
+`tokens.txt`, `silero_vad.onnx` (75 bytes total). Actual bounded reads and SHA-256
+always run. Only when a leaf's real digest equals the private constant SHA-256
+of that leaf's exact filename bytes is its classification replaced by the source
+pinned digest. Changed bytes, newline suffixes or a different leaf's fixture bytes
+cannot receive the fixture classification. Genuine original pinned digests still
+retain their ordinary actual classification.
+
+This method deliberately **bypasses stamp reuse** so each fixture call really
+hashes again, including after a previous fixture-created stamp. Ordinary
+`Job::prepare()` keeps the original stamp shortcut and actual digest behavior,
+even when the harness feature is enabled. In particular, original source can
+accept changed bytes with restored size/time through a valid stamp; the forced
+fixture method rejects them. This is an explicitly different test-control path,
+not a new claim about source's shortcut or real model readiness. Enable only in
+native composition tests with disposable trusted userData. Never enable/use it
+against the actual application/model root.
+
+All preparation/control/quota ownership and the sealed actual-only `apply()` path
+are shared. Three added gated tests (18 total with the feature) establish real
+hash byte counts, unchanged production prepare, changed bytes at every leaf and
+wrong-leaf matching, real stamp bytes and borrowed-result quota retention,
+ignored real write failure, accepted cancellation/deadline at apply, actual
+hash-read limit and during-read cancellation. The 15 ordinary tests remain.
+
+`crates/freeshow-ai-status/tests/fixed-tiny-source.json` records independently
+executed immutable source controls: real tiny hashes without injection are
+outdated; labelled classification injection writes the real original stamp;
+restored metadata can hit source's unchanged shortcut; no-stamp changed bytes are
+outdated; and actual stamp write failure still returns ready. Injection and its
+limits are explicit in the receipt. These source controls do not claim the new
+test-only forced-hash method is an original source API.
+
+`tests/feature-controls.json` in the crate records the private normal driver
+build with `--no-default-features`, resolved root features `[]`, exact artifact
+path/length/SHA-256 and a passing compile-fail doctest proving the method is
+absent. Its source hashes identify this local build; it is not a receipt for the
+coordinator's eventual native app. That app must independently capture normal
+resolved build features. The doctest intentionally fails if the method becomes
+unconditionally available.
+
+```sh
+cargo +1.99.1 test --offline --manifest-path crates/freeshow-ai-status/Cargo.toml --no-default-features --all-targets
+cargo +1.99.1 test --offline --manifest-path crates/freeshow-ai-status/Cargo.toml --no-default-features --doc
+cargo +1.99.1 test --offline --manifest-path crates/freeshow-ai-status/Cargo.toml --features test-harness --all-targets
+cargo +1.99.1 clippy --offline --manifest-path crates/freeshow-ai-status/Cargo.toml --features test-harness --all-targets -- -D warnings
+```
+
+Feature-on strict all-target checks also cover Windows GNU and macOS ARM; these
+are compile controls, with actual platform runtime evidence still pending.
 
 ```sh
 export CARGO_HOME=/mnt/data/cache/freeshow-rust-build/linux-deb-package/cargo-home

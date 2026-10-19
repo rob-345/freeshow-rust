@@ -303,6 +303,17 @@ impl Checker {
         Ok(job)
     }
 }
+#[cfg_attr(
+    not(feature = "test-harness"),
+    doc = r#"
+The fixture composition method is unavailable in ordinary builds:
+```compile_fail
+fn unavailable(job: freeshow_ai_status::Job) {
+    job.prepare_fixed_tiny_fixture();
+}
+```
+"#
+)]
 pub struct Job {
     config: Arc<Config>,
     control: Control,
@@ -352,6 +363,13 @@ impl Job {
     }
     pub fn prepare(self) -> Result<Prepared> {
         engine::prepare(self, None)
+    }
+    /// Test-only composition boundary. Reads/hashes every fixed file, bypassing
+    /// stamp reuse. Only ASCII filename bytes without newline classify as the
+    /// pinned model digests. Never enable for a normal application build/root.
+    #[cfg(feature = "test-harness")]
+    pub fn prepare_fixed_tiny_fixture(self) -> Result<Prepared> {
+        engine::prepare_fixed_tiny_fixture(self)
     }
     fn ready(self, status: EngineStatus) -> Result<StatusRead> {
         self.check()?;

@@ -203,7 +203,37 @@ fn hash(job: &mut Job, name: &'static str) -> Result<String> {
 
 // Digest injection is private and used ONLY by crate tests to reach the real
 // write branch without downloading the genuine 682 MB pinned assets.
-pub(crate) fn prepare(mut job: Job, digest_boundary: Option<[&str; 5]>) -> Result<Prepared> {
+pub(crate) fn prepare(job: Job, digest_boundary: Option<[&str; 5]>) -> Result<Prepared> {
+    prepare_classified(job, true, |index, actual| {
+        digest_boundary.map_or(actual, |values| values[index].to_owned())
+    })
+}
+
+#[cfg(feature = "test-harness")]
+const FIXED_TINY_DIGESTS: [&str; 5] = [
+    "9a20630b95d3fe0fca62595087dc0282aa8d0779dd2a13dfcc65fa59caa90b96",
+    "ee10d2bb896a9036c5462f6eccff43923f4fca1427ce5d5bc91ac0c1efd2f809",
+    "2356d8addc5a593f373b9f4620075d39a9b2c2f075107a93fd8f990b2c5b553a",
+    "e16a20444ac6bfccced4f63ba2528e20173f9e0fb3b2cdb4ed2a04e1ce60e8be",
+    "003b7e9089abbe8874fcf04a6cd8726121cb3acc96dda7cfc698f7ce7c2beb61",
+];
+#[cfg(feature = "test-harness")]
+pub(crate) fn prepare_fixed_tiny_fixture(job: Job) -> Result<Prepared> {
+    // Deliberately bypass test-created valid stamps: changed bytes must pass
+    // the actual fixed-digest gate again. Normal prepare retains source reuse.
+    prepare_classified(job, false, |index, actual| {
+        if actual == FIXED_TINY_DIGESTS[index] {
+            FILES[index].1.to_owned()
+        } else {
+            actual
+        }
+    })
+}
+fn prepare_classified(
+    mut job: Job,
+    stamp_fast_path: bool,
+    classify: impl Fn(usize, String) -> String,
+) -> Result<Prepared> {
     job.check()?;
     if matches!(job.platform, Platform::MacIntel) {
         return Ok(Prepared::Ready(job.ready(EngineStatus::failed(
@@ -213,7 +243,7 @@ pub(crate) fn prepare(mut job: Job, digest_boundary: Option<[&str; 5]>) -> Resul
     if matches!(job.platform, Platform::Unsupported) {
         return Err(Error::unsupported());
     }
-    if stamp_valid(&mut job)? {
+    if stamp_fast_path && stamp_valid(&mut job)? {
         job.evidence.fast_path = true;
         let path = job.path(None)?;
         return Ok(Prepared::Ready(job.ready(EngineStatus::ok(&path))?));
@@ -237,7 +267,7 @@ pub(crate) fn prepare(mut job: Job, digest_boundary: Option<[&str; 5]>) -> Resul
         }
         let (size, mtime) = stat(&mut job, name)?;
         let actual_digest = hash(&mut job, name)?;
-        let digest = digest_boundary.map_or(actual_digest, |values| values[index].to_owned());
+        let digest = classify(index, actual_digest);
         if digest != expected {
             outdated = true
         }

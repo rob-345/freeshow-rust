@@ -479,3 +479,7 @@ fn actual_chunked_hash_cancellation_and_deadline_drop_retained_worker_state() {
     send_sync::<StatusRead>();
     send_sync::<StampIntent>();
 }
+
+#[cfg(feature = "test-harness")]
+#[path = "harness_tests.rs"]
+mod harness_tests;

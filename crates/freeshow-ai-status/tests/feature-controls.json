@@ -1,0 +1,25 @@
+{
+    "scope": "Private normal fixture driver built with no default/test-harness features; not a production-app or genuine-model readiness receipt",
+    "base": "10739bcf8e8fc4c7c241987a22f81fc6b427dba6",
+    "sourceSha256": {
+        "crates/freeshow-ai-status/Cargo.toml": "809127987e83f8ac462e77997b303fa312296ae80c9983c1ced57b8267e07b83",
+        "crates/freeshow-ai-status/src/lib.rs": "d1e70018ec2b14da24de627e77bb42f127ef3cc5e4cc7a13fe908151261c501f",
+        "crates/freeshow-ai-status/src/engine.rs": "7a02318aff8dc984a0e82dc184347875f97de54f8794db02a059dfa35d2556d1"
+    },
+    "build": {
+        "arguments": ["cargo", "+1.99.1", "build", "--offline", "--manifest-path", "crates/freeshow-ai-status/Cargo.toml", "--no-default-features", "--bins"],
+        "stdout": "",
+        "stderr": "   Compiling freeshow-ai-status v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/ai-status/crates/freeshow-ai-status)\n    Finished `dev` profile [unoptimized] target(s) in 0.22s\n",
+        "resolvedRootFeatures": []
+    },
+    "binary": {
+        "path": "/mnt/data/cache/freeshow-rust-build/provider-shows/target/debug/freeshow-ai-status-parity",
+        "bytes": 1608736,
+        "sha256": "228ce4f20984abe8eebb3961753ac35b06954be55b55b7629ba283fdb75ca976"
+    },
+    "methodAbsence": {
+        "arguments": ["cargo", "+1.99.1", "test", "--offline", "--manifest-path", "crates/freeshow-ai-status/Cargo.toml", "--no-default-features", "--doc"],
+        "stdout": "\nrunning 1 test\ntest src/lib.rs - Job (line 309) - compile fail ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s\n\n",
+        "stderr": "    Finished `test` profile [unoptimized] target(s) in 0.03s\n   Doc-tests freeshow_ai_status\n"
+    }
+}
