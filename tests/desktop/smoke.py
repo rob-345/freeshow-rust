@@ -725,6 +725,12 @@ def run():
                 "shows":[{"name":"Native text 敬拜","text":"Imported lyric 敬拜 🙌"},{"name":"Native ChordPro","text":"Chord lyric 敬拜"},{"name":"Native CSV","text":"Native CSV lyric"},
                          {"name":"Native show import","text":"Amazing grace","unknownKey":"nativeFutureField","unknownValue":native_import[1]["nativeFutureField"]},
                          {"name":"Native bundle show","text":"Amazing grace","unknownKey":"nativeFutureField","unknownValue":native_import[1]["nativeFutureField"]}]}
+            text_imports = json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE", "node"),"tests/desktop/imports_text_fixtures.mjs","--fixtures",str(import_dir / "ordinary-text")],cwd=ROOT,text=True,timeout=20))
+            assert len(text_imports["requests"]) == 9 and len(text_imports["shows"]) == 10
+            assert [item["id"] for item in text_imports["requests"]] == ["openlp","opensong","mediashout","quelea","songbeamer","easyslides","verseview","videopsalm","chordpro"]
+            # Preserve the original project alert/converter as the final import.
+            import_fixture["requests"][-1:-1] = text_imports["requests"]
+            import_fixture["shows"].extend(text_imports["shows"])
             script((ROOT / "tests/desktop/imports_probe.js").read_text(), import_fixture)
             wait(lambda: script("return window.__importsProbe.error || window.__importsProbe.readyToSave"), "Native import transport reaches retained text, ChordPro, CSV, show and project converters")
             assert not script("return window.__importsProbe.error"), script("return window.__importsProbe")
@@ -735,7 +741,16 @@ def run():
             script("window.__importsProbe.saveRequested=true")
             imported = wait(lambda: script("return window.__importsProbe.done ? window.__importsProbe : null"), "Converted native imports saved through real Ctrl+S")
             assert "error" not in imported, imported
-            assert len(imported["saved"]) == 5
+            assert len(imported["saved"]) == len(import_fixture["shows"]) == 15
+            assert len({item["id"] for item in imported["saved"]}) == 15, "Distinct source IDs must not overwrite imported shows"
+            assert all(item["sendUndefined"] for item in imported["requests"])
+            assert sum(item["rawMatchesSource"] is True for item in imported["requests"]) == 9
+            assert any(event["message"] == {"channel":"ALERT","data":"popup.importing"} for event in imported["events"]), "Original project alert was lost"
+            for expected in import_fixture["shows"]:
+                actual = json.loads((data_dir / "Shows" / (expected["name"] + ".show")).read_text())
+                assert actual[1]["name"] == expected["name"]
+                text = "\n".join(span.get("value", "") for slide in actual[1].get("slides", {}).values() for item in slide.get("items", []) for line in item.get("lines", []) for span in line.get("text", []))
+                assert expected["text"] in text, expected["name"] + " persisted lyric differs"
             raw_bundle = json.loads(next(item for item in imported["requests"] if item["id"] == "freeshow_project")["raw"][0]["content"])
             installed_media = Path(raw_bundle["files"][0])
             assert installed_media.is_relative_to(data_dir / "Imports" / "Projects"), installed_media
@@ -744,8 +759,9 @@ def run():
             assert saved_bundle[1]["nativeMediaPath"] == str(installed_media)
             assert raw_bundle["nativeFutureBundle"] == {"preserved":True}
             imported["media"] = {"path":str(installed_media),"sha256":hashlib.sha256(media_bytes).hexdigest(),"bytes":len(media_bytes)}
+            imported["ordinaryTextSource"] = text_imports
             (ARTIFACTS / "imports.json").write_text(json.dumps(imported, ensure_ascii=False, indent=2))
-            steps.append("Retained Svelte text, ChordPro, CSV, native-show and project import converters persist Unicode lyrics and unknown fields")
+            steps.append("Retained Svelte ordinary text, eight source text formats, standalone ChordPro PRO, CSV, native-show and project converters persist Unicode lyrics and unknown fields")
             steps.append("Native project ZIP installs identical media bytes before publishing remapped paths and saves those references")
             asset_audio = import_dir / "Native asset audio.wav"
             with wave.open(str(asset_audio), "wb") as audio:
