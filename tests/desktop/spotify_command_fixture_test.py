@@ -57,7 +57,11 @@ class FixtureTests(unittest.TestCase):
         original = {"message":{"channel":"SPOTIFY_COMMAND", "data":True}, "messageKeys":["channel","data"], "args":2, "listener":"exact"}
         actual = {"context":context,"current":context,"action":"command","sendUndefined":True,"callbacks":[{**original,"callbackContext":context}]}
         validate_callback(actual, original, context)
-        for change in [lambda v:v.update(sendUndefined=False), lambda v:v["callbacks"].append(v["callbacks"][0]), lambda v:v["callbacks"][0].update(args=3), lambda v:v["callbacks"][0]["message"].update(data=1), lambda v:v["callbacks"][0].update(listener="wrong"), lambda v:v["callbacks"][0].update(messageKeys=["channel","data","nativeSpotifyCommand"]), lambda v:v.update(current={**context,"libraryGeneration":5})]:
+        shuffled = copy.deepcopy(actual)
+        shuffled["callbacks"][0] = dict(reversed(list(shuffled["callbacks"][0].items())))
+        shuffled["callbacks"][0]["message"] = dict(reversed(list(shuffled["callbacks"][0]["message"].items())))
+        validate_callback(shuffled, original, context)
+        for change in [lambda v:v.update(sendUndefined=False), lambda v:v["callbacks"].append(v["callbacks"][0]), lambda v:v["callbacks"][0].update(args=3), lambda v:v["callbacks"][0]["message"].update(data=1), lambda v:v["callbacks"][0].update(listener="wrong"), lambda v:v["callbacks"][0].update(messageKeys=["channel","data","nativeSpotifyCommand"]), lambda v:v["callbacks"][0].update(messageKeys=["data","channel"]), lambda v:v["callbacks"][0].update(private=True), lambda v:v["callbacks"][0]["message"].update(private=True), lambda v:v.update(current={**context,"libraryGeneration":5})]:
             bad = copy.deepcopy(actual)
             change(bad)
             with self.assertRaises(AssertionError):

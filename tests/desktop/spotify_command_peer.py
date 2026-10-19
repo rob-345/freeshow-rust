@@ -121,8 +121,10 @@ def validate_callback(observed, original, context):
     assert observed["action"] == "command" and observed["sendUndefined"] is True
     assert len(observed["callbacks"]) == 1
     callback = observed["callbacks"][0]
-    assert list(callback) == ["message", "messageKeys", "args", "listener", "callbackContext"]
-    assert list(callback["message"]) == ["channel", "data"] and callback["message"]["data"] is True
+    # WebKitWebDriver may reorder JSON object members. The JavaScript
+    # messageKeys array captures actual original callback insertion order.
+    assert set(callback) == {"message", "messageKeys", "args", "listener", "callbackContext"}
+    assert set(callback["message"]) == {"channel", "data"} and callback["message"]["data"] is True
     for key in ["message", "messageKeys", "args", "listener"]:
         assert callback[key] == original[key], (key, callback, original)
     assert callback["callbackContext"] == context

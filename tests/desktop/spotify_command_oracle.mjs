@@ -35,8 +35,13 @@ try {
         const payload = { command: input.command, ...(input.valueBits ? { value: fromBits(input.valueBits) } : {}) }
         const before = bus.events().length
         assert.equal(await bus.original.send(payload, listener), undefined)
-        assert.deepEqual(bus.original.calls.replies.at(-1), ["MAIN", { channel: "SPOTIFY_COMMAND", data: true }, listener])
-        observed.replies.push({ message: bus.original.calls.replies.at(-1)[1], messageKeys: ["channel", "data"], args: 2, listener, sendUndefined: true })
+        const sourceReply = bus.original.calls.replies.at(-1)
+        assert.deepEqual(sourceReply, ["MAIN", { channel: "SPOTIFY_COMMAND", data: true }, listener])
+        const messageKeys = Object.keys(sourceReply[1])
+        const args = sourceReply.slice(1).length
+        assert.deepEqual(messageKeys, ["channel", "data"])
+        assert.equal(args, 2)
+        observed.replies.push({ message: sourceReply[1], messageKeys, args, listener: sourceReply[2], sendUndefined: true })
         await bus.peer.wait(() => bus.events().length >= before + 1)
         if (input.command === "seek") {
             assert.equal(bus.events().at(-1).name, "Get")
