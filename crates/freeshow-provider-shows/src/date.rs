@@ -82,6 +82,7 @@ fn iso(s: &str) -> Result<f64> {
     }
     let tail = &rest[5..];
     let (mut hour, mut minute, mut second, mut millis, mut offset) = (0i64, 0i64, 0i64, 0i64, 0i64);
+    let mut fraction_nonzero = false;
     if !tail.is_empty() {
         if !tail.starts_with('T') {
             return Err(unsupported("Legacy Date syntax is unsupported"));
@@ -137,6 +138,9 @@ fn iso(s: &str) -> Result<f64> {
                 {
                     return Ok(f64::NAN);
                 }
+                // ISO 24:00 requires every fractional digit to be zero, even
+                // digits beyond the millisecond precision retained by Date.
+                fraction_nonzero = fraction.bytes().any(|ch| ch != b'0');
                 let mut multiplier = 100;
                 for ch in fraction.bytes().take(3) {
                     millis += i64::from(ch - b'0') * multiplier;
@@ -147,7 +151,7 @@ fn iso(s: &str) -> Result<f64> {
         if hour > 24
             || minute > 59
             || second > 59
-            || hour == 24 && (minute != 0 || second != 0 || millis != 0)
+            || hour == 24 && (minute != 0 || second != 0 || fraction_nonzero)
         {
             return Ok(f64::NAN);
         }

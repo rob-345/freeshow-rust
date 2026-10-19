@@ -82,6 +82,11 @@ fraction truncation. Real source comparisons cover epoch fallback, pre-epoch,
 Zero and invalid Date results use Date.now for created and null for modified.
 Fractional negative numeric values truncate to positive zero as actual Date
 TimeClip requires, before the source's truthiness fallback.
+ISO `24:00` additionally requires every fractional digit to be zero before
+millisecond truncation. Actual whole-source comparisons cover invalid
+`.0001Z`/`.0000000001Z` tails (one Date.now fallback, two Date constructions)
+and valid `.0000Z` (no fallback). Away from `24:00`, sub-millisecond digits
+continue to truncate normally.
 
 ## Explicit unsupported scope
 
@@ -131,7 +136,16 @@ preparation, and inputs are borrowed immutably. These logical/node/container
 limits are not an allocation-profiler measurement or an exact RSS claim.
 
 The private driver reads at most 16 MiB, accepts at most 128 fixture cases and
-limits output to 32 MiB. Its tagged/IEEE fixtures are test transport, not a
+limits the retained aggregate's exact serialized output to 32 MiB. A counting
+writer charges each completed row, including JSON escaping and array framing,
+before retaining it beside earlier rows. At most one additional individually
+bounded expanded row exists during that check. Rejection stops the lazy row
+producer, writes no partial JSON, and preserves the original nonzero exit/error
+message. Accepted aggregate output streams to stdout without another whole-array
+serialization allocation. Small-budget Rust controls exercise real 32-file media
+expansion at the exact two-row boundary and one byte below it; the latter must
+not build the third row. This aggregate fixture budget is separate from the
+unchanged production per-call ceilings. Its tagged/IEEE fixtures are test transport, not a
 production deserializer or provider authority. Standalone manifest/lock are
 provided for review; coordinator owns eventual workspace membership and removes
 the nested `[workspace]`/lock at integration.
@@ -147,11 +161,13 @@ complete ordered typed own properties and all original IEEE bits, separate JSON
 projection, and actual UID/Date call counts. Cross-realm arrays are observed via
 Array.from, without discarding own undefined or numeric information.
 
-The current corpus has nine Node suites: 156 whole-source comparisons
-(70 parse, 61 song, 19 empty, 6 media), seven explicit unsupported source controls
-and five public resource controls. Eight Rust tests additionally cover input
+The current corpus has nine Node suites: 159 whole-source comparisons
+(70 parse, 64 song, 19 empty, 6 media), seven explicit unsupported source controls
+and five public resource controls. Nine library Rust tests additionally cover input
 aggregation, global lyric admission, copied/output bounds, UID consumption,
-object ordering, TimeClip, own undefined and long-label operation bounds.
+object ordering, TimeClip, own undefined, ISO fractional-tail validation and
+long-label operation bounds. Three private-driver Rust tests cover aggregate
+expansion, exact byte/framing limits and lazy producer termination.
 
 Lowercase is pinned to the existing actual packaged Electron37.10.3 /
 ICU74.2 / Unicode15.1 evidence in
@@ -164,10 +180,15 @@ behavior is not silently substituted: U+1C89 proves the actual Electron/Node
 lowercase difference. The source VM corpus uses stable characters; the saved
 actual Electron vectors establish the older Unicode behavior independently.
 
-Focused validation uses the private target under
+Foundation validation used the private target under
 `/mnt/data/cache/freeshow-rust-build/provider-shows/target`, one Cargo job and
 incremental/debug data disabled. Rust tests, Node22 source suites, strict
 all-target Clippy for Linux, Windows GNU and macOS ARM, rustfmt and configured
-Prettier passed before sealing. Cross compilation does not establish
+Prettier passed before the foundation was sealed. The Date/aggregate-driver
+corrections were checked separately under
+`/mnt/data/cache/freeshow-rust-build/provider-shows-fixes/target`: nine library
+plus three driver Rust tests, all nine Node22 source suites with the counts above,
+strict Linux all-target Clippy, rustfmt, configured Prettier and `git diff --check`
+passed. That follow-up did not rerun foreign cross checks. Cross compilation does not establish
 native Windows/macOS runtime, accounts, provider integration, persisted imports,
 or graphical/media behavior. No GUI or live provider was started.

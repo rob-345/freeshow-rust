@@ -2,6 +2,45 @@
 use freeshow_provider_shows::{self as shows, SourceValue as S};
 use serde_json::{json, Value};
 use std::io::{Read, Write};
+const MAX_OUTPUT_BYTES: usize = 32 * 1024 * 1024;
+const OUTPUT_LIMIT: &str = "fixture output limit";
+struct CountingWriter {
+    remaining: usize,
+}
+impl Write for CountingWriter {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        self.remaining = self
+            .remaining
+            .checked_sub(bytes.len())
+            .ok_or_else(|| std::io::Error::other(OUTPUT_LIMIT))?;
+        Ok(bytes.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+// Each row is already bounded by the production preparation API. Count its
+// exact serialized bytes before retaining it beside earlier rows. At most one
+// additional unretained row exists when the aggregate budget rejects it.
+fn bounded_array(
+    rows: impl IntoIterator<Item = Result<Value, String>>,
+    limit: usize,
+) -> Result<Value, String> {
+    let mut remaining = limit.checked_sub(2).ok_or(OUTPUT_LIMIT)?; // [ and ]
+    let mut retained = Vec::new();
+    for row in rows {
+        let row = row?;
+        let mut counter = CountingWriter {
+            remaining: remaining
+                .checked_sub(usize::from(!retained.is_empty()))
+                .ok_or(OUTPUT_LIMIT)?,
+        };
+        serde_json::to_writer(&mut counter, &row).map_err(|_| OUTPUT_LIMIT)?;
+        remaining = counter.remaining;
+        retained.push(row);
+    }
+    Ok(Value::Array(retained))
+}
 fn decode(v: &Value, depth: usize, nodes: &mut usize) -> Result<S, String> {
     *nodes += 1;
     if depth > 16 || *nodes > 65536 {
@@ -134,18 +173,68 @@ fn main() {
         if cases.len() > 128 {
             return Err("fixture cases".into());
         }
-        Ok(Value::Array(
-            cases.iter().map(one).collect::<Result<_, _>>()?,
-        ))
+        bounded_array(cases.iter().map(one), MAX_OUTPUT_BYTES)
     })();
     let output = match result {
         Ok(v) => v,
+        Err(e) if e == OUTPUT_LIMIT => {
+            eprintln!("{OUTPUT_LIMIT}");
+            std::process::exit(1);
+        }
         Err(e) => json!({"driverError":e}),
     };
-    let bytes = serde_json::to_vec(&output).unwrap();
-    if bytes.len() > 32 * 1024 * 1024 {
-        eprintln!("fixture output limit");
-        std::process::exit(1);
+    // The aggregate has already passed the exact byte budget; do not allocate
+    // another whole serialized array just to write it to the fixture transport.
+    serde_json::to_writer(std::io::stdout().lock(), &output).unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+
+    fn media_case() -> Value {
+        json!({
+            "method":"media",
+            "args":[["o",[]],["a",(0..32).map(|_|json!(["o",[["name",["s","敬拜\n\""]]]])).collect::<Vec<_>>()]],
+            "uids":(0..65).map(|i|format!("{i:011x}")).collect::<Vec<_>>(),
+            "clock":["4278bcfe5687b000"]
+        })
     }
-    std::io::stdout().write_all(&bytes).unwrap();
+
+    #[test]
+    fn exact_expanded_rows_fit_at_the_boundary() {
+        let case = media_case();
+        let row_bytes = serde_json::to_vec(&one(&case).unwrap()).unwrap().len();
+        let limit = row_bytes * 2 + 3; // two rows, brackets and one comma
+        let value = bounded_array((0..2).map(|_| one(&case)), limit).unwrap();
+        assert_eq!(serde_json::to_vec(&value).unwrap().len(), limit);
+    }
+
+    #[test]
+    fn expanded_rows_stop_before_retaining_over_budget_or_building_later_rows() {
+        let case = media_case();
+        let row_bytes = serde_json::to_vec(&one(&case).unwrap()).unwrap().len();
+        assert!(row_bytes > serde_json::to_vec(&case).unwrap().len() * 4);
+        let calls = Cell::new(0);
+        let rows = (0..3).map(|_| {
+            calls.set(calls.get() + 1);
+            one(&case)
+        });
+        let error = bounded_array(rows, row_bytes * 2 + 2).unwrap_err();
+        assert_eq!(error, OUTPUT_LIMIT);
+        assert_eq!(calls.get(), 2, "third expanded row must never be built");
+    }
+
+    #[test]
+    fn framing_and_empty_array_are_counted_before_consuming_rows() {
+        let calls = Cell::new(0);
+        let rows = std::iter::once_with(|| {
+            calls.set(calls.get() + 1);
+            Ok(Value::Null)
+        });
+        assert_eq!(bounded_array(rows, 1).unwrap_err(), OUTPUT_LIMIT);
+        assert_eq!(calls.get(), 0);
+        assert_eq!(bounded_array(std::iter::empty(), 2).unwrap(), json!([]));
+    }
 }

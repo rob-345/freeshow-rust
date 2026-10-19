@@ -175,6 +175,27 @@ fn timeclip_full_iso_range_and_explicit_unsupported_legacy() {
     }
 }
 #[test]
+fn midnight_requires_all_fractional_digits_zero_before_truncation() {
+    for input in [
+        "2024-01-01T24:00:00.0001Z",
+        "2024-01-01T24:00:00.0000000001Z",
+        "2024-01-01T24:00:00.0001+00:00",
+    ] {
+        assert!(date::parse(&s(input)).unwrap().is_nan(), "{input}");
+    }
+    for input in [
+        "2024-01-01T24:00:00.0000Z",
+        "2024-01-01T24:00:00.0000000000Z",
+    ] {
+        assert_eq!(date::parse(&s(input)).unwrap(), 1_704_153_600_000.0);
+    }
+    // Sub-millisecond fractions remain valid away from the 24:00 restriction.
+    assert_eq!(
+        date::parse(&s("2024-01-01T00:00:00.0001Z")).unwrap(),
+        1_704_067_200_000.0
+    );
+}
+#[test]
 fn operation_budget_covers_repeated_long_section_labels() {
     let text = format!(
         "[{}]\n{}",
