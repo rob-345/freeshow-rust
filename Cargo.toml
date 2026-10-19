@@ -14,6 +14,7 @@ members = [
     "crates/freeshow-ltc",
     "crates/freeshow-now-playing",
     "crates/freeshow-cover-images",
+    "crates/freeshow-cover-http",
     "crates/freeshow-metadata-wire",
     "crates/freeshow-files",
     "crates/freeshow-system",

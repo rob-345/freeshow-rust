@@ -640,6 +640,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-cover-http"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "freeshow-cover-images"
 version = "0.1.0"
 dependencies = [
