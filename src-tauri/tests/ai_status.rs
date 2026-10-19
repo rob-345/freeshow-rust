@@ -98,7 +98,12 @@ async fn actual_missing_and_source_stamp_shortcut_preserve_native_root_envelope_
     assert_eq!(message["nemotron"]["ready"], false);
     assert!(message["nemotron"]["error"].is_string());
     assert!(event.native_lifetime.is_some());
-    assert!(!temp.path().join("app/bin/nemotron").exists());
+    assert!(!temp
+        .path()
+        .join("app")
+        .join("bin")
+        .join("nemotron")
+        .exists());
     assert_eq!(status.test_snapshot().0, 1);
     let clone = event.clone();
     drop(events);
@@ -108,7 +113,13 @@ async fn actual_missing_and_source_stamp_shortcut_preserve_native_root_envelope_
     drop(clone);
     assert_eq!(status.test_snapshot().0, 0);
     fast_stamp(&temp.path().join("app"));
-    let stamp = temp.path().join("app/bin/nemotron/models/model.json");
+    let stamp = temp
+        .path()
+        .join("app")
+        .join("bin")
+        .join("nemotron")
+        .join("models")
+        .join("model.json");
     let before = fs::read(&stamp).unwrap();
     for switched in [false, true] {
         if switched {
@@ -119,7 +130,7 @@ async fn actual_missing_and_source_stamp_shortcut_preserve_native_root_envelope_
         if !intel_mac {
             assert_eq!(
                 data["nemotron"],
-                json!({"ready":true,"localPath":temp.path().join("app/bin/nemotron/models")})
+                json!({"ready":true,"localPath":temp.path().join("app").join("bin").join("nemotron").join("models")})
             );
         } else {
             assert_eq!(data["nemotron"]["ready"], false);
@@ -349,7 +360,7 @@ async fn genuine_worker_panic_keeps_cleanup_frame_owned_and_shutdown_retries_act
 
 #[cfg(not(all(target_os = "macos", target_arch = "x86_64")))]
 fn fixed_tiny(user_data: &Path) -> std::path::PathBuf {
-    let models = user_data.join("bin/nemotron/models");
+    let models = user_data.join("bin").join("nemotron").join("models");
     fs::create_dir_all(&models).unwrap();
     for (name, _) in freeshow_ai_status::FILES {
         fs::write(models.join(name), name).unwrap();
@@ -411,7 +422,7 @@ async fn real_fixed_fixture_preparation_waits_for_ordered_stamp_attempt_and_pres
         assert_eq!(status.test_stamp_observation(), (1, fail_write));
         assert_eq!(
             events[0].message.data.as_ref().unwrap()["nemotron"],
-            json!({"ready":true,"localPath":temp.path().join("app/bin/nemotron/models")})
+            json!({"ready":true,"localPath":temp.path().join("app").join("bin").join("nemotron").join("models")})
         );
         assert_eq!(
             events[0].context.as_ref(),
