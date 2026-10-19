@@ -22,6 +22,12 @@ mod menu;
 mod midi;
 mod network_queries;
 mod network_snapshot;
+mod now_playing;
+mod now_playing_files;
+mod now_playing_input;
+mod now_playing_owner;
+mod now_playing_prepare;
+mod now_playing_schedule;
 mod output;
 mod remotes;
 mod scriptures;
@@ -57,7 +63,9 @@ struct AppState {
     encoders: encoders::NativeEncoders,
     scriptures: scriptures::NativeScriptures,
     media_copy: media_copy::NativeMediaCopy,
-    audio: AudioService,
+    audio: std::sync::Arc<AudioService>,
+    covers: std::sync::Arc<freeshow_cover_images::CoverImageService>,
+    now_playing: now_playing_owner::Owner,
     audio_pipeline: audio_pipeline::NativeAudioPipeline,
     audio_ingress: audio_ingress::AudioIngress,
     audio_last_receipt: std::sync::Mutex<serde_json::Value>,
@@ -310,6 +318,228 @@ fn audio_status_complete(
         .audio_pipeline
         .complete_status(window.label(), &context, &id, accepted)
         .map_err(WireError::from)
+}
+
+fn now_playing_error(error: now_playing::HostError) -> WireError {
+    WireError::new(error.code, error.message)
+}
+
+fn now_playing_callbacks(app: &tauri::AppHandle) -> now_playing::Callbacks {
+    let publisher = app.clone();
+    let reveal = app.clone();
+    now_playing::Callbacks {
+        publish: std::sync::Arc::new(move |publication| {
+            let result = (|| {
+                let current = publisher
+                    .state::<AppState>()
+                    .library
+                    .context()
+                    .map_err(|error| now_playing::HostError::new("now_playing_context", error))?;
+                if publication.context() != &current {
+                    return Err(now_playing::HostError::new(
+                        "now_playing_context",
+                        "Obsolete native metadata publication",
+                    ));
+                }
+                let mut event = publication.event().clone();
+                let mut private = json!({"id":publication.id(),"sequence":publication.sequence()});
+                if let now_playing::Publication::Metadata(delivery) = &publication {
+                    private["hydration"] =
+                        serde_json::to_value(delivery.hydration()).map_err(|error| {
+                            now_playing::HostError::new("now_playing_publication", error)
+                        })?;
+                }
+                event.native_now_playing = Some(private);
+                publisher
+                    .emit_to("main", "freeshow://ipc", event)
+                    .map_err(|error| now_playing::HostError::new("now_playing_publication", error))
+            })();
+            Box::pin(async move { result })
+        }),
+        reveal: std::sync::Arc::new(move |path, context| {
+            let result = (|| {
+                if reveal
+                    .state::<AppState>()
+                    .library
+                    .context()
+                    .map_err(|error| now_playing::HostError::new("now_playing_context", error))?
+                    != context
+                {
+                    return Err(now_playing::HostError::new(
+                        "now_playing_context",
+                        "Obsolete now-playing folder reveal",
+                    ));
+                }
+                reveal
+                    .opener()
+                    .reveal_item_in_dir(path)
+                    .map_err(|error| now_playing::HostError::new("now_playing_reveal", error))
+            })();
+            Box::pin(async move { result })
+        }),
+    }
+}
+
+/// Old preparation/image/file work must actually drain before shared media
+/// grants and audio status owners retire. Failed observations remain retryable.
+async fn synchronize_now_playing_context(app: &tauri::AppHandle) -> Result<(), WireError> {
+    let state = app.state::<AppState>();
+    let _observer = state.now_playing.observers.try_acquire().map_err(|_| {
+        WireError::new(
+            "now_playing_control_busy",
+            "Library-transition observers are full",
+        )
+    })?;
+    let _change = state.now_playing.changes.lock().await;
+    let context = state.library.context().map_err(WireError::from)?;
+    if state.now_playing.ready(&context) {
+        return Ok(());
+    }
+    let (drained, result) = state.now_playing.retire(None, false).await;
+    if !drained {
+        return result.map_err(now_playing_error);
+    }
+    if let Err(error) = result {
+        eprintln!("Now-playing cleanup: {error}");
+    }
+    // The same owners remain installed on any genuine pending drain. A later
+    // command retries this transition before admitting work in the new library.
+    state
+        .audio_pipeline
+        .context_changed()
+        .map_err(WireError::from)?;
+    state
+        .audio_ingress
+        .context_changed()
+        .await
+        .map_err(WireError::from)?;
+    state.assets.context_changed(&context)?;
+    state
+        .now_playing
+        .context_ready(context)
+        .map_err(now_playing_error)
+}
+
+#[tauri::command]
+async fn now_playing_command(
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(WireError::new(
+            "now_playing_raw_body",
+            "Now-playing requires its bounded typed frame",
+        ));
+    };
+    let input = now_playing_input::parse(bytes)
+        .map_err(|error| WireError::new(error.code, error.message))?;
+    let app = window.app_handle();
+    synchronize_now_playing_context(app).await?;
+    let command = match input.command {
+        now_playing_input::Command::Set {
+            payload,
+            duration_number,
+        } => now_playing::Command::Set {
+            payload,
+            duration_number,
+        },
+        now_playing_input::Command::Unset => now_playing::Command::Unset,
+        now_playing_input::Command::Open => now_playing::Command::Open,
+    };
+    let ticket = app
+        .state::<AppState>()
+        .now_playing
+        .submit(
+            &input.context,
+            command,
+            tokio_util::sync::CancellationToken::new(),
+            now_playing_callbacks(app),
+        )
+        .map_err(now_playing_error)?;
+    let receipt = ticket.finish().await.map_err(now_playing_error)?;
+    for diagnostic in receipt.diagnostics() {
+        eprintln!(
+            "Now-playing [{:?} #{}]: {diagnostic}",
+            receipt.context(),
+            receipt.operation()
+        );
+    }
+    if let Some(error) = receipt.failure() {
+        return Err(WireError::new(error.code, &error.message));
+    }
+    // Original SET/UNSET/OPEN have no completion reply. The native receipt is
+    // consumed here, after real effects/cleanup, and never sent to a receiver.
+    Ok(())
+}
+
+#[tauri::command]
+fn now_playing_complete(
+    window: tauri::WebviewWindow,
+    context: RuntimeContext,
+    id: String,
+    accepted: bool,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    window
+        .app_handle()
+        .state::<AppState>()
+        .now_playing
+        .complete(&context, &id, accepted)
+        .map_err(now_playing_error)
+}
+
+#[tauri::command]
+fn now_playing_status(window: tauri::WebviewWindow) -> Result<serde_json::Value, WireError> {
+    audio_window(&window)?;
+    Ok(window.app_handle().state::<AppState>().now_playing.status())
+}
+
+#[tauri::command]
+async fn now_playing_retire(
+    window: tauri::WebviewWindow,
+    context: RuntimeContext,
+    terminal: bool,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    let state = window.app_handle().state::<AppState>();
+    let current = state.library.context().map_err(WireError::from)?;
+    if context.runtime_id != current.runtime_id
+        || context.library_generation > current.library_generation
+        || (context.library_generation == current.library_generation && context != current)
+        || context.data_path.as_os_str().as_encoded_bytes().len() > 32768
+        || context
+            .data_path
+            .as_os_str()
+            .as_encoded_bytes()
+            .contains(&0)
+    {
+        return Err(WireError::new(
+            "stale_library",
+            "Foreign now-playing retirement context",
+        ));
+    }
+    let _observer = state.now_playing.observers.try_acquire().map_err(|_| {
+        WireError::new(
+            "now_playing_control_busy",
+            "Now-playing retirement observers are full",
+        )
+    })?;
+    let status = state.now_playing.status();
+    // A completed old library hint cannot retire a subsequently installed host.
+    if !terminal
+        && status["host"]["context"]
+            != serde_json::to_value(&context)
+                .map_err(|error| WireError::new("now_playing_context", error.to_string()))?
+    {
+        return Ok(());
+    }
+    state
+        .now_playing
+        .retire(Some(&context), terminal)
+        .await
+        .1
+        .map_err(now_playing_error)
 }
 
 fn consume_timecode_receipt(receipt: timecode::TimecodeReceipt) {
@@ -583,6 +813,12 @@ async fn dispatch_native(
     }
     if request.channel == "MAIN" {
         let command = request.data["channel"].as_str().unwrap_or("");
+        if ["NOW_PLAYING", "NOW_PLAYING_UNSET", "OPEN_NOW_PLAYING"].contains(&command) {
+            return Err(WireError::new(
+                "now_playing_raw_body",
+                "Now-playing requires the main-window typed adapter",
+            ));
+        }
         if timecode::COMMANDS.contains(&command) {
             if command == "TIMECODE_AUDIO_DATA" {
                 return Err(WireError::new(
@@ -870,6 +1106,19 @@ async fn dispatch_native(
                 let state = app.state::<AppState>();
                 let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
                 state.context_changes.close_and_drain().await?;
+                let (now_playing_drained, now_playing_result) =
+                    state.now_playing.retire(None, true).await;
+                if !now_playing_drained {
+                    return now_playing_result
+                        .map_err(now_playing_error)
+                        .map(|_| vec![]);
+                }
+                // Covers share actual preparation/image work with now-playing.
+                // Only the real joined drain permits retiring its dependencies.
+                let covers_result = state
+                    .covers
+                    .shutdown(std::time::Duration::from_secs(30))
+                    .await;
                 let (
                     _,
                     _,
@@ -945,6 +1194,9 @@ async fn dispatch_native(
                 ffmpeg_downloads_result?;
                 midi_result?;
                 timecode_result?;
+                now_playing_result.map_err(now_playing_error)?;
+                covers_result
+                    .map_err(|error| WireError::new("now_playing_covers", error.to_string()))?;
                 audio_runtime_result.0.map_err(WireError::from)?;
                 audio_runtime_result.1.map_err(WireError::from)?;
                 audio_runtime_result.2.map_err(WireError::from)?;
@@ -1041,25 +1293,12 @@ async fn dispatch_native(
     if command == "UPDATE_DATA_PATH" {
         let context = library.context().map_err(WireError::from)?;
         let state = app.state::<AppState>();
-        if let Err(error) = state.audio_pipeline.context_changed() {
+        if let Err(error) = synchronize_now_playing_context(&app).await {
             let mut alert = Event::reply(
                 "MAIN",
                 "ALERT",
                 json!(format!(
-                    "The library changed, but audio status cleanup failed: {}",
-                    error.message
-                )),
-                None,
-            );
-            alert.context = Some(context.clone());
-            events.push(alert);
-        }
-        if let Err(error) = state.audio_ingress.context_changed().await {
-            let mut alert = Event::reply(
-                "MAIN",
-                "ALERT",
-                json!(format!(
-                    "The library changed, but audio input cleanup failed: {}",
+                    "The library changed, but native media cleanup remains pending: {}",
                     error.message
                 )),
                 None,
@@ -1093,19 +1332,6 @@ async fn dispatch_native(
         app.state::<AppState>()
             .ffmpeg_downloads
             .context_changed(&context);
-        if let Err(error) = app.state::<AppState>().assets.context_changed(&context) {
-            let mut alert = Event::reply(
-                "MAIN",
-                "ALERT",
-                json!(format!(
-                    "The library changed, but media revocation failed: {}",
-                    error.message
-                )),
-                None,
-            );
-            alert.context = Some(context.clone());
-            events.push(alert);
-        }
         if let Err(error) = app.state::<AppState>().api.context_changed().await {
             let mut alert = Event::reply(
                 "MAIN",
@@ -1390,7 +1616,8 @@ fn main() {
             let osc = tauri::async_runtime::block_on(async {
                 OscSender::start(OscSenderConfig::default())
             })?;
-            let audio = AudioService::new(AudioConfig::default())?;
+            let audio = std::sync::Arc::new(AudioService::new(AudioConfig::default())?);
+            let covers = std::sync::Arc::new(freeshow_cover_images::CoverImageService::new()?);
             let files = files::NativeFiles::new(FilesService::start(FilesLimits::default())?);
             let system = SystemService::start(SystemLimits::default())?;
             let imports = imports::NativeImports::new(freeshow_imports::ImportService::new(
@@ -1594,6 +1821,10 @@ fn main() {
                 }),
             )
             .map_err(|error| std::io::Error::other(error.message))?;
+            let now_playing = now_playing_owner::Owner::new(now_playing::Dependencies {
+                library: library.clone(), assets: assets.clone(), audio: audio.clone(),
+                covers: covers.clone(), pipeline: audio_pipeline.clone(),
+            }).map_err(std::io::Error::other)?;
             app.manage(AppState {
                 library,
                 context_changes: context_changes::ContextChanges::new(),
@@ -1604,6 +1835,8 @@ fn main() {
                 scriptures,
                 media_copy,
                 audio,
+                covers,
+                now_playing,
                 audio_pipeline,
                 audio_ingress,
                 audio_last_receipt: std::sync::Mutex::new(serde_json::Value::Null),
@@ -1678,6 +1911,10 @@ fn main() {
             timecode_complete,
             timecode_retire,
             timecode_status,
+            now_playing_command,
+            now_playing_complete,
+            now_playing_retire,
+            now_playing_status,
             remote_delivery_complete,
             imports_status,
             assets_status,

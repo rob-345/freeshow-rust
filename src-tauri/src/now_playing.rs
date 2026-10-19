@@ -250,6 +250,11 @@ fn check_payload(value: &Value) -> Result<()> {
 /// retains this same budget across scoped host/context replacement.
 #[derive(Clone)]
 pub struct OperationBudget(Arc<Semaphore>);
+impl OperationBudget {
+    pub fn retained(&self) -> usize {
+        4 - self.0.available_permits()
+    }
+}
 impl Default for OperationBudget {
     fn default() -> Self {
         Self(Arc::new(Semaphore::new(4)))
@@ -262,6 +267,10 @@ struct Lease {
 pub struct Receipt {
     context: RuntimeContext,
     operation: u64,
+    #[allow(
+        dead_code,
+        reason = "Private received-object mutation observation for source parity; never an IPC callback"
+    )]
     mutated_input: Option<Value>,
     diagnostics: Vec<HostError>,
     failure: Option<HostError>,
@@ -274,6 +283,10 @@ impl Receipt {
     pub fn operation(&self) -> u64 {
         self.operation
     }
+    #[allow(
+        dead_code,
+        reason = "Private received-object mutation observation for source parity; never an IPC callback"
+    )]
     pub fn mutated_input(&self) -> Option<&Value> {
         self.mutated_input.as_ref()
     }
@@ -395,6 +408,10 @@ struct Work {
     lease: Arc<Lease>,
 }
 impl NativeNowPlaying {
+    #[allow(
+        dead_code,
+        reason = "Isolated native host harness constructor; desktop uses the shared process-lifetime budget"
+    )]
     pub fn start(dependencies: Dependencies, config: Config, callbacks: Callbacks) -> Result<Self> {
         Self::start_with_budget(dependencies, config, callbacks, OperationBudget::default())
     }
@@ -628,6 +645,10 @@ impl NativeNowPlaying {
         }
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Controlled native integration-test boundary; binary unit target does not install it"
+    )]
     pub fn test_hooks(&self) -> TestHooks {
         self.handle.shared.hooks.clone()
     }
@@ -1526,6 +1547,10 @@ pub struct TestGate {
 }
 #[cfg(test)]
 impl TestHooks {
+    #[allow(
+        dead_code,
+        reason = "Controlled native integration-test boundary; binary unit target does not install it"
+    )]
     pub fn hold(&self, stage: TestStage) -> Arc<TestGate> {
         let gate = Arc::new(TestGate {
             entered: Notify::new(),

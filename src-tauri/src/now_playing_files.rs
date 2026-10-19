@@ -22,6 +22,10 @@ pub enum Leaf {
     Cover,
 }
 pub enum Intent {
+    #[allow(
+        dead_code,
+        reason = "Independent path-only parity observation; source runtime uses actual folder effects"
+    )]
     Paths,
     EnsureFolder,
     Exists(Leaf),

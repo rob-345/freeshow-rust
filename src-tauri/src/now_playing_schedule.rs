@@ -74,6 +74,10 @@ impl PhaseToken {
     pub fn operation(&self) -> &OperationId {
         &self.operation
     }
+    #[allow(
+        dead_code,
+        reason = "Sealed token provenance observation for independent scheduler tests"
+    )]
     pub fn context(&self) -> &RuntimeContext {
         self.operation.context()
     }
@@ -175,6 +179,10 @@ impl Schedule {
             retiring: false,
         })
     }
+    #[allow(
+        dead_code,
+        reason = "Captured scheduler provenance observation for independent scheduler tests"
+    )]
     pub fn context(&self) -> &RuntimeContext {
         &self.run.context
     }

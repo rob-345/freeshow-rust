@@ -153,6 +153,10 @@ pub struct PreparationFailure {
     session: Option<Session>,
 }
 impl PreparationFailure {
+    #[allow(
+        dead_code,
+        reason = "Borrowed ownership observation for independent preparation tests; host consumes into_parts"
+    )]
     pub fn session(&self) -> Option<&Session> {
         self.session.as_ref()
     }
@@ -170,8 +174,16 @@ pub struct Prepared {
     all_pictures: Vec<Picture>,
     authority: MediaAuthority,
     session: Session,
+    #[allow(
+        dead_code,
+        reason = "Actual parser descriptor observations retained for independent preparation parity tests"
+    )]
     observations: FileObservations,
 }
+#[allow(
+    dead_code,
+    reason = "Borrowed typed preparation observations and revalidation used by independent tests; production consumes into_parts"
+)]
 impl Prepared {
     pub fn context(&self) -> &RuntimeContext {
         &self.captured
@@ -291,6 +303,10 @@ impl<'a> PreparationServices<'a> {
             hook: None,
         }
     }
+    #[allow(
+        dead_code,
+        reason = "Standalone preparation parity harness; host uses prepare_retained to observe failed-session cleanup"
+    )]
     pub async fn prepare(
         &self,
         captured: &RuntimeContext,

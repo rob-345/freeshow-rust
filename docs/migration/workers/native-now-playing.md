@@ -125,8 +125,11 @@ and operation counts, complete, supervisorJoined, and drained. **drained require
 both real drain proof and actual supervisor join**, even when shutdown returns
 a sticky error. A timeout with drained=false keeps dependencies alive for retry.
 
-The coordinator must retire this scoped host before changing pipeline, ingress,
-assets or library context; then construct a new host with the new full context.
+The coordinator must retire this scoped host before retiring pipeline, ingress
+or asset dependencies. A committed library switch invalidates old preparation
+authority; existing LibraryPhase admission prevents it from splitting an
+already accepted synchronous source region. After the actual old-host drain and
+dependency retirement, a new host captures the new full context.
 The shared process-global codec/resampler/accumulator is not reset by this host.
 Terminal ordering is host drain, pipeline/audio/assets/covers retirement and
 actual dependency joins, then LibraryService::finish_writes. The library's
