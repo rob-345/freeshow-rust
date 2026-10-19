@@ -1,5 +1,11 @@
 # Lazy frontend audio context
 
+The coordinator subsequently integrated this implementation after the separate
+[full retained-application controls](audio-context-fullfork.md) and
+[controlled production idle ablation](audio-context-ablation.md). The latter
+contains the measured result and its explicit attribution/workload limits;
+the initial focused evidence below remains distinct from those later runs.
+
 This is the bounded frontend follow-up to [the idle CPU investigation](idle-cpu-investigation.md). The diagnostic pair attributed about 10% of one logical core to six WebKit audio/queue threads across two web processes; it did not identify JavaScript constructor stacks or prove that this change reduces release CPU. The archived `c9e62492` executable, original baseline, profiling receipts and retained Svelte UI are unchanged.
 
 ## Change and intentional difference

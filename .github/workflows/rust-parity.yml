@@ -64,6 +64,8 @@ jobs:
       - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness,freeshow-opus/test-harness -- -D warnings
       - run: npm run rust:test
       - run: npm run rust:parity:report
+      - name: Validate archived idle ablation arithmetic
+        run: node tests/desktop/audio_context_ablation/validate.mjs --self-test
       - if: inputs.require_full_parity == true
         run: npm run rust:parity:gate
 
