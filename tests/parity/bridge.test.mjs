@@ -156,6 +156,46 @@ test("shared now-playing dispatch restores original metadata types before callba
     assert.equal(errors.length, 1)
 })
 
+test("shared now-playing folder and missing-file alerts preserve original payloads while private provenance stays outside callbacks", async () => {
+    const context = { runtimeId: "now-playing-alerts", libraryGeneration: 1, dataPath: "/selected/native\\literal" },
+        messages = [],
+        completions = [],
+        errors = []
+    const bridge = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {
+            command: async () => {},
+            retire: async () => {},
+            complete: async (context, id, accepted) => completions.push({ context, id, accepted })
+        }
+    )
+    bridge.api.receive("MAIN", (message, listenerId) => messages.push({ message, listenerId }))
+    const folder = context.dataPath + "/Audio",
+        text = `Error: Could not create folder at: ${folder}!`
+    const event = (sequence, data, privateFields) => ({ channel: "MAIN", context, message: { channel: "ALERT", data }, nativeNowPlaying: { id: `native-now-playing-${String(sequence).padStart(32, "0")}`, sequence: String(sequence), ...privateFields } })
+    bridge.dispatch(event(1, text, { alertKind: "folderCreationFailed", alertFolder: folder }))
+    bridge.dispatch(event(2, "This does not exist!", { alertKind: "missingText" }))
+    bridge.dispatch(event(3, text + " wrong", { alertKind: "folderCreationFailed", alertFolder: folder }))
+    await tick()
+    assert.deepEqual(messages, [
+        { message: { channel: "ALERT", data: text }, listenerId: undefined },
+        { message: { channel: "ALERT", data: "This does not exist!" }, listenerId: undefined }
+    ])
+    assert.deepEqual(
+        completions.map(({ accepted }) => accepted),
+        [true, true, false]
+    )
+    assert.ok(completions.every((item) => JSON.stringify(item.context) === JSON.stringify(context)))
+    assert.equal(errors.length, 1)
+})
+
 test("now-playing library retirement captures the old full context and native CLOSE survives a settled frontend drain failure", async () => {
     const old = { runtimeId: "now-playing-life", libraryGeneration: 1, dataPath: "/one" },
         next = { ...old, libraryGeneration: 2, dataPath: "/two" },

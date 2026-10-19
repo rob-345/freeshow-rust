@@ -68,6 +68,7 @@ def run():
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     (ARTIFACTS / "ffmpeg-download.json").unlink(missing_ok=True)
+    (ARTIFACTS / "now-playing-folder-alerts.json").unlink(missing_ok=True)
     driver = os.environ.get("TAURI_DRIVER") or shutil.which("tauri-driver")
     native = os.environ.get("WEBKIT_WEBDRIVER") or shutil.which("WebKitWebDriver")
     xdotool = os.environ.get("XDOTOOL") or shutil.which("xdotool")
@@ -702,6 +703,41 @@ def run():
                 now_playing_receipts.append({"native":observed,"source":expected,"files":files,"unset":cleared,"rootPicturePositionCompared":False,"encodedPngParityClaimed":False})
                 (ARTIFACTS / "now-playing.json").write_text(json.dumps(now_playing_receipts,ensure_ascii=False,indent=2))
                 steps.append("Retained now-playing " + entry["id"] + " preserves raw source metadata, send-time input, actual file effects and void UNSET with drained native work")
+            folder_context = invoke("runtime_context")
+            audio_folder = Path(folder_context["dataPath"]) / "Audio"
+            assert audio_folder.is_dir() and not audio_folder.is_symlink(), audio_folder
+            saved_audio_folder = temp / "saved-now-playing-audio"
+            audio_folder.rename(saved_audio_folder)
+            blocker = b"Native now-playing Audio folder blocker\x00\xff\n"
+            folder_receipts = []
+            try:
+                audio_folder.write_bytes(blocker)
+                wav_entry = next(entry for entry in now_playing_fixtures["cases"] if entry["path"].lower().endswith(".wav"))
+                for action, expected_counts in [("set", (1, 4, 0)), ("unset", (0, 2, 0)), ("open", (0, 1, 1))]:
+                    observed = script((ROOT / "tests/desktop/now_playing_folder_probe.js").read_text(), {"phase":"blocked-audio-" + action, "action":action, "audioFolder":str(audio_folder), "case":wav_entry})
+                    assert observed["context"] == observed["current"] == folder_context == invoke("runtime_context"), observed
+                    counts = observed["counts"]
+                    assert (counts["metadata"], counts["folderAlerts"], counts["missingTextAlerts"]) == expected_counts, observed
+                    assert counts["admitted"] == counts["completed"] == "1" and counts["revealCalls"] == "0", observed
+                    assert counts["sourceAcks"] == counts["runtimeErrors"] == counts["browserErrors"] == 0, observed
+                    assert observed["ordinaryIdleVerified"] and observed["actualCounterAdvanceVerified"] and observed["noNowPlayingRevealCallbackInvoked"], observed
+                    assert audio_folder.is_file() and not audio_folder.is_symlink() and audio_folder.read_bytes() == blocker, observed
+                    observed["filesystem"] = {"regularBlockerBytesUnchanged":True, "blockerBytes":len(blocker), "blockerSha256":hashlib.sha256(blocker).hexdigest(), "verifiedBy":"independent Python filesystem read"}
+                    # The retained ALERT handler replaces one popup message;
+                    # callbacks above independently observed every notification.
+                    expected_visible = "This does not exist!" if action == "open" else observed["expectedFolderMessage"]
+                    visible = wait(lambda: script("const p=document.querySelector('.popup p');return p?.textContent?.trim()===arguments[0] && document.querySelector('.popup button') ? p.textContent.trim() : null", expected_visible), "Actual original now-playing alert text visible")
+                    assert visible == expected_visible, (visible, observed)
+                    observed["visibleAlertText"] = visible
+                    folder_receipts.append(observed)
+                    (ARTIFACTS / "now-playing-folder-alerts.json").write_text(json.dumps(folder_receipts,ensure_ascii=False,indent=2))
+                    steps.append("Retained now-playing " + action.upper() + " preserves exact ordered folder/missing-file alerts, visible original text, void returns and drained work without invoking native reveal")
+                    click(".popup button")
+                    wait(lambda: script("return !document.querySelector('.popup')"), "Now-playing folder alert dismissed")
+            finally:
+                assert audio_folder.is_file() and not audio_folder.is_symlink() and audio_folder.read_bytes() == blocker, "Native code changed the private Audio blocker"
+                audio_folder.unlink()
+                saved_audio_folder.rename(audio_folder)
             read_text = import_dir / "日本語 literal%20.txt"
             read_text.write_bytes(b"\xef\xbb\xbfNative\x00\n\xf0\x9f\x80 invalid\xff")
             read_image = import_dir / "日本語 literal%20.jpg"

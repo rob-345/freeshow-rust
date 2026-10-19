@@ -343,11 +343,25 @@ fn now_playing_callbacks(app: &tauri::AppHandle) -> now_playing::Callbacks {
                 }
                 let mut event = publication.event().clone();
                 let mut private = json!({"id":publication.id(),"sequence":publication.sequence()});
-                if let now_playing::Publication::Metadata(delivery) = &publication {
-                    private["hydration"] =
-                        serde_json::to_value(delivery.hydration()).map_err(|error| {
-                            now_playing::HostError::new("now_playing_publication", error)
-                        })?;
+                match &publication {
+                    now_playing::Publication::Metadata(delivery) => {
+                        private["hydration"] =
+                            serde_json::to_value(delivery.hydration()).map_err(|error| {
+                                now_playing::HostError::new("now_playing_publication", error)
+                            })?;
+                    }
+                    now_playing::Publication::Alert(delivery) => {
+                        private["alertKind"] = json!(delivery.kind().as_str());
+                        if let Some(folder) = delivery.folder_path() {
+                            let folder = folder.to_str().ok_or_else(|| {
+                                now_playing::HostError::new(
+                                    "now_playing_unsupported",
+                                    "Non-Unicode Audio folder notification",
+                                )
+                            })?;
+                            private["alertFolder"] = json!(folder);
+                        }
+                    }
                 }
                 event.native_now_playing = Some(private);
                 publisher
