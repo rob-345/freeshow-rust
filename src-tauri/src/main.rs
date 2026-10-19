@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod ai_local;
+mod ai_status;
 mod api;
 mod assets;
 mod audio_ingress;
@@ -87,6 +88,7 @@ struct AppState {
     browse: browse::NativeBrowse,
     system: SystemService,
     ai_local: ai_local::NativeInventory,
+    ai_status: ai_status::NativeStatus,
     spotify: spotify::NativeSpotify,
     device_id: device_id::DeviceIdentity,
     provider_connections: provider_connections::ProviderConnections,
@@ -1067,6 +1069,13 @@ async fn dispatch_native(
                 .dispatch(&state.library, request, window.label())
                 .await;
         }
+        if command == "AI_GET_STATUS" {
+            let state = app.state::<AppState>();
+            return state
+                .ai_status
+                .dispatch(&state.library, request, window.label())
+                .await;
+        }
         if command == "AI_GET_BIN" {
             let state = app.state::<AppState>();
             return state
@@ -1225,6 +1234,7 @@ async fn dispatch_native(
                 let state = app.state::<AppState>();
                 state.device_id.seal();
                 state.ai_local.seal();
+                state.ai_status.seal();
                 state.spotify.seal();
                 state.provider_connections.seal();
                 let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
@@ -1251,6 +1261,7 @@ async fn dispatch_native(
                     files_result,
                     system_result,
                     ai_local_result,
+                    ai_status_result,
                     spotify_result,
                     api_result,
                     imports_result,
@@ -1274,6 +1285,7 @@ async fn dispatch_native(
                     state.files.shutdown(),
                     state.system.shutdown(),
                     state.ai_local.shutdown(),
+                    state.ai_status.shutdown(),
                     state.spotify.shutdown(),
                     state.api.shutdown(),
                     state.imports.shutdown(),
@@ -1309,6 +1321,7 @@ async fn dispatch_native(
                 system_result
                     .map_err(|error| WireError::new("system_worker", error.to_string()))?;
                 ai_local_result?;
+                ai_status_result?;
                 spotify_result?;
                 api_result?;
                 imports_result?;
@@ -1430,6 +1443,7 @@ async fn dispatch_native(
         let context = library.context().map_err(WireError::from)?;
         let state = app.state::<AppState>();
         state.ai_local.context_changed(&context);
+        state.ai_status.context_changed(&context);
         state.spotify.context_changed(&context);
         if let Some(previous) = previous_cover_context.filter(|previous| previous != &context) {
             state.cover_publications.retire(&previous, false);
@@ -1762,6 +1776,7 @@ fn main() {
             let files = files::NativeFiles::new(FilesService::start(FilesLimits::default())?);
             let system = SystemService::start(SystemLimits::default())?;
             let ai_local = ai_local::NativeInventory::new(app_data.clone());
+            let ai_status = ai_status::NativeStatus::new(app_data.clone());
             let imports = imports::NativeImports::new(freeshow_imports::ImportService::new(
                 freeshow_imports::ImportConfig::default(),
             )?);
@@ -1993,6 +2008,7 @@ fn main() {
                 browse,
                 system,
                 ai_local,
+                ai_status,
                 spotify,
                 device_id: device_id::DeviceIdentity::new(),
                 provider_connections: provider_connections::ProviderConnections::new(),

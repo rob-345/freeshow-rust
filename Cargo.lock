@@ -556,6 +556,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-ai-status"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "ryu-js",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-api"
 version = "0.1.0"
 dependencies = [

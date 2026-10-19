@@ -10,6 +10,7 @@ import { root, upstreamFunctions } from "./oracle.mjs"
 import { corpus, generatedCorpus } from "../../crates/freeshow-exif/tools/fixtures.mjs"
 import { Driver as SpotifyDriver, sourceOracle as spotifyOracle } from "./spotify-oracle.mjs"
 import { catalogueOracle, assertNoCatalogueActivity } from "./provider-catalogue-oracle.mjs"
+import { oracle as aiStatusOracle } from "./ai-status-oracle.mjs"
 
 const source = fs.readFileSync(path.join(root, "src/frontend/rust/bridge.ts"), "utf8")
 const nativeDrop = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/nativeDrop.ts"), "utf8"), {
@@ -112,6 +113,82 @@ test("provider catalogue callbacks preserve actual source declarations, listener
         assert.deepEqual(errors, [])
         assert.deepEqual(bridge.api.getRuntimeContext(), context)
     }
+})
+
+test("AI status preserves actual explicit source callbacks and send-time snapshots through both caller mutation phases", async () => {
+    const userData = fs.mkdtempSync(path.join(os.tmpdir(), "freeshow-ai-status-bridge-"))
+    try {
+        for (const phase of ["ordinary", "before-transport", "after-transport"]) {
+            const context = { runtimeId: "ai-status-source", libraryGeneration: 2, dataPath: "/selected" },
+                payload = { channel: "AI_GET_STATUS", data: { engineId: "nemotron", modelId: false, customPath: "/ignored-decoy" } },
+                snapshot = structuredClone(payload),
+                listener = "status-" + phase,
+                source = aiStatusOracle(userData),
+                original = await source.dispatch(payload.data, listener),
+                expected = JSON.parse(JSON.stringify(original[0])),
+                replies = [],
+                errors = [],
+                requests = []
+            assert.equal(original.length, 1)
+            assert.deepEqual(source.calls, ["userData"])
+            let finish
+            const bridge = createRustApi(
+                async (request) => {
+                    requests.push(request)
+                    return new Promise((resolve) => {
+                        finish = resolve
+                    })
+                },
+                (...error) => errors.push(error),
+                context
+            )
+            bridge.api.receive("MAIN", (...args) => replies.push(args))
+            assert.equal(bridge.api.send("MAIN", payload, listener), undefined)
+            if (phase !== "before-transport") await tick()
+            if (phase !== "ordinary") {
+                payload.channel = "GET_OS"
+                payload.data.engineId = "cloud"
+                payload.data.modelId = "reused"
+            }
+            if (phase === "before-transport") await tick()
+            assert.deepEqual(requests, [{ channel: "MAIN", data: snapshot, listenerId: listener, context }])
+            finish([{ channel: "MAIN", message: { ...expected[1], autoProfile: "private native envelope" }, listenerId: listener, context }])
+            await tick()
+            assert.deepEqual(replies, [expected.slice(1)])
+            assert.deepEqual(Object.keys(replies[0][0]), ["channel", "data"])
+            assert.deepEqual(Object.keys(replies[0][0].data), ["nemotron"])
+            assert.deepEqual(Object.keys(replies[0][0].data.nemotron), ["ready", "error"])
+            assert.deepEqual(errors, [])
+            assert.deepEqual(bridge.api.getRuntimeContext(), context)
+        }
+    } finally {
+        fs.rmSync(userData, { recursive: true, force: true })
+    }
+})
+
+test("AI status rejects missing or mismatched full contexts, wrong origin/listener and malformed replies without retagging the UI", () => {
+    const context = { runtimeId: "ai-status-fence", libraryGeneration: 4, dataPath: "/actual" },
+        replies = [],
+        errors = [],
+        origin = { channel: "MAIN", data: { channel: "AI_GET_STATUS" }, listenerId: "status" },
+        event = { channel: "MAIN", message: { channel: "AI_GET_STATUS", data: { nemotron: { ready: false, error: "The local model is missing" } } }, listenerId: "status", context },
+        bridge = createRustApi(
+            async () => [],
+            (error) => errors.push(error),
+            context
+        )
+    bridge.api.receive("MAIN", (...args) => replies.push(args))
+    for (const changed of [undefined, { ...context, runtimeId: "foreign" }, { ...context, libraryGeneration: 3 }, { ...context, libraryGeneration: 5 }, { ...context, dataPath: "/different-same-generation" }]) bridge.dispatch({ ...event, context: changed }, origin)
+    assert.deepEqual(replies, [])
+    assert.deepEqual(bridge.api.getRuntimeContext(), context)
+    bridge.dispatch(event, { ...origin, data: { channel: "GET_OS" } })
+    bridge.dispatch({ ...event, listenerId: "wrong" }, origin)
+    for (const data of [{ nemotron: { ready: 0, error: "bad boolean" } }, { nemotron: { ready: false, error: "missing", localPath: "extra" } }, { nemotron: { ready: true, localPath: false } }, { cloud: { ready: false, error: "wrong engine" } }]) bridge.dispatch({ ...event, message: { ...event.message, data } }, origin)
+    assert.deepEqual(replies, [])
+    assert.equal(errors.length, 6)
+    bridge.dispatch(event, origin)
+    assert.deepEqual(replies, [[{ channel: "AI_GET_STATUS", data: event.message.data }, "status"]])
+    assert.deepEqual(bridge.api.getRuntimeContext(), context)
 })
 
 function spotifyEvent(context, listenerId, wire, extra = {}) {

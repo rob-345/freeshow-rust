@@ -2,6 +2,7 @@
 members = [
     "crates/freeshow-core",
     "crates/freeshow-ai-local",
+    "crates/freeshow-ai-status",
     "crates/freeshow-spotify",
     "crates/freeshow-provider-shows",
     "crates/freeshow-media",

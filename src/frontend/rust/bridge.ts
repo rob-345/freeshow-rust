@@ -248,6 +248,18 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
             reportError({ code: "spotify_publication", message: "Native Spotify reply lacks restoration" }, event)
             return
         }
+        if (event.channel === "MAIN" && event.message.channel === "AI_GET_STATUS") {
+            if (!context || !event.context || event.context.runtimeId !== context.runtimeId || event.context.libraryGeneration !== context.libraryGeneration || event.context.dataPath !== context.dataPath) return
+            const data = event.message.data
+            const status = data?.nemotron
+            const keys = status?.ready === true ? ["ready", "localPath"] : ["ready", "error"]
+            if (origin?.channel !== "MAIN" || origin.data?.channel !== "AI_GET_STATUS" || event.listenerId !== origin.listenerId || !data || JSON.stringify(Object.keys(data)) !== JSON.stringify(["nemotron"]) || !status || typeof status.ready !== "boolean" || JSON.stringify(Object.keys(status)) !== JSON.stringify(keys) || typeof status[keys[1]] !== "string" || !status[keys[1]] || status[keys[1]].length > 32768) {
+                reportError({ code: "ai_status_publication", message: "Unexpected explicit native Nemotron status" }, event)
+                return
+            }
+            deliver("MAIN", { channel: "AI_GET_STATUS", data }, event.listenerId)
+            return
+        }
         if (event.context) {
             if (context && (event.context.runtimeId !== context.runtimeId || event.context.libraryGeneration < context.libraryGeneration)) return
             // Only the completed root-selection response may advance a library.
@@ -314,7 +326,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 // mutable Svelte objects; queued cues must keep their snapshot.
                 // Pure catalogue requests also retain the original command;
                 // Spotify validates this origin after its native wait.
-                if (mediaCopy || channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && (["SPOTIFY_GET_STATE", "GET_CONTENT_PROVIDERS"].includes(data?.channel) || remoteCommands.has(data?.channel) || midiCommands.has(data?.channel)))) data = structuredClone(data)
+                if (mediaCopy || channel === "OUTPUT" || remoteChannels.has(channel) || (channel === "MAIN" && (["SPOTIFY_GET_STATE", "GET_CONTENT_PROVIDERS", "AI_GET_STATUS"].includes(data?.channel) || remoteCommands.has(data?.channel) || midiCommands.has(data?.channel)))) data = structuredClone(data)
                 // SAVE snapshots its context before its deferred send. Other
                 // requests belong to the library visible when send is called.
                 const captured = channel === "MAIN" && data?.channel === "SAVE" ? data.data?.runtimeContext || context : context
