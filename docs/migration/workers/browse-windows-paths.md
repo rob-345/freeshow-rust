@@ -100,6 +100,13 @@ Existing tighter per-request `BrowseConfig` and aggregate `Budget::string`
 limits still apply before/after helper use; the fixed helper bounds do not
 replace them.
 
+The sealed stat backend already accepts normalized verbatim drive paths, and
+Windows native fixtures obtain these through `canonicalize()`. Keep FILE_INFO's
+existing narrow separator-based extension handling for those accepted paths;
+do not route them through this parser, which deliberately rejects verbatim
+prefixes. The two capability subsets differ. This helper slice does not revoke
+the stat foundation's accepted input or silently expand its own contract.
+
 Do not enable folder or similarity commands on the strength of this slice.
 Windows directory enumeration ordering/name decoding, wider filesystem path
 spellings (including canonical verbatim paths), source error handling, native
