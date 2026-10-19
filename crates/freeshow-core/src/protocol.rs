@@ -66,6 +66,9 @@ pub struct Event {
     /// Private now-playing metadata restoration and bounded delivery receipt.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub native_now_playing: Option<Value>,
+    /// Private fixed-cover folder notification; source callback stays unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub native_cover: Option<Value>,
 }
 
 impl Event {
@@ -87,6 +90,7 @@ impl Event {
             native_audio: None,
             native_timecode: None,
             native_now_playing: None,
+            native_cover: None,
         }
     }
 }

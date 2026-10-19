@@ -38,6 +38,7 @@ function inlineModule(name, imports = {}) {
     return `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`
 }
 const nowPlayingBridgeModule = inlineModule("nowPlayingBridge", { metadata: inlineModule("metadata"), nowPlayingWire: inlineModule("nowPlayingWire") })
+const coverBridgeModule = inlineModule("coverBridge")
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -56,6 +57,7 @@ const javascript = ts
     .replace('from "./timecodeBridge"', `from "${timecodeBridgeModule}"`)
     .replace('from "./timecodeWire"', `from "${timecodeWireModule}"`)
     .replace('from "./nowPlayingBridge"', `from "${nowPlayingBridgeModule}"`)
+    .replace('from "./coverBridge"', `from "${coverBridgeModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
 
