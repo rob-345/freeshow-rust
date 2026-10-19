@@ -1,0 +1,2911 @@
+{
+    "ok": true,
+    "head": "eb751551a8b8604940d1732b782ea5d6dc7db81c",
+    "binary": "/mnt/data/cache/freeshow-rust-build/browse-admission/target/debug/freeshow-desktop",
+    "binarySha256": "f397b2ec5c72c75c5dc72d60611ee66c2f8d96ae22bb5d6a0a23a919587d9cbb",
+    "normalProductionBuild": true,
+    "diagnosticBundle": false,
+    "performanceSample": false,
+    "physicalAudioVerified": false,
+    "cases": [
+        {
+            "ok": true,
+            "savedSubtab": "startup-0",
+            "observations": [
+                {
+                    "errors": [],
+                    "rows": [],
+                    "origin": "tauri://localhost",
+                    "context": null,
+                    "topTab": null,
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "",
+                    "tabs": [],
+                    "clicks": []
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID000b3",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                    },
+                    "topTab": "shows",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nNew show\n13\n:\n56\n:49\nMonday 19. October 2026\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 0,
+                            "active": false
+                        }
+                    ],
+                    "clicks": []
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID000b3",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nImport\nNew show\n13\n:\n56\n:49\nMonday 19. October 2026\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 0,
+                            "active": true
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID000b3",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:00\n\n0-1 retained 音楽\n00:00\n\nNew playlist\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID000b3",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\nNew playlist\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID000b3",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\nNew playlist\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID000b3",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\nNew playlist\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID000b3",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.SPOTIFY_GET_STATE"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "SPOTIFY_GET_STATE",
+                                        "data": null
+                                    },
+                                    "listenerId": "SPOTIFY_GET_STATEc06aa",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\nNew playlist\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID000b3",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.SPOTIFY_GET_STATE"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "SPOTIFY_GET_STATE",
+                                        "data": null
+                                    },
+                                    "listenerId": "SPOTIFY_GET_STATEc06aa",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\nNew playlist\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                }
+            ],
+            "settingsBefore": {
+                "initialized": true,
+                "language": "en",
+                "audioFolders": {
+                    "startup-0": {
+                        "name": "Startup audio 0 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽"
+                    },
+                    "startup-1": {
+                        "name": "Startup audio 1 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 1 音楽"
+                    },
+                    "startup-2": {
+                        "name": "Startup audio 2 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 2 音楽"
+                    }
+                },
+                "mediaFolders": {
+                    "media-0": {
+                        "name": "Startup media 0",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Media fixture 0"
+                    },
+                    "media-1": {
+                        "name": "Startup media 1",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Media fixture 1"
+                    }
+                },
+                "drawerTabsData": {
+                    "audio": {
+                        "enabled": true,
+                        "activeSubTab": "startup-0"
+                    },
+                    "media": {
+                        "enabled": true,
+                        "activeSubTab": "all"
+                    }
+                },
+                "drawer": {
+                    "height": 420,
+                    "stored": null
+                },
+                "special": {
+                    "showClosePopup": false,
+                    "icecast": {
+                        "enabled": false
+                    }
+                }
+            },
+            "settingsBeforeSha256": "6e2816f613cde4257a88e0d0f97a4a763e99fad6fb4a6ac590d96772bc4ecbfe",
+            "fixtures": [
+                {
+                    "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 1 音楽/1-0 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 1 音楽/1-1 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 1 音楽/1-2 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 2 音楽/2-0 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                }
+            ],
+            "expectedRows": [
+                {
+                    "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav",
+                    "name": "0-0 retained 音楽",
+                    "duration": "00:01"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav",
+                    "name": "0-1 retained 音楽",
+                    "duration": "00:01"
+                }
+            ],
+            "expectedCounts": {
+                "Startup audio 0 敬拜": 2,
+                "Startup audio 1 敬拜": 3,
+                "Startup audio 2 敬拜": 1,
+                "All": 6
+            },
+            "appPid": 3736588,
+            "guideDismissed": false,
+            "context": {
+                "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                "libraryGeneration": 0,
+                "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+            },
+            "beforeFirstAudioMount": {
+                "errors": [
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.DEVICE_ID"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "DEVICE_ID",
+                                    "data": null
+                                },
+                                "listenerId": "DEVICE_ID000b3",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "PROVIDER_CONNECTIONS",
+                                    "data": null
+                                },
+                                "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "rows": [],
+                "origin": "tauri://localhost",
+                "context": {
+                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                    "libraryGeneration": 0,
+                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                },
+                "topTab": "shows",
+                "diagnosticGlobalsAbsent": true,
+                "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nNew show\n13\n:\n56\n:49\nMonday 19. October 2026\n",
+                "tabs": [
+                    {
+                        "label": "All",
+                        "count": 0,
+                        "active": false
+                    }
+                ],
+                "clicks": []
+            },
+            "firstAudioMount": {
+                "errors": [
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.DEVICE_ID"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "DEVICE_ID",
+                                    "data": null
+                                },
+                                "listenerId": "DEVICE_ID000b3",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "PROVIDER_CONNECTIONS",
+                                    "data": null
+                                },
+                                "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "rows": [
+                    {
+                        "name": "0-0 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                    },
+                    {
+                        "name": "0-1 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                    }
+                ],
+                "origin": "tauri://localhost",
+                "context": {
+                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                    "libraryGeneration": 0,
+                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                },
+                "topTab": "audio",
+                "diagnosticGlobalsAbsent": true,
+                "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\nNew playlist\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                "tabs": [
+                    {
+                        "label": "All",
+                        "count": 6,
+                        "active": false
+                    },
+                    {
+                        "label": "Startup audio 0 敬拜",
+                        "count": 2,
+                        "active": true
+                    },
+                    {
+                        "label": "Startup audio 1 敬拜",
+                        "count": 3,
+                        "active": false
+                    },
+                    {
+                        "label": "Startup audio 2 敬拜",
+                        "count": 1,
+                        "active": false
+                    }
+                ],
+                "clicks": [
+                    {
+                        "group": "top",
+                        "label": "Audio",
+                        "id": "audio",
+                        "trusted": true
+                    }
+                ]
+            },
+            "final": {
+                "errors": [
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.DEVICE_ID"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "DEVICE_ID",
+                                    "data": null
+                                },
+                                "listenerId": "DEVICE_ID000b3",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "PROVIDER_CONNECTIONS",
+                                    "data": null
+                                },
+                                "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.SPOTIFY_GET_STATE"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "SPOTIFY_GET_STATE",
+                                    "data": null
+                                },
+                                "listenerId": "SPOTIFY_GET_STATEc06aa",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "rows": [
+                    {
+                        "name": "0-0 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                    },
+                    {
+                        "name": "0-1 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                    }
+                ],
+                "origin": "tauri://localhost",
+                "context": {
+                    "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                    "libraryGeneration": 0,
+                    "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                },
+                "topTab": "audio",
+                "diagnosticGlobalsAbsent": true,
+                "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\nNew playlist\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                "tabs": [
+                    {
+                        "label": "All",
+                        "count": 6,
+                        "active": false
+                    },
+                    {
+                        "label": "Startup audio 0 敬拜",
+                        "count": 2,
+                        "active": true
+                    },
+                    {
+                        "label": "Startup audio 1 敬拜",
+                        "count": 3,
+                        "active": false
+                    },
+                    {
+                        "label": "Startup audio 2 敬拜",
+                        "count": 1,
+                        "active": false
+                    }
+                ],
+                "clicks": [
+                    {
+                        "group": "top",
+                        "label": "Audio",
+                        "id": "audio",
+                        "trusted": true
+                    }
+                ]
+            },
+            "knownIndependentStartupGaps": [
+                {
+                    "kind": "freeshow:runtime-error",
+                    "detail": {
+                        "error": {
+                            "code": "unsupported_command",
+                            "message": "unsupported command: MAIN.DEVICE_ID"
+                        },
+                        "request": {
+                            "channel": "MAIN",
+                            "data": {
+                                "channel": "DEVICE_ID",
+                                "data": null
+                            },
+                            "listenerId": "DEVICE_ID000b3",
+                            "context": {
+                                "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                "libraryGeneration": 0,
+                                "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "freeshow:runtime-error",
+                    "detail": {
+                        "error": {
+                            "code": "unsupported_command",
+                            "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                        },
+                        "request": {
+                            "channel": "MAIN",
+                            "data": {
+                                "channel": "PROVIDER_CONNECTIONS",
+                                "data": null
+                            },
+                            "listenerId": "PROVIDER_CONNECTIONSb3aaf",
+                            "context": {
+                                "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                "libraryGeneration": 0,
+                                "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "freeshow:runtime-error",
+                    "detail": {
+                        "error": {
+                            "code": "unsupported_command",
+                            "message": "unsupported command: MAIN.SPOTIFY_GET_STATE"
+                        },
+                        "request": {
+                            "channel": "MAIN",
+                            "data": {
+                                "channel": "SPOTIFY_GET_STATE",
+                                "data": null
+                            },
+                            "listenerId": "SPOTIFY_GET_STATEc06aa",
+                            "context": {
+                                "dataPath": "/tmp/freeshow-browse-startup-3n5wf50v/library",
+                                "libraryGeneration": 0,
+                                "runtimeId": "94496005-4144-4677-8258-f275628cea5f"
+                            }
+                        }
+                    }
+                }
+            ],
+            "normalCloseAttempted": true,
+            "normalCloseExitedBeforeFixtureTermination": true,
+            "savedProfileVerified": {
+                "audioFolders": {
+                    "startup-0": {
+                        "name": "Startup audio 0 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 0 音楽"
+                    },
+                    "startup-1": {
+                        "name": "Startup audio 1 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 1 音楽"
+                    },
+                    "startup-2": {
+                        "name": "Startup audio 2 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Audio fixture 2 音楽"
+                    }
+                },
+                "mediaFolders": {
+                    "media-0": {
+                        "name": "Startup media 0",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Media fixture 0"
+                    },
+                    "media-1": {
+                        "name": "Startup media 1",
+                        "path": "/tmp/freeshow-browse-startup-3n5wf50v/library/Media fixture 1"
+                    }
+                },
+                "audioSubtab": "startup-0"
+            },
+            "webdriverRequests": 20,
+            "actualFixtureCleanup": {
+                "driverJoined": true,
+                "pulseJoined": true,
+                "ownedChildren": ""
+            }
+        },
+        {
+            "ok": true,
+            "savedSubtab": "all",
+            "observations": [
+                {
+                    "errors": [],
+                    "rows": [],
+                    "origin": "tauri://localhost",
+                    "context": null,
+                    "topTab": null,
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "",
+                    "tabs": [],
+                    "clicks": []
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID3387b",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                    },
+                    "topTab": "shows",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nNew show\n13\n:\n56\n:52\nMonday 19. October 2026\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 0,
+                            "active": false
+                        }
+                    ],
+                    "clicks": []
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID3387b",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nImport\nNew show\n13\n:\n56\n:52\nMonday 19. October 2026\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 0,
+                            "active": true
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID3387b",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-0 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-1 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-2 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav"
+                        },
+                        {
+                            "name": "2-0 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:00\n\n0-1 retained 音楽\n00:00\n\n1-0 retained 音楽\n00:00\n\n1-1 retained 音楽\n00:00\n\n1-2 retained 音楽\n00:00\n\n2-0 retained 音楽\n00:00\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID3387b",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-0 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-1 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-2 retained 音楽",
+                            "duration": "00:00",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav"
+                        },
+                        {
+                            "name": "2-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:00\n\n1-0 retained 音楽\n00:00\n\n1-1 retained 音楽\n00:00\n\n1-2 retained 音楽\n00:00\n\n2-0 retained 音楽\n00:01\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID3387b",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-2 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav"
+                        },
+                        {
+                            "name": "2-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\n1-0 retained 音楽\n00:01\n\n1-1 retained 音楽\n00:01\n\n1-2 retained 音楽\n00:01\n\n2-0 retained 音楽\n00:01\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID3387b",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-2 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav"
+                        },
+                        {
+                            "name": "2-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\n1-0 retained 音楽\n00:01\n\n1-1 retained 音楽\n00:01\n\n1-2 retained 音楽\n00:01\n\n2-0 retained 音楽\n00:01\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID3387b",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.SPOTIFY_GET_STATE"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "SPOTIFY_GET_STATE",
+                                        "data": null
+                                    },
+                                    "listenerId": "SPOTIFY_GET_STATE28d7c",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-2 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav"
+                        },
+                        {
+                            "name": "2-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\n1-0 retained 音楽\n00:01\n\n1-1 retained 音楽\n00:01\n\n1-2 retained 音楽\n00:01\n\n2-0 retained 音楽\n00:01\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID3387b",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.SPOTIFY_GET_STATE"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "SPOTIFY_GET_STATE",
+                                        "data": null
+                                    },
+                                    "listenerId": "SPOTIFY_GET_STATE28d7c",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-2 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav"
+                        },
+                        {
+                            "name": "2-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\n1-0 retained 音楽\n00:01\n\n1-1 retained 音楽\n00:01\n\n1-2 retained 音楽\n00:01\n\n2-0 retained 音楽\n00:01\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                },
+                {
+                    "errors": [
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.DEVICE_ID"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "DEVICE_ID",
+                                        "data": null
+                                    },
+                                    "listenerId": "DEVICE_ID3387b",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "PROVIDER_CONNECTIONS",
+                                        "data": null
+                                    },
+                                    "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "kind": "freeshow:runtime-error",
+                            "detail": {
+                                "error": {
+                                    "code": "unsupported_command",
+                                    "message": "unsupported command: MAIN.SPOTIFY_GET_STATE"
+                                },
+                                "request": {
+                                    "channel": "MAIN",
+                                    "data": {
+                                        "channel": "SPOTIFY_GET_STATE",
+                                        "data": null
+                                    },
+                                    "listenerId": "SPOTIFY_GET_STATE28d7c",
+                                    "context": {
+                                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                        "libraryGeneration": 0,
+                                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "rows": [
+                        {
+                            "name": "0-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "0-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-1 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav"
+                        },
+                        {
+                            "name": "1-2 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav"
+                        },
+                        {
+                            "name": "2-0 retained 音楽",
+                            "duration": "00:01",
+                            "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav"
+                        }
+                    ],
+                    "origin": "tauri://localhost",
+                    "context": {
+                        "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                        "libraryGeneration": 0,
+                        "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                    },
+                    "topTab": "audio",
+                    "diagnosticGlobalsAbsent": true,
+                    "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\n1-0 retained 音楽\n00:01\n\n1-1 retained 音楽\n00:01\n\n1-2 retained 音楽\n00:01\n\n2-0 retained 音楽\n00:01\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                    "tabs": [
+                        {
+                            "label": "All",
+                            "count": 6,
+                            "active": true
+                        },
+                        {
+                            "label": "Startup audio 0 敬拜",
+                            "count": 2,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 1 敬拜",
+                            "count": 3,
+                            "active": false
+                        },
+                        {
+                            "label": "Startup audio 2 敬拜",
+                            "count": 1,
+                            "active": false
+                        }
+                    ],
+                    "clicks": [
+                        {
+                            "group": "top",
+                            "label": "Audio",
+                            "id": "audio",
+                            "trusted": true
+                        }
+                    ]
+                }
+            ],
+            "settingsBefore": {
+                "initialized": true,
+                "language": "en",
+                "audioFolders": {
+                    "startup-0": {
+                        "name": "Startup audio 0 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽"
+                    },
+                    "startup-1": {
+                        "name": "Startup audio 1 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽"
+                    },
+                    "startup-2": {
+                        "name": "Startup audio 2 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽"
+                    }
+                },
+                "mediaFolders": {
+                    "media-0": {
+                        "name": "Startup media 0",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Media fixture 0"
+                    },
+                    "media-1": {
+                        "name": "Startup media 1",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Media fixture 1"
+                    }
+                },
+                "drawerTabsData": {
+                    "audio": {
+                        "enabled": true,
+                        "activeSubTab": "all"
+                    },
+                    "media": {
+                        "enabled": true,
+                        "activeSubTab": "all"
+                    }
+                },
+                "drawer": {
+                    "height": 420,
+                    "stored": null
+                },
+                "special": {
+                    "showClosePopup": false,
+                    "icecast": {
+                        "enabled": false
+                    }
+                }
+            },
+            "settingsBeforeSha256": "8c7659a1aa015f46907a21236e240a9e87681fb7feff684f98441b7901ec0f68",
+            "fixtures": [
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav",
+                    "bytes": 16044,
+                    "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+                }
+            ],
+            "expectedRows": [
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav",
+                    "name": "0-0 retained 音楽",
+                    "duration": "00:01"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav",
+                    "name": "0-1 retained 音楽",
+                    "duration": "00:01"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav",
+                    "name": "1-0 retained 音楽",
+                    "duration": "00:01"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav",
+                    "name": "1-1 retained 音楽",
+                    "duration": "00:01"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav",
+                    "name": "1-2 retained 音楽",
+                    "duration": "00:01"
+                },
+                {
+                    "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav",
+                    "name": "2-0 retained 音楽",
+                    "duration": "00:01"
+                }
+            ],
+            "expectedCounts": {
+                "Startup audio 0 敬拜": 2,
+                "Startup audio 1 敬拜": 3,
+                "Startup audio 2 敬拜": 1,
+                "All": 6
+            },
+            "appPid": 3737048,
+            "guideDismissed": false,
+            "context": {
+                "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                "libraryGeneration": 0,
+                "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+            },
+            "beforeFirstAudioMount": {
+                "errors": [
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.DEVICE_ID"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "DEVICE_ID",
+                                    "data": null
+                                },
+                                "listenerId": "DEVICE_ID3387b",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "PROVIDER_CONNECTIONS",
+                                    "data": null
+                                },
+                                "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "rows": [],
+                "origin": "tauri://localhost",
+                "context": {
+                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                    "libraryGeneration": 0,
+                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                },
+                "topTab": "shows",
+                "diagnosticGlobalsAbsent": true,
+                "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nNew show\n13\n:\n56\n:52\nMonday 19. October 2026\n",
+                "tabs": [
+                    {
+                        "label": "All",
+                        "count": 0,
+                        "active": false
+                    }
+                ],
+                "clicks": []
+            },
+            "firstAudioMount": {
+                "errors": [
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.DEVICE_ID"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "DEVICE_ID",
+                                    "data": null
+                                },
+                                "listenerId": "DEVICE_ID3387b",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "PROVIDER_CONNECTIONS",
+                                    "data": null
+                                },
+                                "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "rows": [
+                    {
+                        "name": "0-0 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                    },
+                    {
+                        "name": "0-1 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                    },
+                    {
+                        "name": "1-0 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav"
+                    },
+                    {
+                        "name": "1-1 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav"
+                    },
+                    {
+                        "name": "1-2 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav"
+                    },
+                    {
+                        "name": "2-0 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav"
+                    }
+                ],
+                "origin": "tauri://localhost",
+                "context": {
+                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                    "libraryGeneration": 0,
+                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                },
+                "topTab": "audio",
+                "diagnosticGlobalsAbsent": true,
+                "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\n1-0 retained 音楽\n00:01\n\n1-1 retained 音楽\n00:01\n\n1-2 retained 音楽\n00:01\n\n2-0 retained 音楽\n00:01\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                "tabs": [
+                    {
+                        "label": "All",
+                        "count": 6,
+                        "active": true
+                    },
+                    {
+                        "label": "Startup audio 0 敬拜",
+                        "count": 2,
+                        "active": false
+                    },
+                    {
+                        "label": "Startup audio 1 敬拜",
+                        "count": 3,
+                        "active": false
+                    },
+                    {
+                        "label": "Startup audio 2 敬拜",
+                        "count": 1,
+                        "active": false
+                    }
+                ],
+                "clicks": [
+                    {
+                        "group": "top",
+                        "label": "Audio",
+                        "id": "audio",
+                        "trusted": true
+                    }
+                ]
+            },
+            "final": {
+                "errors": [
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.DEVICE_ID"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "DEVICE_ID",
+                                    "data": null
+                                },
+                                "listenerId": "DEVICE_ID3387b",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "PROVIDER_CONNECTIONS",
+                                    "data": null
+                                },
+                                "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "freeshow:runtime-error",
+                        "detail": {
+                            "error": {
+                                "code": "unsupported_command",
+                                "message": "unsupported command: MAIN.SPOTIFY_GET_STATE"
+                            },
+                            "request": {
+                                "channel": "MAIN",
+                                "data": {
+                                    "channel": "SPOTIFY_GET_STATE",
+                                    "data": null
+                                },
+                                "listenerId": "SPOTIFY_GET_STATE28d7c",
+                                "context": {
+                                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                    "libraryGeneration": 0,
+                                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "rows": [
+                    {
+                        "name": "0-0 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-0 retained 音楽.wav"
+                    },
+                    {
+                        "name": "0-1 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽/0-1 retained 音楽.wav"
+                    },
+                    {
+                        "name": "1-0 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-0 retained 音楽.wav"
+                    },
+                    {
+                        "name": "1-1 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-1 retained 音楽.wav"
+                    },
+                    {
+                        "name": "1-2 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽/1-2 retained 音楽.wav"
+                    },
+                    {
+                        "name": "2-0 retained 音楽",
+                        "duration": "00:01",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽/2-0 retained 音楽.wav"
+                    }
+                ],
+                "origin": "tauri://localhost",
+                "context": {
+                    "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                    "libraryGeneration": 0,
+                    "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                },
+                "topTab": "audio",
+                "diagnosticGlobalsAbsent": true,
+                "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\n6\n\nInputs\n\nMetronome\nPlaylists\nNew playlist\nFolders\n\nStartup audio 0 敬拜\n2\n\nStartup audio 1 敬拜\n3\n\nStartup audio 2 敬拜\n1\nAdd folder\n\n0-0 retained 音楽\n00:01\n\n0-1 retained 音楽\n00:01\n\n1-0 retained 音楽\n00:01\n\n1-1 retained 音楽\n00:01\n\n1-2 retained 音楽\n00:01\n\n2-0 retained 音楽\n00:01\nMain\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\nMetronome\n\n\ndB\n\n\n\n.\n-60-54-48-42-36-30-24-18-12-60\n",
+                "tabs": [
+                    {
+                        "label": "All",
+                        "count": 6,
+                        "active": true
+                    },
+                    {
+                        "label": "Startup audio 0 敬拜",
+                        "count": 2,
+                        "active": false
+                    },
+                    {
+                        "label": "Startup audio 1 敬拜",
+                        "count": 3,
+                        "active": false
+                    },
+                    {
+                        "label": "Startup audio 2 敬拜",
+                        "count": 1,
+                        "active": false
+                    }
+                ],
+                "clicks": [
+                    {
+                        "group": "top",
+                        "label": "Audio",
+                        "id": "audio",
+                        "trusted": true
+                    }
+                ]
+            },
+            "knownIndependentStartupGaps": [
+                {
+                    "kind": "freeshow:runtime-error",
+                    "detail": {
+                        "error": {
+                            "code": "unsupported_command",
+                            "message": "unsupported command: MAIN.DEVICE_ID"
+                        },
+                        "request": {
+                            "channel": "MAIN",
+                            "data": {
+                                "channel": "DEVICE_ID",
+                                "data": null
+                            },
+                            "listenerId": "DEVICE_ID3387b",
+                            "context": {
+                                "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                "libraryGeneration": 0,
+                                "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "freeshow:runtime-error",
+                    "detail": {
+                        "error": {
+                            "code": "unsupported_command",
+                            "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+                        },
+                        "request": {
+                            "channel": "MAIN",
+                            "data": {
+                                "channel": "PROVIDER_CONNECTIONS",
+                                "data": null
+                            },
+                            "listenerId": "PROVIDER_CONNECTIONS7bab5",
+                            "context": {
+                                "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                "libraryGeneration": 0,
+                                "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                            }
+                        }
+                    }
+                },
+                {
+                    "kind": "freeshow:runtime-error",
+                    "detail": {
+                        "error": {
+                            "code": "unsupported_command",
+                            "message": "unsupported command: MAIN.SPOTIFY_GET_STATE"
+                        },
+                        "request": {
+                            "channel": "MAIN",
+                            "data": {
+                                "channel": "SPOTIFY_GET_STATE",
+                                "data": null
+                            },
+                            "listenerId": "SPOTIFY_GET_STATE28d7c",
+                            "context": {
+                                "dataPath": "/tmp/freeshow-browse-startup-0abo1s6h/library",
+                                "libraryGeneration": 0,
+                                "runtimeId": "b7a754cd-9993-43ab-8a62-213bfb95e19a"
+                            }
+                        }
+                    }
+                }
+            ],
+            "normalCloseAttempted": true,
+            "normalCloseExitedBeforeFixtureTermination": true,
+            "savedProfileVerified": {
+                "audioFolders": {
+                    "startup-0": {
+                        "name": "Startup audio 0 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 0 音楽"
+                    },
+                    "startup-1": {
+                        "name": "Startup audio 1 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 1 音楽"
+                    },
+                    "startup-2": {
+                        "name": "Startup audio 2 敬拜",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Audio fixture 2 音楽"
+                    }
+                },
+                "mediaFolders": {
+                    "media-0": {
+                        "name": "Startup media 0",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Media fixture 0"
+                    },
+                    "media-1": {
+                        "name": "Startup media 1",
+                        "path": "/tmp/freeshow-browse-startup-0abo1s6h/library/Media fixture 1"
+                    }
+                },
+                "audioSubtab": "all"
+            },
+            "webdriverRequests": 22,
+            "actualFixtureCleanup": {
+                "driverJoined": true,
+                "pulseJoined": true,
+                "ownedChildren": ""
+            }
+        }
+    ]
+}

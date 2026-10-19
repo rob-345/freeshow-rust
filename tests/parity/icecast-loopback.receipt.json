@@ -1,0 +1,60 @@
+{
+    "revision": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "sourceSha256": "0492c69db5c5ace4637e1a469e3e14a1cc3b48189f7ab78dc8abc64b3e274bc9",
+    "node": "v22.21.1",
+    "platform": "linux",
+    "arch": "x64",
+    "source": {
+        "header": "PUT /music HTTP/1.1\r\nHost: 127.0.0.1:34733\r\nAuthorization: Basic c291cmNlOuenmOWvhg==\r\nContent-Type: audio/ogg; codecs=opus\r\nIce-Name: FreeShow Audio Stream\r\nIce-Description: Live Audio Stream from FreeShow\r\nIce-Genre: Live\r\nIce-Public: 0\r\nExpect: 100-continue\r\nUser-Agent: FreeShow/1.0\r\nIce-Title: Artist - One\r\n\r\n",
+        "pages": [
+            "4f676753000200000000000000005566778800000000247ef35401134f707573486561640102380180bb0000000000",
+            "4f6767530000000000000000000055667788010000008f30803301364f70757354616773080000004672656553686f7702000000090000005449544c453d4f6e650d0000004152544953543d417274697374",
+            "4f6767530000c00300000000000055667788020000009d1fe45a0103010203",
+            "4f676753000200000000000000005566778800000000247ef35401134f707573486561640102380180bb0000000000",
+            "4f6767530000000000000000000055667788010000006323726301364f70757354616773080000004672656553686f7702000000090000005449544c453d54776f0d0000004152544953543d417274697374",
+            "4f6767530000c00300000000000055667788020000008d969f55010104",
+            "4f6767530004c0030000000000005566778803000000d61210450100"
+        ],
+        "statuses": [
+            {
+                "connected": false,
+                "connecting": true
+            },
+            {
+                "connected": true,
+                "connecting": false
+            },
+            {
+                "connected": false,
+                "connecting": false
+            }
+        ]
+    },
+    "native": {
+        "header": "PUT /music HTTP/1.1\r\nHost: 127.0.0.1:44111\r\nAuthorization: Basic c291cmNlOuenmOWvhg==\r\nContent-Type: audio/ogg; codecs=opus\r\nIce-Name: FreeShow Audio Stream\r\nIce-Description: Live Audio Stream from FreeShow\r\nIce-Genre: Live\r\nIce-Public: 0\r\nExpect: 100-continue\r\nUser-Agent: FreeShow/1.0\r\nIce-Title: Artist - One\r\n\r\n",
+        "pages": [
+            "4f6767530002000000000000000062eedfbb00000000a1e5949d01134f707573486561640102380180bb0000000000",
+            "4f6767530000000000000000000062eedfbb010000003b0269a801364f70757354616773080000004672656553686f7702000000090000005449544c453d4f6e650d0000004152544953543d417274697374",
+            "4f6767530000c00300000000000062eedfbb020000004c382b180103010203",
+            "4f676753000200000000000000005ab3779100000000fd58a94301134f707573486561640102380180bb0000000000",
+            "4f676753000000000000000000005ab3779101000000fbfbf61f01364f70757354616773080000004672656553686f7702000000090000005449544c453d54776f0d0000004152544953543d417274697374",
+            "4f6767530000c0030000000000005ab37791020000004972d111010104",
+            "4f6767530004c0030000000000005ab3779103000000a9baa9aa0100"
+        ],
+        "statuses": [
+            {
+                "connected": false,
+                "connecting": true
+            },
+            {
+                "connected": true,
+                "connecting": false
+            },
+            {
+                "connected": false,
+                "connecting": false
+            }
+        ]
+    },
+    "normalization": "Only Host port and Ogg serial/CRC; original raw checksums verified first"
+}

@@ -1,0 +1,30 @@
+{
+    "platform": "linux",
+    "arch": "x64",
+    "binarySha256": "8986fd1d67d999107aa577117d11b37e2124d4756f9172d6d511a5a079d67a75",
+    "profile": "debug with debug=0 incremental=false",
+    "width": 2048,
+    "height": 2048,
+    "pixels": 4194304,
+    "inputPngBytes": 1920795,
+    "inputPngSha256": "41fc72a9b2eb1c0b529f8fe9646f164bec87090fa6f096750bde0d0f17f4eb2d",
+    "png": {
+        "length": 214317,
+        "sha256": "9763d6fd3e11a8fef46abea2269659b0e69a747479cbcf95b04966ec72b88129"
+    },
+    "jpeg": {
+        "length": 310616,
+        "sha256": "e0f80203af06fdd8581c2e692f3b8886d345736667f0bf9551a1fdb2abc8a740"
+    },
+    "maximumResidentKiB": 60216,
+    "status": {
+        "sessions": 0,
+        "reserved_bytes": 0,
+        "queued": 0,
+        "active": 0,
+        "finished_workers": 2,
+        "closing": true,
+        "failures": []
+    },
+    "scope": "Whole private driver RSS for this one actual fixture, including JSON/base64; not a worst-case bound or performance comparison."
+}

@@ -1,2 +1,6 @@
 # Collapse the generated lockfile in diffs.
 package-lock.json linguist-generated=true
+Cargo.lock linguist-generated=true
+src-tauri/Cargo.lock linguist-generated=true
+docs/migration/upstream-inventory.json linguist-generated=true
+tests/parity/fixtures/*.json linguist-generated=true

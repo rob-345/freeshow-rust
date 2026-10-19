@@ -1,0 +1,146 @@
+# FreeShow Rust migration
+
+The goal is to replace Electron with Rust while preserving FreeShow functionality, data compatibility, and user workflows, and to demonstrate performance gains with measurements. This requires a port; a syntax transpiler cannot replace Electron APIs, Chromium-specific behavior, or native Node addons.
+
+## Baseline and existing forks
+
+- Upstream: [ChurchApps/FreeShow](https://github.com/ChurchApps/FreeShow), commit `2d94defcf98175e4f5c9504e7f4fd1d33c35c975`, version `1.6.7-beta.2`.
+- Fork: [rob-345/freeshow-rust](https://github.com/rob-345/freeshow-rust), branch `rust-migration`.
+- On 2026-10-18, GitHub repository searches and the upstream fork list identified [Jesuite/FreeShow-Rust-Fork](https://github.com/Jesuite/FreeShow-Rust-Fork). Its recursive tree contained no `.rs`, `Cargo.toml`, or Tauri config; comparison showed zero commits ahead and 33 behind upstream. The Rust name did not represent an implemented port. `gladsonsam/freeshow-utils` is a Tauri companion, not a FreeShow replacement. This search cannot establish that no private or unindexed port exists.
+- GPL-3.0 licensing and upstream attribution are retained.
+
+## Architecture
+
+Preserve the existing Svelte interface first. `src/frontend/rust/bridge.ts` supplies the existing `window.api` contract using Tauri commands/events. `src-tauri` supplies desktop integration; `crates/freeshow-core` supplies ordered persistence and show readers; `crates/freeshow-media`, `crates/freeshow-audio`, `crates/freeshow-files`, `crates/freeshow-system`, `crates/freeshow-api` and `crates/freeshow-network` supply independent media probes, native audio tags, media-path lookup, OS information, inbound REST/Socket.IO/OSC and outbound OSC services. These Rust crates are testable without a GUI. Retaining the UI does not guarantee identical browser behavior: WebKitGTK, WKWebView, and WebView2 need separate rendering, media, and input verification.
+
+Keep the upstream Electron implementation runnable as an oracle until parity is demonstrated. CI pins Node 22.21.1, matching Electron 37.10.3's embedded Node version, rather than allowing host-runtime validation changes to alter source tests. This is not full runtime equivalence: the verified Linux Electron release uses ICU 74.2/Unicode 15.1, while standalone Node has different Unicode tables and V8. Runtime-sensitive behavior needs comparisons inside the packaged Electron application. The immutable source commit is fetched explicitly in shallow CI checkouts. No Node sidecar substitutes for unported Rust functionality. Unsupported operations return explicit errors. A handler's existence is never counted as proof of parity.
+
+Save snapshots retain their library context and a Rust-only renderer/module-epoch token. Acknowledgments can mark only the latest snapshot saved, and only if its tracked edit revision is still current. Newer edits stay unsaved; a closing save retries its newer snapshot, and library selection requires its pre-switch save to leave no tracked edits pending. Normal Rust Quit always captures a final snapshot, defers behind an active save and rechecks its tracked revision after asynchronous teardown. Native exit awaits a terminal FIFO library barrier covering earlier admission attempts, including those waiting for queue space. A failed drain keeps the window open unless the user explicitly discards unsaved work. Multiple-writer isolation, excluded fields changing after capture, unfinished teardown callbacks and cloud/legacy-drive closing paths remain uncertified.
+
+The Rust fork uses the separate application identifier `app.freeshow.rust`; its data defaults to an isolated `Data` directory inside its own application profile. A selected data library is persisted across restart. `FREESHOW_RUST_APP_DATA` and `FREESHOW_RUST_DATA_DIR` override those locations for tests. Existing Electron user data is not imported or modified implicitly. Library selection preserves shows/media in their existing folders and copies missing portable stores. Bulk relocation, legacy profile import, concurrent-save isolation and crash recovery need further verification and implementation.
+
+### Concurrency
+
+Use Rust's ownership and concurrency facilities to keep presentation control responsive during background work. The following boundaries guide the port:
+
+| Work                                               | Ownership and execution                                                                                                                                                                                     | Verification                                                                                                                                                                                                                                                                                             |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Library persistence, selection and restore         | One owner on a dedicated IO thread, with a bounded async request queue. Dependent writes remain ordered.                                                                                                    | Queue backpressure, write order, failure propagation, stale-context rejection and dropped callers.                                                                                                                                                                                                       |
+| Show reads during backups                          | Two dedicated readers with a separate bounded queue. Admission fences wait for earlier mutations/index repairs; a filesystem barrier excludes their ordered phase. Backup compression reads private copies. | Real uncached UI loading and paired disk reads during compression; blocked readers, queue saturation, old-context rejection and shutdown races.                                                                                                                                                          |
+| Library context and job status                     | Small immutable snapshots behind a short lock, never held during filesystem IO or compression.                                                                                                              | Queries complete while the IO worker is blocked and while a real ZIP backup runs.                                                                                                                                                                                                                        |
+| Output windows and cue routing                     | Independent window lifecycle worker and ordered cue queue; forwarding does not join the library queue or wait for window creation.                                                                          | Two live Linux projections, targeted/broadcast cues, transition visibility, event isolation and library cleanup are tested. Cached-lyric delivery/visible-state round trips are measured during a real ZIP backup; physical frame timing, uncached projected content and other workloads remain pending. |
+| Outbound OSC                                       | One async FIFO sender: 64 waiting messages and one active send, with a three-second admission/queue/DNS/send deadline. A single process-wide resolver thread has one waiting slot.                          | Actual original TS/osc-js bytes, 2,805 numeric cases, real UDP/decoder interoperability, backpressure, cancellation, reserved-permit shutdown and native sending during a ZIP. OS DNS itself cannot be interrupted.                                                                                      |
+| Native OS file drops                               | GTK callbacks perform bounded path/context work; at most two blocking metadata jobs run independently of library writes. Enter captures the library and metadata completion rechecks it.                    | Original preload/DropArea/project actions, real ordered Unicode GTK drops at scales 1 and 2, Leave/Escape and a library switch while a drag is held. Path-only descriptors reject byte reads; Windows/macOS GUI and complete downstream media/import operations remain pending.                          |
+| Remote/control and provider connections            | Async sockets and cancellable per-connection tasks, with explicit bounded queues.                                                                                                                           | Protocol replay, reconnection, slow clients, cancellation and backpressure. Pending implementation.                                                                                                                                                                                                      |
+| CPU work such as indexing and thumbnail generation | Bounded worker pools. Snapshot input before offloading; validate its library generation before applying results.                                                                                            | Saturation tests, control latency, stale-result rejection and resource limits. Pending implementation.                                                                                                                                                                                                   |
+| Media metadata probes                              | Two admitted Tokio jobs; ffmpeg/ffprobe children have ten-second per-process timeouts, 8 MiB stdout/64 KiB stderr caps, cancellation and kill/reap before releasing permits.                                | Real MP4 codecs/subtitles compared with MP4Box, missing binaries, bounded admission and both shutdown/admission orderings. Direct descendants, blocked filesystem calls and whole-request discovery deadlines remain gaps.                                                                               |
+| Capture and native SDKs that can crash             | Supervised subprocesses where isolation is useful, with bounded transport and explicit restart/cleanup.                                                                                                     | Worker crashes, hangs, cancellation, process-tree memory and hardware loopback. Pending implementation.                                                                                                                                                                                                  |
+
+The library worker admits up to eight waiting jobs and one active job. The SHOW pool has eight waiting slots and two active readers. Awaiting admission/dependency fences does not occupy an async executor's blocking thread. These bounds count admitted jobs, not IPC payload bytes or callers waiting outside the queues. SHOW is the only library read routed through this pool; index scans can repair IDs and remain ordered. Backup preparation copies bytes to a private temporary directory under the exclusive filesystem barrier; readers can proceed during compression, while subsequent writes stay queued. Copies require extra temporary disk space and are cleaned on normal completion/failure; external edits during copying and crash-orphan cleanup are not solved. Native dialogs/read callbacks still use the desktop blocking pool. The output lifecycle has its own eight-slot worker queue; cue forwarding uses a short registry snapshot. Per-request size limits, other parallel reads, CPU pools and broader subprocess supervision need separate implementation and measurement. Native closing explicitly awaits the library's terminal admission/drain barrier; detached worker shutdown alone is not a process-exit guarantee. This barrier confirms prior file jobs were attempted, not that every earlier request succeeded; the final token-checked save and failure handling guard normal Quit. Hard process termination and operating-system shutdown deadlines are outside that guarantee.
+
+Add responsiveness and concurrency tests alongside functionality tests. Measure latency under sustained load before increasing parallelism: dependency ordering, disk contention and output timing matter more than the number of workers.
+
+Local-model inventory and Linux Spotify state now each have one lazy, fixed,
+process-global owner, independent of ordered library writes. Each retains four
+complete native jobs through actual work and guarded result encoding; changing
+libraries cancels stale observers while preserving the global capability.
+Shutdown retains real thread handles through observer cancellation and awaits
+actual joins. A held-commit test demonstrates independent AI execution; it is
+not a performance measurement. The ChurchApps show-builder foundation performs
+bounded pure preparation without creating a worker or provider connection.
+[Native contracts and current verification scope](native-ai-spotify.md).
+
+Linux Spotify playback now admits up to four concurrent controls on that same
+fixed runtime, sharing the complete state/command lease budget. Source-global
+accepted controls survive library selection; original-origin early replies never
+retag the current UI. Primitive finite numbers pass through one bounded raw
+Request, preserving exact binary64 tokens before shared source rounding.
+CLOSE retains actual child kill/wait and native joins. This is bounded
+concurrency and compatibility evidence, not measured application speedup.
+[Control contract and tests](native-spotify-commands.md).
+
+Import shutdown separates preparation close from the ordinary cleanup fence and
+the final cleanup-thread join. The host drains its actual queued plans before
+joining cleanup, including after errors. Four whole lifecycle observers include
+serialized waiters; dropping an observer cannot dispose the native owners.
+[Retained import cleanup composition](workers/import-cleanup-host.md).
+
+
+Media lookup runs on two fixed filesystem threads with eight queued slots and bounded input/enumeration work. The native host additionally caps ten whole requests through their ordered effect commits, cancels old-library scans and rejects stale commits. Committed media configuration/context comes from a short atomic snapshot. Existing-file replies and media-folder queries can complete during compression; lookup misses with cache effects wait for their ordered commit before replying. Folder setting/query order is retained separately from long library saves. The packaged Electron Unicode 15.1 corpus supplies filename-folding behavior. Actual playback, public change-time existence checks, universal nested duplicate winners and Windows/macOS filesystem/GUI checks remain pending. [Detailed limits and evidence](workers/media-locate.md).
+
+## Development
+
+Install Node >=22.12, the pinned Rust toolchain, and [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). On Ubuntu, the core desktop packages are `libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `librsvg2-dev`, build tools, and OpenSSL development headers. Optional hardware features will require additional libraries.
+
+```sh
+npm ci --ignore-scripts
+npm run rust:snapshot
+npm run rust:test
+npm run rust:dev
+npm run rust:build
+npm run rust:parity:report
+npm run rust:parity:gate
+npm run rust:bench
+```
+
+`--ignore-scripts` supports Rust-only development without building Electron's native Node addons. Running the original Electron application still requires its normal native dependency installation. The full parity gate is expected to fail during migration.
+
+The official Linux Electron package can also supply an untouched GUI reference without rebuilding native addons. After verifying and extracting the package recorded in [the baseline receipt](baselines/electron-release-linux.json), check readiness with:
+
+```sh
+FREESHOW_ELECTRON_BIN=/absolute/path/to/extracted/opt/FreeShow/freeshow xvfb-run -a dbus-run-session -- node scripts/migration/probe-electron-release.mjs
+```
+
+The probe seeds a temporary app/data/XDG profile, disables updates, verifies the packaged versions, isolated paths, main window and preload, records runtime versions and removes its profile on exit. Readiness artifacts go to `test-output-rust/electron-release`; they contain no performance measurement. Identical release-mode workloads and separate GPU/software-rendering conditions are still required for a comparison.
+
+Media metadata requires installed ffmpeg/ffprobe; the Rust app discovers PATH/conventional locations and its own profile `bin` directory. `FREESHOW_RUST_FFMPEG` and `FREESHOW_RUST_FFPROBE` provide explicit executable candidates. Nothing is downloaded automatically. Unsupported metadata variants and operational failures surface explicit errors; an unavailable FFmpeg check retains its original negative result. Full codec/container and packaged-binary parity remain pending.
+
+For Linux desktop automation, install `tauri-driver` (`cargo install tauri-driver --locked`), `webkit2gtk-driver`, `xdotool`, ffmpeg/ffprobe, Xvfb and D-Bus. Then:
+
+```sh
+npm run rust:frontend:build
+cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol
+xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py
+xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/menu.py
+```
+
+The desktop workflow also selects a library during onboarding, reopens the same profile/library, loads/renders the saved show, reads it through a native file picker, creates an automatic backup, restores it through the native restore picker, cancels a folder picker, and verifies a failed save can be retried after restoring file permissions. A second selection with unsaved work checks that those edits reach the old library, destination settings survive, and a same-ID destination song loads new content without old preview/cue data. It creates a second projection through the real output wizard, checks broadcast and targeted cues against both WebViews and a fresh main-state reply, captures Japanese/emoji output, and verifies both old windows close and both new ones render after library selection. During a real 64 MiB ZIP backup, both warm projections report delivery and visible-text round trips while native controls remain responsive. These probes inspect actual DOM/CSS/RAF progress, not physical scanout. Python GI, the AT-SPI 2 typelib/service and xdotool are required for native controls; the CI workflow lists the Ubuntu packages. Local extracted-package overrides are documented in [PROGRESS.md](PROGRESS.md).
+
+The same real backup workload also checks FFmpeg/AAC metadata replies with unchanged payload fields, library provenance and correlation, plus an actual OSC loopback datagram sent through retained window.api. GTK File → Quit then captures a final save despite legacy saved=true, waits for a second backup and an earlier native config write, and exits only after they persist. The separate menu probe activates localized native items and verifies Quit leaves renderer confirmation open. Session creation uses tauri-driver's capability mapper; subsequent commands directly use the same real native WebKit driver/session. Shared execution receipts protect script side effects when a response is lost.
+
+Set `FREESHOW_DESKTOP_BIN` when the binary is outside `target/debug`, such as `src-tauri/target/debug/freeshow-desktop`. Driver paths can be supplied with `TAURI_DRIVER` and `WEBKIT_WEBDRIVER`. `XDOTOOL` and `XDOTOOL_LIBRARY_PATH` support a user-local xdotool installation. Test profiles are temporary; screenshots and receipts go to `test-output-rust`.
+
+Linux visual tests require an emoji font (`fonts-noto-color-emoji` in CI). `FREESHOW_TEST_FONT_DIR` can supply locally extracted fonts; the harness copies them into its isolated XDG profile without changing the user font catalog.
+
+The desktop test uses the POSIX locale to exercise a WebKitGTK startup regression: `navigator.language` can be `C`, which `Intl.DateTimeFormat` rejects. The fork retains the 24-hour default for invalid tags, with regression tests for valid and invalid locales. WebKitWebDriver's text injection drops line breaks and non-BMP characters, so the test checks ordinary keyboard input and separately simulates a multiline paste input event for Unicode lyrics; this does not verify the native clipboard.
+
+## Test strategy
+
+1. **Pinned inventory and fixtures.** `upstream-inventory.json` records 153 MAIN commands, 13 IPC channels, renderer callbacks, and backend/server source files. The snapshot tool uses TypeScript's AST and executes only the constants module to capture defaults. `--check` rejects drift.
+2. **Differential unit tests.** The Node harness extracts and transpiles the original upstream function declarations. It compares their outputs with the Rust binary on generated, Unicode, malformed, numeric-ID, and missing-value inputs. The initial corpus supplies 1,024 show-helper comparisons. JSON parsing and repair are compared separately.
+3. **Persistence and failure tests.** Compare actual saved JSON and reply events, restart behavior, portable/local store paths, rename and delete rules, unknown-field preservation, corrupt data, failed writes, and duplicate IDs. Rust uses atomic file replacement. The SAVE oracle executes the original save function against its actual `Conf` dependency. Backup tests run the original ZIP writer/reader against Rust archives and compare saved contents. Restore tests cover legacy JSON, mixed stores, malformed data, traversal names, oversized headers, commit failure and failed rollback. Cloud edit timestamps, large/atypical legacy archives and native locking behavior remain unverified.
+4. **Desktop workflows.** Drive the actual application through WebDriver, beginning with onboarding, project/show creation, Quick Lyrics, Unicode, and keyboard save. Expand to editing, undo/redo, layouts, output cues, settings, imports, exports, and restart recovery. Renderer-only mocks supplement these tests but cannot replace them.
+5. **Protocol tests.** Capture and replay remote/stage/controller, Socket.IO, REST/WebSocket, OSC/MIDI/timecode, and provider exchanges. Assert payloads, event order, authentication, reconnection, cancellation, and error behavior.
+6. **Media and hardware tests.** Use deterministic clips and reference audio; measure frame timing, transitions, seek, sync, and duration. NDI/OMT/Blackmagic and MIDI/audio/display devices require real loopback checks on supported operating systems. Record unavailable hardware as unverified.
+7. **Distribution and recovery.** Test Windows, macOS and Linux builds, installers, upgrades, rollback, data integrity, and existing-file compatibility. Replace inherited upstream publishing destinations before release.
+
+`parity-status.json` records the remaining areas. Its `verified` show-helper scope is limited to the recorded functions and corpus. It does not certify the editor or all valid and malformed FreeShow inputs.
+
+## Performance acceptance
+
+Rust does not automatically improve the frontend's rendering speed. Compare release builds on the same machine, data, display configuration, media and workload. Record cold/warm startup, complete process-tree memory and CPU, 100/1,000/10,000-show load/search/save latency, p50/p95/p99 output frame time, dropped frames, audio sync, and sustained streaming. Run repeated samples after warmup and retain raw samples and environment details. Separate GPU acceleration from software-rendered CI.
+
+The initial lyric microbenchmark excludes JSON/IPC, filesystem IO, startup and rendering. It only validates and times one in-memory helper and cannot prove application-level improvement. Establish application baselines before choosing numeric improvement thresholds. A release requires no unexplained functional regressions, no output-frame or audio-sync regression, verified data recovery, and measured gains in the workloads that motivated the port.
+
+## Execution order
+
+Continue from the existing fork and verified milestones. The coordinator owns shared runtime/IPC contracts, integration, review and final checks. Up to three worker agents may implement independent slices in separate worktrees, with explicit file ownership and meaningful feature tests. The first assignments delivered native menus, supervised media probing and OSC networking. Native file drag/drop is integrated with targeted source/native checks; audio tags/ReplayGain are integrated with source/native checks, and follow-up slices cover media-path resolution, native imports and inbound REST/Socket.IO/OSC APIs; workers do not edit shared manifests, native entry points or canonical parity records. Their commits are reviewed and integrated before the full required CI runs. Keep useful independent work moving while CI runs, and balance correctness fixes with expanding feature coverage. Handler counts describe breadth only; the full parity gate remains required and currently fails.
+
+1. Establish the fork, immutable baseline, Rust core, bridge, parity harness and desktop smoke.
+2. Complete storage/import safety and native shell: dialogs, paths, menus, shortcuts, lifecycle, profile migration, backups and restore.
+3. Port output lifecycle/state routing, multi-display behavior, preview and rendering tests.
+4. Port media/audio/capture and remaining import/export formats.
+5. Port remote/control servers, hardware/broadcast protocols, sync/providers and AI.
+6. Expand operating-system/hardware verification, measure/tune application performance, and prepare distribution.
+
+Each slice needs implementation, differential evidence where possible, real integration tests, an updated gap list, and measurements before being called complete.

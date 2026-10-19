@@ -1,0 +1,1765 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-19T16:19:00.580478+00:00",
+  "upstream": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+  "platform": "Linux x86_64, WebKitGTK, private Xvfb/session bus",
+  "runtimeSourceCommit": "ac973731aec0b98c0f143ddc05b86de3fe328403",
+  "frontendSourceCommit": "ac973731aec0b98c0f143ddc05b86de3fe328403",
+  "desktopFixtureCommit": "a52ef70ef812ecc649cee208249bdbb1bd460049",
+  "normalBinary": {
+    "path": "/mnt/data/cache/freeshow-rust-build/provider-catalogue/final-normal-binary/target/debug/freeshow-desktop",
+    "bytes": 109497528,
+    "sha256": "62dc4242a73dfb4f8552a69fe4734da5839a9458a0db7b62f3c160e777f26cba",
+    "features": [
+      "custom-protocol"
+    ],
+    "browseFeatures": [],
+    "diagnosticFrontend": false,
+    "isolatedFromCargoWrites": true,
+    "resources": [
+      {
+        "path": "remotes/controller/client.js",
+        "bytes": 120451,
+        "sha256": "4e97dd9fbbb85433250bbf1dffdf9eff959f554ceeee0a345fd06f7047ac8cbc"
+      },
+      {
+        "path": "remotes/controller/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "remotes/controller/index.html",
+        "bytes": 724,
+        "sha256": "7ee566ef9c0d705f074842b863fc404d18eda59654f8530ea9d867db082da4b8"
+      },
+      {
+        "path": "remotes/controller/manifest.json",
+        "bytes": 1140,
+        "sha256": "bd378c1db5f22dcb57c29df7983532fc3283544ceae14fe1f08bd91cc4c93cdb"
+      },
+      {
+        "path": "remotes/controller/styles.css",
+        "bytes": 5119,
+        "sha256": "5c9c7e953558697b67c144cf1094ba8a9190d5b62cf6126f8fe9583db0ed7d61"
+      },
+      {
+        "path": "remotes/controller/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      },
+      {
+        "path": "remotes/remote/client.js",
+        "bytes": 538536,
+        "sha256": "54548607c0d8d67b1e853d3d92c9316bee67c8ec1cfaad44adc6d238310851fc"
+      },
+      {
+        "path": "remotes/remote/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "remotes/remote/index.html",
+        "bytes": 759,
+        "sha256": "dfeaf0799c8cf595653ff1ec7c05704a7ad4ba61e2d5dc51417c644e98a54a4d"
+      },
+      {
+        "path": "remotes/remote/manifest.json",
+        "bytes": 1123,
+        "sha256": "6c97e0daf5743cc7268ddb429462ef1825306c5021b3122c541a55c2e96b948e"
+      },
+      {
+        "path": "remotes/remote/styles.css",
+        "bytes": 95888,
+        "sha256": "ff952338033431b584c665f440048d0d1ba8235b7d2529ec5e45ccfdffcac1d2"
+      },
+      {
+        "path": "remotes/remote/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      },
+      {
+        "path": "remotes/stage/client.js",
+        "bytes": 237034,
+        "sha256": "2bdbe95ae3c8b4ca22125fb050609e01cd38d3e42defca5eb155e2ba071e135a"
+      },
+      {
+        "path": "remotes/stage/html/navigation.js",
+        "bytes": 8635,
+        "sha256": "7f47e63c0e048addfc9794d8cdb33dc5e15e8888b52f07cd37ff0a641a7f71a1"
+      },
+      {
+        "path": "remotes/stage/html/show.css",
+        "bytes": 1643,
+        "sha256": "7c9b53c6416c8a51afc3af78b475b459cc3034ba320f45dbaa54c0d42d20a177"
+      },
+      {
+        "path": "remotes/stage/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "remotes/stage/index.html",
+        "bytes": 719,
+        "sha256": "602201ef24291a61b7bd37b5a7f275a2853041f386fcfbefafcaa94e3f18c7af"
+      },
+      {
+        "path": "remotes/stage/manifest.json",
+        "bytes": 1128,
+        "sha256": "f18464a42544a481e82863733c785c03912884c772f8c9afe1af27e6ceca2bd0"
+      },
+      {
+        "path": "remotes/stage/styles.css",
+        "bytes": 20200,
+        "sha256": "4b2d6d2163081aab0044825c8bafe49ce242290699349b79d64f4f2051642bb4"
+      },
+      {
+        "path": "remotes/stage/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      }
+    ]
+  },
+  "checks": {
+    "workspaceFull": {
+      "passed": 565,
+      "failed": 0,
+      "ignored": 5
+    },
+    "nativeFull": {
+      "passed": 382,
+      "failed": 0,
+      "ignored": 0
+    },
+    "nativeEntryExecutions": 382,
+    "supervisedNativeSpotifyScenarios": 7,
+    "supervisedPinnedSourceComparisons": 7,
+    "node": {
+      "tests": 657,
+      "pass": 652,
+      "fail": 0,
+      "skipped": 5,
+      "cancelled": 0
+    },
+    "frontendPassed": 20,
+    "strictWorkspaceAndNativeAllTargetClippy": true,
+    "sourceSnapshotAndFormatting": true,
+    "fullParityGate": "expected failure; migration incomplete"
+  },
+  "catalogue": {
+    "foundationRustAdded": 2,
+    "sourceSuitesAdded": 6,
+    "nativeHostCasesAdded": 4,
+    "bridgeSuiteAdded": 1,
+    "completeRows": 5,
+    "completeFields": 15,
+    "sharedWholeResultSlots": 4,
+    "filesystemCredentialOrNetworkIO": false,
+    "newThreadTaskTimerOrRuntime": false,
+    "eventGuardSurvivesCloneAndNativeEncoding": true,
+    "webViewDeliveryOrTransportBufferDisposalCertified": false,
+    "independentCallbackValidation": {
+      "phases": 3,
+      "completeRowsPerPhase": 5,
+      "completeFieldsPerPhase": 15,
+      "sourceBeforeAndAfterExact": true,
+      "nativeExactRowsAndTypes": true,
+      "webViewCapturedKeyOrder": true,
+      "fullCallbackContextsAndNativeContextMatched": true,
+      "exactOriginalEnvelopeListenerAndVoidSend": true,
+      "actualRestartAndLibrarySwitch": true,
+      "identityReceiptSchemaExcludesRawIdentity": true,
+      "commandRuntimeErrors": 0,
+      "authenticationOrBackendHealthVerified": false,
+      "scope": "Actual isolated normal Linux retained callbacks compared with immutable complete source catalogue; declaration capability flags only. Identity values are omitted by exact receipt schema; no account/network/backend or whole-feature/performance claim."
+    },
+    "actualDeviceProviderCallbacks": {
+      "phases": {
+        "normal": {
+          "context": {
+            "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+            "libraryGeneration": 1,
+            "runtimeId": "69905e1b-4a44-4e73-a2cc-cfa1719f47f1"
+          },
+          "identity": {
+            "args": 2,
+            "legacyFallback": false,
+            "nonempty": true,
+            "messageKeys": [
+              "channel",
+              "data"
+            ],
+            "listener": "device-provider-probe-normal-identity",
+            "type": "string",
+            "callbackContext": {
+              "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+              "libraryGeneration": 1,
+              "runtimeId": "69905e1b-4a44-4e73-a2cc-cfa1719f47f1"
+            },
+            "equalsPersisted": true
+          },
+          "phase": "normal",
+          "callbacks": [
+            "DEVICE_ID",
+            "PROVIDER_CONNECTIONS",
+            "GET_CONTENT_PROVIDERS"
+          ],
+          "catalogue": {
+            "args": 2,
+            "data": [
+              {
+                "displayName": "ChurchApps",
+                "providerId": "churchApps",
+                "hasContentLibrary": true
+              },
+              {
+                "displayName": "Planning Center",
+                "providerId": "planningcenter",
+                "hasContentLibrary": false
+              },
+              {
+                "displayName": "APlay",
+                "providerId": "amazinglife",
+                "hasContentLibrary": true
+              },
+              {
+                "displayName": "OnStage",
+                "providerId": "onstage",
+                "hasContentLibrary": false
+              },
+              {
+                "displayName": "Canva",
+                "providerId": "canva",
+                "hasContentLibrary": true
+              }
+            ],
+            "rowKeys": [
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ]
+            ],
+            "messageKeys": [
+              "channel",
+              "data"
+            ],
+            "listener": "device-provider-probe-normal-catalogue",
+            "callbackContext": {
+              "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+              "libraryGeneration": 1,
+              "runtimeId": "69905e1b-4a44-4e73-a2cc-cfa1719f47f1"
+            }
+          },
+          "sendUndefined": {
+            "DEVICE_ID": true,
+            "GET_CONTENT_PROVIDERS": true,
+            "PROVIDER_CONNECTIONS": true
+          },
+          "current": {
+            "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+            "libraryGeneration": 1,
+            "runtimeId": "69905e1b-4a44-4e73-a2cc-cfa1719f47f1"
+          },
+          "providers": {
+            "keys": [],
+            "args": 2,
+            "data": {},
+            "messageKeys": [
+              "channel",
+              "data"
+            ],
+            "listener": "device-provider-probe-normal-providers",
+            "callbackContext": {
+              "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+              "libraryGeneration": 1,
+              "runtimeId": "69905e1b-4a44-4e73-a2cc-cfa1719f47f1"
+            }
+          },
+          "catalogueSource": {
+            "before": {
+              "phase": "normal",
+              "catalogue": {
+                "outer": "MAIN",
+                "command": "GET_CONTENT_PROVIDERS",
+                "data": [
+                  {
+                    "providerId": "churchApps",
+                    "displayName": "ChurchApps",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "planningcenter",
+                    "displayName": "Planning Center",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "amazinglife",
+                    "displayName": "APlay",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "onstage",
+                    "displayName": "OnStage",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "canva",
+                    "displayName": "Canva",
+                    "hasContentLibrary": true
+                  }
+                ],
+                "rowKeys": [
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ]
+                ],
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "listener": "device-provider-probe-normal-catalogue",
+                "sourceReplyArgs": 3
+              },
+              "sourceActivity": {
+                "apps": 8,
+                "routes": 5,
+                "keys": 9,
+                "reads": 0,
+                "writes": 0,
+                "listens": 0,
+                "backend": 0,
+                "opens": 0,
+                "events": 0,
+                "crypto": 0,
+                "timers": 0,
+                "logs": 0
+              },
+              "provenance": {
+                "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+                "node": "22.21.1",
+                "handlerSha256": "3e5bceffed2ea7418b66395a1c4d134b309dc1dbf0058ccf8fd15fff9d862eb9",
+                "registrySha256": "232c1ee43473113353024fb8560cfb75da20af4f04146c7ddd6176918677de10"
+              },
+              "declarationOnly": true,
+              "authenticationOrBackendHealthVerified": false,
+              "rawIdentityArchived": false
+            },
+            "verified": {
+              "matches": true,
+              "completeRows": 5,
+              "completeFields": 15,
+              "keyOrderMatched": true,
+              "exactListenerMatched": true,
+              "fullCallbackContextMatched": true,
+              "voidSendMatched": true
+            },
+            "after": {
+              "phase": "normal",
+              "catalogue": {
+                "outer": "MAIN",
+                "command": "GET_CONTENT_PROVIDERS",
+                "data": [
+                  {
+                    "providerId": "churchApps",
+                    "displayName": "ChurchApps",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "planningcenter",
+                    "displayName": "Planning Center",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "amazinglife",
+                    "displayName": "APlay",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "onstage",
+                    "displayName": "OnStage",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "canva",
+                    "displayName": "Canva",
+                    "hasContentLibrary": true
+                  }
+                ],
+                "rowKeys": [
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ]
+                ],
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "listener": "device-provider-probe-normal-catalogue",
+                "sourceReplyArgs": 3
+              },
+              "sourceActivity": {
+                "apps": 8,
+                "routes": 5,
+                "keys": 9,
+                "reads": 0,
+                "writes": 0,
+                "listens": 0,
+                "backend": 0,
+                "opens": 0,
+                "events": 0,
+                "crypto": 0,
+                "timers": 0,
+                "logs": 0
+              },
+              "provenance": {
+                "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+                "node": "22.21.1",
+                "handlerSha256": "3e5bceffed2ea7418b66395a1c4d134b309dc1dbf0058ccf8fd15fff9d862eb9",
+                "registrySha256": "232c1ee43473113353024fb8560cfb75da20af4f04146c7ddd6176918677de10"
+              },
+              "declarationOnly": true,
+              "authenticationOrBackendHealthVerified": false,
+              "rawIdentityArchived": false
+            },
+            "declarationOnly": true,
+            "authenticationOrBackendHealthVerified": false
+          },
+          "commandRuntimeErrors": 0
+        },
+        "restarted": {
+          "context": {
+            "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+            "libraryGeneration": 0,
+            "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+          },
+          "identity": {
+            "args": 2,
+            "legacyFallback": false,
+            "nonempty": true,
+            "messageKeys": [
+              "channel",
+              "data"
+            ],
+            "listener": "device-provider-probe-restarted-identity",
+            "type": "string",
+            "callbackContext": {
+              "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+            },
+            "equalsPersisted": true
+          },
+          "phase": "restarted",
+          "callbacks": [
+            "DEVICE_ID",
+            "GET_CONTENT_PROVIDERS",
+            "PROVIDER_CONNECTIONS"
+          ],
+          "catalogue": {
+            "args": 2,
+            "data": [
+              {
+                "displayName": "ChurchApps",
+                "providerId": "churchApps",
+                "hasContentLibrary": true
+              },
+              {
+                "displayName": "Planning Center",
+                "providerId": "planningcenter",
+                "hasContentLibrary": false
+              },
+              {
+                "displayName": "APlay",
+                "providerId": "amazinglife",
+                "hasContentLibrary": true
+              },
+              {
+                "displayName": "OnStage",
+                "providerId": "onstage",
+                "hasContentLibrary": false
+              },
+              {
+                "displayName": "Canva",
+                "providerId": "canva",
+                "hasContentLibrary": true
+              }
+            ],
+            "rowKeys": [
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ]
+            ],
+            "messageKeys": [
+              "channel",
+              "data"
+            ],
+            "listener": "device-provider-probe-restarted-catalogue",
+            "callbackContext": {
+              "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+            }
+          },
+          "sendUndefined": {
+            "DEVICE_ID": true,
+            "GET_CONTENT_PROVIDERS": true,
+            "PROVIDER_CONNECTIONS": true
+          },
+          "current": {
+            "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+            "libraryGeneration": 0,
+            "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+          },
+          "providers": {
+            "keys": [],
+            "args": 2,
+            "data": {},
+            "messageKeys": [
+              "channel",
+              "data"
+            ],
+            "listener": "device-provider-probe-restarted-providers",
+            "callbackContext": {
+              "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+            }
+          },
+          "catalogueSource": {
+            "before": {
+              "phase": "restarted",
+              "catalogue": {
+                "outer": "MAIN",
+                "command": "GET_CONTENT_PROVIDERS",
+                "data": [
+                  {
+                    "providerId": "churchApps",
+                    "displayName": "ChurchApps",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "planningcenter",
+                    "displayName": "Planning Center",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "amazinglife",
+                    "displayName": "APlay",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "onstage",
+                    "displayName": "OnStage",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "canva",
+                    "displayName": "Canva",
+                    "hasContentLibrary": true
+                  }
+                ],
+                "rowKeys": [
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ]
+                ],
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "listener": "device-provider-probe-restarted-catalogue",
+                "sourceReplyArgs": 3
+              },
+              "sourceActivity": {
+                "apps": 8,
+                "routes": 5,
+                "keys": 9,
+                "reads": 0,
+                "writes": 0,
+                "listens": 0,
+                "backend": 0,
+                "opens": 0,
+                "events": 0,
+                "crypto": 0,
+                "timers": 0,
+                "logs": 0
+              },
+              "provenance": {
+                "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+                "node": "22.21.1",
+                "handlerSha256": "3e5bceffed2ea7418b66395a1c4d134b309dc1dbf0058ccf8fd15fff9d862eb9",
+                "registrySha256": "232c1ee43473113353024fb8560cfb75da20af4f04146c7ddd6176918677de10"
+              },
+              "declarationOnly": true,
+              "authenticationOrBackendHealthVerified": false,
+              "rawIdentityArchived": false
+            },
+            "verified": {
+              "matches": true,
+              "completeRows": 5,
+              "completeFields": 15,
+              "keyOrderMatched": true,
+              "exactListenerMatched": true,
+              "fullCallbackContextMatched": true,
+              "voidSendMatched": true
+            },
+            "after": {
+              "phase": "restarted",
+              "catalogue": {
+                "outer": "MAIN",
+                "command": "GET_CONTENT_PROVIDERS",
+                "data": [
+                  {
+                    "providerId": "churchApps",
+                    "displayName": "ChurchApps",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "planningcenter",
+                    "displayName": "Planning Center",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "amazinglife",
+                    "displayName": "APlay",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "onstage",
+                    "displayName": "OnStage",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "canva",
+                    "displayName": "Canva",
+                    "hasContentLibrary": true
+                  }
+                ],
+                "rowKeys": [
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ]
+                ],
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "listener": "device-provider-probe-restarted-catalogue",
+                "sourceReplyArgs": 3
+              },
+              "sourceActivity": {
+                "apps": 8,
+                "routes": 5,
+                "keys": 9,
+                "reads": 0,
+                "writes": 0,
+                "listens": 0,
+                "backend": 0,
+                "opens": 0,
+                "events": 0,
+                "crypto": 0,
+                "timers": 0,
+                "logs": 0
+              },
+              "provenance": {
+                "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+                "node": "22.21.1",
+                "handlerSha256": "3e5bceffed2ea7418b66395a1c4d134b309dc1dbf0058ccf8fd15fff9d862eb9",
+                "registrySha256": "232c1ee43473113353024fb8560cfb75da20af4f04146c7ddd6176918677de10"
+              },
+              "declarationOnly": true,
+              "authenticationOrBackendHealthVerified": false,
+              "rawIdentityArchived": false
+            },
+            "declarationOnly": true,
+            "authenticationOrBackendHealthVerified": false
+          },
+          "commandRuntimeErrors": 0
+        },
+        "switched": {
+          "context": {
+            "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/other-library",
+            "libraryGeneration": 1,
+            "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+          },
+          "identity": {
+            "args": 2,
+            "legacyFallback": false,
+            "nonempty": true,
+            "messageKeys": [
+              "channel",
+              "data"
+            ],
+            "listener": "device-provider-probe-switched-identity",
+            "type": "string",
+            "callbackContext": {
+              "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+            },
+            "equalsPersisted": true
+          },
+          "phase": "switched",
+          "callbacks": [
+            "DEVICE_ID",
+            "PROVIDER_CONNECTIONS",
+            "GET_CONTENT_PROVIDERS"
+          ],
+          "catalogue": {
+            "args": 2,
+            "data": [
+              {
+                "displayName": "ChurchApps",
+                "providerId": "churchApps",
+                "hasContentLibrary": true
+              },
+              {
+                "displayName": "Planning Center",
+                "providerId": "planningcenter",
+                "hasContentLibrary": false
+              },
+              {
+                "displayName": "APlay",
+                "providerId": "amazinglife",
+                "hasContentLibrary": true
+              },
+              {
+                "displayName": "OnStage",
+                "providerId": "onstage",
+                "hasContentLibrary": false
+              },
+              {
+                "displayName": "Canva",
+                "providerId": "canva",
+                "hasContentLibrary": true
+              }
+            ],
+            "rowKeys": [
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ],
+              [
+                "providerId",
+                "displayName",
+                "hasContentLibrary"
+              ]
+            ],
+            "messageKeys": [
+              "channel",
+              "data"
+            ],
+            "listener": "device-provider-probe-switched-catalogue",
+            "callbackContext": {
+              "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+            }
+          },
+          "sendUndefined": {
+            "DEVICE_ID": true,
+            "GET_CONTENT_PROVIDERS": true,
+            "PROVIDER_CONNECTIONS": true
+          },
+          "current": {
+            "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/other-library",
+            "libraryGeneration": 1,
+            "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+          },
+          "providers": {
+            "keys": [],
+            "args": 2,
+            "data": {},
+            "messageKeys": [
+              "channel",
+              "data"
+            ],
+            "listener": "device-provider-probe-switched-providers",
+            "callbackContext": {
+              "dataPath": "/tmp/freeshow-desktop-test-e60_f3lq/other-library",
+              "libraryGeneration": 1,
+              "runtimeId": "65f217c7-e8cc-4a9f-a9e9-644df4d5cd90"
+            }
+          },
+          "catalogueSource": {
+            "before": {
+              "phase": "switched",
+              "catalogue": {
+                "outer": "MAIN",
+                "command": "GET_CONTENT_PROVIDERS",
+                "data": [
+                  {
+                    "providerId": "churchApps",
+                    "displayName": "ChurchApps",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "planningcenter",
+                    "displayName": "Planning Center",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "amazinglife",
+                    "displayName": "APlay",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "onstage",
+                    "displayName": "OnStage",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "canva",
+                    "displayName": "Canva",
+                    "hasContentLibrary": true
+                  }
+                ],
+                "rowKeys": [
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ]
+                ],
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "listener": "device-provider-probe-switched-catalogue",
+                "sourceReplyArgs": 3
+              },
+              "sourceActivity": {
+                "apps": 8,
+                "routes": 5,
+                "keys": 9,
+                "reads": 0,
+                "writes": 0,
+                "listens": 0,
+                "backend": 0,
+                "opens": 0,
+                "events": 0,
+                "crypto": 0,
+                "timers": 0,
+                "logs": 0
+              },
+              "provenance": {
+                "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+                "node": "22.21.1",
+                "handlerSha256": "3e5bceffed2ea7418b66395a1c4d134b309dc1dbf0058ccf8fd15fff9d862eb9",
+                "registrySha256": "232c1ee43473113353024fb8560cfb75da20af4f04146c7ddd6176918677de10"
+              },
+              "declarationOnly": true,
+              "authenticationOrBackendHealthVerified": false,
+              "rawIdentityArchived": false
+            },
+            "verified": {
+              "matches": true,
+              "completeRows": 5,
+              "completeFields": 15,
+              "keyOrderMatched": true,
+              "exactListenerMatched": true,
+              "fullCallbackContextMatched": true,
+              "voidSendMatched": true
+            },
+            "after": {
+              "phase": "switched",
+              "catalogue": {
+                "outer": "MAIN",
+                "command": "GET_CONTENT_PROVIDERS",
+                "data": [
+                  {
+                    "providerId": "churchApps",
+                    "displayName": "ChurchApps",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "planningcenter",
+                    "displayName": "Planning Center",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "amazinglife",
+                    "displayName": "APlay",
+                    "hasContentLibrary": true
+                  },
+                  {
+                    "providerId": "onstage",
+                    "displayName": "OnStage",
+                    "hasContentLibrary": false
+                  },
+                  {
+                    "providerId": "canva",
+                    "displayName": "Canva",
+                    "hasContentLibrary": true
+                  }
+                ],
+                "rowKeys": [
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ],
+                  [
+                    "providerId",
+                    "displayName",
+                    "hasContentLibrary"
+                  ]
+                ],
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "listener": "device-provider-probe-switched-catalogue",
+                "sourceReplyArgs": 3
+              },
+              "sourceActivity": {
+                "apps": 8,
+                "routes": 5,
+                "keys": 9,
+                "reads": 0,
+                "writes": 0,
+                "listens": 0,
+                "backend": 0,
+                "opens": 0,
+                "events": 0,
+                "crypto": 0,
+                "timers": 0,
+                "logs": 0
+              },
+              "provenance": {
+                "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+                "node": "22.21.1",
+                "handlerSha256": "3e5bceffed2ea7418b66395a1c4d134b309dc1dbf0058ccf8fd15fff9d862eb9",
+                "registrySha256": "232c1ee43473113353024fb8560cfb75da20af4f04146c7ddd6176918677de10"
+              },
+              "declarationOnly": true,
+              "authenticationOrBackendHealthVerified": false,
+              "rawIdentityArchived": false
+            },
+            "declarationOnly": true,
+            "authenticationOrBackendHealthVerified": false
+          },
+          "commandRuntimeErrors": 0
+        }
+      },
+      "rawIdentityArchived": false,
+      "sameGlobalIdentityAcrossPhases": true,
+      "catalogueDeclarationOnly": true,
+      "providerBackendHealthVerified": false
+    }
+  },
+  "gui": {
+    "editorObservations": 194,
+    "stepCountNote": "One extra Native Open button ready observation versus preceding193-step run; count growth is not a new feature claim.",
+    "nativeMenus": 4,
+    "dropScales": [
+      1,
+      2
+    ],
+    "normalQuitProcessExited": true,
+    "independentNowPlaying": {
+      "run": "local",
+      "sha": "ac973731",
+      "editorSteps": 194,
+      "ordinaryNowPlaying": 6,
+      "folderPhases": 3,
+      "metadataAndFolderCounts": [
+        [
+          1,
+          4,
+          0
+        ],
+        [
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          1,
+          1
+        ]
+      ],
+      "nativeMenus": 4,
+      "dropScales": [
+        1,
+        2
+      ],
+      "processExited": true,
+      "fullEditorDiagnostics": 49,
+      "scope": "Actual local Linux receipts: exact source/native typed values excluding root picture position, exact folder callback/visible text, unchanged blocker hash, actual admitted/completed advances, ordinary idle and no reveal advance. No PNG encoded parity, global zero-error or per-operation terminal join claimed."
+    },
+    "independentCoverHttp": {
+      "editorSteps": 194,
+      "menus": 4,
+      "dropScales": [
+        1,
+        2
+      ],
+      "coverPhases": 14,
+      "httpRequests": 141,
+      "httpStatusCounts": {
+        "200": 60,
+        "404": 63,
+        "206": 9,
+        "304": 9
+      },
+      "exactOriginalFolderAlerts": 3,
+      "coverRuntimeErrors": 0,
+      "coverBrowserErrors": 0,
+      "sourceAcks": 0,
+      "finalRetentionVerifiedZero": true,
+      "unchangedBlockerAndOldLibraryCoverHashesVerified": true,
+      "fullEditorDiagnostics": 49,
+      "processExited": true,
+      "scope": "Actual rebuilt Linux desktop, independent HTTP/file-byte checks and retained original UI callbacks/visible message. Zero counters are observed ordinary disposal, not per-operation IO-thread join or peer-receipt proof; separate native STOP/Weak test checks actual source lifetime. Full parity/performance remains unproven."
+    },
+    "independentJpegPixels": {
+      "recordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+      "cases": [
+        {
+          "id": "jpeg-apic",
+          "width": 17,
+          "height": 11,
+          "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+          "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+          "nativePngBytes": 518,
+          "compressedPngBytesEqualObserved": false,
+          "fullSourceSetCompared": true,
+          "actualFilesystemRead": true,
+          "unsetVerified": true
+        },
+        {
+          "id": "jpeg-flac",
+          "width": 64,
+          "height": 48,
+          "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+          "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+          "nativePngBytes": 8138,
+          "compressedPngBytesEqualObserved": false,
+          "fullSourceSetCompared": true,
+          "actualFilesystemRead": true,
+          "unsetVerified": true
+        }
+      ],
+      "scope": "Actual migrated WebKit metadata/counters/filesystem receipts checked against actual packaged Electron recording; exact RGBA, not compressed bytes or unrestricted format support."
+    },
+    "independentAiSpotify": {
+      "phases": 3,
+      "fixtureBytes": 32,
+      "rowsPerPhase": 1,
+      "sourceAndNativeExactRowsAndKeyOrder": true,
+      "spotifySourceNullReason": "ServiceUnknown",
+      "sourceShellsWaited": 6,
+      "nativeCommandErrors": 0,
+      "originalVoidAndListenerPreserved": true,
+      "exactCallbackEnvelopeAndPrivateFieldOmission": true,
+      "actualRestartAndLibrarySwitch": true,
+      "finalQuitExited": true,
+      "fullEditorDiagnostics": 49,
+      "scope": "Actual isolated normal Linux editor plus six real immutable-source queries around three retained callback phases. Inventory is metadata only; Spotify corpus is absent-service null only. Separate native/private-bus suites cover non-null state and cancellation. No usable-model, account, foreign GUI or performance claim."
+    },
+    "diagnostics": {
+      "count": 49,
+      "byCommand": [
+        {
+          "channel": "MAIN",
+          "command": "GET_MIDI_INPUTS",
+          "code": "midi_backend_unavailable",
+          "count": 2
+        },
+        {
+          "channel": "MAIN",
+          "command": "GET_MIDI_OUTPUTS",
+          "code": "midi_backend_unavailable",
+          "count": 2
+        },
+        {
+          "channel": "MAIN",
+          "command": "SAVE",
+          "code": "io_error",
+          "count": 1
+        },
+        {
+          "channel": "MAIN",
+          "command": "SAVE",
+          "code": "stale_library",
+          "count": 1
+        },
+        {
+          "channel": "NOW_PLAYING",
+          "command": null,
+          "code": "cover_unsupported",
+          "count": 1
+        },
+        {
+          "channel": "OUTPUT",
+          "command": "CAPTURE",
+          "code": "unsupported_command",
+          "count": 19
+        },
+        {
+          "channel": "OUTPUT",
+          "command": "SET_VALUE",
+          "code": "unsupported_command",
+          "count": 8
+        },
+        {
+          "channel": "REMOTE",
+          "command": "ACTIONS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "ACTION_TAGS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "AUDIO_CHANNELS_DATA",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "AUDIO_ROUTING",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "FOLDERS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "PROJECT",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "SCRIPTURE",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "TIMERS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "TIMER_TAGS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "VARIABLES",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "REMOTE",
+          "command": "VARIABLE_TAGS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "STAGE",
+          "command": "EVENTS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "STAGE",
+          "command": "METRONOME",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "STAGE",
+          "command": "TIMERS",
+          "code": "stale_generation",
+          "count": 1
+        },
+        {
+          "channel": "STAGE",
+          "command": "VARIABLES",
+          "code": "stale_generation",
+          "count": 1
+        }
+      ]
+    }
+  },
+  "ciAtObservation": {
+    "head": "06501c09e6f8f924cd67abd6022292634a6b1c17",
+    "run": 39281713736,
+    "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39281713736",
+    "status": "pending",
+    "catalogueIncluded": false,
+    "lastReportedUpdate": "2026-10-19T16:16:28Z"
+  },
+  "archive": {
+    "path": "/mnt/data/cache/freeshow-rust-build/provider-catalogue/gui-final-normal-ac973731",
+    "files": [
+      {
+        "path": "desktop/ai-spotify.json",
+        "bytes": 17515,
+        "sha256": "e8dd8c4aaf1d440a2c5198658307523533c901430803434bf3c308f8cac4607a"
+      },
+      {
+        "path": "desktop/api.json",
+        "bytes": 43896,
+        "sha256": "41b0a45d5e6589cff26e8fede73e59e6e5c6af054bec0cf1dc871c644f39515e"
+      },
+      {
+        "path": "desktop/assets.json",
+        "bytes": 3022,
+        "sha256": "bec085ab9c9cbe90011f2fd41490792df8d5cccfc8d824741a98b20bd56d9417"
+      },
+      {
+        "path": "desktop/audio-metadata.json",
+        "bytes": 2614,
+        "sha256": "c1b09947d7fa0628c2ad1ecff614b32d3a9293666f978830bd9bd51836d1b06f"
+      },
+      {
+        "path": "desktop/audio-stream.json",
+        "bytes": 197215,
+        "sha256": "49c07c860e9f13f236579c1d745da1e6e8ff485faab81a1582cd593d4d796f4e"
+      },
+      {
+        "path": "desktop/browse.json",
+        "bytes": 8733,
+        "sha256": "68f90257175078b8aa5843801d0d8fdd6f315c71f4fc8c731f9617b4ec8b2b74"
+      },
+      {
+        "path": "desktop/close-drain.json",
+        "bytes": 1143,
+        "sha256": "d97258acc7c4ff067416ceb7f724e726f138539552db8c36ece41f5a9f40c34c"
+      },
+      {
+        "path": "desktop/device-providers.json",
+        "bytes": 27775,
+        "sha256": "511b68e475068a898cd6bc455d8ad776527fccb60f7a15fad07b1b8c3bb176ef"
+      },
+      {
+        "path": "desktop/driver.log",
+        "bytes": 24677,
+        "sha256": "e1982d108bff5c1aaddf0780961c914917ade29020b281e40f3dbf991e84c5ad"
+      },
+      {
+        "path": "desktop/editor.png",
+        "bytes": 106064,
+        "sha256": "ee566d9cb3ec67591ec0539ee83aeb04d2653e23a7511da3b7d57fbc818f5288"
+      },
+      {
+        "path": "desktop/encoders.json",
+        "bytes": 25511,
+        "sha256": "abc3383e745cdd7cc1c26ddf11214a4805e644e7ef77d37357a6a95ae066f300"
+      },
+      {
+        "path": "desktop/ffmpeg-download.json",
+        "bytes": 3181,
+        "sha256": "8b44a36db269a838cb4b9f1a8e2fc22a0db23812bc4ef331b1a49827eedd5929"
+      },
+      {
+        "path": "desktop/file-reads.json",
+        "bytes": 3989,
+        "sha256": "7f676661707d907c964b12cda280d29bfaa9f2b2aacaf674bbb1181125db1d58"
+      },
+      {
+        "path": "desktop/imports.json",
+        "bytes": 12144,
+        "sha256": "393d32c607508a519952020e9fef68a42316b1be96775ca0ae26b79b352ba880"
+      },
+      {
+        "path": "desktop/library-switch.png",
+        "bytes": 106115,
+        "sha256": "55009d17017724d1d79ddef5f1b9bd6dd5bfeb661db164f09e9789fc7a6c973a"
+      },
+      {
+        "path": "desktop/maximize-reply.json",
+        "bytes": 166,
+        "sha256": "11f9fa0d08332d48fa892565525f5eead973ff55e3f9f528b3721262be96e8f0"
+      },
+      {
+        "path": "desktop/media-copy.json",
+        "bytes": 10187,
+        "sha256": "fefa7818cac05a68c8c4060fb94cb3f8ff333e98567e85083665fc6ce6dd9427"
+      },
+      {
+        "path": "desktop/media-folder-reset.json",
+        "bytes": 589,
+        "sha256": "137f2d010a193bb04b39c515bf3cb347a9c7a7710b0c51a37db4d61ce09b5e9f"
+      },
+      {
+        "path": "desktop/media-locate.json",
+        "bytes": 2055,
+        "sha256": "d7ecf800075e7d8867f879dcf5f3005e48322fb3f69a8c7511ce5728ec1ce067"
+      },
+      {
+        "path": "desktop/media-probe.json",
+        "bytes": 10028,
+        "sha256": "9f7380abcaaf73ddc56aca8840369544495322f227a28d39eb58d01ba6bf7380"
+      },
+      {
+        "path": "desktop/midi.json",
+        "bytes": 4312,
+        "sha256": "a11b1129a5db1e8c93d59b74d7d1401d167dbcdc5d40cf8f296b7df6a855fd77"
+      },
+      {
+        "path": "desktop/network-queries.json",
+        "bytes": 16785,
+        "sha256": "83a1f67a67722b4e0cba36c4a8164950a7fc9e1d4e9c8979c223c54fe09f44de"
+      },
+      {
+        "path": "desktop/now-playing-folder-alerts.json",
+        "bytes": 13869,
+        "sha256": "f37b78ad4af65b52544d778355ab9f52230f2e7bede6f13acdd2b2eb42f5c539"
+      },
+      {
+        "path": "desktop/now-playing.json",
+        "bytes": 154997,
+        "sha256": "d20264ec05dc668fd5ae11e46cc2d2940b707c97f6373244839d4f9006bd6fc1"
+      },
+      {
+        "path": "desktop/osc-loopback.json",
+        "bytes": 134,
+        "sha256": "e28a738b5da6fa92cf28a6a7d0609e13b97711ea810981e30ca4093ecde4634b"
+      },
+      {
+        "path": "desktop/output-chorus.png",
+        "bytes": 6745,
+        "sha256": "5ea0cc78f530a5b20dacb48adf1ad1d80865a5179f14bc5bbd7a7b6fd6131b4d"
+      },
+      {
+        "path": "desktop/output-scripture.png",
+        "bytes": 8223,
+        "sha256": "a33b99e0e02fd07f825412e5635d3b7a00a779ee4c7baace0e2ca858cc9ad3e7"
+      },
+      {
+        "path": "desktop/output-targeted-primary.png",
+        "bytes": 8807,
+        "sha256": "b3d367889d0884512f43c6b86f3b0a9ed245a890fb2ddab2129180d3e9f5b250"
+      },
+      {
+        "path": "desktop/output-targeted-secondary.png",
+        "bytes": 6764,
+        "sha256": "04e782bc0420d9da02b02d3fb3713fc226945db9c1f398425c5ed5e5012b9d5b"
+      },
+      {
+        "path": "desktop/output-verse.png",
+        "bytes": 8807,
+        "sha256": "b3d367889d0884512f43c6b86f3b0a9ed245a890fb2ddab2129180d3e9f5b250"
+      },
+      {
+        "path": "desktop/receipt.json",
+        "bytes": 254164,
+        "sha256": "a239811110c34fb2ec1ab4141d68413798ae855b27e89cb9f14821ff409e16d4"
+      },
+      {
+        "path": "desktop/remote-covers.json",
+        "bytes": 128194,
+        "sha256": "6ec7c1836324b8c70f4eba044671307055927070b9925aa87a6398157f5723c1"
+      },
+      {
+        "path": "desktop/remotes.json",
+        "bytes": 85921,
+        "sha256": "0832a6f49cb5a0f4d6eec359d9813944e8d2769671d2180488ea8dd0b07cf10d"
+      },
+      {
+        "path": "desktop/responsiveness.json",
+        "bytes": 26742,
+        "sha256": "32ba7ef83ac6651a7d43c060a018f9dc7f18f6f7e04f7e55d299c04caa4ae9f8"
+      },
+      {
+        "path": "desktop/save-revision-race.json",
+        "bytes": 3063,
+        "sha256": "9c66d0db114227d28aeffdab785fce73570d6b89c3030832305db92be52747e8"
+      },
+      {
+        "path": "desktop/saved-before-dialog.show",
+        "bytes": 2174,
+        "sha256": "eaf86e4ed1b025c84ec7d38de7c6f02b739e85c2ef62436be793fb58e27dabb0"
+      },
+      {
+        "path": "desktop/saved.show",
+        "bytes": 2174,
+        "sha256": "eaf86e4ed1b025c84ec7d38de7c6f02b739e85c2ef62436be793fb58e27dabb0"
+      },
+      {
+        "path": "desktop/scriptures.json",
+        "bytes": 14122,
+        "sha256": "532904b0e33df56bd1fe39626c40f05fa77566358a5789b2258632b6d015154f"
+      },
+      {
+        "path": "desktop/stale-save-recovery.json",
+        "bytes": 1033,
+        "sha256": "fa285b9c637dc70ed04eca78d9b60eb73aeee3f775fa5b69e0dc1b45ddae5483"
+      },
+      {
+        "path": "desktop/system-info.json",
+        "bytes": 2375,
+        "sha256": "90ebb262489500aeb19d5e52523711b33928b617524a5b85ff17812ae38e119d"
+      },
+      {
+        "path": "desktop/thumbnails.json",
+        "bytes": 18484,
+        "sha256": "9168e155c746d6f575912b0e14a4a877ce04282021bf1f88732e057dc3af7b07"
+      },
+      {
+        "path": "desktop/timecode.json",
+        "bytes": 441026,
+        "sha256": "7f435386dbc50a879ff8982f3c38a36258246713d6c2d36647662954b5488613"
+      },
+      {
+        "path": "desktop/uncached-show-read.json",
+        "bytes": 3182,
+        "sha256": "198025aa019e7542a0482fabf5ba9afa265723c5f2a52a3bb10f4bae616c205b"
+      },
+      {
+        "path": "desktop.log",
+        "bytes": 12512,
+        "sha256": "22b405cc3a298ec39b655eed644a6b1218bac1c0513a35a7bb7e8f758db3e5f7"
+      },
+      {
+        "path": "drop-1.log",
+        "bytes": 5609,
+        "sha256": "8325a3a4da58e3e5db006e9c4ed9a57b7f4627642436eb7fb510a891134c5935"
+      },
+      {
+        "path": "drop-2.log",
+        "bytes": 5609,
+        "sha256": "b0135dca069219f308afced5173a7d6813531ecc7dd36dff8b64557529a11412"
+      },
+      {
+        "path": "menu.log",
+        "bytes": 5579,
+        "sha256": "c135392ddd34c5a1b9ce3a72afba7001e608d4793d7bdeea9c318aeb2c3c3afd"
+      },
+      {
+        "path": "native-drop/driver-1x.log",
+        "bytes": 1676,
+        "sha256": "c6e0a4136d4f289cfd9899e372417f613f69cda88b44fc01abb0b00eb1b95742"
+      },
+      {
+        "path": "native-drop/driver-2x.log",
+        "bytes": 1676,
+        "sha256": "cd7eec88abe53e5e3187a86c7b6ecf24d9d0203b56adebbc4c9adbcea22c847d"
+      },
+      {
+        "path": "native-drop/receipt-1x.json",
+        "bytes": 4755,
+        "sha256": "b4075211e3925b6b535e8142b79eb2021aa45522d3e4c301b8d4d5e47c61f073"
+      },
+      {
+        "path": "native-drop/receipt-2x.json",
+        "bytes": 4755,
+        "sha256": "ca136899360ba0be583cbb2e96708adcaaee87358226ca31c8d1a9a5c919f8e3"
+      },
+      {
+        "path": "native-menu/driver.log",
+        "bytes": 2216,
+        "sha256": "6d69fda462e6bbf9acd4c94ba244e8865a798febe387569715d39274d6463cf7"
+      },
+      {
+        "path": "native-menu/quit-observation.json",
+        "bytes": 145250,
+        "sha256": "15897269265adf5425e1b5519f929617c677732e5f28a929bd40806c10abf742"
+      },
+      {
+        "path": "native-menu/receipt.json",
+        "bytes": 807,
+        "sha256": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98"
+      }
+    ]
+  },
+  "logs": [
+    {
+      "path": "/tmp/freeshow-provider-catalogue-system-tests.log",
+      "bytes": 977,
+      "sha256": "8a2645bd7f1bee26ca9be8d39334bc970f736840358c598a32e58b46642c9ed0"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-source-tests.log",
+      "bytes": 3669,
+      "sha256": "2d2da7d4b7957b072b8e3ba45fe98c5016234317e6a5956ad0cdeda1858579ed"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-native-tests.log",
+      "bytes": 45428,
+      "sha256": "a7aa58e91367cc6dc790681d0120f5ce493e4c65fd26721905003fbf46dc8510"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-bridge-tests.log",
+      "bytes": 11885,
+      "sha256": "1d7b3b771bb87c90d3f32ab22bd930173f43c53131a4fc17b3c4f218bada75bd"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-native-clippy.log",
+      "bytes": 5318,
+      "sha256": "938a51fd9fc051f2f90be1c29776c7c811649cebb5ada432eb7b90b3cd1807f7"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-workspace-clippy.log",
+      "bytes": 5346,
+      "sha256": "1f50a1fc046a6f1fbcb284e04b8a4e222cda6c0f72651910af5f6c98e79595a9"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-workspace-tests.log",
+      "bytes": 79343,
+      "sha256": "e9d9c52cfd8a75deebbe9611d3c291ddb5127245e3a1bd61db3ebd4df03eaa36"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-all-target-build.log",
+      "bytes": 3397,
+      "sha256": "ee25e0a0a38115e2d9772430b657c3aa99f37ddd88801edf6a64e7249a36e68a"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-full-source-tests-required.log",
+      "bytes": 178804,
+      "sha256": "c6fbb1f4252995636abc410420b0e1e0e3a41caaf133998dde696e4447dfaae9"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-frontend-tests.log",
+      "bytes": 660,
+      "sha256": "df25b1ef6c39470e4adf7304a0d2008ef8cdc4777981027bc59e1e537e482e6a"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-frontend-production.log",
+      "bytes": 5418,
+      "sha256": "eafcc7a1053f46abed8b595fad4d60fb63889cb55736f8c2bf2ad53be5f8a78a"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-normal-binary-build.log",
+      "bytes": 519810,
+      "sha256": "c1d0472ac31015a95fd098a2580b15afb464d842018c458a4f77010c6e11f6e3"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-normal-binary-build-stderr.log",
+      "bytes": 317,
+      "sha256": "78a7678625442a1484fa160e9cc0f79b5f86a200580f849aeb2a702faf345881"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-driver-build.log",
+      "bytes": 194,
+      "sha256": "2977514e1ca74ed47a6c7404c29f6ed7b6f658359643604cbf139d9fda1df261"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-fmt-workspace.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-fmt-native.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-snapshot.log",
+      "bytes": 60,
+      "sha256": "a66ca856b09339fa757b9da8b0fbc7f7526ed631662c01869fd2034724eb89a9"
+    },
+    {
+      "path": "/tmp/freeshow-provider-catalogue-full-gate.log",
+      "bytes": 13285,
+      "sha256": "207736ac1e4bc1d80099edbd19ba8bd0eb913df15c0e50cf728c6c8b76a6d554"
+    }
+  ],
+  "limitations": [
+    "Catalogue flags declare immutable source capabilities, not working/authenticated native provider backends; no account/network/provider content retrieval tested.",
+    "Actual GUI evidence is Linux only; foreign GUI and current complete CI remain uncertified.",
+    "Four shared native event guards retain results through encoding, not WebView delivery or encoded transport-buffer disposal.",
+    "The previous AI/Spotify GUI corpus proves32-byte inventory metadata and genuine absent-service Spotify null, not model usability/inference or authenticated playback.",
+    "Native library terminal fences do not certify library-thread joins; entered OS filesystem calls remain nonpreemptible.",
+    "Full feature parity and whole-application performance improvement remain unproven; the strict complete gate intentionally fails.",
+    "Old07c CI includes actual Darwin shared-device fixture failure; its narrow correction is not certified by Linux portable/cross-compilation checks."
+  ]
+}

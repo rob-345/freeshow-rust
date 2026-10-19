@@ -1,0 +1,35 @@
+# Native thumbnail capture and cache lifecycle
+
+The Rust desktop now connects the retained Svelte canvas helper to native thumbnail preparation, bounded binary completion, and guarded cache effects. The source oracle remains FreeShow 1.6.7-beta.2 at `2d94defcf98175e4f5c9504e7f4fd1d33c35c975`. This is a Linux integration milestone; full media and cross-platform capture parity remain incomplete.
+
+## Ownership and concurrency
+
+`NativeThumbnails` admits four whole requests, including generation waiters, and owns each captured library context and cancellation token through publication. Two fixed preparation/PNG workers perform filesystem and decoding work, with one fixed staging cleanup worker. Independent source hashes can capture concurrently. A bounded weak-key mutex registry serializes preparation and effects for the source cache hash, covering all sizes, existence invalidations, and colliding path hashes. A follower rechecks the installed cache instead of creating a competing absent-destination plan. Each caller retains its own payload and listener ID. Generation waits have a 30-second limit and cancellation; no per-request thread or process is created.
+
+The generation guard, private staging and admission lease move into an accepted library IO-owner effect closure. Dropping the IPC caller cannot release the guard while a queued accepted install is still pending. The next same-key caller waits for that install. Library switches cancel old captures and queued generation waiters; the owner rechecks context when admitting effects. Shutdown closes admission, cancels captures, drains requests and fences staging cleanup before native exit.
+
+Final mutations run on the existing ordered library owner. Stale cache entries are invalidated through a sealed effect receipt before capture; acknowledgement changes the plan's destination guard from the old identity to absent. Validated completion produces a guarded install. The executor checks source, staging, hash, cache-root and destination identity, uses anchored no-clobber operations and compensates owned changes on pre-commit failure. See [effects guarantees and limits](workers/thumbnail-effects.md). There is no durable crash journal or batch/crash-atomic guarantee.
+
+## Retained canvas and bytes
+
+The native host grants only the exact source recorded in its live prepared plan, then publishes the original `MAIN.CAPTURE_CANVAS` payload with a unique opaque native ID. A trusted one-shot `mark_capture_started()` starts the 15-second age check immediately before publication, after any queued invalidation and asset authorization. Time waiting behind a backup cannot expire an unissued canvas request. Repeated starts and canceled/nonpending plans are rejected.
+
+The retained helper draws the image or seeks the video, then sends its ordinary SAVE_IMAGE completion. A private bridge intercepts only registered native IDs, matching current context, private staging output and a nonempty ArrayBuffer of at most 8 MiB. It snapshots bytes synchronously at send time and invokes the Tauri command using a raw binary body and ID/failure headers. The native completion accepts only the main window's live one-use ID. Renderer-supplied output paths never authorize writes; unrelated exports remain outside this route. Failed capture uses the original ID-only form and an empty failure body.
+
+PNG validation preserves the actual canvas bytes. It accepts the measured noninterlaced 8-bit RGB/RGBA sRGB subset with strict CRC, chunk ordering, bounded inflation, scanlines, dimensions and pixel count. Actual WebKit adds a full-precision sBIT chunk; the recorded fixture verifies its exact byte SHA-256 and decoded pixels. Only a single pre-IDAT sBIT with all RGB/RGBA precisions equal to eight is accepted. Lower precision, bad CRC, duplicate/late chunks and unverified metadata remain explicit errors. Electron nativeImage re-encoding can change compressed bytes; equality to its compressed output is not claimed.
+
+After the guarded final install, the exact final cache path is authorized and its grant arrives before the original GET_THUMBNAIL callback. Existing cache hits retain source stat/mtime-only behavior and are labeled unverified. GET_CACHE_PATH now uses the source `media-cache` child of app data; a source differential checks its creation and original correlation. Temporary-root fallback remains pending.
+
+## Folder and existence behavior
+
+Browse preparation retains the exact original listing plus typed capture intents. It does not rerun with capture disabled, which would change depth, audio filtering and own-undefined noMedia fields. READ_FOLDER resolves at most 32 captured slots sequentially at the original 250-pixel width with a 30-second overall capture deadline. Inner GET_THUMBNAIL replies are not published; the outer callback receives final cache paths and grants. Source immediate-prediction/queue timing is still a difference.
+
+DOES_MEDIA_EXIST retains the original access/noCache/change-time reply shape and guarded invalidations for sizes 900/500/250/100. Its requests share the source-hash guard with generation, preventing internal invalidation/install races. Request strings alone do not grant source media.
+
+## Verification and remaining work
+
+Native tests cover two simultaneous same-cache requests, separate caller fields/listeners, one actual capture, final bytes and grants; an accepted install survives caller abort while its follower waits; four whole leases and shutdown; wrong-role/unknown/oversized/stale uploads; capture failure; exact browse slots; and a real 16-second owner-queue delay before stale-cache invalidation and fresh capture. Crate tests separately age plans deterministically to check one-shot start and old unmarked-plan behavior.
+
+The actual Linux WebKit probe records image/video/folder canvas chunks, bytes and pixels, checks the final cache file byte-for-byte against each toBlob result, verifies cache reuse without recapture, checks the source cache root and existence replies, and confirms no active requests/captures after completion. See `tests/desktop/thumbnails_probe.js` and ignored `test-output-rust/desktop/thumbnails.json`. This adds three thumbnail checks to the existing editor/library/projection/backup/Quit workflow.
+
+Limits remain explicit: Linux statx/anchored effects only; Windows/macOS filesystem and GUI behavior; source image decode/resource preflight in the WebView; decoder/codec breadth, protected and remote providers; temporary cache fallback; arbitrary SAVE_IMAGE/export/nativeImage transforms; source 10-second predicted-reply versus 15-second capture timing; raw zero/null/omitted-size duplicate/failure quirks and original global-Set races; immediate folder prediction when files disappear; cache eviction/recovery and uninterruptible kernel calls. Serialization deliberately rechecks state after waiting, rather than reproducing every source race. These bounds are finite cooperative resource limits, not hard whole-process memory or wall-clock guarantees. No application speedup follows from the passing capture checks.

@@ -1,0 +1,87 @@
+[package]
+name = "freeshow-desktop"
+version = "0.1.0"
+description = "FreeShow Rust desktop runtime (migration in progress)"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/rob-345/freeshow-rust"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = "1"
+serde_json = { version = "1", features = ["preserve_order", "raw_value"] }
+freeshow-core = { path = "../crates/freeshow-core" }
+freeshow-media = { path = "../crates/freeshow-media" }
+freeshow-ffmpeg-download = { path = "../crates/freeshow-ffmpeg-download" }
+freeshow-network = { path = "../crates/freeshow-network" }
+freeshow-audio = { path = "../crates/freeshow-audio" }
+freeshow-now-playing = { path = "../crates/freeshow-now-playing" }
+freeshow-cover-images = { path = "../crates/freeshow-cover-images" }
+freeshow-metadata-wire = { path = "../crates/freeshow-metadata-wire" }
+freeshow-audio-pipeline = { path = "../crates/freeshow-audio-pipeline" }
+freeshow-icecast = { path = "../crates/freeshow-icecast" }
+freeshow-opus = { path = "../crates/freeshow-opus" }
+freeshow-midi = { path = "../crates/freeshow-midi" }
+freeshow-timecode = { path = "../crates/freeshow-timecode" }
+freeshow-ltc = { path = "../crates/freeshow-ltc" }
+freeshow-midi-ports = { path = "../crates/freeshow-midi-ports" }
+freeshow-files = { path = "../crates/freeshow-files" }
+freeshow-system = { path = "../crates/freeshow-system" }
+freeshow-ai-local = { path = "../crates/freeshow-ai-local" }
+freeshow-ai-status = { path = "../crates/freeshow-ai-status", default-features = false }
+freeshow-spotify = { path = "../crates/freeshow-spotify" }
+freeshow-api = { path = "../crates/freeshow-api" }
+freeshow-imports = { path = "../crates/freeshow-imports" }
+freeshow-import-effects = { path = "../crates/freeshow-import-effects" }
+freeshow-browse = { path = "../crates/freeshow-browse" }
+freeshow-assets = { path = "../crates/freeshow-assets" }
+freeshow-remotes = { path = "../crates/freeshow-remotes" }
+freeshow-discovery = { path = "../crates/freeshow-discovery" }
+freeshow-encoders = { path = "../crates/freeshow-encoders" }
+freeshow-scriptures = { path = "../crates/freeshow-scriptures" }
+freeshow-media-copy = { path = "../crates/freeshow-media-copy" }
+freeshow-media-copy-effects = { path = "../crates/freeshow-media-copy-effects" }
+freeshow-exif = { path = "../crates/freeshow-exif" }
+freeshow-documents = { path = "../crates/freeshow-documents" }
+freeshow-thumbnails = { path = "../crates/freeshow-thumbnails" }
+freeshow-thumbnail-effects = { path = "../crates/freeshow-thumbnail-effects" }
+uuid = { version = "1", features = ["v4"] }
+freeshow-asset-plans = { path = "../crates/freeshow-asset-plans" }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tokio = { version = "1", features = ["sync", "macros"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+futures-util = "0.3"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+glib = "0.18"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock", "Wdk_Foundation", "Wdk_Storage_FileSystem", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_WindowsProgramming"] }
+
+[dev-dependencies]
+freeshow-ai-status = { path = "../crates/freeshow-ai-status", default-features = false, features = ["test-harness"] }
+freeshow-browse = { path = "../crates/freeshow-browse", features = ["test-harness"] }
+flate2 = "1"
+socket2 = "0.6"
+png = "=0.18.1"
+tempfile = "3"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+
+[profile.dev]
+debug = 0
+incremental = false
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

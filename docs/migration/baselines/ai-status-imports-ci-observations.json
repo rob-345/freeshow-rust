@@ -1,0 +1,2173 @@
+{
+  "schemaVersion": 1,
+  "observedAtUtc": "2026-10-19T17:43:25.852780+00:00",
+  "head": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+  "runId": 39293892950,
+  "runUrl": "https://github.com/rob-345/freeshow-rust/actions/runs/39293892950",
+  "runAttempt": 1,
+  "runStatus": "completed",
+  "runConclusion": "failure",
+  "jobConclusionCounts": {
+    "failure": 2,
+    "success": 3,
+    "cancelled": 1
+  },
+  "jobs": [
+    {
+      "id": 118201339533,
+      "run_id": 39293892950,
+      "workflow_name": "Rust migration",
+      "head_branch": "rust-migration",
+      "run_url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/runs/39293892950",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOVOSYUc8AAAAbhVlOjQ",
+      "head_sha": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+      "url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/jobs/118201339533",
+      "html_url": "https://github.com/rob-345/freeshow-rust/actions/runs/39293892950/job/118201339533",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-10-19T17:24:54Z",
+      "started_at": "2026-10-19T17:24:57Z",
+      "completed_at": "2026-10-19T17:29:54Z",
+      "name": "core (windows-latest)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-19T17:24:58Z",
+          "completed_at": "2026-10-19T17:24:59Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-19T17:24:59Z",
+          "completed_at": "2026-10-19T17:25:06Z"
+        },
+        {
+          "name": "Run git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-19T17:25:06Z",
+          "completed_at": "2026-10-19T17:25:06Z"
+        },
+        {
+          "name": "Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-19T17:25:06Z",
+          "completed_at": "2026-10-19T17:25:20Z"
+        },
+        {
+          "name": "Run rustup show",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-19T17:25:20Z",
+          "completed_at": "2026-10-19T17:25:32Z"
+        },
+        {
+          "name": "Run sudo apt-get update && sudo apt-get install -y libasound2-dev libopus0 libgdk-pixbuf-2.0-dev build-essential dbus dbus-bin python3-gi gir1.2-glib-2.0",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6,
+          "started_at": "2026-10-19T17:25:32Z",
+          "completed_at": "2026-10-19T17:25:32Z"
+        },
+        {
+          "name": "Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-19T17:25:32Z",
+          "completed_at": "2026-10-19T17:26:13Z"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts --no-audit --no-fund",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-19T17:26:13Z",
+          "completed_at": "2026-10-19T17:27:39Z"
+        },
+        {
+          "name": "Run npm run rust:snapshot",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-19T17:27:39Z",
+          "completed_at": "2026-10-19T17:27:41Z"
+        },
+        {
+          "name": "Run python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-10-19T17:27:41Z",
+          "completed_at": "2026-10-19T17:27:41Z"
+        },
+        {
+          "name": "Run cargo fmt --all --check",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-19T17:27:41Z",
+          "completed_at": "2026-10-19T17:27:44Z"
+        },
+        {
+          "name": "Run cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness,freeshow-opus/test-harness,freeshow-ai-status/test-harness -- -D warnings",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-19T17:27:44Z",
+          "completed_at": "2026-10-19T17:28:03Z"
+        },
+        {
+          "name": "Run npm run rust:test",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 13,
+          "started_at": "2026-10-19T17:28:03Z",
+          "completed_at": "2026-10-19T17:29:50Z"
+        },
+        {
+          "name": "Run cargo test -p freeshow-ai-status --features test-harness --locked",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 14,
+          "started_at": "2026-10-19T17:29:50Z",
+          "completed_at": "2026-10-19T17:29:50Z"
+        },
+        {
+          "name": "Run npm run rust:parity:report",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 15,
+          "started_at": "2026-10-19T17:29:50Z",
+          "completed_at": "2026-10-19T17:29:50Z"
+        },
+        {
+          "name": "Validate archived idle ablation arithmetic",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 16,
+          "started_at": "2026-10-19T17:29:50Z",
+          "completed_at": "2026-10-19T17:29:50Z"
+        },
+        {
+          "name": "Run npm run rust:parity:gate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17,
+          "started_at": "2026-10-19T17:29:50Z",
+          "completed_at": "2026-10-19T17:29:50Z"
+        },
+        {
+          "name": "Post Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 32,
+          "started_at": "2026-10-19T17:29:50Z",
+          "completed_at": "2026-10-19T17:29:50Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 33,
+          "started_at": "2026-10-19T17:29:50Z",
+          "completed_at": "2026-10-19T17:29:50Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 34,
+          "started_at": "2026-10-19T17:29:50Z",
+          "completed_at": "2026-10-19T17:29:53Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 35,
+          "started_at": "2026-10-19T17:29:53Z",
+          "completed_at": "2026-10-19T17:29:53Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/rob-345/freeshow-rust/check-runs/118201339533",
+      "labels": [
+        "windows-latest"
+      ],
+      "runner_id": 1000000993,
+      "runner_name": "GitHub Actions 1000000993",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions",
+      "log": {
+        "path": "windows-core.log",
+        "bytes": 36333,
+        "sha256": "e274979078a7584af0a69b774ee2d94e850d02ea7964ac38b9064717950a976f"
+      },
+      "actualResults": {
+        "rustSummaryCount": 1,
+        "rustPassedEntries": 12,
+        "rustFailedEntries": 1,
+        "rustIgnoredEntries": 0,
+        "rustCountScope": "Sum of actual logged Rust summaries, including doctests and repeated feature runs; not unique test count.",
+        "tap": [],
+        "vitestPassed": 0
+      }
+    },
+    {
+      "id": 118201339745,
+      "run_id": 39293892950,
+      "workflow_name": "Rust migration",
+      "head_branch": "rust-migration",
+      "run_url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/runs/39293892950",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOVOSYUc8AAAAbhVlPYQ",
+      "head_sha": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+      "url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/jobs/118201339745",
+      "html_url": "https://github.com/rob-345/freeshow-rust/actions/runs/39293892950/job/118201339745",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-10-19T17:24:54Z",
+      "started_at": "2026-10-19T17:25:09Z",
+      "completed_at": "2026-10-19T17:28:48Z",
+      "name": "core (macos-latest)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-19T17:25:09Z",
+          "completed_at": "2026-10-19T17:25:10Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-19T17:25:10Z",
+          "completed_at": "2026-10-19T17:25:13Z"
+        },
+        {
+          "name": "Run git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-19T17:25:13Z",
+          "completed_at": "2026-10-19T17:25:14Z"
+        },
+        {
+          "name": "Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-19T17:25:14Z",
+          "completed_at": "2026-10-19T17:25:19Z"
+        },
+        {
+          "name": "Run rustup show",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-19T17:25:19Z",
+          "completed_at": "2026-10-19T17:25:35Z"
+        },
+        {
+          "name": "Run sudo apt-get update && sudo apt-get install -y libasound2-dev libopus0 libgdk-pixbuf-2.0-dev build-essential dbus dbus-bin python3-gi gir1.2-glib-2.0",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6,
+          "started_at": "2026-10-19T17:25:35Z",
+          "completed_at": "2026-10-19T17:25:35Z"
+        },
+        {
+          "name": "Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-19T17:25:35Z",
+          "completed_at": "2026-10-19T17:25:35Z"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts --no-audit --no-fund",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-19T17:25:35Z",
+          "completed_at": "2026-10-19T17:26:09Z"
+        },
+        {
+          "name": "Run npm run rust:snapshot",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-19T17:26:09Z",
+          "completed_at": "2026-10-19T17:26:09Z"
+        },
+        {
+          "name": "Run python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-10-19T17:26:09Z",
+          "completed_at": "2026-10-19T17:26:09Z"
+        },
+        {
+          "name": "Run cargo fmt --all --check",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-19T17:26:09Z",
+          "completed_at": "2026-10-19T17:26:10Z"
+        },
+        {
+          "name": "Run cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness,freeshow-opus/test-harness,freeshow-ai-status/test-harness -- -D warnings",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-19T17:26:10Z",
+          "completed_at": "2026-10-19T17:26:33Z"
+        },
+        {
+          "name": "Run npm run rust:test",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 13,
+          "started_at": "2026-10-19T17:26:33Z",
+          "completed_at": "2026-10-19T17:28:44Z"
+        },
+        {
+          "name": "Run cargo test -p freeshow-ai-status --features test-harness --locked",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 14,
+          "started_at": "2026-10-19T17:28:44Z",
+          "completed_at": "2026-10-19T17:28:44Z"
+        },
+        {
+          "name": "Run npm run rust:parity:report",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 15,
+          "started_at": "2026-10-19T17:28:44Z",
+          "completed_at": "2026-10-19T17:28:44Z"
+        },
+        {
+          "name": "Validate archived idle ablation arithmetic",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 16,
+          "started_at": "2026-10-19T17:28:44Z",
+          "completed_at": "2026-10-19T17:28:44Z"
+        },
+        {
+          "name": "Run npm run rust:parity:gate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17,
+          "started_at": "2026-10-19T17:28:44Z",
+          "completed_at": "2026-10-19T17:28:44Z"
+        },
+        {
+          "name": "Post Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 32,
+          "started_at": "2026-10-19T17:28:44Z",
+          "completed_at": "2026-10-19T17:28:44Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 33,
+          "started_at": "2026-10-19T17:28:44Z",
+          "completed_at": "2026-10-19T17:28:44Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 34,
+          "started_at": "2026-10-19T17:28:44Z",
+          "completed_at": "2026-10-19T17:28:45Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 35,
+          "started_at": "2026-10-19T17:28:45Z",
+          "completed_at": "2026-10-19T17:28:46Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/rob-345/freeshow-rust/check-runs/118201339745",
+      "labels": [
+        "macos-latest"
+      ],
+      "runner_id": 1000000995,
+      "runner_name": "GitHub Actions 1000000995",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions",
+      "log": {
+        "path": "macos-core.log",
+        "bytes": 478090,
+        "sha256": "fa5612cd9eba2ae75c2edbab165b6086d04b1072f40a423e734e6367c9c5e863"
+      },
+      "actualResults": {
+        "rustSummaryCount": 113,
+        "rustPassedEntries": 526,
+        "rustFailedEntries": 0,
+        "rustIgnoredEntries": 5,
+        "rustCountScope": "Sum of actual logged Rust summaries, including doctests and repeated feature runs; not unique test count.",
+        "tap": [
+          {
+            "tests": 678,
+            "pass": 631,
+            "fail": 2,
+            "skipped": 45
+          }
+        ],
+        "vitestPassed": 0
+      }
+    },
+    {
+      "id": 118201339758,
+      "run_id": 39293892950,
+      "workflow_name": "Rust migration",
+      "head_branch": "rust-migration",
+      "run_url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/runs/39293892950",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOVOSYUc8AAAAbhVlPbg",
+      "head_sha": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+      "url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/jobs/118201339758",
+      "html_url": "https://github.com/rob-345/freeshow-rust/actions/runs/39293892950/job/118201339758",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-19T17:24:54Z",
+      "started_at": "2026-10-19T17:24:57Z",
+      "completed_at": "2026-10-19T17:34:34Z",
+      "name": "desktop-linux",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-19T17:24:58Z",
+          "completed_at": "2026-10-19T17:24:59Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-19T17:24:59Z",
+          "completed_at": "2026-10-19T17:25:01Z"
+        },
+        {
+          "name": "Run git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-19T17:25:01Z",
+          "completed_at": "2026-10-19T17:25:02Z"
+        },
+        {
+          "name": "Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-19T17:25:02Z",
+          "completed_at": "2026-10-19T17:25:08Z"
+        },
+        {
+          "name": "Run sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev libasound2-dev libopus0 build-essential webkit2gtk-driver xvfb dbus-x11 dbus dbus-bin gir1.2-glib-2.0 xdotool ffmpeg python3-gi gir1.2-atspi-2.0 at-spi2-core fonts-noto-color-emoji",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-19T17:25:08Z",
+          "completed_at": "2026-10-19T17:25:52Z"
+        },
+        {
+          "name": "Run rustup show",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-19T17:25:52Z",
+          "completed_at": "2026-10-19T17:25:59Z"
+        },
+        {
+          "name": "Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-19T17:25:59Z",
+          "completed_at": "2026-10-19T17:27:49Z"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts --no-audit --no-fund",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-19T17:27:49Z",
+          "completed_at": "2026-10-19T17:28:16Z"
+        },
+        {
+          "name": "Run python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-19T17:28:16Z",
+          "completed_at": "2026-10-19T17:28:28Z"
+        },
+        {
+          "name": "Run npm run rust:frontend:build",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-19T17:28:28Z",
+          "completed_at": "2026-10-19T17:29:05Z"
+        },
+        {
+          "name": "Run cargo fmt --manifest-path src-tauri/Cargo.toml --check",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-19T17:29:05Z",
+          "completed_at": "2026-10-19T17:29:06Z"
+        },
+        {
+          "name": "Run python3 tests/desktop/freeze_binary_test.py",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-19T17:29:06Z",
+          "completed_at": "2026-10-19T17:29:06Z"
+        },
+        {
+          "name": "Build and freeze the normal GUI binary before test builds",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-10-19T17:29:06Z",
+          "completed_at": "2026-10-19T17:29:25Z"
+        },
+        {
+          "name": "Run cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets -- -D warnings",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-10-19T17:29:25Z",
+          "completed_at": "2026-10-19T17:29:37Z"
+        },
+        {
+          "name": "Run cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --tests --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-10-19T17:29:37Z",
+          "completed_at": "2026-10-19T17:30:48Z"
+        },
+        {
+          "name": "Run cargo build --workspace --all-targets",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-10-19T17:30:48Z",
+          "completed_at": "2026-10-19T17:31:27Z"
+        },
+        {
+          "name": "Run node --test tests/parity/media-probe.test.mjs tests/parity/audio-metadata.test.mjs tests/parity/osc.test.mjs tests/parity/encoders.test.mjs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17,
+          "started_at": "2026-10-19T17:31:27Z",
+          "completed_at": "2026-10-19T17:31:33Z"
+        },
+        {
+          "name": "Run cargo install tauri-driver --version 2.1.0 --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-10-19T17:31:33Z",
+          "completed_at": "2026-10-19T17:31:45Z"
+        },
+        {
+          "name": "Run xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-10-19T17:31:45Z",
+          "completed_at": "2026-10-19T17:33:22Z"
+        },
+        {
+          "name": "Run xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/menu.py",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-10-19T17:33:22Z",
+          "completed_at": "2026-10-19T17:33:24Z"
+        },
+        {
+          "name": "Run GDK_SCALE=1 xvfb-run -a -s '-screen 0 3200x2200x24' dbus-run-session -- /usr/bin/python3 tests/desktop/drop.py",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-10-19T17:33:24Z",
+          "completed_at": "2026-10-19T17:33:26Z"
+        },
+        {
+          "name": "Run GDK_SCALE=2 xvfb-run -a -s '-screen 0 3200x2200x24' dbus-run-session -- /usr/bin/python3 tests/desktop/drop.py",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 22,
+          "started_at": "2026-10-19T17:33:26Z",
+          "completed_at": "2026-10-19T17:33:28Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 23,
+          "started_at": "2026-10-19T17:33:28Z",
+          "completed_at": "2026-10-19T17:33:29Z"
+        },
+        {
+          "name": "Post Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 44,
+          "started_at": "2026-10-19T17:33:29Z",
+          "completed_at": "2026-10-19T17:34:30Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 45,
+          "started_at": "2026-10-19T17:34:30Z",
+          "completed_at": "2026-10-19T17:34:32Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 46,
+          "started_at": "2026-10-19T17:34:32Z",
+          "completed_at": "2026-10-19T17:34:32Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 47,
+          "started_at": "2026-10-19T17:34:32Z",
+          "completed_at": "2026-10-19T17:34:32Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/rob-345/freeshow-rust/check-runs/118201339758",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "runner_id": 1000000991,
+      "runner_name": "GitHub Actions 1000000991",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions",
+      "log": {
+        "path": "desktop-linux.log",
+        "bytes": 427197,
+        "sha256": "c3bb715f0e44676b73131cdbe3ebd7d7d92bad4ceb187a21e947ff25908f21c2"
+      },
+      "actualResults": {
+        "rustSummaryCount": 42,
+        "rustPassedEntries": 392,
+        "rustFailedEntries": 0,
+        "rustIgnoredEntries": 0,
+        "rustCountScope": "Sum of actual logged Rust summaries, including doctests and repeated feature runs; not unique test count.",
+        "tap": [
+          {
+            "tests": 34,
+            "pass": 34,
+            "fail": 0,
+            "skipped": 0
+          }
+        ],
+        "vitestPassed": 0
+      }
+    },
+    {
+      "id": 118201339782,
+      "run_id": 39293892950,
+      "workflow_name": "Rust migration",
+      "head_branch": "rust-migration",
+      "run_url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/runs/39293892950",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOVOSYUc8AAAAbhVlPhg",
+      "head_sha": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+      "url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/jobs/118201339782",
+      "html_url": "https://github.com/rob-345/freeshow-rust/actions/runs/39293892950/job/118201339782",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-19T17:24:54Z",
+      "started_at": "2026-10-19T17:24:57Z",
+      "completed_at": "2026-10-19T17:30:19Z",
+      "name": "core (ubuntu-24.04)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-19T17:24:58Z",
+          "completed_at": "2026-10-19T17:24:59Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-19T17:24:59Z",
+          "completed_at": "2026-10-19T17:25:01Z"
+        },
+        {
+          "name": "Run git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-19T17:25:01Z",
+          "completed_at": "2026-10-19T17:25:01Z"
+        },
+        {
+          "name": "Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-19T17:25:01Z",
+          "completed_at": "2026-10-19T17:25:06Z"
+        },
+        {
+          "name": "Run rustup show",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-19T17:25:06Z",
+          "completed_at": "2026-10-19T17:25:16Z"
+        },
+        {
+          "name": "Run sudo apt-get update && sudo apt-get install -y libasound2-dev libopus0 libgdk-pixbuf-2.0-dev build-essential dbus dbus-bin python3-gi gir1.2-glib-2.0",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-19T17:25:16Z",
+          "completed_at": "2026-10-19T17:25:27Z"
+        },
+        {
+          "name": "Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-19T17:25:27Z",
+          "completed_at": "2026-10-19T17:25:43Z"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts --no-audit --no-fund",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-19T17:25:43Z",
+          "completed_at": "2026-10-19T17:26:10Z"
+        },
+        {
+          "name": "Run npm run rust:snapshot",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-19T17:26:10Z",
+          "completed_at": "2026-10-19T17:26:10Z"
+        },
+        {
+          "name": "Run python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-19T17:26:10Z",
+          "completed_at": "2026-10-19T17:26:30Z"
+        },
+        {
+          "name": "Run cargo fmt --all --check",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-19T17:26:30Z",
+          "completed_at": "2026-10-19T17:26:31Z"
+        },
+        {
+          "name": "Run cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness,freeshow-opus/test-harness,freeshow-ai-status/test-harness -- -D warnings",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-19T17:26:31Z",
+          "completed_at": "2026-10-19T17:26:42Z"
+        },
+        {
+          "name": "Run npm run rust:test",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-10-19T17:26:42Z",
+          "completed_at": "2026-10-19T17:29:52Z"
+        },
+        {
+          "name": "Run cargo test -p freeshow-ai-status --features test-harness --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-10-19T17:29:52Z",
+          "completed_at": "2026-10-19T17:29:58Z"
+        },
+        {
+          "name": "Run npm run rust:parity:report",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-10-19T17:29:58Z",
+          "completed_at": "2026-10-19T17:29:58Z"
+        },
+        {
+          "name": "Validate archived idle ablation arithmetic",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-10-19T17:29:58Z",
+          "completed_at": "2026-10-19T17:29:59Z"
+        },
+        {
+          "name": "Run npm run rust:parity:gate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17,
+          "started_at": "2026-10-19T17:29:59Z",
+          "completed_at": "2026-10-19T17:29:59Z"
+        },
+        {
+          "name": "Post Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 32,
+          "started_at": "2026-10-19T17:29:59Z",
+          "completed_at": "2026-10-19T17:30:14Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 33,
+          "started_at": "2026-10-19T17:30:14Z",
+          "completed_at": "2026-10-19T17:30:17Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 34,
+          "started_at": "2026-10-19T17:30:17Z",
+          "completed_at": "2026-10-19T17:30:17Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 35,
+          "started_at": "2026-10-19T17:30:17Z",
+          "completed_at": "2026-10-19T17:30:17Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/rob-345/freeshow-rust/check-runs/118201339782",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "runner_id": 1000000992,
+      "runner_name": "GitHub Actions 1000000992",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions",
+      "log": {
+        "path": "linux-core.log",
+        "bytes": 592358,
+        "sha256": "4dd2b5aef616fd5706aea9b5e73de4e6283e8863729c8a3da89faa7d0dff0363"
+      },
+      "actualResults": {
+        "rustSummaryCount": 116,
+        "rustPassedEntries": 611,
+        "rustFailedEntries": 0,
+        "rustIgnoredEntries": 5,
+        "rustCountScope": "Sum of actual logged Rust summaries, including doctests and repeated feature runs; not unique test count.",
+        "tap": [
+          {
+            "tests": 683,
+            "pass": 669,
+            "fail": 0,
+            "skipped": 14
+          }
+        ],
+        "vitestPassed": 20
+      }
+    },
+    {
+      "id": 118201339858,
+      "run_id": 39293892950,
+      "workflow_name": "Rust migration",
+      "head_branch": "rust-migration",
+      "run_url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/runs/39293892950",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOVOSYUc8AAAAbhVlP0g",
+      "head_sha": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+      "url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/jobs/118201339858",
+      "html_url": "https://github.com/rob-345/freeshow-rust/actions/runs/39293892950/job/118201339858",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "created_at": "2026-10-19T17:24:55Z",
+      "started_at": "2026-10-19T17:24:55Z",
+      "completed_at": "2026-10-19T17:39:57Z",
+      "name": "native (macos-latest)",
+      "steps": [],
+      "check_run_url": "https://api.github.com/repos/rob-345/freeshow-rust/check-runs/118201339858",
+      "labels": [
+        "macos-latest"
+      ],
+      "runner_id": 0,
+      "runner_name": "",
+      "runner_group_id": 0,
+      "runner_group_name": "",
+      "log": null,
+      "logUnavailable": {
+        "jobId": 118201339858,
+        "jobName": "native (macos-latest)",
+        "conclusion": "cancelled",
+        "logAvailable": false,
+        "exitCode": 1,
+        "stdout": "\ufeff<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>BlobNotFound</Code><Message>The specified blob does not exist.\nRequestId:278fe176-c01e-007d-6cf0-5f59d5000000\nTime:2026-10-19T17:40:58.2572076Z</Message></Error>",
+        "stderr": "gh: HTTP 404\n"
+      },
+      "runnerEvidence": {
+        "id": 118201339858,
+        "run_id": 39293892950,
+        "workflow_name": "Rust migration",
+        "head_branch": "rust-migration",
+        "run_url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/runs/39293892950",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOVOSYUc8AAAAbhVlP0g",
+        "head_sha": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+        "url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/jobs/118201339858",
+        "html_url": "https://github.com/rob-345/freeshow-rust/actions/runs/39293892950/job/118201339858",
+        "status": "completed",
+        "conclusion": "cancelled",
+        "created_at": "2026-10-19T17:24:55Z",
+        "started_at": "2026-10-19T17:24:55Z",
+        "completed_at": "2026-10-19T17:39:57Z",
+        "name": "native (macos-latest)",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/rob-345/freeshow-rust/check-runs/118201339858",
+        "labels": [
+          "macos-latest"
+        ],
+        "runner_id": 0,
+        "runner_name": "",
+        "runner_group_id": 0,
+        "runner_group_name": ""
+      },
+      "checkRunAnnotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/rob-345/freeshow-rust/blob/5434778f4e820345070bcbe8cf7793791cd40d5e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not acquired by Runner of type hosted even after multiple attempts",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/rob-345/freeshow-rust/blob/5434778f4e820345070bcbe8cf7793791cd40d5e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "notice",
+          "title": "",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/rob-345/freeshow-rust/blob/5434778f4e820345070bcbe8cf7793791cd40d5e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "notice",
+          "title": "",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/rob-345/freeshow-rust/blob/5434778f4e820345070bcbe8cf7793791cd40d5e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "notice",
+          "title": "",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+          "raw_details": ""
+        }
+      ],
+      "actualResults": {
+        "executed": false,
+        "reason": "No runner assigned and no executed steps; log request returned404 BlobNotFound. Do not infer native macOS success."
+      }
+    },
+    {
+      "id": 118201340817,
+      "run_id": 39293892950,
+      "workflow_name": "Rust migration",
+      "head_branch": "rust-migration",
+      "run_url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/runs/39293892950",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOVOSYUc8AAAAbhVlTkQ",
+      "head_sha": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+      "url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/jobs/118201340817",
+      "html_url": "https://github.com/rob-345/freeshow-rust/actions/runs/39293892950/job/118201340817",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-19T17:24:55Z",
+      "started_at": "2026-10-19T17:24:58Z",
+      "completed_at": "2026-10-19T17:37:34Z",
+      "name": "native (windows-latest)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-19T17:24:59Z",
+          "completed_at": "2026-10-19T17:25:00Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-19T17:25:00Z",
+          "completed_at": "2026-10-19T17:25:07Z"
+        },
+        {
+          "name": "Run git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-19T17:25:07Z",
+          "completed_at": "2026-10-19T17:25:08Z"
+        },
+        {
+          "name": "Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-19T17:25:08Z",
+          "completed_at": "2026-10-19T17:25:22Z"
+        },
+        {
+          "name": "Run rustup show",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-19T17:25:22Z",
+          "completed_at": "2026-10-19T17:25:34Z"
+        },
+        {
+          "name": "Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-19T17:25:34Z",
+          "completed_at": "2026-10-19T17:25:35Z"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts --no-audit --no-fund",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-19T17:25:35Z",
+          "completed_at": "2026-10-19T17:27:01Z"
+        },
+        {
+          "name": "Run npm run rust:frontend:build",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-19T17:27:01Z",
+          "completed_at": "2026-10-19T17:27:55Z"
+        },
+        {
+          "name": "Run cargo fmt --manifest-path src-tauri/Cargo.toml --check",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-19T17:27:55Z",
+          "completed_at": "2026-10-19T17:27:58Z"
+        },
+        {
+          "name": "Run cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-19T17:27:58Z",
+          "completed_at": "2026-10-19T17:32:27Z"
+        },
+        {
+          "name": "Run cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets --locked -- -D warnings",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-19T17:32:27Z",
+          "completed_at": "2026-10-19T17:34:21Z"
+        },
+        {
+          "name": "Run cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --tests --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-19T17:34:21Z",
+          "completed_at": "2026-10-19T17:37:01Z"
+        },
+        {
+          "name": "Post Run actions/cache@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 22,
+          "started_at": "2026-10-19T17:37:01Z",
+          "completed_at": "2026-10-19T17:37:22Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 23,
+          "started_at": "2026-10-19T17:37:22Z",
+          "completed_at": "2026-10-19T17:37:29Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 24,
+          "started_at": "2026-10-19T17:37:29Z",
+          "completed_at": "2026-10-19T17:37:32Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 25,
+          "started_at": "2026-10-19T17:37:32Z",
+          "completed_at": "2026-10-19T17:37:32Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/rob-345/freeshow-rust/check-runs/118201340817",
+      "labels": [
+        "windows-latest"
+      ],
+      "runner_id": 1000000996,
+      "runner_name": "GitHub Actions 1000000996",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions",
+      "log": {
+        "path": "windows-native.log",
+        "bytes": 162332,
+        "sha256": "5c59a099b08b9421faf13bc4f5b2f7474e60030674ffcabc3dc84851a1ef0f2d"
+      },
+      "actualResults": {
+        "rustSummaryCount": 42,
+        "rustPassedEntries": 372,
+        "rustFailedEntries": 0,
+        "rustIgnoredEntries": 0,
+        "rustCountScope": "Sum of actual logged Rust summaries, including doctests and repeated feature runs; not unique test count.",
+        "tap": [],
+        "vitestPassed": 0
+      }
+    }
+  ],
+  "actualLogCount": 5,
+  "actualLogs": [
+    {
+      "path": "windows-core.log",
+      "bytes": 36333,
+      "sha256": "e274979078a7584af0a69b774ee2d94e850d02ea7964ac38b9064717950a976f"
+    },
+    {
+      "path": "macos-core.log",
+      "bytes": 478090,
+      "sha256": "fa5612cd9eba2ae75c2edbab165b6086d04b1072f40a423e734e6367c9c5e863"
+    },
+    {
+      "path": "desktop-linux.log",
+      "bytes": 427197,
+      "sha256": "c3bb715f0e44676b73131cdbe3ebd7d7d92bad4ceb187a21e947ff25908f21c2"
+    },
+    {
+      "path": "linux-core.log",
+      "bytes": 592358,
+      "sha256": "4dd2b5aef616fd5706aea9b5e73de4e6283e8863729c8a3da89faa7d0dff0363"
+    },
+    {
+      "path": "windows-native.log",
+      "bytes": 162332,
+      "sha256": "5c59a099b08b9421faf13bc4f5b2f7474e60030674ffcabc3dc84851a1ef0f2d"
+    }
+  ],
+  "missingSixthExecutionLog": "native macOS never acquired a hosted runner; runner_id0/steps[], genuine404 BlobNotFound captured.",
+  "cancelledJobReason": "The job was not acquired by Runner of type hosted even after multiple attempts",
+  "rawFinalRun": {
+    "path": "run-20261019T174009Z.json",
+    "bytes": 12826,
+    "sha256": "5b6f54beefb388d57f4fb1b230fd2aa62358b732be4d73accd92e53e4c2024c9"
+  },
+  "rawFinalJobs": {
+    "path": "jobs-20261019T174009Z.json",
+    "bytes": 25901,
+    "sha256": "179d98378ff9a5fdd7f774a6f22651a428afb3b243e9bc41ffda384b91dc0e56"
+  },
+  "getFreshness": "Every gh api GET used an explicit repos/rob-345/freeshow-rust endpoint with a newly generated UUID query parameter; no run/rerun/cancel/write API invoked.",
+  "artifact": {
+    "artifact": {
+      "id": 12206657992,
+      "node_id": "MDg6QXJ0aWZhY3QxMjIwNjY1Nzk5Mg==",
+      "name": "desktop-linux-evidence",
+      "size_in_bytes": 528411,
+      "url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/artifacts/12206657992",
+      "archive_download_url": "https://api.github.com/repos/rob-345/freeshow-rust/actions/artifacts/12206657992/zip",
+      "expired": false,
+      "digest": "sha256:e7ce60786a10ef84d9b755920a691531e706411fd4c7655688e9147e7ad15f3f",
+      "created_at": "2026-10-19T17:33:29Z",
+      "updated_at": "2026-10-19T17:33:29Z",
+      "expires_at": "2027-01-17T17:24:50Z",
+      "workflow_run": {
+        "id": 39293892950,
+        "repository_id": 1424267345,
+        "head_repository_id": 1424267345,
+        "head_branch": "rust-migration",
+        "head_sha": "5434778f4e820345070bcbe8cf7793791cd40d5e"
+      }
+    },
+    "independentZipSha256": "e7ce60786a10ef84d9b755920a691531e706411fd4c7655688e9147e7ad15f3f",
+    "zipBytes": 528411,
+    "entries": [
+      {
+        "path": "desktop/api.json",
+        "bytes": 43880,
+        "crc32": "376b2a8f"
+      },
+      {
+        "path": "desktop/assets.json",
+        "bytes": 3025,
+        "crc32": "9d26e50f"
+      },
+      {
+        "path": "desktop/ai-spotify.json",
+        "bytes": 26296,
+        "crc32": "6ead4024"
+      },
+      {
+        "path": "desktop/audio-metadata.json",
+        "bytes": 2614,
+        "crc32": "2c21af30"
+      },
+      {
+        "path": "desktop/audio-stream.json",
+        "bytes": 196283,
+        "crc32": "f50322f4"
+      },
+      {
+        "path": "desktop/browse.json",
+        "bytes": 8728,
+        "crc32": "70b15dc6"
+      },
+      {
+        "path": "desktop/close-drain.json",
+        "bytes": 1141,
+        "crc32": "62054121"
+      },
+      {
+        "path": "desktop/device-providers.json",
+        "bytes": 27775,
+        "crc32": "62767e78"
+      },
+      {
+        "path": "desktop/driver.log",
+        "bytes": 21051,
+        "crc32": "d2ca7144"
+      },
+      {
+        "path": "desktop/editor.png",
+        "bytes": 93221,
+        "crc32": "b0cf2783"
+      },
+      {
+        "path": "desktop/encoders.json",
+        "bytes": 25529,
+        "crc32": "6c918e93"
+      },
+      {
+        "path": "desktop/ffmpeg-download.json",
+        "bytes": 3181,
+        "crc32": "e45c509f"
+      },
+      {
+        "path": "desktop/file-reads.json",
+        "bytes": 3973,
+        "crc32": "868038f7"
+      },
+      {
+        "path": "desktop/imported-shows/Native CSV.show",
+        "bytes": 1075,
+        "crc32": "022d5823"
+      },
+      {
+        "path": "desktop/imported-shows/Native ChordPro.show",
+        "bytes": 744,
+        "crc32": "675781c7"
+      },
+      {
+        "path": "desktop/imported-shows/Native EasySlides Second \u656c\u62dc.show",
+        "bytes": 643,
+        "crc32": "892c3c8c"
+      },
+      {
+        "path": "desktop/imported-shows/Native ChordPro PRO \u656c\u62dc.show",
+        "bytes": 779,
+        "crc32": "b00c69eb"
+      },
+      {
+        "path": "desktop/imported-shows/Native EasySlides \u656c\u62dc.show",
+        "bytes": 709,
+        "crc32": "38eb738a"
+      },
+      {
+        "path": "desktop/imported-shows/Native MediaShout \u656c\u62dc.show",
+        "bytes": 914,
+        "crc32": "70284eda"
+      },
+      {
+        "path": "desktop/imported-shows/Native OpenLP \u656c\u62dc.show",
+        "bytes": 965,
+        "crc32": "82e43fee"
+      },
+      {
+        "path": "desktop/imported-shows/Native Quelea \u656c\u62dc.show",
+        "bytes": 785,
+        "crc32": "f1b0801c"
+      },
+      {
+        "path": "desktop/imported-shows/Native SongBeamer \u656c\u62dc.show",
+        "bytes": 956,
+        "crc32": "eb9b2174"
+      },
+      {
+        "path": "desktop/imported-shows/Native OpenSong \u656c\u62dc.show",
+        "bytes": 1015,
+        "crc32": "5f556051"
+      },
+      {
+        "path": "desktop/imported-shows/Native VerseVIEW \u656c\u62dc.show",
+        "bytes": 815,
+        "crc32": "c32c5011"
+      },
+      {
+        "path": "desktop/imported-shows/Native VideoPsalm \u656c\u62dc.show",
+        "bytes": 1042,
+        "crc32": "ec6f6110"
+      },
+      {
+        "path": "desktop/imported-shows/Native bundle show.show",
+        "bytes": 1177,
+        "crc32": "c4364f48"
+      },
+      {
+        "path": "desktop/imported-shows/Native show import.show",
+        "bytes": 1059,
+        "crc32": "c3c8738a"
+      },
+      {
+        "path": "desktop/imported-shows/Native text \u656c\u62dc.show",
+        "bytes": 715,
+        "crc32": "83637d6f"
+      },
+      {
+        "path": "desktop/imports.json",
+        "bytes": 47936,
+        "crc32": "a256ef0a"
+      },
+      {
+        "path": "desktop/library-switch.png",
+        "bytes": 106411,
+        "crc32": "221bfb28"
+      },
+      {
+        "path": "desktop/maximize-reply.json",
+        "bytes": 166,
+        "crc32": "f61d3668"
+      },
+      {
+        "path": "desktop/media-copy.json",
+        "bytes": 10208,
+        "crc32": "ab5ce3b9"
+      },
+      {
+        "path": "desktop/media-folder-reset.json",
+        "bytes": 589,
+        "crc32": "3aafab40"
+      },
+      {
+        "path": "desktop/media-locate.json",
+        "bytes": 2055,
+        "crc32": "929c315b"
+      },
+      {
+        "path": "desktop/media-probe.json",
+        "bytes": 10036,
+        "crc32": "2913ac3f"
+      },
+      {
+        "path": "desktop/midi.json",
+        "bytes": 4312,
+        "crc32": "a17c24a6"
+      },
+      {
+        "path": "desktop/network-queries.json",
+        "bytes": 10981,
+        "crc32": "f5fbc369"
+      },
+      {
+        "path": "desktop/now-playing.json",
+        "bytes": 154997,
+        "crc32": "e5d8e9a0"
+      },
+      {
+        "path": "desktop/now-playing-folder-alerts.json",
+        "bytes": 13869,
+        "crc32": "02e55a1c"
+      },
+      {
+        "path": "desktop/output-chorus.png",
+        "bytes": 5526,
+        "crc32": "a59b4f56"
+      },
+      {
+        "path": "desktop/osc-loopback.json",
+        "bytes": 133,
+        "crc32": "c95ddbea"
+      },
+      {
+        "path": "desktop/output-scripture.png",
+        "bytes": 7527,
+        "crc32": "30251ea7"
+      },
+      {
+        "path": "desktop/output-targeted-primary.png",
+        "bytes": 9179,
+        "crc32": "04c4bf0c"
+      },
+      {
+        "path": "desktop/output-targeted-secondary.png",
+        "bytes": 5137,
+        "crc32": "2b97bb2e"
+      },
+      {
+        "path": "desktop/output-verse.png",
+        "bytes": 9179,
+        "crc32": "04c4bf0c"
+      },
+      {
+        "path": "desktop/receipt.json",
+        "bytes": 329180,
+        "crc32": "20e79fa9"
+      },
+      {
+        "path": "desktop/remote-covers.json",
+        "bytes": 128185,
+        "crc32": "2b35bd76"
+      },
+      {
+        "path": "desktop/responsiveness.json",
+        "bytes": 27104,
+        "crc32": "6ac7fd1e"
+      },
+      {
+        "path": "desktop/remotes.json",
+        "bytes": 70083,
+        "crc32": "e4f85709"
+      },
+      {
+        "path": "desktop/save-revision-race.json",
+        "bytes": 3060,
+        "crc32": "d7a5ed18"
+      },
+      {
+        "path": "desktop/saved-before-dialog.show",
+        "bytes": 2174,
+        "crc32": "53e8f4e5"
+      },
+      {
+        "path": "desktop/saved.show",
+        "bytes": 2070,
+        "crc32": "85c34986"
+      },
+      {
+        "path": "desktop/scriptures.json",
+        "bytes": 14138,
+        "crc32": "aed1d005"
+      },
+      {
+        "path": "desktop/stale-save-recovery.json",
+        "bytes": 1033,
+        "crc32": "9c6f23f2"
+      },
+      {
+        "path": "desktop/system-info.json",
+        "bytes": 2399,
+        "crc32": "59974060"
+      },
+      {
+        "path": "desktop/thumbnails.json",
+        "bytes": 18493,
+        "crc32": "ef2587b6"
+      },
+      {
+        "path": "desktop/uncached-show-read.json",
+        "bytes": 3155,
+        "crc32": "3e14a92b"
+      },
+      {
+        "path": "native-menu/driver.log",
+        "bytes": 1788,
+        "crc32": "fc77c342"
+      },
+      {
+        "path": "desktop/timecode.json",
+        "bytes": 441026,
+        "crc32": "c83264e5"
+      },
+      {
+        "path": "native-menu/quit-observation.json",
+        "bytes": 145204,
+        "crc32": "d127f963"
+      },
+      {
+        "path": "native-menu/receipt.json",
+        "bytes": 807,
+        "crc32": "b1e54875"
+      },
+      {
+        "path": "native-drop/driver-1x.log",
+        "bytes": 1254,
+        "crc32": "e4ff84d8"
+      },
+      {
+        "path": "native-drop/driver-2x.log",
+        "bytes": 1254,
+        "crc32": "d89ba072"
+      },
+      {
+        "path": "native-drop/receipt-1x.json",
+        "bytes": 4755,
+        "crc32": "5b27fe90"
+      },
+      {
+        "path": "native-drop/receipt-2x.json",
+        "bytes": 4755,
+        "crc32": "ec8be82e"
+      },
+      {
+        "path": "normal-binary/build.jsonl",
+        "bytes": 499623,
+        "crc32": "1c23c176"
+      },
+      {
+        "path": "normal-binary/receipt.json",
+        "bytes": 4820,
+        "crc32": "39d2bb29"
+      }
+    ]
+  },
+  "artifactArchive": {
+    "path": "desktop-linux-evidence.zip",
+    "bytes": 528411,
+    "sha256": "e7ce60786a10ef84d9b755920a691531e706411fd4c7655688e9147e7ad15f3f"
+  },
+  "artifactAudit": {
+    "ok": true,
+    "head": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+    "runId": 39293892950,
+    "uploadedFileCount": 67,
+    "compilerRecordCount": 652,
+    "normalLocalArtifacts": 38,
+    "normalFeatures": [
+      "custom-protocol"
+    ],
+    "noLocalTestHarnessFeature": true,
+    "recordedFrozenBinary": {
+      "source": "/home/runner/work/freeshow-rust/freeshow-rust/target/debug/freeshow-desktop",
+      "path": "/home/runner/work/freeshow-rust/freeshow-rust/test-output-rust/normal-binary-runtime/target/debug/freeshow-desktop",
+      "bytes": 110152176,
+      "sha256": "bb45ea3835c30c97ee7543f1563f0913c3c3ac33c9042dc0050f549e18f0b743"
+    },
+    "recordedResourceFiles": 20,
+    "independentExecutableBytesVerified": false,
+    "independentFrozenResourceBytesVerified": false,
+    "integrityScope": "Uploaded ZIP and all67 uploaded file bytes hashed independently; executable and frozen resource tree are absent. Binary/resource hashes are CI freeze observations corroborated by compiler JSON/logs, not independent byte attestations.",
+    "editorSteps": 193,
+    "diagnosticCount": 49,
+    "diagnostics": [
+      {
+        "code": "unsupported_command",
+        "outer": "OUTPUT",
+        "command": "SET_VALUE",
+        "count": 8
+      },
+      {
+        "code": "unsupported_command",
+        "outer": "OUTPUT",
+        "command": "CAPTURE",
+        "count": 19
+      },
+      {
+        "code": "cover_unsupported",
+        "outer": "NOW_PLAYING",
+        "command": null,
+        "count": 1
+      },
+      {
+        "code": "midi_backend_unavailable",
+        "outer": "MAIN",
+        "command": "GET_MIDI_INPUTS",
+        "count": 2
+      },
+      {
+        "code": "midi_backend_unavailable",
+        "outer": "MAIN",
+        "command": "GET_MIDI_OUTPUTS",
+        "count": 2
+      },
+      {
+        "code": "io_error",
+        "outer": "MAIN",
+        "command": "SAVE",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "PROJECT",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "STAGE",
+        "command": "TIMERS",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "TIMERS",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "STAGE",
+        "command": "VARIABLES",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "VARIABLES",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "SCRIPTURE",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "ACTIONS",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "ACTION_TAGS",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "VARIABLE_TAGS",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "TIMER_TAGS",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "FOLDERS",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "STAGE",
+        "command": "EVENTS",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "AUDIO_ROUTING",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "REMOTE",
+        "command": "AUDIO_CHANNELS_DATA",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "outer": "STAGE",
+        "command": "METRONOME",
+        "count": 1
+      },
+      {
+        "code": "stale_library",
+        "outer": "MAIN",
+        "command": "SAVE",
+        "count": 1
+      }
+    ],
+    "actualQuitCaptured": true,
+    "menus": 4,
+    "dropScales": [
+      1,
+      2
+    ],
+    "freezeNegativeControls": [
+      "test-harness",
+      "resource-set",
+      "binary-record-sha",
+      "wrong-executable"
+    ],
+    "files": [
+      {
+        "path": "desktop/ai-spotify.json",
+        "bytes": 26296,
+        "sha256": "acaa36b6c29d06c9886fc39f37657bfb581bc305d56628a5818462570843df5f"
+      },
+      {
+        "path": "desktop/api.json",
+        "bytes": 43880,
+        "sha256": "35701f311f05bcb480614d72d8be5fd7fcaf4db483a0a99f6c5a102ad9fde64f"
+      },
+      {
+        "path": "desktop/assets.json",
+        "bytes": 3025,
+        "sha256": "212b792a290ad2f588c527c10fb91d19746e6867ea3ba8602ac5c421d8666192"
+      },
+      {
+        "path": "desktop/audio-metadata.json",
+        "bytes": 2614,
+        "sha256": "fdbde57acfa634a571fd0f323affe280134f0599628a2eaead53132454695ffd"
+      },
+      {
+        "path": "desktop/audio-stream.json",
+        "bytes": 196283,
+        "sha256": "feb05089c0ce01d9f5d35e6cfbe13a4cd966c9c41f622c6c0dc32cb7dde2271c"
+      },
+      {
+        "path": "desktop/browse.json",
+        "bytes": 8728,
+        "sha256": "fd66197433e42be9851ffe00cb478f27031a7830716e39428017db6c33047bc3"
+      },
+      {
+        "path": "desktop/close-drain.json",
+        "bytes": 1141,
+        "sha256": "e6b448b1878abcccfdca554551d24cd3e5824d8f0c6874f0e5711ff8e0cd9a58"
+      },
+      {
+        "path": "desktop/device-providers.json",
+        "bytes": 27775,
+        "sha256": "874463b794536f782d8366560d6a1cf88ea45f424f8cd93ed5e75caa6525230a"
+      },
+      {
+        "path": "desktop/driver.log",
+        "bytes": 21051,
+        "sha256": "a8601a14c241f6ed00459604f9d8ea0d3db255684913e30618caa3484294e24b"
+      },
+      {
+        "path": "desktop/editor.png",
+        "bytes": 93221,
+        "sha256": "3879b9353d7c626a23c9408e6ab8fabb4ea5c469008e3ebf7c249238d4f5ae06"
+      },
+      {
+        "path": "desktop/encoders.json",
+        "bytes": 25529,
+        "sha256": "ed3ca21e1d1088ab6b939479024d74cb4d229391c4d9c6eedbc61bbe516190ad"
+      },
+      {
+        "path": "desktop/ffmpeg-download.json",
+        "bytes": 3181,
+        "sha256": "91d85ca3b6eb50bba175c15d7a3937264e3fbfdbefaa3e97c839cf5c35d8550e"
+      },
+      {
+        "path": "desktop/file-reads.json",
+        "bytes": 3973,
+        "sha256": "07ed78c3b2bf58044cbc4f1064659d59cad6ca633e5d54114872f424ca5d13a2"
+      },
+      {
+        "path": "desktop/imported-shows/Native CSV.show",
+        "bytes": 1075,
+        "sha256": "34c66d560611cf2b84710bb9d77894f9c959b542b57d163a03c714a1e3cc3073"
+      },
+      {
+        "path": "desktop/imported-shows/Native ChordPro PRO \u656c\u62dc.show",
+        "bytes": 779,
+        "sha256": "1ed152d9605db9e8a5bc167dd6156362eac98c13b0632c8ad088e0597e4ebd0f"
+      },
+      {
+        "path": "desktop/imported-shows/Native ChordPro.show",
+        "bytes": 744,
+        "sha256": "31bc047b99601c98ec8df35f340e6572e08049a7c522e69821cdbf124d78e49e"
+      },
+      {
+        "path": "desktop/imported-shows/Native EasySlides Second \u656c\u62dc.show",
+        "bytes": 643,
+        "sha256": "ecb3b111f14aab6607549b88e8798525cab587bae5d11024c09f9549d4039b5a"
+      },
+      {
+        "path": "desktop/imported-shows/Native EasySlides \u656c\u62dc.show",
+        "bytes": 709,
+        "sha256": "19a97ad81a2accada27d6b50b5bb9f51dc41db14ad974e24a700b995632ba005"
+      },
+      {
+        "path": "desktop/imported-shows/Native MediaShout \u656c\u62dc.show",
+        "bytes": 914,
+        "sha256": "0b2f81a9f7cc916520c3c5ea2231bc04a953bc732eaef7a42b58fe89d0bf7ffd"
+      },
+      {
+        "path": "desktop/imported-shows/Native OpenLP \u656c\u62dc.show",
+        "bytes": 965,
+        "sha256": "c5cfde472c7e1fdbd10fa640080defcb0e27184a243cd1839b09ab69d1967c56"
+      },
+      {
+        "path": "desktop/imported-shows/Native OpenSong \u656c\u62dc.show",
+        "bytes": 1015,
+        "sha256": "9d3c55b721d4d69990c5f616a14b87ab026f91615772edcdfb96581bf6ff7d73"
+      },
+      {
+        "path": "desktop/imported-shows/Native Quelea \u656c\u62dc.show",
+        "bytes": 785,
+        "sha256": "f34fdb88fdbea669c0b143ad42341cc70c37b7db61111fee7a2eb06e793bf6f2"
+      },
+      {
+        "path": "desktop/imported-shows/Native SongBeamer \u656c\u62dc.show",
+        "bytes": 956,
+        "sha256": "4493a01b91c4fb7a3263a7d335585413bc4736e2bf0bc1ab9e88dc298b0c0071"
+      },
+      {
+        "path": "desktop/imported-shows/Native VerseVIEW \u656c\u62dc.show",
+        "bytes": 815,
+        "sha256": "382fa5ad619b4e6b9bb00c3341adc78dadde12ba0f75bc48ada1e891d4dc5aee"
+      },
+      {
+        "path": "desktop/imported-shows/Native VideoPsalm \u656c\u62dc.show",
+        "bytes": 1042,
+        "sha256": "cff8d8113e530e887d2dcd35a24505d7a31b5a6363952df997a8412978790aff"
+      },
+      {
+        "path": "desktop/imported-shows/Native bundle show.show",
+        "bytes": 1177,
+        "sha256": "93685dd0d8fda13441a4057a5c19228666df547373ee1db0c7fdca756b29dff7"
+      },
+      {
+        "path": "desktop/imported-shows/Native show import.show",
+        "bytes": 1059,
+        "sha256": "467b78dc5c50c15b13286816407809ef8c9ee6f1c88308912564f01bc09ca9f7"
+      },
+      {
+        "path": "desktop/imported-shows/Native text \u656c\u62dc.show",
+        "bytes": 715,
+        "sha256": "7b632a3dad8b589d49289ed33627680742822260e7b8e45647a4088a55c09165"
+      },
+      {
+        "path": "desktop/imports.json",
+        "bytes": 47936,
+        "sha256": "ee337fb8a9a031a05ced018ef0864b7a0ec8968fc4c0a4e94c38ec88d17210f2"
+      },
+      {
+        "path": "desktop/library-switch.png",
+        "bytes": 106411,
+        "sha256": "33158b326962f0a74dd888050822e156d599df3151f0a959e09a41d13f7c9548"
+      },
+      {
+        "path": "desktop/maximize-reply.json",
+        "bytes": 166,
+        "sha256": "11f9fa0d08332d48fa892565525f5eead973ff55e3f9f528b3721262be96e8f0"
+      },
+      {
+        "path": "desktop/media-copy.json",
+        "bytes": 10208,
+        "sha256": "32904fbf2b116263ed8ec599d8cd3a237c377bf8b269855cdf1b4182d890de37"
+      },
+      {
+        "path": "desktop/media-folder-reset.json",
+        "bytes": 589,
+        "sha256": "62b2c4e7c1611ac53e4237d0684904cc2d2c5267ebb4e13cc9a7307ae6ad90ca"
+      },
+      {
+        "path": "desktop/media-locate.json",
+        "bytes": 2055,
+        "sha256": "132acdea82c07e13f3415e12461524b3064062ae695d671433d38b301d09c473"
+      },
+      {
+        "path": "desktop/media-probe.json",
+        "bytes": 10036,
+        "sha256": "4b428af49e10aa592ddae7cd1d8cf73dedc0710f54ab93263ed38f886c3742e3"
+      },
+      {
+        "path": "desktop/midi.json",
+        "bytes": 4312,
+        "sha256": "782c9e99a9a9fc534c6ff37aa6f5fdee06b866cadf1a735f64263b1f2d467762"
+      },
+      {
+        "path": "desktop/network-queries.json",
+        "bytes": 10981,
+        "sha256": "a5c83972ccdd96c37b41ed7cdbbf826e1427c4f011c13f153bfa639ca820dbf6"
+      },
+      {
+        "path": "desktop/now-playing-folder-alerts.json",
+        "bytes": 13869,
+        "sha256": "afe6cd4fee7987be29de7b1dc9a5c25c4393e16cce915e2f374a9d38a2b705ca"
+      },
+      {
+        "path": "desktop/now-playing.json",
+        "bytes": 154997,
+        "sha256": "5908547a90cca0960cfd326dc6aa1f61ecc47cf5740a8151407cb9ce9617a4d4"
+      },
+      {
+        "path": "desktop/osc-loopback.json",
+        "bytes": 133,
+        "sha256": "91ddc899c0c65a33366a229e223e93e3d7534056306f2a0748d43a5fe55049ad"
+      },
+      {
+        "path": "desktop/output-chorus.png",
+        "bytes": 5526,
+        "sha256": "208d9e361d44c6bac27c24eb5923eb3b971d3646f718ba1f75fc095c44eba2bb"
+      },
+      {
+        "path": "desktop/output-scripture.png",
+        "bytes": 7527,
+        "sha256": "0bcbf03c6f6508281bdb51b0cd275df1dfcdfc74b26bc181afc0567fbf45e48a"
+      },
+      {
+        "path": "desktop/output-targeted-primary.png",
+        "bytes": 9179,
+        "sha256": "2087d766871dc8aa3581bb355de4e66a130c5205b905631e74706e04a468a7ee"
+      },
+      {
+        "path": "desktop/output-targeted-secondary.png",
+        "bytes": 5137,
+        "sha256": "68575fdc7f105e90a57f54ce7585f8eab7ded4dd215f6caa4cb5ab851391ac60"
+      },
+      {
+        "path": "desktop/output-verse.png",
+        "bytes": 9179,
+        "sha256": "2087d766871dc8aa3581bb355de4e66a130c5205b905631e74706e04a468a7ee"
+      },
+      {
+        "path": "desktop/receipt.json",
+        "bytes": 329180,
+        "sha256": "1ceac8f5d27b41cfcb76da0da99f479eb67342fcd8bd402465a57dc6f294fd09"
+      },
+      {
+        "path": "desktop/remote-covers.json",
+        "bytes": 128185,
+        "sha256": "6b5726cfcf939e3aa160f2498af907bdc63c49ab80bcf0df3165b4615d8e3aa3"
+      },
+      {
+        "path": "desktop/remotes.json",
+        "bytes": 70083,
+        "sha256": "ad6e4cd0ec98a1fbe4f50705f23f6c859c622f72a76f7274d0b131771be744ee"
+      },
+      {
+        "path": "desktop/responsiveness.json",
+        "bytes": 27104,
+        "sha256": "b76e32d1fda6ef9428e50617bbf4cc9aea9c9456bace2838bc312db41af6e814"
+      },
+      {
+        "path": "desktop/save-revision-race.json",
+        "bytes": 3060,
+        "sha256": "d32e53e619811fce3bde8df460d0b98e55c10efed8555555948bd999e711b29f"
+      },
+      {
+        "path": "desktop/saved-before-dialog.show",
+        "bytes": 2174,
+        "sha256": "8d1fd43a2e8a58fa00de78f608cbabca0a8bbe5a6fdffeed6eb581055d195274"
+      },
+      {
+        "path": "desktop/saved.show",
+        "bytes": 2070,
+        "sha256": "6ba773dfd981b24d767ea423220fed3db291c19530d471a1cb9b16a5318dd8e8"
+      },
+      {
+        "path": "desktop/scriptures.json",
+        "bytes": 14138,
+        "sha256": "e0274ac43e797d8729b488d6d2a68c8d84b110503c8310c03de1be183086ec5c"
+      },
+      {
+        "path": "desktop/stale-save-recovery.json",
+        "bytes": 1033,
+        "sha256": "f089225610638550f9940a8a4a625fb547d57764c4a76ebe8498d2a60cc37c96"
+      },
+      {
+        "path": "desktop/system-info.json",
+        "bytes": 2399,
+        "sha256": "468fc44bdb6b06aad6018e8d7b23e95fab36e4c325ad989e93b8ad163267227d"
+      },
+      {
+        "path": "desktop/thumbnails.json",
+        "bytes": 18493,
+        "sha256": "1c00588916d17046006ceaa0dcec6e4be07f054040f9e0b2666181c21562f450"
+      },
+      {
+        "path": "desktop/timecode.json",
+        "bytes": 441026,
+        "sha256": "77321166139b0c555742520ee72ad9602ae62f4ae57bea88b90f92babde4f79a"
+      },
+      {
+        "path": "desktop/uncached-show-read.json",
+        "bytes": 3155,
+        "sha256": "5ba159ffa29f76067d7ecd9c59a042051e01d1d80452c66dc954636c7ca5e7b0"
+      },
+      {
+        "path": "native-drop/driver-1x.log",
+        "bytes": 1254,
+        "sha256": "e0e0d3eafbaa574df2896c8e917ee381fc71b6066910433afb83b375ac6a202c"
+      },
+      {
+        "path": "native-drop/driver-2x.log",
+        "bytes": 1254,
+        "sha256": "1c5924dae893218885d8efbbc71948c7e77b937294233b9c21511b700f64bf74"
+      },
+      {
+        "path": "native-drop/receipt-1x.json",
+        "bytes": 4755,
+        "sha256": "484ba2eaff3996e958edc150bdd31f27070b86a06b01c5989170fe551f183c89"
+      },
+      {
+        "path": "native-drop/receipt-2x.json",
+        "bytes": 4755,
+        "sha256": "b7307d7ee39db1dbc07391274c3ae72ffb543a38eb3236329954334325132a13"
+      },
+      {
+        "path": "native-menu/driver.log",
+        "bytes": 1788,
+        "sha256": "8c23592cb1a35a9679ca4443332846ad57ce2bb38a8bc06934c990cb11352305"
+      },
+      {
+        "path": "native-menu/quit-observation.json",
+        "bytes": 145204,
+        "sha256": "0a276a9fcbaa0445e561f081c7ab3810ab2b36586226db254a6c6a43c58d1942"
+      },
+      {
+        "path": "native-menu/receipt.json",
+        "bytes": 807,
+        "sha256": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98"
+      },
+      {
+        "path": "normal-binary/build.jsonl",
+        "bytes": 499623,
+        "sha256": "9290b1bf2e86f605b15d239889b65610b2e3f5fe072d42cfae3b65720daff777"
+      },
+      {
+        "path": "normal-binary/receipt.json",
+        "bytes": 4820,
+        "sha256": "ae6a4c47be8b57ba986f919b2d0abf75099ef5cfbfaccb0901474b0e1c2df03f"
+      }
+    ]
+  },
+  "sourceAndNativeUiAudit": {
+    "report": {
+      "path": "independent-ai-imports.json",
+      "bytes": 16071,
+      "sha256": "f78af8c53ebad0c302bc743bd262f3910175bd3d9c376634f022ac649f339acb"
+    },
+    "helper": {
+      "path": "validate-ai-imports-gui.mjs",
+      "bytes": 24418,
+      "sha256": "e7ef27ac83ecc4d988125f794559cd33539a91165b14f28b0f4743c60596e3c8"
+    },
+    "helperCommand": "node22.21.1 validate-ai-imports-gui.mjs --root /home/rob-admin/GitHub/freeshow-rust --artifacts artifact/desktop --report independent-ai-imports.json",
+    "aiStatusPhases": 3,
+    "cataloguePhases": 3,
+    "sourceBeforeAfterEqual": true,
+    "newImportRawSourceComparisons": 9,
+    "persistedShows": 15,
+    "newUnicodeShows": 10,
+    "changedLyricSourceNegatives": 9,
+    "validatorNegatives": 15,
+    "spotifyScope": "Archived original-source actual private-bus ServiceUnknown/null evidence, owner absent/nonactivatable before/after, original callback/listener and waited nonzero shell exit. No fresh bus repro, account or active-playback claim.",
+    "identityScope": "Raw stable identity is absent from device/probe receipt; persisted equality/type/nonempty booleans are checked.",
+    "limits": [
+      "AI inventory is an inert32-byte fixture, not usable model verification; missing first pinned file hashes none.",
+      "Spotify is genuine captured private-bus ServiceUnknown only; no account, active player or hardware claim; process/wait fields are captured source evidence, not a fresh bus probe.",
+      "Catalogue is five declared rows only; no authentication or backend-health certification.",
+      "Archived UI listener/void/context/own-key arrays are inspected; callback run and physical UI visibility remain original driver observations.",
+      "IMPORT2 source XML DOM is controlled; actual archived Svelte output and disk files are verified separately.",
+      "Native import-time installed-media bytes and persisted identity matching were observed by smoke; deleted original temp-profile paths cannot be reread now."
+    ]
+  },
+  "correctionsNotIncluded": [
+    {
+      "commit": "1223105028ea1b5260eb143c210bcebd9d9aac74",
+      "includedInObservedHead": false
+    },
+    {
+      "commit": "af1f3aa79098691a5e156872c8317c45f448e4c0",
+      "includedInObservedHead": false
+    }
+  ],
+  "integrityScope": "Uploaded ZIP and all67 uploaded file bytes hashed independently; executable and frozen resource tree are absent. Binary/resource hashes are CI freeze observations corroborated by compiler JSON/logs, not independent byte attestations.",
+  "compilerProvenanceAttested": false,
+  "noRootBuildOrGuiLaunchByAuditor": true,
+  "observationScope": "Historical run remains failed. Compiler/freeze and callback/process fields are captured CI observations; independent hashes cover uploaded ZIP/67file bytes. Original TS/source reconstruction is separate from original WebView execution; no full parity or performance claim."
+}

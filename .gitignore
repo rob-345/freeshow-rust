@@ -22,3 +22,11 @@ test-results/
 *.ipr
 *.iws
 .serena
+
+# Rust migration artifacts
+/target/
+/src-tauri/target/
+/src-tauri/gen/
+/dist-rust/
+/test-output-rust/
+/tests/desktop/__pycache__/

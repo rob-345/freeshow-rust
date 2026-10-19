@@ -1,0 +1,53 @@
+[workspace]
+members = [
+    "crates/freeshow-core",
+    "crates/freeshow-ai-local",
+    "crates/freeshow-ai-status",
+    "crates/freeshow-spotify",
+    "crates/freeshow-provider-shows",
+    "crates/freeshow-media",
+    "crates/freeshow-ffmpeg-download",
+    "crates/freeshow-network",
+    "crates/freeshow-audio",
+    "crates/freeshow-audio-pipeline",
+    "crates/freeshow-icecast",
+    "crates/freeshow-opus",
+    "crates/freeshow-midi",
+    "crates/freeshow-midi-ports",
+    "crates/freeshow-timecode",
+    "crates/freeshow-ltc",
+    "crates/freeshow-now-playing",
+    "crates/freeshow-cover-images",
+    "crates/freeshow-cover-http",
+    "crates/freeshow-metadata-wire",
+    "crates/freeshow-files",
+    "crates/freeshow-system",
+    "crates/freeshow-api",
+    "crates/freeshow-imports",
+    "crates/freeshow-browse",
+    "crates/freeshow-import-effects",
+    "crates/freeshow-assets",
+    "crates/freeshow-thumbnails",
+    "crates/freeshow-asset-plans",
+    "crates/freeshow-thumbnail-effects",
+    "crates/freeshow-exif",
+    "crates/freeshow-documents",
+    "crates/freeshow-remotes",
+    "crates/freeshow-discovery",
+    "crates/freeshow-encoders",
+    "crates/freeshow-scriptures",
+    "crates/freeshow-media-copy",
+    "crates/freeshow-media-copy-effects",
+]
+exclude = ["src-tauri", "vendor/socketioxide"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/rob-345/freeshow-rust"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

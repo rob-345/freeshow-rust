@@ -93,6 +93,9 @@ export type SaveListSettings =
     | "ai"
 
 export interface SaveData {
+    // Runtime-only provenance, captured with the snapshot before deferred IPC.
+    runtimeContext?: import("../frontend/rust/bridge").RuntimeContext
+    runtimeSaveToken?: string
     // SETTINGS
     SETTINGS: { [key in SaveListSettings]: any } | {}
     SYNCED_SETTINGS: { [key in SaveListSyncedSettings]: any } | {}

@@ -1,0 +1,178 @@
+name: Rust migration
+
+on:
+  push:
+    branches: [rust-migration]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      require_full_parity:
+        description: Enforce the complete migration acceptance gate
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - run: git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975
+      - uses: actions/setup-node@v5
+        with:
+          # Match Node bundled by the pinned Electron 37.10.3 oracle.
+          node-version: 22.21.1
+          cache: npm
+      - run: rustup show
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libopus0 libgdk-pixbuf-2.0-dev build-essential dbus dbus-bin python3-gi gir1.2-glib-2.0
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ runner.arch }}-rust-core-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-rust-core-
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run rust:snapshot
+      - if: runner.os == 'Linux'
+        run: |
+          python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles
+          node crates/freeshow-ltc/tools/build-original.mjs
+          echo "FREESHOW_LTC_ORACLE_ADDON=$GITHUB_WORKSPACE/target/ltc-original/ltc-native.node" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_LTC=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_TIMECODE_ORACLE=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_TIMECODE_NODE=$(command -v node)" >> "$GITHUB_ENV"
+          echo "FREESHOW_OPUS_ORACLE_DIR=$GITHUB_WORKSPACE/target/opus-oracles" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_OPUS=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_OPUS_ORACLE=1" >> "$GITHUB_ENV"
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --features freeshow-audio-pipeline/test-harness,freeshow-icecast/test-harness,freeshow-opus/test-harness,freeshow-ai-status/test-harness -- -D warnings
+      - run: npm run rust:test
+      - run: cargo test -p freeshow-ai-status --features test-harness --locked
+      - run: npm run rust:parity:report
+      - name: Validate archived idle ablation arithmetic
+        run: node tests/desktop/audio_context_ablation/validate.mjs --self-test
+      - if: inputs.require_full_parity == true
+        run: npm run rust:parity:gate
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      CARGO_BUILD_JOBS: "2"
+    steps:
+      - uses: actions/checkout@v5
+      - run: git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.21.1
+          cache: npm
+      - run: rustup show
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ runner.arch }}-rust-native-${{ hashFiles('Cargo.lock', 'src-tauri/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-rust-native-
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run rust:frontend:build
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --locked
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets --locked -- -D warnings
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --tests --locked
+
+  desktop-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - run: git fetch --no-tags --depth=1 origin 2d94defcf98175e4f5c9504e7f4fd1d33c35c975
+      - uses: actions/setup-node@v5
+        with:
+          # Match Node bundled by the pinned Electron 37.10.3 oracle.
+          node-version: 22.21.1
+          cache: npm
+      - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev libasound2-dev libopus0 build-essential webkit2gtk-driver xvfb dbus-x11 dbus dbus-bin gir1.2-glib-2.0 xdotool ffmpeg python3-gi gir1.2-atspi-2.0 at-spi2-core fonts-noto-color-emoji
+      - run: rustup show
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ runner.arch }}-rust-desktop-${{ hashFiles('Cargo.lock', 'src-tauri/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-rust-desktop-
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: |
+          python3 tests/parity/fixtures/opus/build-oracles.py --output target/opus-oracles
+          node crates/freeshow-ltc/tools/build-original.mjs
+          echo "FREESHOW_LTC_ORACLE_ADDON=$GITHUB_WORKSPACE/target/ltc-original/ltc-native.node" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_LTC=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_TIMECODE_ORACLE=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_TIMECODE_NODE=$(command -v node)" >> "$GITHUB_ENV"
+          echo "FREESHOW_OPUS_ORACLE_DIR=$GITHUB_WORKSPACE/target/opus-oracles" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_OPUS=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_REQUIRE_NATIVE_AUDIO_ORACLE=1" >> "$GITHUB_ENV"
+          echo "FREESHOW_NATIVE_AUDIO_NODE=$(command -v node)" >> "$GITHUB_ENV"
+      - run: npm run rust:frontend:build
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      - run: python3 tests/desktop/freeze_binary_test.py
+      - name: Check Spotify browser fixture and actual owned peer controls
+        run: |
+          node --test tests/desktop/spotify_command_fixture.test.mjs
+          dbus-run-session -- /usr/bin/python3 tests/desktop/spotify_command_fixture_test.py -v
+      - name: Build and freeze the normal GUI binary before test builds
+        run: |
+          mkdir -p test-output-rust/normal-binary
+          cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --message-format=json > test-output-rust/normal-binary/build.jsonl
+          python3 scripts/migration/freeze-desktop-binary.py --build-log test-output-rust/normal-binary/build.jsonl --binary target/debug/freeshow-desktop --resources dist-rust/remotes --destination test-output-rust/normal-binary-runtime/target/debug --receipt test-output-rust/normal-binary/receipt.json
+          echo "FREESHOW_DESKTOP_BIN=$GITHUB_WORKSPACE/test-output-rust/normal-binary-runtime/target/debug/freeshow-desktop" >> "$GITHUB_ENV"
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --features custom-protocol --all-targets -- -D warnings
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --tests --locked
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      - run: cargo build --workspace --all-targets
+      - run: node --test tests/parity/media-probe.test.mjs tests/parity/audio-metadata.test.mjs tests/parity/osc.test.mjs tests/parity/encoders.test.mjs
+        env:
+          FREESHOW_REQUIRE_MEDIA_TOOLS: "1"
+      - run: cargo install tauri-driver --version 2.1.0 --locked
+      - run: xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py
+      - run: xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/menu.py
+      - run: GDK_SCALE=1 xvfb-run -a -s '-screen 0 3200x2200x24' dbus-run-session -- /usr/bin/python3 tests/desktop/drop.py
+      - run: GDK_SCALE=2 xvfb-run -a -s '-screen 0 3200x2200x24' dbus-run-session -- /usr/bin/python3 tests/desktop/drop.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-linux-evidence
+          path: |
+            test-output-rust/desktop
+            test-output-rust/native-menu
+            test-output-rust/native-drop
+            test-output-rust/normal-binary

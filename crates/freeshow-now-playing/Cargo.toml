@@ -1,0 +1,15 @@
+[package]
+name = "freeshow-now-playing"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+base64 = "0.22"
+ryu-js = "0.2.2"
+freeshow-audio = { path = "../freeshow-audio" }
+tokio = { version = "1", features = ["rt", "macros"] }
+[[bin]]
+name = "freeshow-now-playing-parity"
+path = "src/bin/parity.rs"

@@ -1,0 +1,22 @@
+[package]
+name = "freeshow-import-effects"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/rob-345/freeshow-rust"
+
+
+[dependencies]
+freeshow-imports = { path = "../freeshow-imports" }
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+tempfile = "3"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }
+tokio = { version = "1", features = ["rt", "macros", "time"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+zip = { version = "9", default-features = false, features = ["deflate"] }

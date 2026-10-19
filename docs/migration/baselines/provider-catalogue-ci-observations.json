@@ -1,0 +1,710 @@
+{
+  "schema": 1,
+  "observedAtUtc": "2026-10-19T16:57:43.049348+00:00",
+  "repository": "rob-345/freeshow-rust",
+  "run": {
+    "id": 39284557607,
+    "head_sha": "983258f09373516836de6f6a7606e358543e9a04",
+    "status": "completed",
+    "conclusion": "failure",
+    "run_attempt": 1,
+    "created_at": "2026-10-19T16:19:37Z",
+    "updated_at": "2026-10-19T16:42:02Z",
+    "html_url": "https://github.com/rob-345/freeshow-rust/actions/runs/39284557607"
+  },
+  "freshQuery": "fresh=20261019T1655",
+  "jobs": [
+    {
+      "id": 118166719322,
+      "name": "core (windows-latest)",
+      "status": "completed",
+      "conclusion": "failure",
+      "failedSteps": [
+        "Run npm run rust:test"
+      ]
+    },
+    {
+      "id": 118166719486,
+      "name": "desktop-linux",
+      "status": "completed",
+      "conclusion": "success",
+      "failedSteps": []
+    },
+    {
+      "id": 118166719505,
+      "name": "core (ubuntu-24.04)",
+      "status": "completed",
+      "conclusion": "success",
+      "failedSteps": []
+    },
+    {
+      "id": 118166719534,
+      "name": "core (macos-latest)",
+      "status": "completed",
+      "conclusion": "failure",
+      "failedSteps": [
+        "Run npm run rust:test"
+      ]
+    },
+    {
+      "id": 118166719607,
+      "name": "native (windows-latest)",
+      "status": "completed",
+      "conclusion": "failure",
+      "failedSteps": [
+        "Run cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --tests --locked"
+      ]
+    },
+    {
+      "id": 118166719610,
+      "name": "native (macos-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "failedSteps": []
+    }
+  ],
+  "jobConclusions": {
+    "failure": 3,
+    "success": 3
+  },
+  "artifact": {
+    "id": 12201349771,
+    "name": "desktop-linux-evidence",
+    "apiSizeBytes": 473561,
+    "archivePath": "/mnt/data/cache/freeshow-rust-ci/983258f0/desktop-linux-evidence.zip",
+    "archiveBytes": 473561,
+    "archiveSha256": "72cf7229787b533014baf60599f5cd96bd9169452ee1d4db67c18569077ce7d2",
+    "apiDigestMatched": true,
+    "allZipEntriesEqualExtraction": true,
+    "extractedFiles": [
+      {
+        "path": "desktop/ai-spotify.json",
+        "bytes": 17515,
+        "sha256": "8a976f2be4af538e2fb344b6783cb0047717090a538c1383c8ee5eaff2bdc231"
+      },
+      {
+        "path": "desktop/api.json",
+        "bytes": 43880,
+        "sha256": "91f2df55847a7ab6b63f8d231cda8815bc4eb0fd13c040c311ef8060808b4d5e"
+      },
+      {
+        "path": "desktop/assets.json",
+        "bytes": 3025,
+        "sha256": "540bf3fdf52dccbde00242b3e2665fb9ada0a5529a4d35208efd4efa851f4350"
+      },
+      {
+        "path": "desktop/audio-metadata.json",
+        "bytes": 2614,
+        "sha256": "39c387554779448db7728c8d6d16aff985b986a3281c971f9e535ebabfa27c9f"
+      },
+      {
+        "path": "desktop/audio-stream.json",
+        "bytes": 196283,
+        "sha256": "d605593a65e747cb6f6ef43a36efcaceb369228a9766c7f8c99d3199a73591f8"
+      },
+      {
+        "path": "desktop/browse.json",
+        "bytes": 8734,
+        "sha256": "1e565669db310822182a1f9766899e04215d349b060704fd7485b58b18501ba4"
+      },
+      {
+        "path": "desktop/close-drain.json",
+        "bytes": 1141,
+        "sha256": "504196546736e52886d636aa5dd902014f044ad661e8d07257f17baa790c6ee4"
+      },
+      {
+        "path": "desktop/device-providers.json",
+        "bytes": 27775,
+        "sha256": "6e8fc20bedc767f272d4423a3e2ccbd2357f12ecf60a94b8c5caf834a94a5a45"
+      },
+      {
+        "path": "desktop/driver.log",
+        "bytes": 20354,
+        "sha256": "5c4447b92e55840bc9657b353c5d883561f30dd05c61c1c1756aab554f3d800c"
+      },
+      {
+        "path": "desktop/editor.png",
+        "bytes": 97058,
+        "sha256": "965fc8c4d7d725067aa91cb174be02dbeff8c96612435d4a42411f86ce3f1c0e"
+      },
+      {
+        "path": "desktop/encoders.json",
+        "bytes": 25513,
+        "sha256": "ec07523e11f9534cea4c1d3cb2157bf0895e3d4363072b70ff5cb31a8ed43ff0"
+      },
+      {
+        "path": "desktop/ffmpeg-download.json",
+        "bytes": 3181,
+        "sha256": "c5421456ca8eb7786927d84c9b9a2e4bb2e32b38b921a0b4b74f46ff0468fb71"
+      },
+      {
+        "path": "desktop/file-reads.json",
+        "bytes": 3990,
+        "sha256": "ac0ea10052a177aceaa651670da51cac395657ef08a7cfce8aa37b75d6773ead"
+      },
+      {
+        "path": "desktop/imports.json",
+        "bytes": 12144,
+        "sha256": "64777b90c9b1ce447a35c004ee85452de57fde267ba28601ab612e5973a6158d"
+      },
+      {
+        "path": "desktop/library-switch.png",
+        "bytes": 102110,
+        "sha256": "5950e14d7a354a53fa373adb87b462466865d068c5fd7f1acd67b4d033561069"
+      },
+      {
+        "path": "desktop/maximize-reply.json",
+        "bytes": 166,
+        "sha256": "11f9fa0d08332d48fa892565525f5eead973ff55e3f9f528b3721262be96e8f0"
+      },
+      {
+        "path": "desktop/media-copy.json",
+        "bytes": 10200,
+        "sha256": "a79e948c95f9c25153998dcc15288c2bb259436ecf558fdead4e04aa8cd49464"
+      },
+      {
+        "path": "desktop/media-folder-reset.json",
+        "bytes": 589,
+        "sha256": "33df6943b14e8bf9919b2809737fda610a2175f75eb975a360bf2243c117a84e"
+      },
+      {
+        "path": "desktop/media-locate.json",
+        "bytes": 2055,
+        "sha256": "7c8abb61979408709ad6a3fa90efaa3f7c8a717f7b323808e59fd733d5ac191d"
+      },
+      {
+        "path": "desktop/media-probe.json",
+        "bytes": 10051,
+        "sha256": "13b31cee9a141054aa15bb6c6c88721aec0d12e75687b95b21d9218924c45dac"
+      },
+      {
+        "path": "desktop/midi.json",
+        "bytes": 4312,
+        "sha256": "f320542179e1a273adbe9509c7033345738c8ad55126cace0e1205454c9429ce"
+      },
+      {
+        "path": "desktop/network-queries.json",
+        "bytes": 10985,
+        "sha256": "01262f0576b5cbd2b6fb0608611e5c1d67986824c3f0ecde46f15482324e9fd5"
+      },
+      {
+        "path": "desktop/now-playing-folder-alerts.json",
+        "bytes": 13869,
+        "sha256": "067d695fa2156e3636823cad05a98e17354bda7ff8d7f5de191dae8229fb5f1e"
+      },
+      {
+        "path": "desktop/now-playing.json",
+        "bytes": 154997,
+        "sha256": "33b64e5b610879b17a0a24a1a1a7703cdd9f26b2697cdb2cb09a3592c45dbc02"
+      },
+      {
+        "path": "desktop/osc-loopback.json",
+        "bytes": 134,
+        "sha256": "b68d2d6915ddaf536784339f7850584c74f679aa0e8d2bfcfece681cb0cc650d"
+      },
+      {
+        "path": "desktop/output-chorus.png",
+        "bytes": 5526,
+        "sha256": "208d9e361d44c6bac27c24eb5923eb3b971d3646f718ba1f75fc095c44eba2bb"
+      },
+      {
+        "path": "desktop/output-scripture.png",
+        "bytes": 7527,
+        "sha256": "0bcbf03c6f6508281bdb51b0cd275df1dfcdfc74b26bc181afc0567fbf45e48a"
+      },
+      {
+        "path": "desktop/output-targeted-primary.png",
+        "bytes": 9179,
+        "sha256": "2087d766871dc8aa3581bb355de4e66a130c5205b905631e74706e04a468a7ee"
+      },
+      {
+        "path": "desktop/output-targeted-secondary.png",
+        "bytes": 5118,
+        "sha256": "7d4f6bc7544f335ba9c1bfbc3cc74060ffce4aba00776e96ad1e4d9917aa5b15"
+      },
+      {
+        "path": "desktop/output-verse.png",
+        "bytes": 9179,
+        "sha256": "2087d766871dc8aa3581bb355de4e66a130c5205b905631e74706e04a468a7ee"
+      },
+      {
+        "path": "desktop/receipt.json",
+        "bytes": 254528,
+        "sha256": "ea74f18700f56f8c2c14d4c6c30807e458246f48bec2bf7af8fc706bbf861d52"
+      },
+      {
+        "path": "desktop/remote-covers.json",
+        "bytes": 128159,
+        "sha256": "780b2fd6a5dbb16ca54fbe30275aae5509e5a9e50a3a8314ffba66912cc2a655"
+      },
+      {
+        "path": "desktop/remotes.json",
+        "bytes": 71023,
+        "sha256": "6db467e566dd07f9436fad308e08ef28745f3ec973c98b8686ac1d8799c2289c"
+      },
+      {
+        "path": "desktop/responsiveness.json",
+        "bytes": 27011,
+        "sha256": "38c196c8d20733519fb0e2642f56d90b1270b2d60460fddb7a6816f0fff0845c"
+      },
+      {
+        "path": "desktop/save-revision-race.json",
+        "bytes": 3060,
+        "sha256": "1f8fe574310b0efe002c7070d2cb10164cde285f79794b0aef7cfc63e31959d6"
+      },
+      {
+        "path": "desktop/saved-before-dialog.show",
+        "bytes": 2174,
+        "sha256": "69dffbe988ff20fcfe8f51f9bcc999c2f2b426d42df41a28e3c5c5b7c6ed0f33"
+      },
+      {
+        "path": "desktop/saved.show",
+        "bytes": 2174,
+        "sha256": "69dffbe988ff20fcfe8f51f9bcc999c2f2b426d42df41a28e3c5c5b7c6ed0f33"
+      },
+      {
+        "path": "desktop/scriptures.json",
+        "bytes": 14122,
+        "sha256": "0ac22623a900c07b543c4dcfcadc029c6d9a4575935c1576615d9fec18e12667"
+      },
+      {
+        "path": "desktop/stale-save-recovery.json",
+        "bytes": 1033,
+        "sha256": "621e23a35eba325203c7e113fc0ec84868be7a3633ee348e6c59ec8e6bfeb90c"
+      },
+      {
+        "path": "desktop/system-info.json",
+        "bytes": 2399,
+        "sha256": "07dd2837d7cce80880a354d4c3867dd97af51fce3722416cfe50f514d3ec7396"
+      },
+      {
+        "path": "desktop/thumbnails.json",
+        "bytes": 18494,
+        "sha256": "2e289bbae7854570ea81a6733b096fdda0b3ce1529ac87a368c5ae0f6f7ba02f"
+      },
+      {
+        "path": "desktop/timecode.json",
+        "bytes": 441026,
+        "sha256": "1c25c808381434296925714d1bb881e450768212239165c00cb73a51e274d4a6"
+      },
+      {
+        "path": "desktop/uncached-show-read.json",
+        "bytes": 3182,
+        "sha256": "4908707c6ac26f91bd04db73a48f311e6d8c610d971df7b2357b4d07595a1e04"
+      },
+      {
+        "path": "native-drop/driver-1x.log",
+        "bytes": 1254,
+        "sha256": "dd194b9b9fd9626ecc6989b0f550de3f0339f4e7c6f9ede5bb213662e133c017"
+      },
+      {
+        "path": "native-drop/driver-2x.log",
+        "bytes": 1254,
+        "sha256": "89bbddfbcefa40285ce7e7c00cd0b1bc297d6569f8ca5695a466c7fbc86e6139"
+      },
+      {
+        "path": "native-drop/receipt-1x.json",
+        "bytes": 4755,
+        "sha256": "013c6442c24dab78cfc9dc2128ab91522e577c01042372a04bf418916a12f519"
+      },
+      {
+        "path": "native-drop/receipt-2x.json",
+        "bytes": 4755,
+        "sha256": "4baa3761d251fb0fe5108129d726a5d7cc38cabebb374182ff3b3870654f5d52"
+      },
+      {
+        "path": "native-menu/driver.log",
+        "bytes": 1788,
+        "sha256": "14368d523d758afaf5f9055cbd36fdde14709493d5ae3822d88d8a94c2767396"
+      },
+      {
+        "path": "native-menu/quit-observation.json",
+        "bytes": 145204,
+        "sha256": "ad01dc4baecb1d9cf5bb7857d536f49867e29244c1dd4f4efa82d596634d0193"
+      },
+      {
+        "path": "native-menu/receipt.json",
+        "bytes": 807,
+        "sha256": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98"
+      }
+    ]
+  },
+  "logs": [
+    {
+      "label": "linux-core",
+      "path": "/tmp/freeshow-ci-983258f0-linux-core.log",
+      "bytes": 569711,
+      "sha256": "8ce6a8140b88f87784c69e5925106e10926ae5452140ca886a40cab5b074329c",
+      "rustResultLineTotals": {
+        "passed": 565,
+        "failed": 0,
+        "ignored": 5,
+        "filtered": 0
+      },
+      "lastTapSummary": {
+        "tests": 657,
+        "pass": 643,
+        "fail": 0,
+        "skipped": 14
+      }
+    },
+    {
+      "label": "linux-desktop",
+      "path": "/tmp/freeshow-ci-983258f0-linux-desktop.log",
+      "bytes": 422341,
+      "sha256": "9cdf1a09100d8f90f20fd3fe4c0c11d97aaf3bef0097ecea6c8bcd7995ec1fac",
+      "rustResultLineTotals": {
+        "passed": 382,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 0
+      },
+      "lastTapSummary": {
+        "tests": 34,
+        "pass": 34,
+        "fail": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "label": "macos-native",
+      "path": "/tmp/freeshow-ci-983258f0-macos-native.log",
+      "bytes": 105517,
+      "sha256": "8dc081f05761731bc2cb0a6a5f028bfdb7cc419aa280b4f5230c8bf471fe9b00",
+      "rustResultLineTotals": {
+        "passed": 351,
+        "failed": 0,
+        "ignored": 0,
+        "filtered": 0
+      },
+      "lastTapSummary": {}
+    },
+    {
+      "label": "windows-core",
+      "path": "/tmp/freeshow-ci-983258f0-windows-core.log",
+      "bytes": 37152,
+      "sha256": "b036d9e9ed32b4ee3704fa3b66cafe3c0eba58f2b2f1857a4cdcb05667f385a5",
+      "rustResultLineTotals": {
+        "passed": 11,
+        "failed": 2,
+        "ignored": 0,
+        "filtered": 0
+      },
+      "lastTapSummary": {}
+    },
+    {
+      "label": "macos-core",
+      "path": "/tmp/freeshow-ci-983258f0-macos-core.log",
+      "bytes": 67555,
+      "sha256": "9e1fad73ae63bdf64b9c765bb7a5133c46bfa466621c7bce22cb357d5e7fb847",
+      "rustResultLineTotals": {
+        "passed": 12,
+        "failed": 1,
+        "ignored": 0,
+        "filtered": 0
+      },
+      "lastTapSummary": {}
+    },
+    {
+      "label": "windows-native",
+      "path": "/tmp/freeshow-ci-983258f0-windows-native.log",
+      "bytes": 52816,
+      "sha256": "ea5708fa2952dcdec27935a7f4730f614f2a52088068fc2b17f7957a37788d18",
+      "rustResultLineTotals": {
+        "passed": 20,
+        "failed": 3,
+        "ignored": 0,
+        "filtered": 0
+      },
+      "lastTapSummary": {}
+    }
+  ],
+  "sourceOnlyIndependentCheck": {
+    "path": "/mnt/data/cache/freeshow-rust-ci/983258f0/source-check.json",
+    "sha256": "235bf2406dc327ebbfe93aabac26bea0cf1b29d70eb9a7cc0525a15320b72d7d",
+    "scriptPath": "/tmp/freeshow-ci-983258f0-source-check.mjs",
+    "scriptSha256": "d90ed5c45c44e133ffab986f1ddfcef618df04938f466fe9b9732374fb184718",
+    "actualPinnedCataloguePhases": 3
+  },
+  "desktop": {
+    "artifactSmokeSteps": 193,
+    "stdoutSmokePassLines": 113,
+    "runtimeDiagnosticCount": 49,
+    "diagnostics": [
+      {
+        "code": "unsupported_command",
+        "message": "unsupported command: OUTPUT.SET_VALUE capture",
+        "count": 8
+      },
+      {
+        "code": "unsupported_command",
+        "message": "unsupported command: OUTPUT.CAPTURE",
+        "count": 19
+      },
+      {
+        "code": "cover_unsupported",
+        "message": "Only bounded certified PNG and Linux JPEG subsets are available; GIF/WebP/etc are unavailable",
+        "count": 1
+      },
+      {
+        "code": "midi_backend_unavailable",
+        "message": "Native MIDI backend initialization failed (missing/denied ALSA, CoreMIDI or WinMM)",
+        "count": 4
+      },
+      {
+        "code": "io_error",
+        "message": "file operation failed: Permission denied (os error 13)",
+        "count": 1
+      },
+      {
+        "code": "stale_generation",
+        "message": "Remote listener is absent or obsolete",
+        "count": 15
+      },
+      {
+        "code": "stale_library",
+        "message": "request belongs to a previous library or runtime session",
+        "count": 1
+      }
+    ],
+    "catalogue": {
+      "phases": [
+        "normal",
+        "restarted",
+        "switched"
+      ],
+      "rowsPerPhase": 5,
+      "fieldsPerPhase": 15,
+      "nativeAndSourceBeforeAfterMatch": true,
+      "strictTypesCapturedKeyArraysExactListenerFullContextAndVoidSend": true,
+      "declarationOnly": true,
+      "backendHealthVerified": false,
+      "negativeControlsRejected": [
+        "boolean-type",
+        "missing-row",
+        "captured-key-order",
+        "listener",
+        "full-context",
+        "source-after"
+      ]
+    },
+    "aiSpotify": [
+      {
+        "phase": "normal",
+        "fixtureBytes": 32,
+        "sourceBeforeEqualsAfter": true,
+        "actualSourceShellWaited": true,
+        "serviceUnknown": true,
+        "callbackShapeAndContextMatched": true,
+        "runtimeErrors": 0
+      },
+      {
+        "phase": "restarted",
+        "fixtureBytes": 32,
+        "sourceBeforeEqualsAfter": true,
+        "actualSourceShellWaited": true,
+        "serviceUnknown": true,
+        "callbackShapeAndContextMatched": true,
+        "runtimeErrors": 0
+      },
+      {
+        "phase": "switched",
+        "fixtureBytes": 32,
+        "sourceBeforeEqualsAfter": true,
+        "actualSourceShellWaited": true,
+        "serviceUnknown": true,
+        "callbackShapeAndContextMatched": true,
+        "runtimeErrors": 0
+      }
+    ],
+    "identity": {
+      "rawValueArchived": false,
+      "persistedEqualityAndNonFallback": true,
+      "sameAcrossThreePhases": true
+    },
+    "nowPlaying": [
+      {
+        "case": "wav-nan",
+        "typedMetadataAndPicturesMatchSource": true,
+        "rootPicturePlacementExcluded": true,
+        "unsetVoidAndIdle": true,
+        "jpegExactRgba": null,
+        "nativeImageLiveReplay": null
+      },
+      {
+        "case": "flac-empty",
+        "typedMetadataAndPicturesMatchSource": true,
+        "rootPicturePlacementExcluded": true,
+        "unsetVoidAndIdle": true,
+        "jpegExactRgba": null,
+        "nativeImageLiveReplay": null
+      },
+      {
+        "case": "png-cover",
+        "typedMetadataAndPicturesMatchSource": true,
+        "rootPicturePlacementExcluded": true,
+        "unsetVoidAndIdle": true,
+        "jpegExactRgba": null,
+        "nativeImageLiveReplay": null
+      },
+      {
+        "case": "image-unsupported",
+        "typedMetadataAndPicturesMatchSource": true,
+        "rootPicturePlacementExcluded": true,
+        "unsetVoidAndIdle": true,
+        "jpegExactRgba": null,
+        "nativeImageLiveReplay": null
+      },
+      {
+        "case": "jpeg-apic",
+        "typedMetadataAndPicturesMatchSource": true,
+        "rootPicturePlacementExcluded": true,
+        "unsetVoidAndIdle": true,
+        "jpegExactRgba": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+        "nativeImageLiveReplay": false
+      },
+      {
+        "case": "jpeg-flac",
+        "typedMetadataAndPicturesMatchSource": true,
+        "rootPicturePlacementExcluded": true,
+        "unsetVoidAndIdle": true,
+        "jpegExactRgba": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+        "nativeImageLiveReplay": false
+      }
+    ],
+    "remoteCover": {
+      "phases": 14,
+      "responses": 141,
+      "statusCounts": {
+        "200": 60,
+        "404": 63,
+        "206": 9,
+        "304": 9
+      },
+      "methodCounts": {
+        "OPTIONS": 42,
+        "GET": 60,
+        "HEAD": 39
+      },
+      "allThreePorts": true,
+      "optionsNoObservedLookupEffects": true,
+      "folderAlerts": 3,
+      "retainedFileAndPublicationZero": true,
+      "actualNativeIoJoinClaimed": false
+    },
+    "folderAlerts": [
+      {
+        "phase": "blocked-audio-set",
+        "metadata": 1,
+        "folderAlerts": 4,
+        "missingAlerts": 0,
+        "revealCalls": "0",
+        "exactOrderAndMessage": true
+      },
+      {
+        "phase": "blocked-audio-unset",
+        "metadata": 0,
+        "folderAlerts": 2,
+        "missingAlerts": 0,
+        "revealCalls": "0",
+        "exactOrderAndMessage": true
+      },
+      {
+        "phase": "blocked-audio-open",
+        "metadata": 0,
+        "folderAlerts": 1,
+        "missingAlerts": 1,
+        "revealCalls": "0",
+        "exactOrderAndMessage": true
+      }
+    ],
+    "quit": {
+      "actualProcessExitedRecorded": true,
+      "pendingBackupAndTwoQueuedJobsBeforeQuit": true,
+      "queuedConfigWritePersisted": true,
+      "finalSaveCaptured": true
+    },
+    "menuSemanticSteps": 4,
+    "menuStdoutPassLines": 15,
+    "dropScales": [
+      1,
+      2
+    ],
+    "dropStdoutPassLinesPerScale": 13
+  },
+  "failureEvidence": {
+    "windowsCore": {
+      "failedTests": 2,
+      "loggedUnsupportedRootCode": "ai_local_unsupported",
+      "unsupportedRootActualTempPathLogged": false,
+      "otherFailure": "exact native backslash path versus mixed app/bin expected path"
+    },
+    "macosCore": {
+      "failedTests": 1,
+      "loggedUnsupportedRootCode": "ai_local_unsupported",
+      "unsupportedRootActualTempPathLogged": false
+    },
+    "windowsNative": {
+      "failedTests": 3,
+      "observedDifference": "exact native backslash paths versus mixed app/bin expected paths"
+    },
+    "classification": "Observed test fixture failures; no unlogged path or hypothetical errno inferred, and no claim this proves all production paths correct"
+  },
+  "normalBinaryAttestation": {
+    "established": false,
+    "reason": "Historical desktop workflow built normal binary then native tests and cargo build --workspace --all-targets before GUI; no frozen normal binary/hash comparison was recorded",
+    "workflowSha256": "f07d1cfd2d43f2d3dd5334283a0e7b42eff0443d8ba2e9e713ec579cada16a4c",
+    "relevantLines": [
+      {
+        "line": 103,
+        "text": "      - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol --locked"
+      },
+      {
+        "line": 105,
+        "text": "      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --tests --locked"
+      },
+      {
+        "line": 141,
+        "text": "      - run: cargo build --manifest-path src-tauri/Cargo.toml --features custom-protocol"
+      },
+      {
+        "line": 147,
+        "text": "      - run: cargo test --manifest-path src-tauri/Cargo.toml --features custom-protocol --tests --locked"
+      },
+      {
+        "line": 150,
+        "text": "      - run: cargo build --workspace --all-targets"
+      },
+      {
+        "line": 155,
+        "text": "      - run: xvfb-run -a dbus-run-session -- /usr/bin/python3 tests/desktop/smoke.py"
+      }
+    ]
+  },
+  "limits": [
+    "This is independent inspection of historical CI evidence plus source-only catalogue execution; no new GUI/Cargo/native runtime was run.",
+    "Linux core source summary has 14 explicit skipped tests; desktop separately ran 34 required media/audio/OSC/encoder source tests with zero skips.",
+    "JPEG exact RGBA evidence uses original packaged archive plus actual CI filesystem receipt; no live Electron replay here and no compressed-PNG or root picture placement parity claim.",
+    "Provider catalogue is declaration-only, empty stored access is a fixture state, and Spotify corpus here is genuine service-null only, not account playback or provider health.",
+    "Quit receipt records actual process exit and persisted queued effects, not independent joins of every subsystem.",
+    "The three failed jobs remain failures; future fixture corrections and newly frozen local normal binary are separate evidence."
+  ],
+  "validator": {
+    "path": "/tmp/freeshow-ci-983258f0-observe.py",
+    "sha256": "385dfc90151fae4e94e928b6199ced6825d39b1cff981d55ac61af747e24e7db"
+  },
+  "apiMetadataFiles": [
+    {
+      "path": "/mnt/data/cache/freeshow-rust-ci/983258f0/api-run.json",
+      "sha256": "cb948c8ee9036e489e9694a024bf4345268c8196beb42e37b35089406e5fd03b"
+    },
+    {
+      "path": "/mnt/data/cache/freeshow-rust-ci/983258f0/api-jobs.json",
+      "sha256": "3e50392ae1c9ed27a7b489acde4c04e0d399f1af3f38897ce722132bf17fab32"
+    },
+    {
+      "path": "/mnt/data/cache/freeshow-rust-ci/983258f0/api-artifacts.json",
+      "sha256": "9535df5cd112f726464c68fb37692e7e6a3b6822143c055978593d9766051bd6"
+    }
+  ]
+}

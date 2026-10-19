@@ -1,0 +1,21 @@
+[package]
+name = "freeshow-audio-pipeline"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/rob-345/freeshow-rust"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+ryu-js = "0.2.2"
+tokio = { version = "1", features = ["sync", "rt", "time", "macros"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+
+[features]
+test-harness = []
+
+[[bin]]
+name = "freeshow-audio-pipeline"
+path = "src/main.rs"
+required-features = ["test-harness"]

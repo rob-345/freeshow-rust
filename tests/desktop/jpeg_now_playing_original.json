@@ -1,0 +1,910 @@
+{
+  "schema": 1,
+  "provenance": {
+    "revision": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "sourceHash": "0a203138d9c283b3e5fa37f0aa46cd33df596d8ee7183ac6cd73d3c59cf3bc7c",
+    "declarationHash": "1b012b16a208f4a4fabfe8ad6d8569096e6b9d0c1f6240ab2d214cddd42ad80b",
+    "parserVersion": "7.14.0",
+    "parserHash": "da18395fa70aac724f3369aea202133d40d6d74c2b0af4d0c93bb2539cac98fe",
+    "imageReceiptHash": "2f1327d2d2c3eea38dd0f05f4fd05afd50440f437aba53d0f92dd7019402ceda"
+  },
+  "recorderHash": "c7c7e28e6dba88a3ad93de3626ce77faee33b4c2f5dd0bc2c235b1d8a142db3f",
+  "platform": "linux",
+  "arch": "x64",
+  "runtime": {
+    "version": "1.6.7-beta.2",
+    "packaged": true,
+    "versions": {
+      "node": "22.21.1",
+      "acorn": "8.15.0",
+      "ada": "2.9.2",
+      "amaro": "1.1.4",
+      "ares": "1.34.5",
+      "brotli": "1.0.9",
+      "cjs_module_lexer": "2.1.0",
+      "cldr": "44.1",
+      "icu": "74.2",
+      "llhttp": "9.3.0",
+      "modules": "136",
+      "napi": "10",
+      "nbytes": "0.1.1",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.64.0",
+      "openssl": "0.0.0",
+      "simdjson": "3.13.0",
+      "simdutf": "7.0.0",
+      "sqlite": "3.50.4",
+      "tz": "2025b",
+      "undici": "6.22.0",
+      "unicode": "15.1",
+      "uv": "1.51.0",
+      "uvwasi": "0.0.23",
+      "v8": "13.8.258.32-electron.0",
+      "zlib": "1.3.1",
+      "zstd": "1.5.8",
+      "electron": "37.10.3",
+      "chrome": "138.0.7204.251"
+    }
+  },
+  "executableSha256": "eb3263aad96ce7c35df3db4516bb04c67bdc6c2f30ae8ebc0cb5649783c82a15",
+  "cases": [
+    {
+      "id": "jpeg-apic",
+      "metadataRaw": [
+        "object",
+        [
+          [
+            "track",
+            [
+              "object",
+              [
+                [
+                  "no",
+                  [
+                    "null"
+                  ]
+                ],
+                [
+                  "of",
+                  [
+                    "null"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "disk",
+            [
+              "object",
+              [
+                [
+                  "no",
+                  [
+                    "null"
+                  ]
+                ],
+                [
+                  "of",
+                  [
+                    "null"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "movementIndex",
+            [
+              "object",
+              []
+            ]
+          ],
+          [
+            "title",
+            [
+              "string",
+              "JPEG title 敬拜"
+            ]
+          ],
+          [
+            "artists",
+            [
+              "array",
+              [
+                [
+                  "string",
+                  "Artist α"
+                ],
+                [
+                  "string",
+                  "Artist β"
+                ]
+              ]
+            ]
+          ],
+          [
+            "artist",
+            [
+              "string",
+              "Artist α"
+            ]
+          ],
+          [
+            "album",
+            [
+              "string",
+              "JPEG album"
+            ]
+          ],
+          [
+            "date",
+            [
+              "string",
+              "invalid"
+            ]
+          ],
+          [
+            "picture",
+            [
+              "array",
+              [
+                [
+                  "object",
+                  [
+                    [
+                      "format",
+                      [
+                        "string",
+                        "image/jpeg"
+                      ]
+                    ],
+                    [
+                      "type",
+                      [
+                        "undefined"
+                      ]
+                    ],
+                    [
+                      "description",
+                      [
+                        "string",
+                        "Unknown kind 音楽 🎵"
+                      ]
+                    ],
+                    [
+                      "data",
+                      [
+                        "bytes",
+                        "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAALABEDASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAACAAEB//EACkQAAECAwcCBwAAAAAAAAAAAAIAAQQFIwMGBxIXIUERUxUxM0NRobP/xAAXAQADAQAAAAAAAAAAAAAAAAAFBgcI/8QAHxEAAQQCAgMAAAAAAAAAAAAAAQACAwQFFQYxMnGh/9oADAMBAAIRAxEAPwAh4c4XelR+OEh4O4Qye500incoYhhTGztQZ2IbQmyh0dt2fM478ea1Ycy6GpUR4XcJ5LobTiZUR9n9gTbXxkclmNh6LgPqN4XklmphbVmPyZFI4ewwkIY6XP2vpSSHhsN2RUrBr2LMW8mX/9k="
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "object",
+                  [
+                    [
+                      "format",
+                      [
+                        "string",
+                        "image/jpeg"
+                      ]
+                    ],
+                    [
+                      "type",
+                      [
+                        "string",
+                        "Cover (back)"
+                      ]
+                    ],
+                    [
+                      "description",
+                      [
+                        "string",
+                        "Back café"
+                      ]
+                    ],
+                    [
+                      "data",
+                      [
+                        "bytes",
+                        "/9j/4AAQSkZJRgABAgAAAQABAAD/wAALCAALABEBAREA/9sAQwADAgIDAgIDAwMDBAMDBAUIBQUEBAUKBwcGCAwKDAwLCgsLDQ4SEA0OEQ4LCxAWEBETFBUVFQwPFxgWFBgSFBUU/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APmT9mTRP+PT5fSv0L8TeJIfhh+y38R/EUmqXGhTweH7qCy1C0MizQ3s8ZgtSjRjcjGeWIBxjaSGJABI/ID+xP8AZr6l/ZkhT/RPlHavsD9q2FP+GEviF8o/5hf/AKdLSvzL8lP7or//2Q=="
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "durationRaw": [
+        "number",
+        "-0"
+      ],
+      "set": {
+        "sourceVoid": true,
+        "events": [
+          {
+            "channel": "AUDIO_METADATA",
+            "dataKeys": [
+              "filePath",
+              "metadata"
+            ],
+            "metadataRaw": [
+              "object",
+              [
+                [
+                  "track",
+                  [
+                    "object",
+                    [
+                      [
+                        "no",
+                        [
+                          "null"
+                        ]
+                      ],
+                      [
+                        "of",
+                        [
+                          "null"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "disk",
+                  [
+                    "object",
+                    [
+                      [
+                        "no",
+                        [
+                          "null"
+                        ]
+                      ],
+                      [
+                        "of",
+                        [
+                          "null"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "movementIndex",
+                  [
+                    "object",
+                    []
+                  ]
+                ],
+                [
+                  "title",
+                  [
+                    "string",
+                    "JPEG title 敬拜"
+                  ]
+                ],
+                [
+                  "artists",
+                  [
+                    "array",
+                    [
+                      [
+                        "string",
+                        "Artist α"
+                      ],
+                      [
+                        "string",
+                        "Artist β"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "artist",
+                  [
+                    "string",
+                    "Artist α"
+                  ]
+                ],
+                [
+                  "album",
+                  [
+                    "string",
+                    "JPEG album"
+                  ]
+                ],
+                [
+                  "date",
+                  [
+                    "string",
+                    "invalid"
+                  ]
+                ],
+                [
+                  "picture",
+                  [
+                    "array",
+                    [
+                      [
+                        "object",
+                        [
+                          [
+                            "format",
+                            [
+                              "string",
+                              "image/jpeg"
+                            ]
+                          ],
+                          [
+                            "type",
+                            [
+                              "undefined"
+                            ]
+                          ],
+                          [
+                            "description",
+                            [
+                              "string",
+                              "Unknown kind 音楽 🎵"
+                            ]
+                          ],
+                          [
+                            "data",
+                            [
+                              "bytes",
+                              "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAALABEDASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAACAAEB//EACkQAAECAwcCBwAAAAAAAAAAAAIAAQQFIwMGBxIXIUERUxUxM0NRobP/xAAXAQADAQAAAAAAAAAAAAAAAAAFBgcI/8QAHxEAAQQCAgMAAAAAAAAAAAAAAQACAwQFFQYxMnGh/9oADAMBAAIRAxEAPwAh4c4XelR+OEh4O4Qye500incoYhhTGztQZ2IbQmyh0dt2fM478ea1Ycy6GpUR4XcJ5LobTiZUR9n9gTbXxkclmNh6LgPqN4XklmphbVmPyZFI4ewwkIY6XP2vpSSHhsN2RUrBr2LMW8mX/9k="
+                            ]
+                          ]
+                        ]
+                      ],
+                      [
+                        "object",
+                        [
+                          [
+                            "format",
+                            [
+                              "string",
+                              "image/jpeg"
+                            ]
+                          ],
+                          [
+                            "type",
+                            [
+                              "string",
+                              "Cover (back)"
+                            ]
+                          ],
+                          [
+                            "description",
+                            [
+                              "string",
+                              "Back café"
+                            ]
+                          ],
+                          [
+                            "data",
+                            [
+                              "bytes",
+                              "/9j/4AAQSkZJRgABAgAAAQABAAD/wAALCAALABEBAREA/9sAQwADAgIDAgIDAwMDBAMDBAUIBQUEBAUKBwcGCAwKDAwLCgsLDQ4SEA0OEQ4LCxAWEBETFBUVFQwPFxgWFBgSFBUU/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APmT9mTRP+PT5fSv0L8TeJIfhh+y38R/EUmqXGhTweH7qCy1C0MizQ3s8ZgtSjRjcjGeWIBxjaSGJABI/ID+xP8AZr6l/ZkhT/RPlHavsD9q2FP+GEviF8o/5hf/AKdLSvzL8lP7or//2Q=="
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "filePathProjection": "input"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "metadata"
+          },
+          {
+            "kind": "title",
+            "value": "Artist α, Artist β - JPEG title 敬拜"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "write",
+            "target": "cover"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "write",
+            "target": "text"
+          }
+        ],
+        "text": "Artist α, Artist β|JPEG title 敬拜|JPEG album|Unknown Year|00:00|0|${AUDIO_FOLDER}/NowPlayingCover.png|data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAALABEDASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAACAAEB//EACkQAAECAwcCBwAAAAAAAAAAAAIAAQQFIwMGBxIXIUERUxUxM0NRobP/xAAXAQADAQAAAAAAAAAAAAAAAAAFBgcI/8QAHxEAAQQCAgMAAAAAAAAAAAAAAQACAwQFFQYxMnGh/9oADAMBAAIRAxEAPwAh4c4XelR+OEh4O4Qye500incoYhhTGztQZ2IbQmyh0dt2fM478ea1Ycy6GpUR4XcJ5LobTiZUR9n9gTbXxkclmNh6LgPqN4XklmphbVmPyZFI4ewwkIY6XP2vpSSHhsN2RUrBr2LMW8mX/9k=",
+        "cover": {
+          "width": 17,
+          "height": 11,
+          "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+          "png": {
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAABEAAAALCAIAAAAWQvFQAAABhUlEQVQokQXBy45NURAG4FX1/1W1bvtyzj66iYFOi9f0TEYGvIUgITFkqFtCHOeyt+8TptSYR8aIsqDv4HvFgbZgaIkl+8FjOW/juP8Ty4/nL15/+MjwmnNxRtbibKEWqkZPK1ofLek0juXv2XLzaX7z7j3v72mtM4qZU7OjGcxUndE4qHq2OG8SbeCwO43DZZ60D0Sb4BnuEAcrJYxKhFi5rsx9sKuE1aPHQ+uX26drH6ht1nA1B4xoSA5C6ZvVQE2I7nW7pHVa8PLV9y/frtOOqU0pRzIVDUGlOBRqkayIVyY/XaGl2OHZ19N5u7u71h3RdxpUU4UpmiZTpXrZlCtryaP9Wz3mX6W9/fT54cntWkdKHbQ4KACBpmIQg0dEo/rpLDf7Q7r6MerveXnsQ28zMcx0ugtViQYx06BlsUz11nNK2dBsPhwff27LTUIlSrNMMjnMWExCJWhhXigEwiSbDmh96/M2jJBC1orMwOZKs0rJJuFWzMLUCDK5obB21o7aKfk/Is1IQ7mBccEAAAAASUVORK5CYII=",
+            "length": 446,
+            "sha256": "aac71deb90053f3aa1349c43f3d24fca39aa0673dd5f0955726cc23d54601031"
+          }
+        }
+      },
+      "unset": {
+        "sourceVoid": true,
+        "events": [],
+        "effects": [
+          {
+            "kind": "title",
+            "value": ""
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "write",
+            "target": "text"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "exists",
+            "target": "cover"
+          },
+          {
+            "kind": "delete",
+            "target": "cover"
+          }
+        ],
+        "text": "",
+        "coverExists": false
+      },
+      "input": {
+        "name": "JPEG APIC 音楽.mp3",
+        "length": 4387,
+        "sha256": "138bc57aeeb29c543d44abaa0038d62fedcc373edeb7ed6f9fa9df727ceb32f8"
+      }
+    },
+    {
+      "id": "jpeg-flac",
+      "metadataRaw": [
+        "object",
+        [
+          [
+            "track",
+            [
+              "object",
+              [
+                [
+                  "no",
+                  [
+                    "null"
+                  ]
+                ],
+                [
+                  "of",
+                  [
+                    "null"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "disk",
+            [
+              "object",
+              [
+                [
+                  "no",
+                  [
+                    "null"
+                  ]
+                ],
+                [
+                  "of",
+                  [
+                    "null"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "movementIndex",
+            [
+              "object",
+              []
+            ]
+          ],
+          [
+            "title",
+            [
+              "string",
+              "real container"
+            ]
+          ],
+          [
+            "artists",
+            [
+              "array",
+              [
+                [
+                  "string",
+                  " Artist α "
+                ],
+                [
+                  "string",
+                  " Artist β "
+                ]
+              ]
+            ]
+          ],
+          [
+            "artist",
+            [
+              "string",
+              " Artist α "
+            ]
+          ],
+          [
+            "album",
+            [
+              "string",
+              "FLAC JPEG album"
+            ]
+          ],
+          [
+            "date",
+            [
+              "string",
+              "invalid"
+            ]
+          ],
+          [
+            "picture",
+            [
+              "array",
+              [
+                [
+                  "object",
+                  [
+                    [
+                      "type",
+                      [
+                        "string",
+                        "Cover (front)"
+                      ]
+                    ],
+                    [
+                      "format",
+                      [
+                        "string",
+                        "image/jpeg"
+                      ]
+                    ],
+                    [
+                      "description",
+                      [
+                        "string",
+                        "Café 音楽 🎵"
+                      ]
+                    ],
+                    [
+                      "width",
+                      [
+                        "number",
+                        64
+                      ]
+                    ],
+                    [
+                      "height",
+                      [
+                        "number",
+                        48
+                      ]
+                    ],
+                    [
+                      "colour_depth",
+                      [
+                        "number",
+                        24
+                      ]
+                    ],
+                    [
+                      "indexed_color",
+                      [
+                        "number",
+                        0
+                      ]
+                    ],
+                    [
+                      "data",
+                      [
+                        "bytes",
+                        "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"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "durationRaw": [
+        "number",
+        "Infinity"
+      ],
+      "set": {
+        "sourceVoid": true,
+        "events": [
+          {
+            "channel": "AUDIO_METADATA",
+            "dataKeys": [
+              "filePath",
+              "metadata"
+            ],
+            "metadataRaw": [
+              "object",
+              [
+                [
+                  "track",
+                  [
+                    "object",
+                    [
+                      [
+                        "no",
+                        [
+                          "null"
+                        ]
+                      ],
+                      [
+                        "of",
+                        [
+                          "null"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "disk",
+                  [
+                    "object",
+                    [
+                      [
+                        "no",
+                        [
+                          "null"
+                        ]
+                      ],
+                      [
+                        "of",
+                        [
+                          "null"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "movementIndex",
+                  [
+                    "object",
+                    []
+                  ]
+                ],
+                [
+                  "title",
+                  [
+                    "string",
+                    "real container"
+                  ]
+                ],
+                [
+                  "artists",
+                  [
+                    "array",
+                    [
+                      [
+                        "string",
+                        " Artist α "
+                      ],
+                      [
+                        "string",
+                        " Artist β "
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "artist",
+                  [
+                    "string",
+                    " Artist α "
+                  ]
+                ],
+                [
+                  "album",
+                  [
+                    "string",
+                    "FLAC JPEG album"
+                  ]
+                ],
+                [
+                  "date",
+                  [
+                    "string",
+                    "invalid"
+                  ]
+                ],
+                [
+                  "picture",
+                  [
+                    "array",
+                    [
+                      [
+                        "object",
+                        [
+                          [
+                            "type",
+                            [
+                              "string",
+                              "Cover (front)"
+                            ]
+                          ],
+                          [
+                            "format",
+                            [
+                              "string",
+                              "image/jpeg"
+                            ]
+                          ],
+                          [
+                            "description",
+                            [
+                              "string",
+                              "Café 音楽 🎵"
+                            ]
+                          ],
+                          [
+                            "width",
+                            [
+                              "number",
+                              64
+                            ]
+                          ],
+                          [
+                            "height",
+                            [
+                              "number",
+                              48
+                            ]
+                          ],
+                          [
+                            "colour_depth",
+                            [
+                              "number",
+                              24
+                            ]
+                          ],
+                          [
+                            "indexed_color",
+                            [
+                              "number",
+                              0
+                            ]
+                          ],
+                          [
+                            "data",
+                            [
+                              "bytes",
+                              "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"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "filePathProjection": "input"
+          }
+        ],
+        "effects": [
+          {
+            "kind": "metadata"
+          },
+          {
+            "kind": "title",
+            "value": "Artist α, Artist β - real container"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "write",
+            "target": "cover"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "write",
+            "target": "text"
+          }
+        ],
+        "text": "Artist α, Artist β|real container|FLAC JPEG album|Unknown Year|Infinity:NaN|Infinity|${AUDIO_FOLDER}/NowPlayingCover.png|data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAwAEADASIAAhEBAxEB/8QAGgAAAwEBAQEAAAAAAAAAAAAABgcIBQIEA//EADMQAAECBAQEBQMEAgMAAAAAAAECAwQFBhEABxIhEzFBUQgjM2GBFSIyFCRCoRfxUnGR/8QAGQEBAAMBAQAAAAAAAAAAAAAABQIEBgED/8QALBEAAQMDBAEDBAEFAAAAAAAAAQIDEQQFIQAGEjFBIjJhBxNRcYEVM0JSYv/aAAwDAQACEQMRAD8AkPLnK70vJ7dMUPB0EmT0dNIolUMpMKtLbqAQpLihpRYjcHUU79OeDbLnK70vJ7dMNCvZDCSGg1Q3A/UvRcQ1D6Wz6ZBLlzt3btbnvfD9Q3Q21SHrg6ltEjJMfuB2THgAn41fs+8FUVkqqlCvUltRHffE8evmPx+xqbMucrvS8nt0w16tkcNJ8u5imGcBi3g2y3oVpCiVp1Jv1ujVcC+wVfBRRlFRMzUgKQUMk7NJ5W259+XXBpmbRsPKKalbcWlqGhA45GPRb7gQhlDSPuKidgLOEkki2n/zF3b6lPVlcmi28zxE/wBxQ9RjMpT0OsFUkj/EHWOpdxCg21VvuqyUFIAntcIHWZlQ/nzGkHRFBxMyU0XwSm4IQBZI+PnnzwzK4y84FIwEOlXDW/Fo1NBVi4hKVE3HUBWg+x0+2OpVnTlhSHHa+tfW42H0ftZOwqI4urT+DuzJsFXPmbWI/IWwC5++Mg/VJLL6SpNuHTDJL5j5+u4W04AnTwm1DSrWg78RQsBtdX2xtWy7/f7mmrqW1ntSluGMATJK/HXX8da601fnNqVBpqcpCwlIKvQDyUkGJgn0knAMwfnTby5yu9Lye3TBDncumqAg6ag6iqKUyFmKW6+lmYxbTCnSjSlJSFEE21q5bb78sR3D+IXM+r7sM1DEy2GVEF9CZYhMJwvyAQlTYDhQArYLWq9hqBIvhP1xRBnFfoStDi3YWFbYWpwbEkqc+32s4O298OpboqOs+1Suh51IJlIJbBiMqPEqgkYSIPhY70u9sesZ2qr+p1ob+6pCIRJJzyIk8YwnIggiRq5msz6EpkcKaVRLIPhPmFdhIN4xUQhwAhSXG2gpaQClQN0gA2B3thf54eMGnZU9IZRTVOxk+YDz7sSqKeRBpUElKWXWxpcWUqBd/IIO24JuEpPLnK70vJ7dMbVX5fNxtdNsoYUFQkK0ysqSLFRuvb2ssfN8eds+nTN4u4rr08upcAJPI8U9RhKY4iT0DE+NKVO27FZdqqQ+4pwuqQjKuIOeRjjCukmZV1OtuUeIPMyqoNqFh3oGnW1NrbdVKIUpcdCwB+bilqQU72U2UkXJvcCwHm/JJ7VdXydc/msbNzCy8Ft6YvqeW2C4vUNayTp+0G17Dc9Th0UZS0NCJQlhsRD1ttIugHbmevx26YFp1SbtSZgzV9SFhpDwZ4ak2AU2kINgPdJsedrY1KNybZ2nWKZtbCXXkg+yOIJxCnM57wORHRjStyrqGz7bap6NpLX3XEjAgkCVEnyoSB2fIjrQ/RtNNQ6m24RhL6+qyDpBv/f+ueMmr6JjpxmLEpjFKfTDNtNMpKQAhJbSogAD/kon5xUuXOV3peT26YyZDl2zMalmUXDo4kO/Fuutr0kakqWSDY7jY9cYhd7vO6qxxytchoDDacIGRGPJwcqk5MQMaI3Vupuks9HRoVlxye8kJSZEeRKgfwCB5I0JZc5Xel5Pbpj4/wCP3JnXU3edYSlSYpTICEkDS35afmyRf3vitqSoeDkEtXMI8iHhIdBcccKSqyQLnYAk7A7AdMTxDZt0BRnlxdSyyFdaiP0rrTK/1cS24L3SploLUixSoEqFgbA2JAxJivtliW6qpJW7AhtCStZmfA6GO1EA/mdZDcu4K24s262USC4VKUshMkjiAkYAJzyVB+D343aLpCEl+hOjjPDbhti9j7npy/79sB0zpqNqWvJy6+2lptMUplLLQITpbIQm/c2QCfe9gOWGRD565VZfwUc9ET36u7L20uuMSeHVE602CiUOgBpVkm5sv+JH5bYnKB8WcQp1LVH0k020lxBTGTxRUVo0/ckstEaTqOx4ithyuftDpzvLe6nQGCzTkAcRKAQc+pSoKx1j2nsJxq9fKO91VNbaKnp1QtSlkrPEDiEhJhUEg8zBE9GJzFa5c5Xel5P9YB5fByKTTNMdUc2lUidmTzjyEx0U3DpcVqBXo1qFwCsd7XF+eE5UedmZk0oycxMVVkXI4ZKHHmRJwIIsLUFJbSl1oB3SCsAalnkCSSL4n2jaaah1NtwjCX19VkHSDf8Av/XPGytf0+otvUrtfuCsS0DACUgqUrvCeickTAIHkgZ0nf8AaNXVP26hrKwJICllKPV7oCZJ4xHFXgg5A61fcb4rcvKGpyZxsnh4+oomFlzsUw43DcCFLyUqKGnFOlC0glKbqShVgra5uMSuvxp1hPGhC0dIIGmG1tpSYx/95EoWFElSCpKW7FOkWU2r+XUi3lqaiohVAxy3n1Ied4bTf3aCq606kpA7pCrgcwDfrjvLnK/0vJ7dMQYuFI4w4mzU5bQTHNZ5OKAH4HoT34Cj/wBeNP3rbu26C7UFM62XlNt8vWrkJUqMpEJPsEynqMa81f1fXta0PUURUlRzWcMx0Olh6CVElqFOopQkhhFmwEkhVgkXIvzN8AuXOV3peT26YpmuMvOBSMBDpVw1vxaNTQVYuISlRNx1AVoPsdPtjZoig4aWoaL4AVa4QBdR+PjnywnaqCltlvcrKpSW0lRJUogDoDJPnH78auX/AHO0m/MW+jSEIabSOKQAJJJOAP8AXiI+Nf/Z",
+        "cover": {
+          "width": 64,
+          "height": 48,
+          "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+          "png": {
+            "base64": "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",
+            "length": 6943,
+            "sha256": "ad7e7705af7c49bf752166cba1f5c5039b33d157171eb63b764bc3166fae2f3d"
+          }
+        }
+      },
+      "unset": {
+        "sourceVoid": true,
+        "events": [],
+        "effects": [
+          {
+            "kind": "title",
+            "value": ""
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "write",
+            "target": "text"
+          },
+          {
+            "kind": "audio-folder"
+          },
+          {
+            "kind": "exists",
+            "target": "cover"
+          },
+          {
+            "kind": "delete",
+            "target": "cover"
+          }
+        ],
+        "text": "",
+        "coverExists": false
+      },
+      "input": {
+        "name": "JPEG PICTURE Ελληνικά.flac",
+        "length": 2992,
+        "sha256": "838f737604556ce2bec38d91f9511b0f53d218e0d887e86f4157e84ed97a4dc3"
+      }
+    }
+  ]
+}

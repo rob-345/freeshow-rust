@@ -1,0 +1,28 @@
+{
+    "oracle": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "normalization": "CRLF to LF",
+    "sources": {
+        "src/electron/data/import.ts": "2e5aae7e43ae9cb09db8324c73b132577ebece86fdd7cc04039e2e529189cc6e",
+        "src/electron/data/zip.ts": "525a6f49ac1eb02d9ceb2508d7f3f315b088c6f50e903b83bf297e3f19395629",
+        "src/electron/utils/files.ts": "98e563c55026d2dbbdd217ee9b94962ed7fc8b82d893795355bd7dc0f54fc5de",
+        "src/electron/IPC/main.ts": "11afb38cdc1ca36134b48b7457da2cd27078dedd8b6d7a54cf24e0ecc0608609",
+        "src/electron/IPC/responsesMain.ts": "70372b48b698f74f239b82f92e48dde69880a7c4d78af1a9f0e1723313fb57a3",
+        "src/types/IPC/Main.ts": "e0d9cb8bb07eec6d9dcab44576f8300ffc75e32f401b714a4148c610a8ff6ad2",
+        "src/types/IPC/ToMain.ts": "cbb658ff42353597249074aca147d933e9169cc05ea5e31a61f7a37929c8db31",
+        "src/frontend/components/main/popups/Import.svelte": "e53fe6e3ccf37496dc9778bfddce9182bad10b73a9b567f68618ba59e13d04af",
+        "src/frontend/IPC/responsesMain.ts": "c1505f907313e32e35f58881edbc6565818102fe7c746e7e97f197e2d8c35b07",
+        "src/frontend/classes/Show.ts": "ab89f5990fe7d28898443b7233f0b7d4f9f3dbd6ba7292b9be9fbdd362048218",
+        "src/frontend/converters/openlp.ts": "be9077692090aaf6f71da1577d90546caa73fca4167a3efe9627918038c5e765",
+        "src/frontend/converters/opensong.ts": "a5fe090aba516379c73995f701e32bd883f2841a989e09ab3d974b23831bd274",
+        "src/frontend/converters/songbeamer.ts": "e6feacf75f9e2728c2556ed372835ed74cb10ee65c8ea0d79f10738c454eba13",
+        "src/frontend/converters/quelea.ts": "0d71da47af37ab3a8826ddd7e5f294ce258cef60c24ac968b61ec9579b7de3ae",
+        "src/frontend/converters/easyslides.ts": "56ad695d70a8c8aff11a6fd83cd7d7da6dd4f99d4585890cf00b80baa3fe8702",
+        "src/frontend/converters/verseview.ts": "be10745ab28702271f360456dd3db8a2f93eddb825749053d3c86f8ef87cc27c",
+        "src/frontend/converters/videopsalm.ts": "2e11677639b153d6092428ee250adeaab96b21b9393a48c15f0d5c64a2ab8563",
+        "src/frontend/converters/mediashout.ts": "18b86cf1511002221ed9d553c011ad8217d5749c8b786d78a947579a0f561c7e",
+        "src/frontend/converters/xml.ts": "5ff8b2fb54b52e57c05b969149576fe347170e1994e2b888e04bdc998ac8e5d2",
+        "src/frontend/components/helpers/show.ts": "1f374a8060a7471dc2ca917f739d9b6178c919074ae6745cfc93b53d83d6a6ac",
+        "src/frontend/components/edit/scripts/chords.ts": "3c58f08b1fd22808fb4b562f5e21b6c88daac8b5dffb5302c61bb077f054768a",
+        "src/frontend/converters/importHelpers.ts": "962391d29fbb6d33f891fe251f7c2b7f2772a25ee2ece8f4cdf050c881cbd493"
+    }
+}

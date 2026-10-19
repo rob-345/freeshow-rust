@@ -1,0 +1,78 @@
+{
+    "schema": 1,
+    "kind": "local-functional-verification",
+    "dateUtc": "2026-10-19",
+    "sourceRevision": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "nativeCodeHead": "d85dd546",
+    "platform": "linux",
+    "arch": "x64",
+    "officialElectronExecutableSha256": "eb3263aad96ce7c35df3db4516bb04c67bdc6c2f30ae8ebc0cb5649783c82a15",
+    "originalRecordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+    "migratedDesktopExecutableSha256": "039fe37cfed8398aeeff3ed48c98bdf7b485d6d0f53e5d31fe908cf369afae13",
+    "checks": {
+        "workspaceRustPassed": 493,
+        "drivenIgnoredEntryFixtures": 5,
+        "sourcePassed": 563,
+        "existingSourceSkips": 4,
+        "frontendPassed": 20,
+        "nativeExecutionsPassed": 352,
+        "editorSteps": 187,
+        "nativeMenuSteps": 4,
+        "nativeDropScales": [1, 2],
+        "processExited": true,
+        "fullEditorDiagnostics": 55
+    },
+    "jpegCases": [
+        {
+            "id": "jpeg-apic",
+            "width": 17,
+            "height": 11,
+            "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+            "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+            "nativePngBytes": 518,
+            "compressedPngBytesEqualObserved": false,
+            "fullSourceSetCompared": true,
+            "actualFilesystemRead": true,
+            "unsetVerified": true
+        },
+        {
+            "id": "jpeg-flac",
+            "width": 64,
+            "height": 48,
+            "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+            "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+            "nativePngBytes": 8138,
+            "compressedPngBytesEqualObserved": false,
+            "fullSourceSetCompared": true,
+            "actualFilesystemRead": true,
+            "unsetVerified": true
+        }
+    ],
+    "remoteCoverHttp": {
+        "coverPhases": 14,
+        "httpRequests": 141,
+        "httpStatusCounts": {
+            "200": 60,
+            "404": 63,
+            "206": 9,
+            "304": 9
+        },
+        "exactOriginalFolderAlerts": 3,
+        "coverRuntimeErrors": 0,
+        "coverBrowserErrors": 0,
+        "sourceAcks": 0,
+        "finalRetentionVerifiedZero": true,
+        "unchangedBlockerAndOldLibraryCoverHashesVerified": true
+    },
+    "evidenceHashes": {
+        "desktop/receipt.json": "0c5ccc5f45fccdb35912e65d76918040afa4cf716ac3464672b73de81381edc8",
+        "desktop/now-playing.json": "2f7a908c113a2fe6ebc1a085414bb00f4af116c82da4b38290809ce0d0a2306a",
+        "desktop/now-playing-folder-alerts.json": "469195f12af87fa407fa033116baecbea444cad35322b439550a07994ca5b4e0",
+        "desktop/remote-covers.json": "a827fb942817deb06027d51b9e9c6375b6f608ccb7a13d2b88e536ec21a3ea78",
+        "desktop/close-drain.json": "e642b77436427158e832e67cbc80e153bb2085b0fd07a760df535e525d75886d",
+        "native-menu/receipt.json": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98",
+        "native-drop/receipt-1x.json": "fc22a8443928ffcd7d79adacf63c30229d64335e426f134883370db1f380aa25",
+        "native-drop/receipt-2x.json": "ead93a7619b57d59abdb23610e8f905e99dfd272a95d1ab32544497198a0a4d9"
+    },
+    "scope": "Actual rebuilt Linux WebKit functional receipts and original packaged Electron recording. Exact JPEG RGBA for the two recorded real files; compressed PNG differs. Root picture insertion placement, unrestricted image/metadata formats, foreign OS runtime and full feature parity remain incomplete. Ordinary idle counters are not terminal joins; separate native tests verify actual owner joins. No performance claim."
+}

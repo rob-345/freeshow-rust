@@ -3,6 +3,7 @@ import { Main } from "../../types/IPC/Main"
 import type { Projects } from "../../types/Projects"
 import type { Shows } from "../../types/Show"
 import { stopAllChannelRecordings } from "../audio/audioChannelRecorder"
+import { isBackupOnly } from "./savePolicy"
 import { customActionActivation } from "../components/actions/actions"
 import { stopMediaRecorder } from "../components/drawer/live/recorder"
 import { stopAllInteractions } from "../components/drawer/pages/interactions"
@@ -119,13 +120,22 @@ import { isSyncing, socketDisconnect, syncWithCloud } from "./cloudSync"
 import { newToast, setStatus, startAutosave } from "./common"
 import { syncDrive } from "./drive"
 import { autoDisableRemoteController, stopRemoteController } from "./remoteController"
+import { acknowledgeSave, beginSave, deferClosing, isSaveMutationSuppressed, recordEdit, takeDeferredClosing, withoutSaveEdits } from "../rust/saveRevision"
 
-export function save(closeWhenFinished = false, customTriggers: SaveActions = {}) {
+export function save(closeWhenFinished = false, customTriggers: SaveActions = {}, listenerId?: string) {
     updateSyncedOutputs()
     startAutosave() // reset auto save timer
 
     // don't save again while saving
-    if (get(statusIndicator) === "saving") return
+    if (get(statusIndicator) === "saving") {
+        if (closeWhenFinished && typeof window !== "undefined" && (window as any).__TAURI__) {
+            deferClosing()
+            alertMessage.set("actions.closing")
+            activePopup.set("alert")
+            return true
+        }
+        return false
+    }
 
     console.info("SAVING...")
     if ((!customTriggers.autosave || !get(saved)) && !customTriggers.backup) {
@@ -242,13 +252,26 @@ export function save(closeWhenFinished = false, customTriggers: SaveActions = {}
     }
 
     const saveData = clone(allSavedData)
+    if (typeof window !== "undefined" && window.api.getRuntimeContext) {
+        saveData.runtimeContext = window.api.getRuntimeContext()
+    }
 
-    deletedShows.set([])
-    renamedShows.set([])
+    if (!isBackupOnly(customTriggers, closeWhenFinished)) {
+        const clearQueues = () => {
+            deletedShows.set([])
+            renamedShows.set([])
+        }
+        if (typeof window !== "undefined" && (window as any).__TAURI__) {
+            saveData.runtimeSaveToken = beginSave()
+            // Moving operations into this snapshot is not a new user edit.
+            withoutSaveEdits(clearQueues)
+        } else clearQueues()
+    }
 
     if (customTriggers.backup) newToast("settings.backup_started")
     // trigger toast before saving
-    setTimeout(() => sendMain(Main.SAVE, saveData))
+    setTimeout(() => sendMain(Main.SAVE, saveData, listenerId))
+    return true
 }
 
 export function getSyncedSettings(): { [key in SaveListSyncedSettings]: any } {
@@ -288,7 +311,33 @@ export function getSyncedSettings(): { [key in SaveListSyncedSettings]: any } {
     }
 }
 
-export async function saveComplete({ closeWhenFinished, customTriggers }: { closeWhenFinished: boolean; customTriggers?: SaveActions }) {
+export async function saveComplete({ closeWhenFinished, customTriggers, runtimeSaveToken }: { closeWhenFinished: boolean; customTriggers?: SaveActions; runtimeSaveToken?: string }) {
+    if (isBackupOnly(customTriggers, closeWhenFinished)) return
+    const rust = typeof window !== "undefined" && (window as any).__TAURI__
+    // The unsaved popup also calls this directly when the legacy saved flag is
+    // true. Minor settings can still have changed, so capture a final snapshot.
+    if (rust && closeWhenFinished && runtimeSaveToken === undefined) {
+        save(true, customTriggers)
+        return
+    }
+    if (rust && runtimeSaveToken !== undefined) {
+        const completion = acknowledgeSave(runtimeSaveToken)
+        if (completion === "superseded") return
+        const closing = takeDeferredClosing()
+        if (closing) {
+            setStatus("", 0)
+            save(true)
+            return
+        }
+        if (completion === "edited") {
+            saved.set(false)
+            setStatus("", 0)
+            // Closing must save the newer snapshot before continuing. Ordinary
+            // acknowledgments leave these edits visibly unsaved for the next save.
+            if (closeWhenFinished) save(true, customTriggers)
+            return
+        }
+    }
     const alreadySaved = get(saved)
     if (!closeWhenFinished) {
         if ((!customTriggers?.autosave || !alreadySaved) && !customTriggers?.backup) setStatus("saved", 1)
@@ -314,7 +363,7 @@ export async function saveComplete({ closeWhenFinished, customTriggers }: { clos
 
         if (closeWhenFinished) {
             await socketDisconnect()
-            closeApp()
+            closeApp(false, runtimeSaveToken)
         }
         return
     }
@@ -324,7 +373,7 @@ export async function saveComplete({ closeWhenFinished, customTriggers }: { clos
     // DEPRECATED drive sync
     const mainFolderId = get(driveData)?.mainFolderId
     if (!mainFolderId || get(driveData)?.disabled === true || !Object.keys(get(driveKeys)).length) {
-        if (closeWhenFinished) closeApp()
+        if (closeWhenFinished) closeApp(false, runtimeSaveToken)
 
         return
     }
@@ -335,12 +384,13 @@ export async function saveComplete({ closeWhenFinished, customTriggers }: { clos
 export function initializeClosing(skipPopup = false) {
     // don't save automatically if an error has happened in case it breaks something
     if (!skipPopup && (get(special).showClosePopup || get(errorHasOccurred))) activePopup.set("unsaved")
+    else if (typeof window !== "undefined" && (window as any).__TAURI__) save(true)
     // "saved" does not count for all minor changes, but should be fine
     else if (get(saved)) saveComplete({ closeWhenFinished: true })
     else save(true)
 }
 
-export async function closeApp() {
+export async function closeApp(discardUnsaved = false, runtimeSaveToken?: string) {
     try {
         const timeout = <T>(promise: Promise<T>, ms: number): Promise<T | void> => {
             return Promise.race([promise, new Promise<void>((resolve) => setTimeout(resolve, ms))])
@@ -356,7 +406,16 @@ export async function closeApp() {
         console.error("Could not stop interactions before closing!", e)
     }
 
-    sendMain(Main.CLOSE)
+    const rust = typeof window !== "undefined" && (window as any).__TAURI__
+    // Cloud sync and stopping interactions can await while the editor changes.
+    // Revalidate after that work, immediately before requesting native exit.
+    if (rust && !discardUnsaved && runtimeSaveToken !== undefined && acknowledgeSave(runtimeSaveToken) !== "current") {
+        saved.set(false)
+        if (get(statusIndicator) !== "saving") setStatus("", 0)
+        save(true)
+        return
+    }
+    sendMain(Main.CLOSE, rust && discardUnsaved === true ? { discardUnsaved: true } : undefined)
 }
 
 // GET SAVED STATE
@@ -364,26 +423,35 @@ export async function closeApp() {
 export function unsavedUpdater() {
     const cachedValues: { [key: string]: string } = {}
     const s = { ...saveList, folders, projects, showsCache, stageShows, deletedShows, renamedShows }
+    const useRevisions = typeof window !== "undefined" && (window as any).__TAURI__
 
     let initialized = false
     Object.keys(s).forEach((id) => {
         if (!s[id]) return
 
         s[id].subscribe((a: any) => {
-            if (customSavedListener[id] && a) {
-                a = customSavedListener[id](clone(a))
+            if ((customSavedListener[id] && a) || useRevisions) {
+                if (customSavedListener[id] && a) a = customSavedListener[id](clone(a))
                 let stringObj
                 try {
                     stringObj = JSON.stringify(a)
                 } catch {
-                    return
+                    // Preserve the legacy custom comparison. Other Rust stores
+                    // conservatively count a non-serializable update as an edit.
+                    if (customSavedListener[id]) return
                 }
-                if (cachedValues[id] === stringObj) return
-
-                cachedValues[id] = stringObj
+                if (stringObj !== undefined) {
+                    if (cachedValues[id] === stringObj) return
+                    cachedValues[id] = stringObj
+                }
             }
 
             if (!initialized) return
+
+            if (useRevisions) {
+                if (isSaveMutationSuppressed()) return
+                recordEdit()
+            }
 
             saved.set(false)
             if (id === "deletedShows" || id === "renamedShows") {

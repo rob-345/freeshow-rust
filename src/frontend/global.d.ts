@@ -25,6 +25,8 @@ interface Window {
         receive: (channel: string, func: any, id?: string) => void
         removeListener: (channel: string, id: string) => void
         getListeners: () => [string, number][]
+        getRuntimeContext?: () => import("./rust/bridge").RuntimeContext | undefined
+        resolveFilePath?: (path: string) => string | undefined
         showFilePath: (file: File) => string
     }
     queryLocalFonts: () => Promise<FontData[]>

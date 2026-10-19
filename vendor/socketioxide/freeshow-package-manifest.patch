@@ -1,0 +1,53 @@
+--- socketioxide-0.18.7/Cargo.toml
++++ socketioxide-0.18.7/Cargo.toml
+@@ -67,43 +67,6 @@
+ [lib]
+ name = "socketioxide"
+ path = "src/lib.rs"
+-
+-[[test]]
+-name = "acknowledgement"
+-path = "tests/acknowledgement.rs"
+-
+-[[test]]
+-name = "concurrent_emit"
+-path = "tests/concurrent_emit.rs"
+-
+-[[test]]
+-name = "connect"
+-path = "tests/connect.rs"
+-
+-[[test]]
+-name = "disconnect_reason"
+-path = "tests/disconnect_reason.rs"
+-
+-[[test]]
+-name = "extractors"
+-path = "tests/extractors.rs"
+-
+-[[test]]
+-name = "fixture"
+-path = "tests/fixture.rs"
+-
+-[[test]]
+-name = "utils"
+-path = "tests/utils.rs"
+-
+-[[test]]
+-name = "volatile"
+-path = "tests/volatile.rs"
+-
+-[[bench]]
+-name = "extensions"
+-path = "benches/extensions.rs"
+-harness = false
+ 
+ [dependencies.bytes]
+ version = "1.11"
+@@ -230,3 +193,6 @@
+ level = "warn"
+ priority = 0
+ check-cfg = ["cfg(fuzzing)"]
++
++# Standalone vendored package; upstream workspace targets are not included.
++[workspace]

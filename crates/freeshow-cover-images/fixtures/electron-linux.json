@@ -1,0 +1,589 @@
+{
+    "runtime": {
+        "version": "1.6.7-beta.2",
+        "versions": {
+            "node": "22.21.1",
+            "acorn": "8.15.0",
+            "ada": "2.9.2",
+            "amaro": "1.1.4",
+            "ares": "1.34.5",
+            "brotli": "1.0.9",
+            "cjs_module_lexer": "2.1.0",
+            "cldr": "44.1",
+            "icu": "74.2",
+            "llhttp": "9.3.0",
+            "modules": "136",
+            "napi": "10",
+            "nbytes": "0.1.1",
+            "ncrypto": "0.0.1",
+            "nghttp2": "1.64.0",
+            "openssl": "0.0.0",
+            "simdjson": "3.13.0",
+            "simdutf": "7.0.0",
+            "sqlite": "3.50.4",
+            "tz": "2025b",
+            "undici": "6.22.0",
+            "unicode": "15.1",
+            "uv": "1.51.0",
+            "uvwasi": "0.0.23",
+            "v8": "13.8.258.32-electron.0",
+            "zlib": "1.3.1",
+            "zstd": "1.5.8",
+            "electron": "37.10.3",
+            "chrome": "138.0.7204.251"
+        }
+    },
+    "fixtures": [
+        {
+            "name": "empty",
+            "sourceBytes": {
+                "length": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "source": {
+                "size": {
+                    "width": 0,
+                    "height": 0
+                },
+                "bitmap": {
+                    "length": 0,
+                    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "png": {
+                    "length": 0,
+                    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                }
+            },
+            "rust": {
+                "size": {
+                    "width": 0,
+                    "height": 0
+                },
+                "bitmap": {
+                    "length": 0,
+                    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "png": {
+                    "length": 0,
+                    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "diagnostics": ["native_png_encoding_differs"]
+            },
+            "pngBytesEqual": true
+        },
+        {
+            "name": "2x1",
+            "sourceBytes": {
+                "length": 74,
+                "sha256": "7dce34363a3c3acfa0708f59437898c43a47369116f677d295c4c9aa0e15b40b"
+            },
+            "source": {
+                "size": {
+                    "width": 2,
+                    "height": 1
+                },
+                "bitmap": {
+                    "length": 8,
+                    "sha256": "ce91ba268e126ac6e380a3218acd6ea084229097351b203a3f02cd4f04d01cac"
+                },
+                "png": {
+                    "length": 87,
+                    "sha256": "08c50bad8356dc0c7675952ff967b95244e129594a0e828323c2a4eb94fbfdc1"
+                }
+            },
+            "rust": {
+                "size": {
+                    "width": 2,
+                    "height": 1
+                },
+                "bitmap": {
+                    "length": 8,
+                    "sha256": "ce91ba268e126ac6e380a3218acd6ea084229097351b203a3f02cd4f04d01cac"
+                },
+                "png": {
+                    "length": 72,
+                    "sha256": "c18e9234de6461f85307db2f90782b9340a90d07278ca14e24a0717699f782ed"
+                },
+                "diagnostics": ["native_png_encoding_differs"]
+            },
+            "pngBytesEqual": false
+        },
+        {
+            "name": "9x5",
+            "sourceBytes": {
+                "length": 205,
+                "sha256": "ed96333cc74e4a1952794111286b4a559c9aa2ace6196215b039ac22f21c24d2"
+            },
+            "source": {
+                "size": {
+                    "width": 9,
+                    "height": 5
+                },
+                "bitmap": {
+                    "length": 180,
+                    "sha256": "d4b9772d16ac3e7fb81f56c116433182c3af4b7b9d82571ae3350f6cb2efa117"
+                },
+                "png": {
+                    "length": 98,
+                    "sha256": "4982259fb515f905fd23e6059a9d127ea44d1595ec062a6717f7ddb3107a23d0"
+                }
+            },
+            "rust": {
+                "size": {
+                    "width": 9,
+                    "height": 5
+                },
+                "bitmap": {
+                    "length": 180,
+                    "sha256": "d4b9772d16ac3e7fb81f56c116433182c3af4b7b9d82571ae3350f6cb2efa117"
+                },
+                "png": {
+                    "length": 97,
+                    "sha256": "86e83d1d56626cf5b8dab29dbf7189043564c632bd3d69b797df9afb802eb272"
+                },
+                "diagnostics": ["native_png_encoding_differs"]
+            },
+            "pngBytesEqual": false
+        },
+        {
+            "name": "640x480",
+            "sourceBytes": {
+                "length": 430133,
+                "sha256": "3a256eaba76bf80caf17b84304f17f3bb2d64773094e0ce26e55a23b5a8f1bc7"
+            },
+            "source": {
+                "size": {
+                    "width": 640,
+                    "height": 480
+                },
+                "bitmap": {
+                    "length": 1228800,
+                    "sha256": "011ee699418c00580021e5087d0f14559292d362ac45e4688aae632d238ed8a4"
+                },
+                "png": {
+                    "length": 17006,
+                    "sha256": "e4c279392f882df0b2a4062d7f5737a3885dd896acaf2aa4a5b10c84618a7b3c"
+                }
+            },
+            "rust": {
+                "size": {
+                    "width": 640,
+                    "height": 480
+                },
+                "bitmap": {
+                    "length": 1228800,
+                    "sha256": "011ee699418c00580021e5087d0f14559292d362ac45e4688aae632d238ed8a4"
+                },
+                "png": {
+                    "length": 20291,
+                    "sha256": "cd5181e52052d542e47ec600b790bad8497bdfcf2c5ad4c82956a121a3883f1c"
+                },
+                "diagnostics": ["native_png_encoding_differs"]
+            },
+            "pngBytesEqual": false
+        },
+        {
+            "name": "641x1",
+            "sourceBytes": {
+                "length": 1015,
+                "sha256": "c5955797f91ed43b6a80f99cf1e250ccd1ae9d3a48fa265d5086e486c2442bbf"
+            },
+            "source": {
+                "size": {
+                    "width": 641,
+                    "height": 1
+                },
+                "bitmap": {
+                    "length": 2564,
+                    "sha256": "d6aab4553f510161806cf0ef30d27823d2dd713c185cbbee0a779011d88958fb"
+                },
+                "png": {
+                    "length": 98,
+                    "sha256": "8514a789bd8dbfa6a8520b1b3f6226897a7ed29f0a42c766f2d2eef2d3c71d1c"
+                }
+            },
+            "rust": {
+                "size": {
+                    "width": 641,
+                    "height": 1
+                },
+                "bitmap": {
+                    "length": 2564,
+                    "sha256": "d6aab4553f510161806cf0ef30d27823d2dd713c185cbbee0a779011d88958fb"
+                },
+                "png": {
+                    "length": 90,
+                    "sha256": "6b30085fc435b16dc4134add393c682081fde7a4ece084719c557a0a3ee7fb51"
+                },
+                "diagnostics": ["native_png_encoding_differs"]
+            },
+            "resize": {
+                "target": {
+                    "width": 640,
+                    "height": 1
+                },
+                "source": {
+                    "size": {
+                        "width": 640,
+                        "height": 1
+                    },
+                    "bytes": {
+                        "length": 2058,
+                        "sha256": "635f27577364bee2fa5a77c19ce57652e0a24a15366000ca31551aa768515425"
+                    },
+                    "bitmap": {
+                        "length": 2560,
+                        "sha256": "cce74309a1a046b4a465b3b8e4476953c4da36621fb31c30b97accc28c8dd321"
+                    }
+                },
+                "rust": {
+                    "size": {
+                        "width": 640,
+                        "height": 1
+                    },
+                    "bytes": {
+                        "length": 2905,
+                        "sha256": "2106f7765ee54cbef440a96f8cb49e7f4c187f689de39abdf3447ff422eeba0a"
+                    },
+                    "bitmap": {
+                        "length": 2560,
+                        "sha256": "6d5a4f4aa090ad6da4f7e57bd117df406be70289a204ed0168d760c6a63c79d1"
+                    },
+                    "diagnostics": ["native_lanczos3_jpeg90_differs"]
+                },
+                "bytesEqual": false,
+                "pixelsEqual": false
+            },
+            "pngBytesEqual": false
+        },
+        {
+            "name": "640x481",
+            "sourceBytes": {
+                "length": 431026,
+                "sha256": "3923d3ec1dc6f2b85366a098d07e3b23eaff47244f96e88b1d58c421bab6d723"
+            },
+            "source": {
+                "size": {
+                    "width": 640,
+                    "height": 481
+                },
+                "bitmap": {
+                    "length": 1231360,
+                    "sha256": "d49751dbad012b40fd790b8270a26473cecbdcc6a9197ac4c63369c2492eb0d9"
+                },
+                "png": {
+                    "length": 17043,
+                    "sha256": "3c1d4f777c015837cd627d47274f349208ca0d9d0493976fe5d77c71640a7c51"
+                }
+            },
+            "rust": {
+                "size": {
+                    "width": 640,
+                    "height": 481
+                },
+                "bitmap": {
+                    "length": 1231360,
+                    "sha256": "d49751dbad012b40fd790b8270a26473cecbdcc6a9197ac4c63369c2492eb0d9"
+                },
+                "png": {
+                    "length": 20330,
+                    "sha256": "2c606987282acd4bce3ffdbeae64aa4d036d5891708d2dc5af8470665bac0c35"
+                },
+                "diagnostics": ["native_png_encoding_differs"]
+            },
+            "resize": {
+                "target": {
+                    "width": 639,
+                    "height": 480
+                },
+                "source": {
+                    "size": {
+                        "width": 639,
+                        "height": 480
+                    },
+                    "bytes": {
+                        "length": 184178,
+                        "sha256": "2e0e93c6f36c3d1006074355d8c2af12c198f6ec0a21a5c36678d7ec011fa563"
+                    },
+                    "bitmap": {
+                        "length": 1226880,
+                        "sha256": "166ab7ff19e401ef93608da57f77ed7b8d39bd948a46784445f5235607c9f5bd"
+                    }
+                },
+                "rust": {
+                    "size": {
+                        "width": 639,
+                        "height": 480
+                    },
+                    "bytes": {
+                        "length": 333105,
+                        "sha256": "9d0296eacd1e51e1867da7167c007b0b62f6adccf897196767278feae73dcbee"
+                    },
+                    "bitmap": {
+                        "length": 1226880,
+                        "sha256": "7dbc8f564e99e50056a2febd102a93e6550f774ba254243877a93aea07905ad5"
+                    },
+                    "diagnostics": ["native_lanczos3_jpeg90_differs"]
+                },
+                "bytesEqual": false,
+                "pixelsEqual": false
+            },
+            "pngBytesEqual": false
+        },
+        {
+            "name": "2000x1",
+            "sourceBytes": {
+                "length": 1059,
+                "sha256": "0e29889c407d388934b33d1b00286102eff665611a6bbb8993afae0a659ebf31"
+            },
+            "source": {
+                "size": {
+                    "width": 2000,
+                    "height": 1
+                },
+                "bitmap": {
+                    "length": 8000,
+                    "sha256": "2c4e3738b674aef5f0122b849f11f8024fbb1ba8b30f6cb746f3e00380318763"
+                },
+                "png": {
+                    "length": 105,
+                    "sha256": "d62c99047f0f2799a37ce12566c3b9c9378a78ca9a603cbe8b2ba110da4a6afa"
+                }
+            },
+            "rust": {
+                "size": {
+                    "width": 2000,
+                    "height": 1
+                },
+                "bitmap": {
+                    "length": 8000,
+                    "sha256": "2c4e3738b674aef5f0122b849f11f8024fbb1ba8b30f6cb746f3e00380318763"
+                },
+                "png": {
+                    "length": 96,
+                    "sha256": "fc807785da870bd3cdc9007494234e83dc79e0843c5d9b115e48eff32c52ae1c"
+                },
+                "diagnostics": ["native_png_encoding_differs"]
+            },
+            "resize": {
+                "target": {
+                    "width": 640,
+                    "height": 0
+                },
+                "source": {
+                    "size": {
+                        "width": 0,
+                        "height": 0
+                    },
+                    "bytes": {
+                        "length": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    "bitmap": {
+                        "length": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    }
+                },
+                "rust": {
+                    "size": {
+                        "width": 0,
+                        "height": 0
+                    },
+                    "bytes": {
+                        "length": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    "bitmap": {
+                        "length": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    "diagnostics": ["native_lanczos3_jpeg90_differs"]
+                },
+                "bytesEqual": true,
+                "pixelsEqual": true
+            },
+            "pngBytesEqual": false
+        },
+        {
+            "name": "2001x1",
+            "sourceBytes": {
+                "length": 1059,
+                "sha256": "9a7c568e2ed88557c2d8ad4178e2a52b110a4bf82031432d92cbfdf3e5422b19"
+            },
+            "source": {
+                "size": {
+                    "width": 2001,
+                    "height": 1
+                },
+                "bitmap": {
+                    "length": 8004,
+                    "sha256": "ab04834aed83d978d2f8b803608468d2c6e22e576b509b363b65d97283714f72"
+                },
+                "png": {
+                    "length": 105,
+                    "sha256": "5b2596a4a8c553580433c3360ef87d97c4ccefe155e12aada0405d4b66d10318"
+                }
+            },
+            "rust": {
+                "size": {
+                    "width": 2001,
+                    "height": 1
+                },
+                "bitmap": {
+                    "length": 8004,
+                    "sha256": "ab04834aed83d978d2f8b803608468d2c6e22e576b509b363b65d97283714f72"
+                },
+                "png": {
+                    "length": 96,
+                    "sha256": "a86bd40b91003c759f3c6291963b84514d219ebacc4da4af7ceb520f443d00aa"
+                },
+                "diagnostics": ["native_png_encoding_differs"]
+            },
+            "resize": {
+                "target": {
+                    "width": 640,
+                    "height": 0
+                },
+                "source": {
+                    "size": {
+                        "width": 0,
+                        "height": 0
+                    },
+                    "bytes": {
+                        "length": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    "bitmap": {
+                        "length": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    }
+                },
+                "rust": {
+                    "size": {
+                        "width": 0,
+                        "height": 0
+                    },
+                    "bytes": {
+                        "length": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    "bitmap": {
+                        "length": 0,
+                        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    "diagnostics": ["native_lanczos3_jpeg90_differs"]
+                },
+                "bytesEqual": true,
+                "pixelsEqual": true
+            },
+            "pngBytesEqual": false
+        },
+        {
+            "name": "800x600-solid",
+            "sourceBytes": {
+                "length": 3235,
+                "sha256": "e4e0fe0b5a56c78e7273dc21b45965694573e7f850fb1dc93187a0b403c9f9dc"
+            },
+            "source": {
+                "size": {
+                    "width": 800,
+                    "height": 600
+                },
+                "bitmap": {
+                    "length": 1920000,
+                    "sha256": "df788335eb0913ae80b2bf3a99375b08dea6f6944234173aa6cd88965e69bdd1"
+                },
+                "png": {
+                    "length": 2799,
+                    "sha256": "15db9405afcbd60a560271c99116dcece8fc77e352fe37ba05c25e2f1276eca9"
+                }
+            },
+            "rust": {
+                "size": {
+                    "width": 800,
+                    "height": 600
+                },
+                "bitmap": {
+                    "length": 1920000,
+                    "sha256": "df788335eb0913ae80b2bf3a99375b08dea6f6944234173aa6cd88965e69bdd1"
+                },
+                "png": {
+                    "length": 3235,
+                    "sha256": "2640b12b6089d1b65d1818a98734b4bed2c1e63c2f23c6caf4473279ee9bf222"
+                },
+                "diagnostics": ["native_png_encoding_differs"]
+            },
+            "resize": {
+                "target": {
+                    "width": 640,
+                    "height": 480
+                },
+                "source": {
+                    "size": {
+                        "width": 640,
+                        "height": 480
+                    },
+                    "bytes": {
+                        "length": 2562,
+                        "sha256": "c5726df40c9f477df33195e48e6650adce94cbac8e607532e36de2ae908aeb8d"
+                    },
+                    "bitmap": {
+                        "length": 1228800,
+                        "sha256": "5c555e3c9f9babed71f33b7b3cdee4a9750a27704819a3044f2685aa212778d2"
+                    }
+                },
+                "rust": {
+                    "size": {
+                        "width": 640,
+                        "height": 480
+                    },
+                    "bytes": {
+                        "length": 9030,
+                        "sha256": "be19006ba5951b0fc6313c12ff7a95ad67ae102fdfb59a09c9822d85fe8d1d0b"
+                    },
+                    "bitmap": {
+                        "length": 1228800,
+                        "sha256": "5c555e3c9f9babed71f33b7b3cdee4a9750a27704819a3044f2685aa212778d2"
+                    },
+                    "diagnostics": ["native_lanczos3_jpeg90_differs"]
+                },
+                "bytesEqual": false,
+                "pixelsEqual": true
+            },
+            "pngBytesEqual": false
+        }
+    ],
+    "unsupported": [
+        {
+            "name": "partial-alpha",
+            "sourceSize": {
+                "width": 2,
+                "height": 1
+            },
+            "inputBytes": 74,
+            "inputSha256": "c344e826bec90493bae743b461a358e04db5843a19f695aa2b026c31e76efb0c",
+            "nativeError": "cover_unsupported"
+        },
+        {
+            "name": "unknown-short",
+            "sourceSize": {
+                "width": 0,
+                "height": 0
+            },
+            "inputBytes": 3,
+            "inputSha256": "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81",
+            "nativeError": "cover_unsupported"
+        },
+        {
+            "name": "source-jpeg",
+            "sourceSize": {
+                "width": 2,
+                "height": 1
+            },
+            "inputBytes": 769,
+            "inputSha256": "af693a8cd8e9d7cc23303b6aebe137445d3c409d5972b8a61a7021fd8bffc123",
+            "nativeError": "cover_unsupported"
+        }
+    ],
+    "fixtureInputSha256": "bbbf9de816f7eb7ba26d829b520a008145e8147e894535017164c1758d8d9982"
+}

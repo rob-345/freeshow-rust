@@ -1,0 +1,1604 @@
+{
+  "sourceHead": "834e9da33cbaf02b1ad83408a5bde4e8e415e271",
+  "trackedDiffAtRecord": "",
+  "inputs": [
+    {
+      "file": "Cargo.lock",
+      "sha256": "9c04cac75dc6f4bf9c1fd2e93cca389c8e962b333e6a5ce9ebc162744553e40a"
+    },
+    {
+      "file": "package-lock.json",
+      "sha256": "89d6ed1a5d62c22f6cf6ee6325d22b9eab611a222f1931d5bfa9c0819d10018c"
+    },
+    {
+      "file": "src-tauri/tauri.conf.json",
+      "sha256": "b29d3422c56ce9fb297bfd73de0980af79b7884034ee5bda2b53424f6f989b37"
+    },
+    {
+      "file": "src-tauri/Cargo.toml",
+      "sha256": "03c5328958ed9c737ed4dc9314ad55ebeae226142c58f721c5ab1a87d6209ac5"
+    },
+    {
+      "file": "src-tauri/src/main.rs",
+      "sha256": "ee38bfc1ec113c383fe3df5e17b65218da956f3225b403af54b80f0b4993a6f7"
+    },
+    {
+      "file": "crates/freeshow-ltc/src/backend.rs",
+      "sha256": "d7d1fed9bd479b1b7849b34ea83fa9dddbddb0871c62f639e6b58ab049a577ec"
+    },
+    {
+      "file": "vite.rust.config.mjs",
+      "sha256": "9c2f8e035ca9c665842808ffe83159c881b37ac677fe1186710b48033f926c47"
+    },
+    {
+      "file": "scripts/migration/build-frontend.mjs",
+      "sha256": "72e2cd1352791fdea5dc90f27416b559364b0880a4603daf1d0591904c39abdf"
+    },
+    {
+      "file": "config/packaging/linux-deb.json",
+      "sha256": "769b0ec10087125868c7a09d8bd7f2e6f146f16f9a3fd53e6aa4e748c23e384b"
+    },
+    {
+      "file": "config/packaging/prepare-linux-deb.mjs",
+      "sha256": "5a1f768abe0e5c925e87ec4f054a49c64ee65fcdc734158d5c52beb7d234fe2e"
+    },
+    {
+      "file": "config/packaging/build-linux-deb.sh",
+      "sha256": "4bb44ca94e374da85b25f725e88c0d20cac89279eb76e2243faeb9e7d407acc4"
+    },
+    {
+      "file": "config/packaging/LOCAL-REVIEW.md",
+      "sha256": "5dcc46347e3907e9aa2f20988697e0bbd71b5e34672857c0c43c4f5a16896c7b"
+    },
+    {
+      "file": "tests/desktop/package_linux/verify.py",
+      "sha256": "a26f5c632ee074f61251d986ca2911d3fd2c748b216cf4fb5740798cbbb9aa5d"
+    },
+    {
+      "file": "tests/desktop/package_linux/run.py",
+      "sha256": "0ac29bcf0f3ccbacd6c36838e9086a81e9ecf47b060478ecbe8acf18f41bb1d8"
+    },
+    {
+      "file": "tests/desktop/package_linux/probe.js",
+      "sha256": "8f3f22dc81170f875ed8f4cde1c28c48c15610c150f3ee57ed82ecba8fe25b02"
+    },
+    {
+      "file": "tests/desktop/package_linux/record.mjs",
+      "sha256": "c0cee0fd2dc3bb13dd59867a95636f2bad9fc8d8380fe97341e95a5d41ae2827"
+    },
+    {
+      "file": "tests/desktop/timecode_probe.js",
+      "sha256": "1821db2ecf1aabec008cb3cbc909aa5273d7615011669ec58694ec5fe6f41df2"
+    }
+  ],
+  "toolchain": {
+    "node": {
+      "node": "22.21.1",
+      "acorn": "8.15.0",
+      "ada": "2.9.2",
+      "amaro": "1.1.4",
+      "ares": "1.34.5",
+      "brotli": "1.1.0",
+      "cjs_module_lexer": "2.1.0",
+      "cldr": "47.0",
+      "icu": "77.1",
+      "llhttp": "9.3.0",
+      "modules": "127",
+      "napi": "10",
+      "nbytes": "0.1.1",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.64.0",
+      "openssl": "3.5.4",
+      "simdjson": "3.13.0",
+      "simdutf": "6.4.2",
+      "sqlite": "3.50.4",
+      "tz": "2025b",
+      "undici": "6.22.0",
+      "unicode": "16.0",
+      "uv": "1.51.0",
+      "uvwasi": "0.0.23",
+      "v8": "12.4.254.21-node.33",
+      "zlib": "1.3.1-470d3a2",
+      "zstd": "1.5.7"
+    },
+    "cargo": "cargo 1.99.1 (5f94df478 2026-08-27)",
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.1\nLLVM version: 23.1.1",
+    "tauriCli": "2.12.3",
+    "dpkg": "Debian 'dpkg-deb' package archive backend version 1.22.6 (amd64).\nThis is free software; see the GNU General Public License version 2 or\nlater for copying conditions. There is NO warranty."
+  },
+  "host": "PRETTY_NAME=\"Ubuntu 24.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.1 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "buildLogSha256": "cf366f21ec0df85bdcbd54febc3efd4e9cb4bad338134c41b668627c6533209b",
+  "buildLog": "        Warn --no-sign flag detected: Signing will be skipped.\n        Info Looking up installed tauri packages to check mismatched versions...\n     Running beforeBuildCommand `npm run rust:frontend:build`\n\n> freeshow@1.6.7-beta.2 rust:frontend:build\n> node scripts/migration/build-frontend.mjs\n\nvite v4.5.14 building for production...\ntransforming...\n✓ 1173 modules transformed.\nrendering chunks...\n[plugin:vite:reporter] \n(!) /home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/src/frontend/components/stage/StageLayout.svelte is dynamically imported by /home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/src/frontend/MainLayout.svelte but also statically imported by /home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/src/frontend/MainOutput.svelte, /home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/src/frontend/components/output/preview/PreviewOutput.svelte, /home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/src/frontend/components/stage/Stagebox.svelte, dynamic import will not move module into another chunk.\n\ncomputing gzip size...\n../dist-rust/index.html                                      1.05 kB │ gzip:     0.53 kB\n../dist-rust/assets/CMGSans-Bold-a1eeff18.woff2            118.47 kB\n../dist-rust/assets/CMGSans-BoldItalic-5f56deb5.woff2      119.49 kB\n../dist-rust/assets/CMGSans-Medium-f0e428cd.woff2          122.02 kB\n../dist-rust/assets/CMGSans-MediumItalic-deef28ab.woff2    123.07 kB\n../dist-rust/assets/DrawSettings-26991f67.css                0.10 kB │ gzip:     0.11 kB\n../dist-rust/assets/Slide-aab7074f.css                       0.12 kB │ gzip:     0.12 kB\n../dist-rust/assets/SettingsTools-f96ec5c8.css               0.17 kB │ gzip:     0.15 kB\n../dist-rust/assets/MediaTools-98ade305.css                  0.18 kB │ gzip:     0.14 kB\n../dist-rust/assets/FocusMode-0c4d75fd.css                   0.36 kB │ gzip:     0.23 kB\n../dist-rust/assets/EffectTools-fd8f3537.css                 0.49 kB │ gzip:     0.24 kB\n../dist-rust/assets/StageTools-cdb2b429.css                  0.87 kB │ gzip:     0.32 kB\n../dist-rust/assets/EditTools-27a4e1a8.css                   0.96 kB │ gzip:     0.34 kB\n../dist-rust/assets/SceneTools-3840bf72.css                  1.00 kB │ gzip:     0.36 kB\n../dist-rust/assets/EditValues-34674343.css                  1.41 kB │ gzip:     0.53 kB\n../dist-rust/assets/index-b4d374ab.css                       2.40 kB │ gzip:     1.04 kB\n../dist-rust/assets/Editor-e3352ab4.css                      5.31 kB │ gzip:     1.39 kB\n../dist-rust/assets/Settings-2497c12a.css                   10.65 kB │ gzip:     2.47 kB\n../dist-rust/assets/Drawer-bbef28a2.css                     35.80 kB │ gzip:     6.41 kB\n../dist-rust/assets/main-50942d39.css                      210.00 kB │ gzip:    35.23 kB\n../dist-rust/assets/ScenePreview-a69c550d.js                 1.16 kB │ gzip:     0.69 kB\n../dist-rust/assets/AudioTools-f581af66.js                   2.46 kB │ gzip:     1.23 kB\n../dist-rust/assets/MaterialFontDropdown-71ce3611.js         2.71 kB │ gzip:     1.29 kB\n../dist-rust/assets/Slide-8e60c202.js                        3.06 kB │ gzip:     1.64 kB\n../dist-rust/assets/media-9a9b4af9.js                        3.96 kB │ gzip:     0.99 kB\n../dist-rust/assets/MediaTools-6c5f2865.js                   4.18 kB │ gzip:     1.92 kB\n../dist-rust/assets/DrawSettings-14f28d60.js                 6.39 kB │ gzip:     2.28 kB\n../dist-rust/assets/SettingsTools-2ad01190.js                7.83 kB │ gzip:     2.02 kB\n../dist-rust/assets/SceneTools-13ad6958.js                   8.03 kB │ gzip:     3.44 kB\n../dist-rust/assets/FocusMode-3f0c86b9.js                   11.54 kB │ gzip:     4.00 kB\n../dist-rust/assets/stores-5eb96d33.js                      12.46 kB │ gzip:     5.20 kB\n../dist-rust/assets/EffectTools-608e5556.js                 21.21 kB │ gzip:     4.84 kB\n../dist-rust/assets/StageTools-305c8356.js                  24.31 kB │ gzip:     8.32 kB\n../dist-rust/assets/EditValues-7340a4c1.js                  29.40 kB │ gzip:     9.10 kB\n../dist-rust/assets/EditTools-d494329e.js                   60.61 kB │ gzip:    18.35 kB\n../dist-rust/assets/Editor-072fd1c5.js                      73.19 kB │ gzip:    20.72 kB\n../dist-rust/assets/index-eddc89d8.js                       86.93 kB │ gzip:    28.29 kB\n../dist-rust/assets/Settings-06336b3e.js                   199.04 kB │ gzip:    51.85 kB\n../dist-rust/assets/Drawer-9672e39a.js                     578.20 kB │ gzip:   150.11 kB\n../dist-rust/assets/main-966c3dd0.js                     4,291.37 kB │ gzip: 1,238.99 kB\n✓ built in 36.29s\nvite v4.5.14 building for production...\ntransforming...\n✓ 174 modules transformed.\nrendering chunks...\ncomputing gzip size...\n../../../dist-rust/remotes/remote/styles.css   95.89 kB │ gzip:  14.25 kB\n../../../dist-rust/remotes/remote/client.js   538.46 kB │ gzip: 148.26 kB\n✓ built in 8.07s\nvite v4.5.14 building for production...\ntransforming...\n✓ 100 modules transformed.\nrendering chunks...\ncomputing gzip size...\n../../../dist-rust/remotes/stage/styles.css   20.20 kB │ gzip:  4.36 kB\n../../../dist-rust/remotes/stage/client.js   236.69 kB │ gzip: 77.38 kB\n✓ built in 2.98s\nvite v4.5.14 building for production...\ntransforming...\n✓ 37 modules transformed.\nrendering chunks...\ncomputing gzip size...\n../../../dist-rust/remotes/controller/styles.css    5.12 kB │ gzip:  1.27 kB\n../../../dist-rust/remotes/controller/client.js   120.45 kB │ gzip: 40.55 kB\n✓ built in 980ms\n   Compiling quote v1.0.47\n   Compiling proc-macro2 v1.0.107\n   Compiling unicode-ident v1.0.27\n   Compiling syn v3.0.9\n   Compiling serde_derive v1.0.229\n   Compiling libc v0.2.191\n   Compiling serde_core v1.0.229\n   Compiling serde v1.0.229\n   Compiling equivalent v1.0.3\n   Compiling hashbrown v0.17.1\n   Compiling indexmap v2.14.2\n   Compiling smallvec v1.16.3\n   Compiling pkg-config v0.3.34\n   Compiling pin-project-lite v0.2.17\n   Compiling syn v2.0.119\n   Compiling heck v0.5.0\n   Compiling toml_datetime v0.6.3\n   Compiling futures-core v0.3.34\n   Compiling winnow v0.5.40\n   Compiling zmij v1.0.23\n   Compiling memchr v2.8.3\n   Compiling serde_spanned v0.6.9\n   Compiling toml_edit v0.20.2\n   Compiling target-lexicon v0.12.16\n   Compiling cfg-expr v0.15.8\n   Compiling toml v0.8.2\n   Compiling version-compare v0.2.1\n   Compiling system-deps v6.2.2\n   Compiling slab v0.4.12\n   Compiling cfg-if v1.0.5\n   Compiling itoa v1.0.18\n   Compiling bytes v1.12.1\n   Compiling futures-macro v0.3.34\n   Compiling synstructure v0.14.0\n   Compiling futures-task v0.3.34\n   Compiling futures-sink v0.3.34\n   Compiling futures-util v0.3.34\n   Compiling zerofrom-derive v0.1.8\n   Compiling version_check v0.9.5\n   Compiling yoke-derive v0.8.4\n   Compiling thiserror v2.0.21\n   Compiling errno v0.3.14\n   Compiling zerovec-derive v0.11.6\n   Compiling thiserror-impl v2.0.21\n   Compiling serde_json v1.0.154\n   Compiling autocfg v1.5.1\n   Compiling signal-hook-registry v1.4.8\n   Compiling foldhash v0.2.0\n   Compiling displaydoc v0.2.7\n   Compiling socket2 v0.6.5\n   Compiling mio v1.2.4\n   Compiling tokio-macros v2.7.2\n   Compiling tokio v1.53.3\n   Compiling bitflags v2.13.2\n   Compiling once_cell v1.21.4\n   Compiling icu_properties_data v2.3.0\n   Compiling siphasher v1.0.4\n   Compiling icu_normalizer_data v2.3.0\n   Compiling phf_shared v0.13.1\n   Compiling glib-sys v0.18.1\n   Compiling fastrand v2.5.0\n   Compiling phf_generator v0.13.1\n   Compiling stable_deref_trait v1.2.1\n   Compiling gobject-sys v0.18.0\n   Compiling zerofrom v0.1.8\n   Compiling semver v1.0.28\n   Compiling rand_core v0.10.1\n   Compiling getrandom v0.4.3\n   Compiling winnow v1.0.4\n   Compiling yoke v0.8.3\n   Compiling toml_parser v1.1.5+spec-1.1.0\n   Compiling gio-sys v0.18.1\n   Compiling toml_datetime v1.1.2+spec-1.1.0\n   Compiling find-msvc-tools v0.1.14\n   Compiling parking_lot_core v0.9.12\n   Compiling shlex v2.0.1\n   Compiling cc v1.8.0\n   Compiling zerovec v0.11.8\n   Compiling phf_macros v0.13.1\n   Compiling typeid v1.0.3\n   Compiling num-conv v0.2.2\n   Compiling time-core v0.1.9\n   Compiling tinystr v0.8.4\n   Compiling phf_codegen v0.13.1\n   Compiling ident_case v1.0.1\n   Compiling erased-serde v0.4.10\n   Compiling litemap v0.8.3\n   Compiling writeable v0.6.4\n   Compiling strsim v0.11.1\n   Compiling darling_core v0.24.1\n   Compiling icu_locale_core v2.3.0\n   Compiling potential_utf v0.1.6\n   Compiling zerotrie v0.2.5\n   Compiling tokio-util v0.7.20\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling syn v1.0.109\n   Compiling utf8_iter v1.0.4\n   Compiling icu_collections v2.3.0\n   Compiling icu_provider v2.3.1\n   Compiling darling_macro v0.24.1\n   Compiling proc-macro-error v1.0.4\n   Compiling generic-array v0.14.7\n   Compiling http v1.5.0\n   Compiling gdk-sys v0.18.2\n   Compiling scopeguard v1.2.0\n   Compiling new_debug_unreachable v1.0.6\n   Compiling crc32fast v1.5.2\n   Compiling futures-io v0.3.34\n   Compiling log v0.4.34\n   Compiling anyhow v1.0.104\n   Compiling lock_api v0.4.14\n   Compiling darling v0.24.1\n   Compiling phf v0.13.1\n   Compiling string_cache_codegen v0.6.1\n   Compiling precomputed-hash v0.1.1\n   Compiling web_atoms v0.2.6\n   Compiling serde_with_macros v3.24.0\n   Compiling parking_lot v0.12.5\n   Compiling icu_normalizer v2.3.0\n   Compiling icu_properties v2.3.0\n   Compiling rustc_version v0.4.1\n   Compiling typenum v1.20.1\n   Compiling thiserror v1.0.69\n   Compiling idna_adapter v1.2.2\n   Compiling string_cache v0.9.0\n   Compiling gdk-pixbuf-sys v0.18.0\n   Compiling proc-macro-crate v2.0.2\n   Compiling thiserror-impl v1.0.69\n   Compiling serde_spanned v1.1.2\n   Compiling toml_writer v1.1.3+spec-1.1.0\n   Compiling percent-encoding v2.3.2\n   Compiling dtoa v1.0.11\n   Compiling heck v0.4.1\n   Compiling glib-macros v0.18.5\n   Compiling dtoa-short v0.3.5\n   Compiling form_urlencoded v1.2.2\n   Compiling toml v1.1.8+spec-1.1.0\n   Compiling uuid v1.28.0\n   Compiling idna v1.1.0\n   Compiling tendril v0.5.1\n   Compiling selectors v0.38.0\n   Compiling aho-corasick v1.1.5\n   Compiling indexmap v1.9.3\n   Compiling futures-executor v0.3.34\n   Compiling atk-sys v0.18.2\n   Compiling cairo-sys-rs v0.18.2\n   Compiling pango-sys v0.18.0\n   Compiling futures-channel v0.3.34\n   Compiling derive_more-impl v2.1.1\n   Compiling cssparser-macros v0.7.1\n   Compiling regex-syntax v0.8.11\n   Compiling alloc-no-stdlib v3.0.0\n   Compiling camino v1.2.6\n   Compiling alloc-stdlib v0.3.0\n   Compiling regex-automata v0.4.18\n   Compiling cssparser v0.37.0\n   Compiling derive_more v2.1.1\n   Compiling glib v0.18.5\n   Compiling markup5ever v0.39.0\n   Compiling url v2.5.8\n   Compiling servo_arc v0.4.3\n   Compiling serde_derive_internals v0.29.1\n   Compiling hashbrown v0.12.3\n   Compiling fnv v1.0.7\n   Compiling powerfmt v0.2.1\n   Compiling bit-vec v0.8.0\n   Compiling deranged v0.5.9\n   Compiling web-time v1.1.0\n   Compiling schemars v0.8.22\n   Compiling rustc-hash v2.1.3\n   Compiling cfb v0.14.0\n   Compiling time v0.3.55\n   Compiling bit-set v0.8.0\n   Compiling schemars_derive v0.8.22\n   Compiling html5ever v0.39.0\n   Compiling regex v1.13.1\n   Compiling brotli-decompressor v6.0.1\n   Compiling jsonptr v0.7.1\n   Compiling quick-xml v0.42.0\n   Compiling cargo-platform v0.1.9\n   Compiling tauri-utils v2.10.2\n   Compiling dyn-clone v1.0.20\n   Compiling same-file v1.0.6\n   Compiling dunce v1.0.5\n   Compiling base64 v0.23.1\n   Compiling plist v1.10.1\n   Compiling dom_query v0.28.0\n   Compiling walkdir v2.5.0\n   Compiling cargo_metadata v0.19.2\n   Compiling json-patch v4.2.0\n   Compiling brotli v9.0.0\n   Compiling urlpattern v0.6.0\n   Compiling serde-untagged v0.1.9\n   Compiling infer v0.22.0\n   Compiling serde_with v3.24.0\n   Compiling gtk-sys v0.18.2\n   Compiling ctor v1.0.13\n   Compiling gio v0.18.4\n   Compiling glob v0.3.4\n   Compiling crossbeam-utils v0.8.23\n   Compiling rustix v1.1.5\n   Compiling http-body v1.1.0\n   Compiling simd-adler32 v0.3.10\n   Compiling linux-raw-sys v0.12.1\n   Compiling gdk-pixbuf v0.18.5\n   Compiling memoffset v0.9.1\n   Compiling httparse v1.10.1\n   Compiling atomic-waker v1.1.2\n   Compiling option-ext v0.2.0\n   Compiling dirs-sys v0.5.0\n   Compiling pango v0.18.3\n   Compiling cairo-rs v0.18.5\n   Compiling embed-resource v3.0.12\n   Compiling field-offset v0.3.6\n   Compiling toml_edit v0.19.15\n   Compiling parking v2.2.1\n   Compiling adler2 v2.0.1\n   Compiling proc-macro-crate v1.3.1\n   Compiling tauri-winres v0.3.6\n   Compiling gdk v0.18.2\n   Compiling dirs v7.0.0\n   Compiling http-body-util v0.1.5\n   Compiling cargo_toml v1.0.1\n   Compiling soup3-sys v0.5.0\n   Compiling javascriptcore-rs-sys v1.1.1\n   Compiling gtk v0.18.2\n   Compiling cpufeatures v0.3.1\n   Compiling static_vcruntime v3.0.0\n   Compiling tauri-build v2.7.3\n   Compiling gtk3-macros v0.18.2\n   Compiling miniz_oxide v0.9.1\n   Compiling atk v0.18.2\n   Compiling time-macros v0.2.32\n   Compiling webkit2gtk-sys v2.0.2\n   Compiling x11 v2.21.0\n   Compiling base64 v0.22.1\n   Compiling try-lock v0.2.5\n   Compiling tower-service v0.3.3\n   Compiling zlib-rs v0.6.8\n   Compiling flate2 v1.1.10\n   Compiling want v0.3.2\n   Compiling chacha20 v0.10.2\n   Compiling block-buffer v0.10.4\n   Compiling crypto-common v0.1.7\n   Compiling tauri-plugin v2.7.2\n   Compiling hybrid-array v0.4.15\n   Compiling gdkx11-sys v0.18.2\n   Compiling data-encoding v2.11.1\n   Compiling httpdate v1.0.3\n   Compiling bitflags v1.3.2\n   Compiling hyper v1.12.0\n   Compiling digest v0.10.7\n   Compiling rand v0.10.3\n   Compiling tauri v2.12.4\n   Compiling miniz_oxide v0.8.9\n   Compiling fdeflate v0.3.7\n   Compiling toml_edit v0.25.17+spec-1.1.0\n   Compiling num-traits v0.2.19\n   Compiling cookie v0.18.2\n   Compiling enumflags2_derive v0.7.12\n   Compiling x11-dl v2.21.0\n   Compiling libdbus-sys v0.2.7\n   Compiling dpi v0.1.2\n   Compiling raw-window-handle v0.6.2\n   Compiling cpufeatures v0.2.17\n   Compiling ryu-js v0.2.2\n   Compiling sha2 v0.10.9\n   Compiling proc-macro-crate v3.5.0\n   Compiling hyper-util v0.1.21\n   Compiling javascriptcore-rs v1.1.2\n   Compiling block-buffer v0.12.1\n   Compiling crypto-common v0.2.2\n   Compiling soup3 v0.5.0\n   Compiling event-listener v5.4.2\n   Compiling concurrent-queue v2.5.0\n   Compiling zvariant_utils v4.2.0\n   Compiling mime v0.3.17\n   Compiling const-oid v0.10.2\n   Compiling digest v0.11.3\n   Compiling png v0.17.16\n   Compiling zvariant_derive v5.15.1\n   Compiling event-listener-strategy v0.5.4\n   Compiling webkit2gtk v2.0.2\n   Compiling futures-lite v2.6.1\n   Compiling tempfile v3.27.0\n   Compiling crossbeam-channel v0.5.17\n   Compiling ring v0.17.14\n   Compiling dlopen2_derive v0.4.3\n   Compiling wry v0.57.0\n   Compiling tauri-runtime v2.12.2\n   Compiling getrandom v0.3.4\n   Compiling byteorder v1.5.0\n   Compiling tower-layer v0.3.3\n   Compiling ico v0.5.0\n   Compiling dlopen2 v0.8.2\n   Compiling dbus v0.9.12\n   Compiling sha1 v0.11.0\n   Compiling gdkx11 v0.18.2\n   Compiling png v0.18.1\n   Compiling engineioxide-core v0.2.2\n   Compiling gdkwayland-sys v0.18.2\n   Compiling async-io v2.6.0\n   Compiling muda v0.20.0\n   Compiling tauri-runtime-wry v2.12.2\n   Compiling rustversion v1.0.23\n   Compiling paste v1.0.15\n   Compiling zeroize v1.9.1\n   Compiling rustls-pki-types v1.15.1\n   Compiling tao v0.37.1\n   Compiling tauri-codegen v2.7.3\n   Compiling tungstenite v0.30.0\n   Compiling enumflags2 v0.7.12\n   Compiling tauri-plugin-fs v2.7.1\n   Compiling polling v3.11.0\n   Compiling alsa-sys v0.6.1\n   Compiling keyboard-types v0.8.3\n   Compiling getrandom v0.2.17\n   Compiling serialize-to-javascript-impl v0.1.2\n   Compiling zcheapstr v1.1.0\n   Compiling serde_repr v0.1.21\n   Compiling untrusted v0.9.0\n   Compiling async-task v4.7.1\n   Compiling endi v1.1.1\n   Compiling bumpalo v3.20.3\n   Compiling sync_wrapper v1.0.2\n   Compiling zopfli v0.8.4\n   Compiling zvariant v5.15.1\n   Compiling ogg_pager v0.7.2\n   Compiling serialize-to-javascript v0.1.2\n   Compiling tokio-tungstenite v0.30.0\n   Compiling tauri-macros v2.7.3\n   Compiling socketioxide-core v0.19.0\n   Compiling async-channel v2.5.0\n   Compiling lofty_attr v0.12.0\n   Compiling typed-path v0.12.3\n   Compiling iana-time-zone v0.1.65\n   Compiling rustls v0.23.46\n   Compiling chrono v0.4.45\n   Compiling zip v9.0.5\n   Compiling lofty v0.24.0\n   Compiling socketioxide-parser-common v0.17.2\n   Compiling encoding_rs v0.8.42\n   Compiling engineioxide v0.17.7\n   Compiling async-signal v0.2.14\n   Compiling rustls-webpki v0.103.15\n   Compiling zbus_names v4.3.5\n   Compiling tower v0.5.3\n   Compiling axum-core v0.5.6\n   Compiling async-lock v3.4.2\n   Compiling tauri-plugin-opener v2.7.2\n   Compiling tauri-plugin-dialog v2.8.3\n   Compiling piper v0.2.5\n   Compiling is-docker v0.2.0\n   Compiling tracing-core v0.1.36\n   Compiling tracing-attributes v0.1.31\n   Compiling tinyvec v1.13.3\n   Compiling midir v0.11.1\n   Compiling matchit v0.8.4\n   Compiling zune-core v0.5.3\n   Compiling rfd v0.16.0\n   Compiling subtle v2.6.1\n   Compiling pxfm v0.1.30\n   Compiling matchit v0.9.2\n   Compiling socketioxide v0.18.7 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/vendor/socketioxide)\n   Compiling moxcms v0.8.1\n   Compiling zune-jpeg v0.5.15\n   Compiling axum v0.8.9\n   Compiling unicode-normalization v0.1.23\n   Compiling tracing v0.1.44\n   Compiling is-wsl v0.4.0\n   Compiling blocking v1.7.0\n   Compiling async-process v2.5.0\n   Compiling zbus_macros v5.19.0\n   Compiling alsa v0.12.1\n   Compiling freeshow-audio v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-audio)\n   Compiling async-executor v1.14.0\n   Compiling async-broadcast v0.7.2\n   Compiling freeshow-midi v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-midi)\n   Compiling freeshow-ltc v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-ltc)\n   Compiling ordered-stream v0.2.0\n   Compiling async-recursion v1.2.0\n   Compiling async-trait v0.1.92\n   Compiling bytemuck v1.25.2\n   Compiling hex v0.4.3\n   Compiling simdutf8 v0.1.5\n   Compiling byteorder-lite v0.1.0\n   Compiling multiversion_no_op v1.0.0\n   Compiling core_detect v1.0.0\n   Compiling image v0.25.10\n   Compiling zbus v5.19.0\n   Compiling open v5.4.4\n   Compiling freeshow-files v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-files)\n   Compiling tokio-rustls v0.26.6\n   Compiling freeshow-thumbnails v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-thumbnails)\n   Compiling freeshow-imports v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-imports)\n   Compiling freeshow-cover-http v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-cover-http)\n   Compiling webpki-roots v1.0.9\n   Compiling freeshow-media-copy v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-media-copy)\n   Compiling freeshow-assets v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-assets)\n   Compiling freeshow-desktop v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/src-tauri)\n   Compiling tokio-stream v0.1.19\n   Compiling libloading v0.7.4\n   Compiling freeshow-opus v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-opus)\n   Compiling freeshow-remotes v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-remotes)\n   Compiling freeshow-asset-plans v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-asset-plans)\n   Compiling freeshow-media-copy-effects v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-media-copy-effects)\n   Compiling freeshow-ffmpeg-download v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-ffmpeg-download)\n   Compiling freeshow-import-effects v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-import-effects)\n   Compiling freeshow-thumbnail-effects v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-thumbnail-effects)\n   Compiling freeshow-midi-ports v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-midi-ports)\n   Compiling freeshow-cover-images v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-cover-images)\n   Compiling freeshow-api v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-api)\n   Compiling freeshow-timecode v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-timecode)\n   Compiling freeshow-now-playing v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-now-playing)\n   Compiling freeshow-metadata-wire v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-metadata-wire)\n   Compiling freeshow-core v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-core)\n   Compiling freeshow-icecast v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-icecast)\n   Compiling freeshow-encoders v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-encoders)\n   Compiling freeshow-audio-pipeline v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-audio-pipeline)\n   Compiling freeshow-exif v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-exif)\n   Compiling freeshow-scriptures v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-scriptures)\n   Compiling freeshow-documents v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-documents)\n   Compiling freeshow-browse v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-browse)\n   Compiling freeshow-discovery v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-discovery)\n   Compiling freeshow-media v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-media)\n   Compiling freeshow-system v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-system)\n   Compiling freeshow-network v0.1.0 (/home/rob-admin/GitHub/freeshow-worktrees/linux-deb-package/crates/freeshow-network)\n    Finished `release` profile [optimized] target(s) in 14m 02s\n       Built application at: /mnt/data/cache/freeshow-rust-build/linux-deb-package/target/release/freeshow-desktop\n        Info Patching /mnt/data/cache/freeshow-rust-build/linux-deb-package/target/release/freeshow-desktop with bundle type information: deb\n    Bundling FreeShow Rust_0.1.0_amd64.deb (/mnt/data/cache/freeshow-rust-build/linux-deb-package/target/release/bundle/deb/FreeShow Rust_0.1.0_amd64.deb)\n    Finished 1 bundle at:\n        /mnt/data/cache/freeshow-rust-build/linux-deb-package/target/release/bundle/deb/FreeShow Rust_0.1.0_amd64.deb (15.11 MiB)\n\n",
+  "guiLaunchLog": "PASS private virtual sink\nPASS private WebDriver\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.a11y.Bus' requested by ':1.1' (uid=1000 pid=3911286 comm=\"/mnt/data/cache/freeshow-rust-build/linux-deb-pack\" label=\"unconfined\")\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Successfully activated service 'org.a11y.Bus'\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.portal.Desktop' requested by ':1.3' (uid=1000 pid=3911286 comm=\"/mnt/data/cache/freeshow-rust-build/linux-deb-pack\" label=\"unconfined\")\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.portal.Documents' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.PermissionStore' requested by ':1.5' (uid=1000 pid=3911308 comm=\"/usr/libexec/xdg-document-portal\" label=\"unconfined\")\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Successfully activated service 'org.freedesktop.portal.Documents'\nfusermount3: failed to access mountpoint /run/user/1000/doc: Permission denied\nerror: fuse init failed: Can't mount path /run/user/1000/doc\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.123: Choosing gtk.portal for org.freedesktop.impl.portal.Lockdown as a last-resort fallback\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.123: The preferred method to match portal implementations to desktop environments is to use the portals.conf(5) configuration file\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.gtk.vfs.Daemon' requested by ':1.7' (uid=1000 pid=3911284 comm=\"/home/rob-admin/.local/share/freeshow-native/usr/b\" label=\"unconfined\")\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Successfully activated service 'org.gtk.vfs.Daemon'\n\n(xdg-desktop-portal-gtk:3911323): Gtk-WARNING **: 14:32:20.134: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.150: No skeleton to export\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.150: Choosing gtk.portal for org.freedesktop.impl.portal.FileChooser as a last-resort fallback\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911337): Gtk-WARNING **: 14:32:20.161: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.163: Failed to create file chooser proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.163: No skeleton to export\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.163: Choosing gtk.portal for org.freedesktop.impl.portal.AppChooser as a last-resort fallback\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911339): Gtk-WARNING **: 14:32:20.173: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.175: Failed to create app chooser proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.175: No skeleton to export\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.175: Choosing gtk.portal for org.freedesktop.impl.portal.Print as a last-resort fallback\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911352): Gtk-WARNING **: 14:32:20.186: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.187: Failed to create print proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.187: No skeleton to export\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.187: Choosing gtk.portal for org.freedesktop.impl.portal.Notification as a last-resort fallback\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911365): Gtk-WARNING **: 14:32:20.198: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.200: Failed to create notification proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.200: No skeleton to export\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.200: Choosing gtk.portal for org.freedesktop.impl.portal.Inhibit as a last-resort fallback\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911377): Gtk-WARNING **: 14:32:20.210: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.212: Failed to create inhibit proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.212: No skeleton to export\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.212: Choosing gtk.portal for org.freedesktop.impl.portal.Access as a last-resort fallback\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911389): Gtk-WARNING **: 14:32:20.223: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.224: Failed to create access proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.224: No skeleton to export\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911402): Gtk-WARNING **: 14:32:20.235: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911416): Gtk-WARNING **: 14:32:20.248: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.249: Failed to create access proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.249: No skeleton to export\n[W][91377.839775] pw.conf      | [          conf.c: 1031 try_load_conf()] can't load config client.conf: No such file or directory\n[E][91377.839830] pw.conf      | [          conf.c: 1060 pw_conf_load_conf_for_context()] can't load config client.conf: No such file or directory\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.250: Failed connect to PipeWire: Couldn't create PipeWire context\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.250: Choosing gtk.portal for org.freedesktop.impl.portal.Account as a last-resort fallback\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911425): Gtk-WARNING **: 14:32:20.260: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.262: Failed to create account proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.262: No skeleton to export\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.262: Choosing gtk.portal for org.freedesktop.impl.portal.Email as a last-resort fallback\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911427): Gtk-WARNING **: 14:32:20.273: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.274: Failed to create email proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.274: No skeleton to export\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.274: Choosing gtk.portal for org.freedesktop.impl.portal.DynamicLauncher as a last-resort fallback\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.4' (uid=1000 pid=3911302 comm=\"/usr/libexec/xdg-desktop-portal\" label=\"unconfined\")\n\n(xdg-desktop-portal-gtk:3911429): Gtk-WARNING **: 14:32:20.285: cannot open display: \ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Activated service 'org.freedesktop.impl.portal.desktop.gtk' failed: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.287: Failed to create dynamic_launcher proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.gtk: Process org.freedesktop.impl.portal.desktop.gtk exited with status 1\n\n(/usr/libexec/xdg-desktop-portal:3911302): xdg-desktop-portal-WARNING **: 14:32:20.287: No skeleton to export\ndbus-daemon[3911258]: [session uid=1000 pid=3911258] Successfully activated service 'org.freedesktop.portal.Desktop'\ndbus-daemon[3911297]: Activating service name='org.a11y.atspi.Registry' requested by ':1.0' (uid=1000 pid=3911286 comm=\"/mnt/data/cache/freeshow-rust-build/linux-deb-pack\" label=\"unconfined\")\ndbus-daemon[3911297]: Successfully activated service 'org.a11y.atspi.Registry'\nSpiRegistry daemon is running with well-known name - org.a11y.atspi.Registry\nPASS normal packaged editor\nPASS all packaged remote resources served from actual native bindings\nPASS normal packaged CLOSE\nA connection to the bus can't be made\n",
+  "previousFailedFixtures": [
+    {
+      "name": "gui-failed-session-timeout",
+      "sha256": "2f9486d4f5d54452d3aefa3c9077f686b1c4193e20c024e209d2f1e272c67141",
+      "receipt": {
+        "ok": false,
+        "sourceHead": "834e9da33cbaf02b1ad83408a5bde4e8e415e271",
+        "packageSha256": "aa80e5c28f2d57a0a5764743884504fb727097eda01a2a31a068183ce1ce93d7",
+        "binary": "/mnt/data/cache/freeshow-rust-build/linux-deb-package/extracted-verified/usr/bin/freeshow-desktop",
+        "binarySha256": "6a1a37b487f146a2420a8dc20b6707d51f938a2e51f14b17fc65806f603c575d",
+        "normalProductionRelease": true,
+        "diagnosticBundle": false,
+        "systemInstallationPerformed": false,
+        "performanceSample": false,
+        "physicalMidiOrAudioVerified": false,
+        "resourceOverridesAbsent": [
+          "FREESHOW_RUST_LTC_LIBRARY",
+          "APPDIR",
+          "LD_LIBRARY_PATH",
+          "LD_PRELOAD"
+        ],
+        "privateDisplay": ":1",
+        "xvfbPid": 3891731,
+        "error": "timed out",
+        "actualFixtureCleanup": {
+          "driverJoined": true,
+          "pulseJoined": true,
+          "xvfbJoined": true,
+          "ownedChildren": ""
+        }
+      }
+    },
+    {
+      "name": "gui-failed-http-name",
+      "sha256": "d2da923cd3666db820947a803c7b10076bd58d0a1ffe99cee97ab9c99558e7ba",
+      "receipt": {
+        "ok": false,
+        "sourceHead": "834e9da33cbaf02b1ad83408a5bde4e8e415e271",
+        "packageSha256": "aa80e5c28f2d57a0a5764743884504fb727097eda01a2a31a068183ce1ce93d7",
+        "binary": "/mnt/data/cache/freeshow-rust-build/linux-deb-package/extracted-verified/usr/bin/freeshow-desktop",
+        "binarySha256": "6a1a37b487f146a2420a8dc20b6707d51f938a2e51f14b17fc65806f603c575d",
+        "normalProductionRelease": true,
+        "diagnosticBundle": false,
+        "systemInstallationPerformed": false,
+        "performanceSample": false,
+        "physicalMidiOrAudioVerified": false,
+        "privateBusLauncher": "dbus-run-session -- env WEBKIT_WEBDRIVER=/home/rob-admin/.local/share/freeshow-native/usr/bin/WebKitWebDriver python3 tests/desktop/package_linux/run.py /mnt/data/cache/freeshow-rust-build/linux-deb-package/artifacts/verification.json /mnt/data/cache/freeshow-rust-build/linux-deb-package/artifacts/gui ",
+        "resourceOverridesAbsent": [
+          "FREESHOW_RUST_LTC_LIBRARY",
+          "APPDIR",
+          "LD_LIBRARY_PATH",
+          "LD_PRELOAD"
+        ],
+        "privateDisplay": ":1",
+        "xvfbPid": 3899795,
+        "appPid": 3899823,
+        "editor": {
+          "title": "FreeShow",
+          "origin": "tauri://localhost",
+          "context": {
+            "dataPath": "/mnt/data/cache/fspkg/fspkg-y72a786c/library",
+            "libraryGeneration": 0,
+            "runtimeId": "0adc8dca-d059-442c-a7d2-01649f5a2a3e"
+          },
+          "diagnosticGlobalsAbsent": true,
+          "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nImport\nNew show\n14\n:\n29\n:40\nMonday 19. October 2026\n",
+          "editor": true,
+          "browserErrors": [],
+          "runtimeErrors": [
+            {
+              "error": {
+                "code": "unsupported_command",
+                "message": "unsupported command: MAIN.DEVICE_ID"
+              },
+              "request": {
+                "channel": "MAIN",
+                "data": {
+                  "channel": "DEVICE_ID",
+                  "data": null
+                },
+                "listenerId": "DEVICE_IDa4a49",
+                "context": {
+                  "dataPath": "/mnt/data/cache/fspkg/fspkg-y72a786c/library",
+                  "libraryGeneration": 0,
+                  "runtimeId": "0adc8dca-d059-442c-a7d2-01649f5a2a3e"
+                }
+              }
+            },
+            {
+              "error": {
+                "code": "unsupported_command",
+                "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+              },
+              "request": {
+                "channel": "MAIN",
+                "data": {
+                  "channel": "PROVIDER_CONNECTIONS",
+                  "data": null
+                },
+                "listenerId": "PROVIDER_CONNECTIONS49f03",
+                "context": {
+                  "dataPath": "/mnt/data/cache/fspkg/fspkg-y72a786c/library",
+                  "libraryGeneration": 0,
+                  "runtimeId": "0adc8dca-d059-442c-a7d2-01649f5a2a3e"
+                }
+              }
+            }
+          ],
+          "version": "1.6.7-beta.2-rust.1"
+        },
+        "editorScreenshotSha256": "f9abaac5419ab6397ab02d651b43f48530f38dcaac3002adb4db5f8d245d5b25",
+        "remoteBinding": {
+          "bound": {
+            "endpoints": {
+              "STAGE": "127.0.0.1:5511",
+              "CONTROLLER": "127.0.0.1:5512",
+              "REMOTE": "127.0.0.1:5510"
+            },
+            "generation": {
+              "run": "4e434fd0fa7c4aed84bd8edd4a67aebc",
+              "context": 0
+            }
+          },
+          "discoveryRun": {
+            "listenerRun": "4e434fd0fa7c4aed84bd8edd4a67aebc",
+            "context": {
+              "dataPath": "/mnt/data/cache/fspkg/fspkg-y72a786c/library",
+              "libraryGeneration": 0,
+              "runtimeId": "0adc8dca-d059-442c-a7d2-01649f5a2a3e"
+            },
+            "generation": {
+              "run": "572fc9a657034bf68e8d559fcf5d6e7a",
+              "context": 0
+            }
+          },
+          "connections": 0,
+          "context": {
+            "dataPath": "/mnt/data/cache/fspkg/fspkg-y72a786c/library",
+            "libraryGeneration": 0,
+            "runtimeId": "0adc8dca-d059-442c-a7d2-01649f5a2a3e"
+          },
+          "retiring": false
+        },
+        "error": "'function' object has no attribute 'client'",
+        "failureObservation": {
+          "title": "FreeShow",
+          "origin": "tauri://localhost",
+          "context": {
+            "dataPath": "/mnt/data/cache/fspkg/fspkg-y72a786c/library",
+            "libraryGeneration": 0,
+            "runtimeId": "0adc8dca-d059-442c-a7d2-01649f5a2a3e"
+          },
+          "diagnosticGlobalsAbsent": true,
+          "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nImport\nNew show\n14\n:\n29\n:40\nMonday 19. October 2026\n",
+          "editor": true,
+          "browserErrors": [],
+          "runtimeErrors": [
+            {
+              "error": {
+                "code": "unsupported_command",
+                "message": "unsupported command: MAIN.DEVICE_ID"
+              },
+              "request": {
+                "channel": "MAIN",
+                "data": {
+                  "channel": "DEVICE_ID",
+                  "data": null
+                },
+                "listenerId": "DEVICE_IDa4a49",
+                "context": {
+                  "dataPath": "/mnt/data/cache/fspkg/fspkg-y72a786c/library",
+                  "libraryGeneration": 0,
+                  "runtimeId": "0adc8dca-d059-442c-a7d2-01649f5a2a3e"
+                }
+              }
+            },
+            {
+              "error": {
+                "code": "unsupported_command",
+                "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+              },
+              "request": {
+                "channel": "MAIN",
+                "data": {
+                  "channel": "PROVIDER_CONNECTIONS",
+                  "data": null
+                },
+                "listenerId": "PROVIDER_CONNECTIONS49f03",
+                "context": {
+                  "dataPath": "/mnt/data/cache/fspkg/fspkg-y72a786c/library",
+                  "libraryGeneration": 0,
+                  "runtimeId": "0adc8dca-d059-442c-a7d2-01649f5a2a3e"
+                }
+              }
+            }
+          ],
+          "version": null
+        },
+        "normalCloseAttempted": true,
+        "normalCloseExitedBeforeFixtureTermination": true,
+        "actualFixtureCleanup": {
+          "driverJoined": true,
+          "pulseJoined": true,
+          "xvfbJoined": true,
+          "ownedChildren": ""
+        }
+      }
+    }
+  ],
+  "verification": {
+    "ok": true,
+    "package": "/mnt/data/cache/freeshow-rust-build/linux-deb-package/target/release/bundle/deb/FreeShow Rust_0.1.0_amd64.deb",
+    "packageBytes": 15844430,
+    "packageSha256": "aa80e5c28f2d57a0a5764743884504fb727097eda01a2a31a068183ce1ce93d7",
+    "fields": {
+      "Package": "free-show-rust",
+      "Version": "0.1.0",
+      "Architecture": "amd64",
+      "Maintainer": "FreeShow Rust contributors",
+      "Depends": "libc6 (>= 2.39), libasound2t64 | libasound2, libopus0 (>= 1.3.1), libwebkit2gtk-4.1-0, libgtk-3-0",
+      "Recommends": "gstreamer1.0-plugins-good, gstreamer1.0-plugins-bad, gstreamer1.0-libav, xdg-utils",
+      "Description": "FreeShow Rust migration preview\n Native Rust migration of the FreeShow presentation application, retaining its Svelte interface. Unsigned local review build; migration capability and distribution gaps remain documented.",
+      "Installed-Size": "41654"
+    },
+    "archiveMembers": [
+      "debian-binary",
+      "control.tar.gz",
+      "data.tar.gz"
+    ],
+    "elfFiles": [
+      "usr/bin/freeshow-desktop",
+      "usr/lib/FreeShow Rust/codecs/libltc.so.11"
+    ],
+    "extracted": "/mnt/data/cache/freeshow-rust-build/linux-deb-package/extracted-verified",
+    "binary": "/mnt/data/cache/freeshow-rust-build/linux-deb-package/extracted-verified/usr/bin/freeshow-desktop",
+    "binarySha256": "6a1a37b487f146a2420a8dc20b6707d51f938a2e51f14b17fc65806f603c575d",
+    "codecSha256": "f02c75f982fe01d16f345875d2b09404b8b326bb847f2b5456616f6d0227d09f",
+    "desktop": "[Desktop Entry]\nCategories=AudioVideo;Video;\nComment=FreeShow Rust migration preview\nExec=freeshow-desktop\nStartupWMClass=freeshow-desktop\nIcon=freeshow-desktop\nName=FreeShow Rust\nTerminal=false\nType=Application\n",
+    "iconFiles": [
+      "usr/share/icons/hicolor/512x512/apps/freeshow-desktop.png"
+    ],
+    "resources": [
+      {
+        "path": "controller/client.js",
+        "bytes": 120451,
+        "sha256": "4e97dd9fbbb85433250bbf1dffdf9eff959f554ceeee0a345fd06f7047ac8cbc"
+      },
+      {
+        "path": "controller/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "controller/index.html",
+        "bytes": 724,
+        "sha256": "7ee566ef9c0d705f074842b863fc404d18eda59654f8530ea9d867db082da4b8"
+      },
+      {
+        "path": "controller/manifest.json",
+        "bytes": 1140,
+        "sha256": "bd378c1db5f22dcb57c29df7983532fc3283544ceae14fe1f08bd91cc4c93cdb"
+      },
+      {
+        "path": "controller/styles.css",
+        "bytes": 5119,
+        "sha256": "5c9c7e953558697b67c144cf1094ba8a9190d5b62cf6126f8fe9583db0ed7d61"
+      },
+      {
+        "path": "controller/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      },
+      {
+        "path": "remote/client.js",
+        "bytes": 538536,
+        "sha256": "54548607c0d8d67b1e853d3d92c9316bee67c8ec1cfaad44adc6d238310851fc"
+      },
+      {
+        "path": "remote/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "remote/index.html",
+        "bytes": 759,
+        "sha256": "dfeaf0799c8cf595653ff1ec7c05704a7ad4ba61e2d5dc51417c644e98a54a4d"
+      },
+      {
+        "path": "remote/manifest.json",
+        "bytes": 1123,
+        "sha256": "6c97e0daf5743cc7268ddb429462ef1825306c5021b3122c541a55c2e96b948e"
+      },
+      {
+        "path": "remote/styles.css",
+        "bytes": 95888,
+        "sha256": "ff952338033431b584c665f440048d0d1ba8235b7d2529ec5e45ccfdffcac1d2"
+      },
+      {
+        "path": "remote/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      },
+      {
+        "path": "stage/client.js",
+        "bytes": 237034,
+        "sha256": "2bdbe95ae3c8b4ca22125fb050609e01cd38d3e42defca5eb155e2ba071e135a"
+      },
+      {
+        "path": "stage/html/navigation.js",
+        "bytes": 8635,
+        "sha256": "7f47e63c0e048addfc9794d8cdb33dc5e15e8888b52f07cd37ff0a641a7f71a1"
+      },
+      {
+        "path": "stage/html/show.css",
+        "bytes": 1643,
+        "sha256": "7c9b53c6416c8a51afc3af78b475b459cc3034ba320f45dbaa54c0d42d20a177"
+      },
+      {
+        "path": "stage/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "stage/index.html",
+        "bytes": 719,
+        "sha256": "602201ef24291a61b7bd37b5a7f275a2853041f386fcfbefafcaa94e3f18c7af"
+      },
+      {
+        "path": "stage/manifest.json",
+        "bytes": 1128,
+        "sha256": "f18464a42544a481e82863733c785c03912884c772f8c9afe1af27e6ceca2bd0"
+      },
+      {
+        "path": "stage/styles.css",
+        "bytes": 20200,
+        "sha256": "4b2d6d2163081aab0044825c8bafe49ce242290699349b79d64f4f2051642bb4"
+      },
+      {
+        "path": "stage/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      }
+    ],
+    "fileCount": 1659,
+    "installedBytes": 37169493,
+    "contentManifestSha256": "02eea97b672cf15b6af8e68a7eff65570bf6791cb66c94c37c5379ec7d35331e",
+    "maximumGlibcSymbol": "2.39",
+    "systemDependencies": "\tlinux-vdso.so.1 (0x00007fff8c505000)\n\tlibasound.so.2 => /lib/x86_64-linux-gnu/libasound.so.2 (0x000079b483d18000)\n\tlibgdk-3.so.0 => /lib/x86_64-linux-gnu/libgdk-3.so.0 (0x000079b481f05000)\n\tlibgdk_pixbuf-2.0.so.0 => /lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so.0 (0x000079b483cea000)\n\tlibcairo.so.2 => /lib/x86_64-linux-gnu/libcairo.so.2 (0x000079b481dc1000)\n\tlibgobject-2.0.so.0 => /lib/x86_64-linux-gnu/libgobject-2.0.so.0 (0x000079b483c87000)\n\tlibglib-2.0.so.0 => /lib/x86_64-linux-gnu/libglib-2.0.so.0 (0x000079b481c78000)\n\tlibdbus-1.so.3 => /lib/x86_64-linux-gnu/libdbus-1.so.3 (0x000079b481c29000)\n\tlibwebkit2gtk-4.1.so.0 => /lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so.0 (0x000079b47c000000)\n\tlibgtk-3.so.0 => /lib/x86_64-linux-gnu/libgtk-3.so.0 (0x000079b47b800000)\n\tlibsoup-3.0.so.0 => /lib/x86_64-linux-gnu/libsoup-3.0.so.0 (0x000079b481b8f000)\n\tlibgio-2.0.so.0 => /lib/x86_64-linux-gnu/libgio-2.0.so.0 (0x000079b47b630000)\n\tlibjavascriptcoregtk-4.1.so.0 => /lib/x86_64-linux-gnu/libjavascriptcoregtk-4.1.so.0 (0x000079b479600000)\n\tlibgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x000079b481b61000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x000079b47b547000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x000079b479200000)\n\t/lib64/ld-linux-x86-64.so.2 (0x000079b483e34000)\n\tlibpango-1.0.so.0 => /lib/x86_64-linux-gnu/libpango-1.0.so.0 (0x000079b481af6000)\n\tlibfribidi.so.0 => /lib/x86_64-linux-gnu/libfribidi.so.0 (0x000079b481ad8000)\n\tlibcairo-gobject.so.2 => /lib/x86_64-linux-gnu/libcairo-gobject.so.2 (0x000079b481acc000)\n\tlibepoxy.so.0 => /lib/x86_64-linux-gnu/libepoxy.so.0 (0x000079b4794dd000)\n\tlibfontconfig.so.1 => /lib/x86_64-linux-gnu/libfontconfig.so.1 (0x000079b47b4f6000)\n\tlibpangocairo-1.0.so.0 => /lib/x86_64-linux-gnu/libpangocairo-1.0.so.0 (0x000079b481abb000)\n\tlibxkbcommon.so.0 => /lib/x86_64-linux-gnu/libxkbcommon.so.0 (0x000079b47b4ad000)\n\tlibwayland-client.so.0 => /lib/x86_64-linux-gnu/libwayland-client.so.0 (0x000079b47bff0000)\n\tlibwayland-cursor.so.0 => /lib/x86_64-linux-gnu/libwayland-cursor.so.0 (0x000079b481ab1000)\n\tlibwayland-egl.so.1 => /lib/x86_64-linux-gnu/libwayland-egl.so.1 (0x000079b47bfeb000)\n\tlibX11.so.6 => /lib/x86_64-linux-gnu/libX11.so.6 (0x000079b4790c2000)\n\tlibXi.so.6 => /lib/x86_64-linux-gnu/libXi.so.6 (0x000079b47bfd8000)\n\tlibXext.so.6 => /lib/x86_64-linux-gnu/libXext.so.6 (0x000079b4794c9000)\n\tlibXcursor.so.1 => /lib/x86_64-linux-gnu/libXcursor.so.1 (0x000079b47bfcc000)\n\tlibXdamage.so.1 => /lib/x86_64-linux-gnu/libXdamage.so.1 (0x000079b47bfc7000)\n\tlibXfixes.so.3 => /lib/x86_64-linux-gnu/libXfixes.so.3 (0x000079b47b4a5000)\n\tlibXcomposite.so.1 => /lib/x86_64-linux-gnu/libXcomposite.so.1 (0x000079b4794c4000)\n\tlibXrandr.so.2 => /lib/x86_64-linux-gnu/libXrandr.so.2 (0x000079b4794b7000)\n\tlibXinerama.so.1 => /lib/x86_64-linux-gnu/libXinerama.so.1 (0x000079b4794b2000)\n\tlibgmodule-2.0.so.0 => /lib/x86_64-linux-gnu/libgmodule-2.0.so.0 (0x000079b4794ab000)\n\tlibpng16.so.16 => /lib/x86_64-linux-gnu/libpng16.so.16 (0x000079b479473000)\n\tlibjpeg.so.8 => /lib/x86_64-linux-gnu/libjpeg.so.8 (0x000079b47903f000)\n\tlibz.so.1 => /lib/x86_64-linux-gnu/libz.so.1 (0x000079b479457000)\n\tlibfreetype.so.6 => /lib/x86_64-linux-gnu/libfreetype.so.6 (0x000079b478f73000)\n\tlibXrender.so.1 => /lib/x86_64-linux-gnu/libXrender.so.1 (0x000079b479449000)\n\tlibxcb.so.1 => /lib/x86_64-linux-gnu/libxcb.so.1 (0x000079b479420000)\n\tlibxcb-render.so.0 => /lib/x86_64-linux-gnu/libxcb-render.so.0 (0x000079b478f64000)\n\tlibxcb-shm.so.0 => /lib/x86_64-linux-gnu/libxcb-shm.so.0 (0x000079b47941b000)\n\tlibpixman-1.so.0 => /lib/x86_64-linux-gnu/libpixman-1.so.0 (0x000079b478eb5000)\n\tlibffi.so.8 => /lib/x86_64-linux-gnu/libffi.so.8 (0x000079b478ea9000)\n\tlibpcre2-8.so.0 => /lib/x86_64-linux-gnu/libpcre2-8.so.0 (0x000079b478e0f000)\n\tlibsystemd.so.0 => /lib/x86_64-linux-gnu/libsystemd.so.0 (0x000079b478d2f000)\n\tlibatomic.so.1 => /lib/x86_64-linux-gnu/libatomic.so.1 (0x000079b478d24000)\n\tlibharfbuzz.so.0 => /lib/x86_64-linux-gnu/libharfbuzz.so.0 (0x000079b478c17000)\n\tlibatk-1.0.so.0 => /lib/x86_64-linux-gnu/libatk-1.0.so.0 (0x000079b478bed000)\n\tlibwebpmux.so.3 => /lib/x86_64-linux-gnu/libwebpmux.so.3 (0x000079b478bdf000)\n\tlibexpat.so.1 => /lib/x86_64-linux-gnu/libexpat.so.1 (0x000079b478bb1000)\n\tlibicudata.so.74 => /lib/x86_64-linux-gnu/libicudata.so.74 (0x000079b476e00000)\n\tlibicui18n.so.74 => /lib/x86_64-linux-gnu/libicui18n.so.74 (0x000079b476a00000)\n\tlibicuuc.so.74 => /lib/x86_64-linux-gnu/libicuuc.so.74 (0x000079b476600000)\n\tlibxml2.so.2 => /lib/x86_64-linux-gnu/libxml2.so.2 (0x000079b47681e000)\n\tlibsqlite3.so.0 => /lib/x86_64-linux-gnu/libsqlite3.so.0 (0x000079b476498000)\n\tlibxslt.so.1 => /lib/x86_64-linux-gnu/libxslt.so.1 (0x000079b478b70000)\n\tliblcms2.so.2 => /lib/x86_64-linux-gnu/liblcms2.so.2 (0x000079b476d9e000)\n\tlibgcrypt.so.20 => /lib/x86_64-linux-gnu/libgcrypt.so.20 (0x000079b47634f000)\n\tlibgpg-error.so.0 => /lib/x86_64-linux-gnu/libgpg-error.so.0 (0x000079b476d79000)\n\tlibgstallocators-1.0.so.0 => /lib/x86_64-linux-gnu/libgstallocators-1.0.so.0 (0x000079b478b66000)\n\tlibgstapp-1.0.so.0 => /lib/x86_64-linux-gnu/libgstapp-1.0.so.0 (0x000079b476d63000)\n\tlibgstbase-1.0.so.0 => /lib/x86_64-linux-gnu/libgstbase-1.0.so.0 (0x000079b4762ca000)\n\tlibgstreamer-1.0.so.0 => /lib/x86_64-linux-gnu/libgstreamer-1.0.so.0 (0x000079b476177000)\n\tlibgstpbutils-1.0.so.0 => /lib/x86_64-linux-gnu/libgstpbutils-1.0.so.0 (0x000079b476134000)\n\tlibgstaudio-1.0.so.0 => /lib/x86_64-linux-gnu/libgstaudio-1.0.so.0 (0x000079b4760af000)\n\tlibgsttag-1.0.so.0 => /lib/x86_64-linux-gnu/libgsttag-1.0.so.0 (0x000079b47606e000)\n\tlibgstvideo-1.0.so.0 => /lib/x86_64-linux-gnu/libgstvideo-1.0.so.0 (0x000079b475f99000)\n\tlibgstgl-1.0.so.0 => /lib/x86_64-linux-gnu/libgstgl-1.0.so.0 (0x000079b475f06000)\n\tlibgstfft-1.0.so.0 => /lib/x86_64-linux-gnu/libgstfft-1.0.so.0 (0x000079b476d58000)\n\tlibwebpdemux.so.2 => /lib/x86_64-linux-gnu/libwebpdemux.so.2 (0x000079b476d51000)\n\tlibwebp.so.7 => /lib/x86_64-linux-gnu/libwebp.so.7 (0x000079b475e8b000)\n\tlibharfbuzz-icu.so.0 => /lib/x86_64-linux-gnu/libharfbuzz-icu.so.0 (0x000079b476819000)\n\tlibwayland-server.so.0 => /lib/x86_64-linux-gnu/libwayland-server.so.0 (0x000079b475e75000)\n\tlibmanette-0.2.so.0 => /lib/x86_64-linux-gnu/libmanette-0.2.so.0 (0x000079b475e45000)\n\tlibseccomp.so.2 => /lib/x86_64-linux-gnu/libseccomp.so.2 (0x000079b475e25000)\n\tlibenchant-2.so.2 => /lib/x86_64-linux-gnu/libenchant-2.so.2 (0x000079b475e18000)\n\tlibgbm.so.1 => /lib/x86_64-linux-gnu/libgbm.so.1 (0x000079b476812000)\n\tlibdrm.so.2 => /lib/x86_64-linux-gnu/libdrm.so.2 (0x000079b475e01000)\n\tlibtasn1.so.6 => /lib/x86_64-linux-gnu/libtasn1.so.6 (0x000079b475deb000)\n\tlibhyphen.so.0 => /lib/x86_64-linux-gnu/libhyphen.so.0 (0x000079b475de3000)\n\tlibsecret-1.so.0 => /lib/x86_64-linux-gnu/libsecret-1.so.0 (0x000079b475d84000)\n\tlibstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x000079b475a00000)\n\tlibpangoft2-1.0.so.0 => /lib/x86_64-linux-gnu/libpangoft2-1.0.so.0 (0x000079b475d69000)\n\tlibatk-bridge-2.0.so.0 => /lib/x86_64-linux-gnu/libatk-bridge-2.0.so.0 (0x000079b475d2d000)\n\tlibpsl.so.5 => /lib/x86_64-linux-gnu/libpsl.so.5 (0x000079b475d19000)\n\tlibbrotlidec.so.1 => /lib/x86_64-linux-gnu/libbrotlidec.so.1 (0x000079b475d0b000)\n\tlibgssapi_krb5.so.2 => /lib/x86_64-linux-gnu/libgssapi_krb5.so.2 (0x000079b475cb7000)\n\tlibnghttp2.so.14 => /lib/x86_64-linux-gnu/libnghttp2.so.14 (0x000079b475c8c000)\n\tlibmount.so.1 => /lib/x86_64-linux-gnu/libmount.so.1 (0x000079b4759b3000)\n\tlibselinux.so.1 => /lib/x86_64-linux-gnu/libselinux.so.1 (0x000079b475986000)\n\tlibthai.so.0 => /lib/x86_64-linux-gnu/libthai.so.0 (0x000079b475c81000)\n\tlibbz2.so.1.0 => /lib/x86_64-linux-gnu/libbz2.so.1.0 (0x000079b475972000)\n\tlibXau.so.6 => /lib/x86_64-linux-gnu/libXau.so.6 (0x000079b47596c000)\n\tlibXdmcp.so.6 => /lib/x86_64-linux-gnu/libXdmcp.so.6 (0x000079b475964000)\n\tlibcap.so.2 => /lib/x86_64-linux-gnu/libcap.so.2 (0x000079b475957000)\n\tliblz4.so.1 => /lib/x86_64-linux-gnu/liblz4.so.1 (0x000079b475935000)\n\tliblzma.so.5 => /lib/x86_64-linux-gnu/liblzma.so.5 (0x000079b475903000)\n\tlibzstd.so.1 => /lib/x86_64-linux-gnu/libzstd.so.1 (0x000079b475849000)\n\tlibgraphite2.so.3 => /lib/x86_64-linux-gnu/libgraphite2.so.3 (0x000079b475823000)\n\tlibunwind.so.8 => /lib/x86_64-linux-gnu/libunwind.so.8 (0x000079b475808000)\n\tlibdw.so.1 => /lib/x86_64-linux-gnu/libdw.so.1 (0x000079b475754000)\n\tliborc-0.4.so.0 => /lib/x86_64-linux-gnu/liborc-0.4.so.0 (0x000079b4756a0000)\n\tlibGL.so.1 => /lib/x86_64-linux-gnu/libGL.so.1 (0x000079b475619000)\n\tlibEGL.so.1 => /lib/x86_64-linux-gnu/libEGL.so.1 (0x000079b475607000)\n\tlibX11-xcb.so.1 => /lib/x86_64-linux-gnu/libX11-xcb.so.1 (0x000079b475602000)\n\tlibgudev-1.0.so.0 => /lib/x86_64-linux-gnu/libgudev-1.0.so.0 (0x000079b4755f5000)\n\tlibsharpyuv.so.0 => /lib/x86_64-linux-gnu/libsharpyuv.so.0 (0x000079b4755eb000)\n\tlibevdev.so.2 => /lib/x86_64-linux-gnu/libevdev.so.2 (0x000079b4755cd000)\n\tlibatspi.so.0 => /lib/x86_64-linux-gnu/libatspi.so.0 (0x000079b475593000)\n\tlibunistring.so.5 => /lib/x86_64-linux-gnu/libunistring.so.5 (0x000079b4753e6000)\n\tlibidn2.so.0 => /lib/x86_64-linux-gnu/libidn2.so.0 (0x000079b4753c4000)\n\tlibbrotlicommon.so.1 => /lib/x86_64-linux-gnu/libbrotlicommon.so.1 (0x000079b47539f000)\n\tlibkrb5.so.3 => /lib/x86_64-linux-gnu/libkrb5.so.3 (0x000079b4752d6000)\n\tlibk5crypto.so.3 => /lib/x86_64-linux-gnu/libk5crypto.so.3 (0x000079b4752aa000)\n\tlibcom_err.so.2 => /lib/x86_64-linux-gnu/libcom_err.so.2 (0x000079b4752a4000)\n\tlibkrb5support.so.0 => /lib/x86_64-linux-gnu/libkrb5support.so.0 (0x000079b475297000)\n\tlibblkid.so.1 => /lib/x86_64-linux-gnu/libblkid.so.1 (0x000079b47525a000)\n\tlibdatrie.so.1 => /lib/x86_64-linux-gnu/libdatrie.so.1 (0x000079b475251000)\n\tlibbsd.so.0 => /lib/x86_64-linux-gnu/libbsd.so.0 (0x000079b47523b000)\n\tlibelf.so.1 => /lib/x86_64-linux-gnu/libelf.so.1 (0x000079b47521c000)\n\tlibGLdispatch.so.0 => /lib/x86_64-linux-gnu/libGLdispatch.so.0 (0x000079b475164000)\n\tlibGLX.so.0 => /lib/x86_64-linux-gnu/libGLX.so.0 (0x000079b47512f000)\n\tlibudev.so.1 => /lib/x86_64-linux-gnu/libudev.so.1 (0x000079b4750fc000)\n\tlibkeyutils.so.1 => /lib/x86_64-linux-gnu/libkeyutils.so.1 (0x000079b4750f5000)\n\tlibresolv.so.2 => /lib/x86_64-linux-gnu/libresolv.so.2 (0x000079b4750e3000)\n\tlibmd.so.0 => /lib/x86_64-linux-gnu/libmd.so.0 (0x000079b4750d4000)\n",
+    "systemInstallationPerformed": false,
+    "signed": false,
+    "licenseCompletenessCertified": false
+  },
+  "gui": {
+    "ok": true,
+    "sourceHead": "834e9da33cbaf02b1ad83408a5bde4e8e415e271",
+    "packageSha256": "aa80e5c28f2d57a0a5764743884504fb727097eda01a2a31a068183ce1ce93d7",
+    "binary": "/mnt/data/cache/freeshow-rust-build/linux-deb-package/extracted-verified/usr/bin/freeshow-desktop",
+    "binarySha256": "6a1a37b487f146a2420a8dc20b6707d51f938a2e51f14b17fc65806f603c575d",
+    "normalProductionRelease": true,
+    "diagnosticBundle": false,
+    "systemInstallationPerformed": false,
+    "performanceSample": false,
+    "physicalMidiOrAudioVerified": false,
+    "privateBusLauncher": "dbus-run-session -- env WEBKIT_WEBDRIVER=/home/rob-admin/.local/share/freeshow-native/usr/bin/WebKitWebDriver python3 tests/desktop/package_linux/run.py /mnt/data/cache/freeshow-rust-build/linux-deb-package/artifacts/verification.json /mnt/data/cache/freeshow-rust-build/linux-deb-package/artifacts/gui ",
+    "resourceOverridesAbsent": [
+      "FREESHOW_RUST_LTC_LIBRARY",
+      "APPDIR",
+      "LD_LIBRARY_PATH",
+      "LD_PRELOAD"
+    ],
+    "privateDisplay": ":1",
+    "xvfbPid": 3911262,
+    "appPid": 3911286,
+    "editor": {
+      "title": "FreeShow",
+      "origin": "tauri://localhost",
+      "context": {
+        "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+        "libraryGeneration": 0,
+        "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+      },
+      "diagnosticGlobalsAbsent": true,
+      "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nImport\nNew show\n14\n:\n32\n:21\nMonday 19. October 2026\n",
+      "editor": true,
+      "browserErrors": [],
+      "runtimeErrors": [
+        {
+          "error": {
+            "code": "unsupported_command",
+            "message": "unsupported command: MAIN.DEVICE_ID"
+          },
+          "request": {
+            "channel": "MAIN",
+            "data": {
+              "channel": "DEVICE_ID",
+              "data": null
+            },
+            "listenerId": "DEVICE_ID1b0d1",
+            "context": {
+              "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+              "libraryGeneration": 0,
+              "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+            }
+          }
+        },
+        {
+          "error": {
+            "code": "unsupported_command",
+            "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+          },
+          "request": {
+            "channel": "MAIN",
+            "data": {
+              "channel": "PROVIDER_CONNECTIONS",
+              "data": null
+            },
+            "listenerId": "PROVIDER_CONNECTIONSd12ac",
+            "context": {
+              "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+              "libraryGeneration": 0,
+              "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+            }
+          }
+        }
+      ],
+      "version": "1.6.7-beta.2-rust.1"
+    },
+    "editorScreenshotSha256": "3f8ab73671eac5879a5b5ae2e79926a84af1e5c2ac0f5318735a48101b0b68fe",
+    "remoteBinding": {
+      "bound": {
+        "endpoints": {
+          "STAGE": "127.0.0.1:5511",
+          "CONTROLLER": "127.0.0.1:5512",
+          "REMOTE": "127.0.0.1:5510"
+        },
+        "generation": {
+          "run": "80404ce071b14a98aa5d4bea42f0b385",
+          "context": 0
+        }
+      },
+      "discoveryRun": {
+        "listenerRun": "80404ce071b14a98aa5d4bea42f0b385",
+        "context": {
+          "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+          "libraryGeneration": 0,
+          "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+        },
+        "generation": {
+          "run": "425ff2e3fef040ecbe4e6390e86d6891",
+          "context": 0
+        }
+      },
+      "connections": 0,
+      "context": {
+        "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+        "libraryGeneration": 0,
+        "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+      },
+      "retiring": false
+    },
+    "remoteHttp": [
+      {
+        "kind": "REMOTE",
+        "method": "GET",
+        "status": 200,
+        "contentType": "text/html; charset=UTF-8",
+        "contentLength": "759",
+        "bytes": 759,
+        "sha256": "dfeaf0799c8cf595653ff1ec7c05704a7ad4ba61e2d5dc51417c644e98a54a4d"
+      },
+      {
+        "kind": "REMOTE",
+        "method": "HEAD",
+        "status": 200,
+        "contentType": "text/html; charset=UTF-8",
+        "contentLength": "759",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "kind": "STAGE",
+        "method": "GET",
+        "status": 200,
+        "contentType": "text/html; charset=UTF-8",
+        "contentLength": "719",
+        "bytes": 719,
+        "sha256": "602201ef24291a61b7bd37b5a7f275a2853041f386fcfbefafcaa94e3f18c7af"
+      },
+      {
+        "kind": "STAGE",
+        "method": "HEAD",
+        "status": 200,
+        "contentType": "text/html; charset=UTF-8",
+        "contentLength": "719",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "kind": "CONTROLLER",
+        "method": "GET",
+        "status": 200,
+        "contentType": "text/html; charset=UTF-8",
+        "contentLength": "724",
+        "bytes": 724,
+        "sha256": "7ee566ef9c0d705f074842b863fc404d18eda59654f8530ea9d867db082da4b8"
+      },
+      {
+        "kind": "CONTROLLER",
+        "method": "HEAD",
+        "status": 200,
+        "contentType": "text/html; charset=UTF-8",
+        "contentLength": "724",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "packagedLtc": {
+      "mtc": {
+        "reason": "Exact controlled LTC corpus does not open a physical MIDI port",
+        "hardwareDeliveryVerified": false,
+        "exercised": false
+      },
+      "actualNativeLtc": {
+        "decoderCreated": 1,
+        "encoderFreed": 3,
+        "loaded": true,
+        "decoderFreed": 1,
+        "encoderCreated": 3
+      },
+      "microphoneCaptureVerified": false,
+      "stopCheckpoint": {
+        "closing": false,
+        "lifecycleCapacity": 4,
+        "queuedPublications": 0,
+        "syncEffect": false,
+        "lastRetired": null,
+        "inputOwners": 0,
+        "senderOwners": 0,
+        "published": 23,
+        "ltcJoined": false,
+        "stale": 0,
+        "diagnostics": 0,
+        "ltc": {
+          "failure": null,
+          "closing": false,
+          "admitted": 0,
+          "workerFinished": false,
+          "decoderCreated": 1,
+          "encoderFreed": 2,
+          "loaded": true,
+          "backlog": 0,
+          "encoder": false,
+          "encoderCreated": 2,
+          "decoder": false,
+          "decoderFreed": 1,
+          "samples": 0
+        },
+        "pendingDelivery": false,
+        "retiredRuns": 0,
+        "router": {
+          "decoderFramerate": {
+            "value": {
+              "value": 25,
+              "kind": "Finite"
+            },
+            "kind": "number"
+          },
+          "encoderFramerate": {
+            "value": {
+              "value": 25,
+              "kind": "Finite"
+            },
+            "kind": "number"
+          },
+          "mtcSender": false,
+          "decoderFailed": false,
+          "ownedListeners": 0,
+          "lastTime": {
+            "value": -1,
+            "kind": "Finite"
+          },
+          "receivers": [],
+          "retired": false,
+          "pending": 0,
+          "encoderFailed": false,
+          "currentMode": "LTC",
+          "sendData": {
+            "kind": "undefined"
+          },
+          "encoder": false,
+          "framerate": {
+            "value": {
+              "value": 25,
+              "kind": "Finite"
+            },
+            "kind": "number"
+          },
+          "decoder": false
+        },
+        "asyncEffects": 0,
+        "terminal": null,
+        "retained": 0,
+        "retiring": false,
+        "portOwners": 0,
+        "run": 1,
+        "publicationBytes": 0,
+        "last": null,
+        "lifecycleObservers": 0,
+        "context": {
+          "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+          "libraryGeneration": 0,
+          "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+        }
+      },
+      "feedEvidence": [
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "byteOffset": 7,
+          "poisonedPrefix": true,
+          "reusedAfterSend": true,
+          "backingByteLength": 1934,
+          "byteLength": 1920,
+          "expectedBase64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        }
+      ],
+      "fps": 25,
+      "errors": [],
+      "playbackVerified": false,
+      "omittedBrowserErrors": 0,
+      "terminalShutdownVerified": false,
+      "context": {
+        "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+        "libraryGeneration": 0,
+        "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+      },
+      "after": {
+        "closing": false,
+        "lifecycleCapacity": 4,
+        "queuedPublications": 0,
+        "syncEffect": false,
+        "lastRetired": null,
+        "inputOwners": 0,
+        "senderOwners": 0,
+        "published": 24,
+        "ltcJoined": false,
+        "stale": 0,
+        "diagnostics": 0,
+        "ltc": {
+          "failure": null,
+          "closing": false,
+          "admitted": 0,
+          "workerFinished": false,
+          "decoderCreated": 1,
+          "encoderFreed": 3,
+          "loaded": true,
+          "backlog": 0,
+          "encoder": false,
+          "encoderCreated": 3,
+          "decoder": false,
+          "decoderFreed": 1,
+          "samples": 0
+        },
+        "pendingDelivery": false,
+        "retiredRuns": 0,
+        "router": {
+          "decoderFramerate": {
+            "value": {
+              "value": 25,
+              "kind": "Finite"
+            },
+            "kind": "number"
+          },
+          "encoderFramerate": {
+            "value": {
+              "value": 25,
+              "kind": "Finite"
+            },
+            "kind": "number"
+          },
+          "mtcSender": false,
+          "decoderFailed": false,
+          "ownedListeners": 0,
+          "lastTime": {
+            "value": -1,
+            "kind": "Finite"
+          },
+          "receivers": [],
+          "retired": false,
+          "pending": 0,
+          "encoderFailed": false,
+          "currentMode": "LTC",
+          "sendData": {
+            "kind": "undefined"
+          },
+          "encoder": false,
+          "framerate": {
+            "value": {
+              "value": 25,
+              "kind": "Finite"
+            },
+            "kind": "number"
+          },
+          "decoder": false
+        },
+        "asyncEffects": 0,
+        "terminal": null,
+        "retained": 0,
+        "retiring": false,
+        "portOwners": 0,
+        "run": 1,
+        "publicationBytes": 0,
+        "last": null,
+        "lifecycleObservers": 0,
+        "context": {
+          "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+          "libraryGeneration": 0,
+          "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+        }
+      },
+      "phase": "extracted-package",
+      "script": {
+        "phase": "extracted-package",
+        "actions": [
+          {
+            "op": "stop"
+          },
+          {
+            "op": "start",
+            "data": {
+              "type": "receive",
+              "mode": "LTC",
+              "framerate": 25
+            }
+          },
+          {
+            "op": "start",
+            "data": {
+              "type": "send",
+              "mode": "LTC",
+              "framerate": 25
+            }
+          },
+          {
+            "op": "rawNoop",
+            "base64": "AQID"
+          },
+          {
+            "op": "value",
+            "value": 0
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 40
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 80
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 120
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 1000
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 1040
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 1080
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 1120
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 400
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 440
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 480
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "value",
+            "value": 520
+          },
+          {
+            "op": "audio",
+            "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+          },
+          {
+            "op": "status",
+            "ownUndefined": true
+          },
+          {
+            "op": "stop"
+          },
+          {
+            "op": "value",
+            "value": 2080
+          },
+          {
+            "op": "stop"
+          }
+        ]
+      },
+      "current": {
+        "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+        "libraryGeneration": 0,
+        "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+      },
+      "before": {
+        "closing": false,
+        "lifecycleCapacity": 4,
+        "queuedPublications": 0,
+        "syncEffect": false,
+        "lastRetired": null,
+        "inputOwners": 0,
+        "senderOwners": 0,
+        "published": 0,
+        "ltcJoined": false,
+        "stale": 0,
+        "diagnostics": 0,
+        "ltc": null,
+        "pendingDelivery": false,
+        "retiredRuns": 0,
+        "router": {
+          "decoderFramerate": {
+            "value": {
+              "value": 25,
+              "kind": "Finite"
+            },
+            "kind": "number"
+          },
+          "encoderFramerate": null,
+          "mtcSender": false,
+          "decoderFailed": false,
+          "ownedListeners": 0,
+          "lastTime": {
+            "value": -1,
+            "kind": "Finite"
+          },
+          "receivers": [],
+          "retired": false,
+          "pending": 0,
+          "encoderFailed": false,
+          "currentMode": null,
+          "sendData": {
+            "kind": "undefined"
+          },
+          "encoder": false,
+          "framerate": {
+            "value": {
+              "value": 25,
+              "kind": "Finite"
+            },
+            "kind": "number"
+          },
+          "decoder": false
+        },
+        "asyncEffects": 0,
+        "terminal": null,
+        "retained": 0,
+        "retiring": false,
+        "portOwners": 0,
+        "run": 1,
+        "publicationBytes": 0,
+        "last": null,
+        "lifecycleObservers": 0,
+        "context": {
+          "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+          "libraryGeneration": 0,
+          "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+        }
+      },
+      "browserErrors": [],
+      "sourceAcks": [],
+      "events": [
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 0,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 0,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 0,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 0,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 1000,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 1000,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 1000,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 1000,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 0,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 0,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        },
+        {
+          "channel": "TIMECODE_VALUE",
+          "listenerIdUndefined": true,
+          "data": 0,
+          "dataOwn": true,
+          "messageKeys": [
+            "channel",
+            "data"
+          ]
+        },
+        {
+          "messageKeys": [
+            "channel",
+            "data"
+          ],
+          "channel": "TIMECODE_AUDIO_DATA",
+          "listenerIdUndefined": true,
+          "dataOwn": true,
+          "bytes": {
+            "constructor": "Uint8Array",
+            "uint8Array": true,
+            "byteOffset": 0,
+            "backingByteLength": 1920,
+            "byteLength": 1920
+          },
+          "base64": "1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYmJiYmJiYmJiYmJiYr1NnZ2dnZ2dnZ2dnUKyYmJiYmJiYmJiYr"
+        }
+      ],
+      "omittedErrors": 0
+    },
+    "actualCodecOrigin": {
+      "canonicalPackagedPath": "/mnt/data/cache/freeshow-rust-build/linux-deb-package/extracted-verified/usr/lib/FreeShow Rust/codecs/libltc.so.11",
+      "packagedDevice": 2049,
+      "packagedInode": 27560006,
+      "packagedBytes": 75888,
+      "packagedSha256": "f02c75f982fe01d16f345875d2b09404b8b326bb847f2b5456616f6d0227d09f",
+      "actualExeSameFile": true,
+      "actualProcessOverrides": [],
+      "sealedMappedSnapshots": [
+        {
+          "descriptor": "76",
+          "target": "/memfd:freeshow-verified-ltc (deleted)",
+          "device": 1,
+          "inode": 782436,
+          "bytes": 75888,
+          "sha256": "f02c75f982fe01d16f345875d2b09404b8b326bb847f2b5456616f6d0227d09f",
+          "seals": 15,
+          "maps": [
+            "7054e53d9000-7054e53da000 r--p 00000000 00:01 782436                     /memfd:freeshow-verified-ltc (deleted)",
+            "7054e53da000-7054e53dd000 r-xp 00001000 00:01 782436                     /memfd:freeshow-verified-ltc (deleted)",
+            "7054e53dd000-7054e53de000 r--p 00004000 00:01 782436                     /memfd:freeshow-verified-ltc (deleted)",
+            "7054e53de000-7054e53df000 r--p 00004000 00:01 782436                     /memfd:freeshow-verified-ltc (deleted)",
+            "7054e53df000-7054e53e0000 rw-p 00005000 00:01 782436                     /memfd:freeshow-verified-ltc (deleted)"
+          ]
+        }
+      ],
+      "originContract": {
+        "mainSourceSha256": "ee38bfc1ec113c383fe3df5e17b65218da956f3225b403af54b80f0b4993a6f7",
+        "loaderSourceSha256": "d7d1fed9bd479b1b7849b34ea83fa9dddbddb0871c62f639e6b58ab049a577ec",
+        "candidateOrder": [
+          "FREESHOW_RUST_LTC_LIBRARY if present",
+          "resource_dir()/codecs/libltc.so.11 otherwise"
+        ],
+        "otherCandidateFallbacks": false
+      }
+    },
+    "final": {
+      "title": "FreeShow",
+      "origin": "tauri://localhost",
+      "context": {
+        "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+        "libraryGeneration": 0,
+        "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+      },
+      "diagnosticGlobalsAbsent": true,
+      "body": "FreeShow\n\nShow\n\nEdit\n\nStage\n\n\n\nProjects\n\nNothing here\n\nFreeShow\nv1.6.7-beta.2-rust.1\nDocumentation\nQuick search\nNew project\nNew show\n \n\n\n\n\n\nClear all\n\n\n\n\n\n\nShows\n\nMedia\n\nAudio\n\nOverlays\n\nTemplates\n\nScripture\n\nCalendar\n\nFunctions\n\nSearch\n\nAll\nCategories\n\nPresentations\n\nSongs\nNew category\nNo shows\nImport\nNew show\n14\n:\n32\n:22\nMonday 19. October 2026\n",
+      "editor": true,
+      "browserErrors": [],
+      "runtimeErrors": [
+        {
+          "error": {
+            "code": "unsupported_command",
+            "message": "unsupported command: MAIN.DEVICE_ID"
+          },
+          "request": {
+            "channel": "MAIN",
+            "data": {
+              "channel": "DEVICE_ID",
+              "data": null
+            },
+            "listenerId": "DEVICE_ID1b0d1",
+            "context": {
+              "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+              "libraryGeneration": 0,
+              "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+            }
+          }
+        },
+        {
+          "error": {
+            "code": "unsupported_command",
+            "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+          },
+          "request": {
+            "channel": "MAIN",
+            "data": {
+              "channel": "PROVIDER_CONNECTIONS",
+              "data": null
+            },
+            "listenerId": "PROVIDER_CONNECTIONSd12ac",
+            "context": {
+              "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+              "libraryGeneration": 0,
+              "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+            }
+          }
+        }
+      ],
+      "version": null
+    },
+    "knownIndependentStartupGaps": [
+      {
+        "error": {
+          "code": "unsupported_command",
+          "message": "unsupported command: MAIN.DEVICE_ID"
+        },
+        "request": {
+          "channel": "MAIN",
+          "data": {
+            "channel": "DEVICE_ID",
+            "data": null
+          },
+          "listenerId": "DEVICE_ID1b0d1",
+          "context": {
+            "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+            "libraryGeneration": 0,
+            "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+          }
+        }
+      },
+      {
+        "error": {
+          "code": "unsupported_command",
+          "message": "unsupported command: MAIN.PROVIDER_CONNECTIONS"
+        },
+        "request": {
+          "channel": "MAIN",
+          "data": {
+            "channel": "PROVIDER_CONNECTIONS",
+            "data": null
+          },
+          "listenerId": "PROVIDER_CONNECTIONSd12ac",
+          "context": {
+            "dataPath": "/mnt/data/cache/fspkg/fspkg-kgh4495h/library",
+            "libraryGeneration": 0,
+            "runtimeId": "4c2a11d7-129d-414a-9980-8829afaa62d4"
+          }
+        }
+      }
+    ],
+    "normalCloseAttempted": true,
+    "normalCloseExitedBeforeFixtureTermination": true,
+    "webdriverRequests": 15,
+    "actualFixtureCleanup": {
+      "driverJoined": true,
+      "pulseJoined": true,
+      "xvfbJoined": true,
+      "ownedChildren": ""
+    }
+  }
+}

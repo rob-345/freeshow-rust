@@ -1,0 +1,209 @@
+{
+    "runtime": {
+        "version": "1.6.7-beta.2",
+        "versions": {
+            "node": "22.21.1",
+            "acorn": "8.15.0",
+            "ada": "2.9.2",
+            "amaro": "1.1.4",
+            "ares": "1.34.5",
+            "brotli": "1.0.9",
+            "cjs_module_lexer": "2.1.0",
+            "cldr": "44.1",
+            "icu": "74.2",
+            "llhttp": "9.3.0",
+            "modules": "136",
+            "napi": "10",
+            "nbytes": "0.1.1",
+            "ncrypto": "0.0.1",
+            "nghttp2": "1.64.0",
+            "openssl": "0.0.0",
+            "simdjson": "3.13.0",
+            "simdutf": "7.0.0",
+            "sqlite": "3.50.4",
+            "tz": "2025b",
+            "undici": "6.22.0",
+            "unicode": "15.1",
+            "uv": "1.51.0",
+            "uvwasi": "0.0.23",
+            "v8": "13.8.258.32-electron.0",
+            "zlib": "1.3.1",
+            "zstd": "1.5.8",
+            "electron": "37.10.3",
+            "chrome": "138.0.7204.251"
+        }
+    },
+    "fixtures": [
+        {
+            "name": "empty",
+            "size": {
+                "width": 0,
+                "height": 0
+            },
+            "empty": true,
+            "png": {
+                "length": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "firstBytes": []
+            },
+            "bitmap": {
+                "length": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "firstBytes": []
+            }
+        },
+        {
+            "name": "invalid",
+            "size": {
+                "width": 0,
+                "height": 0
+            },
+            "empty": true,
+            "png": {
+                "length": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "firstBytes": []
+            },
+            "bitmap": {
+                "length": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "firstBytes": []
+            }
+        },
+        {
+            "name": "2x1",
+            "size": {
+                "width": 2,
+                "height": 1
+            },
+            "empty": false,
+            "png": {
+                "length": 87,
+                "sha256": "f09a498d707ecb70462b42e2ebd2ad4184c43ded4b005ae707172f608231749a",
+                "firstBytes": [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]
+            },
+            "bitmap": {
+                "length": 8,
+                "sha256": "3c223234f0cd306912cd6ab0cbc54c62a344228f4b97a4953824f1531a8a83e7",
+                "firstBytes": [0, 0, 255, 255, 0, 0, 0, 0]
+            }
+        },
+        {
+            "name": "640x480",
+            "size": {
+                "width": 640,
+                "height": 480
+            },
+            "empty": false,
+            "png": {
+                "length": 3170,
+                "sha256": "604d5651d4068fd0f2a83e9cb2347c9d17d056dc8b60263570baf59b09082bec",
+                "firstBytes": [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]
+            },
+            "bitmap": {
+                "length": 1228800,
+                "sha256": "74dbec86c946e2c4a2c63503e6d9130f5338a6e5d1fd0abe46e7d441d404d3bc",
+                "firstBytes": [0, 0, 255, 255, 0, 0, 0, 0, 0, 2, 255, 255, 0, 0, 0, 0]
+            }
+        },
+        {
+            "name": "641x1",
+            "size": {
+                "width": 641,
+                "height": 1
+            },
+            "empty": false,
+            "png": {
+                "length": 344,
+                "sha256": "c3a62d85ae63ff64fce085f6524199e671d9a4d3852717f69ba8fc6c4e78cd7b",
+                "firstBytes": [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]
+            },
+            "bitmap": {
+                "length": 2564,
+                "sha256": "c62de73812bc627665ab3f0e3e6f9cc8196180de9c29ed68eb76c4787683f78e",
+                "firstBytes": [0, 0, 255, 255, 0, 0, 0, 0, 0, 2, 255, 255, 0, 0, 0, 0]
+            },
+            "resized": {
+                "target": {
+                    "width": 640,
+                    "height": 1
+                },
+                "size": {
+                    "width": 640,
+                    "height": 1
+                },
+                "jpeg": {
+                    "length": 1495,
+                    "sha256": "a914a813563686d45a67dcd5c2aa04787f357784ce4794e31e0b6ef87c5c6685",
+                    "firstBytes": [255, 216, 255, 224, 0, 16, 74, 70]
+                }
+            }
+        },
+        {
+            "name": "640x481",
+            "size": {
+                "width": 640,
+                "height": 481
+            },
+            "empty": false,
+            "png": {
+                "length": 3176,
+                "sha256": "98474f3daba90833452a8e1ad5392eadabc82edf7c8f5189de044fe9bd620215",
+                "firstBytes": [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]
+            },
+            "bitmap": {
+                "length": 1231360,
+                "sha256": "a3abfd2ddb7552305e6f795a91d4260a46c1475b9110121c493e74c2d7e1d363",
+                "firstBytes": [0, 0, 255, 255, 0, 0, 0, 0, 0, 2, 255, 255, 0, 0, 0, 0]
+            },
+            "resized": {
+                "target": {
+                    "width": 639,
+                    "height": 480
+                },
+                "size": {
+                    "width": 639,
+                    "height": 480
+                },
+                "jpeg": {
+                    "length": 40907,
+                    "sha256": "64cec0e07e8f6ab42da028ff8c10303878bdcbc477ed8b4f9b13bc5aed42381c",
+                    "firstBytes": [255, 216, 255, 224, 0, 16, 74, 70]
+                }
+            }
+        },
+        {
+            "name": "2000x1",
+            "size": {
+                "width": 2000,
+                "height": 1
+            },
+            "empty": false,
+            "png": {
+                "length": 384,
+                "sha256": "aad541b01c07093727c40628b4de01aa64a15953d0fad258ebe63b9801fdc2f6",
+                "firstBytes": [137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]
+            },
+            "bitmap": {
+                "length": 8000,
+                "sha256": "e4969145f13ed42a48943cd47458d6753626c8b8573ff12f3b64bef39b4721a5",
+                "firstBytes": [0, 0, 255, 255, 0, 0, 0, 0, 0, 2, 255, 255, 0, 0, 0, 0]
+            },
+            "resized": {
+                "target": {
+                    "width": 640,
+                    "height": 0
+                },
+                "size": {
+                    "width": 0,
+                    "height": 0
+                },
+                "jpeg": {
+                    "length": 0,
+                    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    "firstBytes": []
+                }
+            }
+        }
+    ]
+}

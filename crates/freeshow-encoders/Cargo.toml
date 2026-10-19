@@ -1,0 +1,16 @@
+[package]
+name = "freeshow-encoders"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+repository = "https://github.com/rob-345/freeshow-rust"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order", "raw_value"] }
+ryu-js = "0.2"
+tokio = { version = "1", features = ["rt", "sync", "process", "time", "io-util", "io-std", "macros"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+
+[dev-dependencies]
+tempfile = "3"

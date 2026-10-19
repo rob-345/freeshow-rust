@@ -1,0 +1,65 @@
+{
+    "node": "22.21.1",
+    "uv": "1.51.0",
+    "pin": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "classification": "EXPLICIT TEST INJECTION: source and native real streaming hashes run on filename bytes; only classification digest strings are substituted. This is not real pinned assets/model readiness. Native gated method additionally forces hashing rather than stamp reuse.",
+    "fixedFiles": [
+        {
+            "file": "encoder.int8.onnx",
+            "utf8": "encoder.int8.onnx",
+            "sha256": "9a20630b95d3fe0fca62595087dc0282aa8d0779dd2a13dfcc65fa59caa90b96"
+        },
+        {
+            "file": "decoder.int8.onnx",
+            "utf8": "decoder.int8.onnx",
+            "sha256": "ee10d2bb896a9036c5462f6eccff43923f4fca1427ce5d5bc91ac0c1efd2f809"
+        },
+        {
+            "file": "joiner.int8.onnx",
+            "utf8": "joiner.int8.onnx",
+            "sha256": "2356d8addc5a593f373b9f4620075d39a9b2c2f075107a93fd8f990b2c5b553a"
+        },
+        {
+            "file": "tokens.txt",
+            "utf8": "tokens.txt",
+            "sha256": "e16a20444ac6bfccced4f63ba2528e20173f9e0fb3b2cdb4ed2a04e1ce60e8be"
+        },
+        {
+            "file": "silero_vad.onnx",
+            "utf8": "silero_vad.onnx",
+            "sha256": "003b7e9089abbe8874fcf04a6cd8726121cb3acc96dda7cfc698f7ce7c2beb61"
+        }
+    ],
+    "sourceUninjected": {
+        "nemotron": {
+            "ready": false,
+            "error": "The local model is outdated"
+        }
+    },
+    "sourceInjected": {
+        "nemotron": {
+            "ready": true,
+            "localPath": "/tmp/freeshow-ai-status-harness-dBqvJy/bin/nemotron/models"
+        }
+    },
+    "sourceInjectedStamp": "{\n    \"revision\": \"cba1c96ca5ef0e8393b50584ae153a79145dc492\",\n    \"files\": {\n        \"encoder.int8.onnx\": {\n            \"sha256\": \"2fff2166acaa535bd969fb223c1f0783d71029f143cb298bc54c2afe85abf772\",\n            \"size\": 17,\n            \"mtimeMs\": 1700000000500\n        },\n        \"decoder.int8.onnx\": {\n            \"sha256\": \"19f9c98fc6d0a2c33a65a43b36fdb2e914c26c0aa9764be3aebc502a1e982fb0\",\n            \"size\": 17,\n            \"mtimeMs\": 1700000000500\n        },\n        \"joiner.int8.onnx\": {\n            \"sha256\": \"4101c7c679a0bc30483794b27a059e34e79232aa2068d78d51231a22c8b0d7ce\",\n            \"size\": 16,\n            \"mtimeMs\": 1700000000500\n        },\n        \"tokens.txt\": {\n            \"sha256\": \"729cc103155bafa785f9cd45746cd41cabe97eab7182fc04d594129587958f8a\",\n            \"size\": 10,\n            \"mtimeMs\": 1700000000500\n        },\n        \"silero_vad.onnx\": {\n            \"sha256\": \"9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6\",\n            \"size\": 15,\n            \"mtimeMs\": 1700000000500\n        }\n    }\n}",
+    "sourceChangedStampFastPath": {
+        "nemotron": {
+            "ready": true,
+            "localPath": "/tmp/freeshow-ai-status-harness-dBqvJy/bin/nemotron/models"
+        }
+    },
+    "sourceChangedWithoutStamp": {
+        "nemotron": {
+            "ready": false,
+            "error": "The local model is outdated"
+        }
+    },
+    "sourceInjectedWriteFailure": {
+        "nemotron": {
+            "ready": true,
+            "localPath": "/tmp/freeshow-ai-status-harness-dBqvJy/bin/nemotron/models"
+        }
+    },
+    "writeDiagnostics": ["[nemotron] Could not write the model stamp:"]
+}

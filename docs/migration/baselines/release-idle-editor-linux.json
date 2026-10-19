@@ -1,0 +1,1236 @@
+{
+    "schemaVersion": 1,
+    "kind": "release-idle-editor-comparison",
+    "startedAt": "2026-10-18T17:35:51.253Z",
+    "finishedAt": "2026-10-18T17:42:33.863Z",
+    "status": "completed",
+    "upstreamCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "rustBuildCommit": "c9e62492",
+    "rustBuildState": "partial migration; files milestone, before system/API/import/browse host integration",
+    "officialPackage": {
+        "path": "/mnt/data/local/share/freeshow-electron-baseline/v1.6.7-beta.2/FreeShow-1.6.7-beta.2-amd64.deb",
+        "sha256": "1e50bb99dc2c30e09bf6210b7e169ec7025a8d5a6f04627bb5bbb4832cd219da",
+        "bytes": 132008364,
+        "mtime": "2026-10-18T16:17:13.216Z"
+    },
+    "electronExecutable": {
+        "path": "/mnt/data/local/share/freeshow-electron-baseline/v1.6.7-beta.2/extracted/opt/FreeShow/freeshow",
+        "sha256": "eb3263aad96ce7c35df3db4516bb04c67bdc6c2f30ae8ebc0cb5649783c82a15",
+        "bytes": 200830168,
+        "mtime": "2026-10-16T09:49:40.000Z"
+    },
+    "officialAppAsar": {
+        "path": "/mnt/data/local/share/freeshow-electron-baseline/v1.6.7-beta.2/extracted/opt/FreeShow/resources/app.asar",
+        "sha256": "4300599cbba55da34fd707f2bee12187afdcf26c637412a0e89647919e573f89",
+        "bytes": 98677943,
+        "mtime": "2026-10-16T09:49:57.000Z"
+    },
+    "rustExecutable": {
+        "path": "/home/rob-admin/GitHub/freeshow-rust/target/release/freeshow-desktop",
+        "sha256": "b1924acd481ec61baf80105be0734c4f7805caf64213d82ae0c81eda73909fbf",
+        "bytes": 16369984,
+        "mtime": "2026-10-18T17:05:30.407Z"
+    },
+    "preservedRustExecutable": "/home/rob-admin/.local/share/freeshow-rust-baselines/c9e62492/freeshow-desktop",
+    "runner": [
+        {
+            "path": "/home/rob-admin/GitHub/freeshow-rust/scripts/migration/compare-releases.mjs",
+            "sha256": "a9928c580cfc77ac8e53893c47c44dad677480b91f21eee6fe031f09a452ba45",
+            "bytes": 40146,
+            "mtime": "2026-10-18T17:33:13.714Z"
+        },
+        {
+            "path": "/home/rob-admin/GitHub/freeshow-rust/scripts/migration/release-process-launcher.py",
+            "sha256": "f2e3afe2ede4c5ec78ebfb4450b4badacfbd83422caca2658f6df68d1cb4378c",
+            "bytes": 4669,
+            "mtime": "2026-10-18T17:33:13.714Z"
+        },
+        {
+            "path": "/home/rob-admin/GitHub/freeshow-rust/scripts/migration/release-process-metrics.mjs",
+            "sha256": "7c3de5d35870b11e5a6b6f5b9420e67d082dde370f8a6c3ec68021a2f874fbf4",
+            "bytes": 10996,
+            "mtime": "2026-10-18T17:33:13.714Z"
+        }
+    ],
+    "tools": {
+        "xvfb": {
+            "path": "/usr/bin/Xvfb",
+            "sha256": "d38fa3711bc2568f1d18b7cb7e61d5fb8fe748b6ba0f0ff4b55180663839a038",
+            "bytes": 2064864,
+            "mtime": "2025-10-23T17:29:50.000Z"
+        },
+        "sessionBus": {
+            "path": "/usr/bin/dbus-daemon",
+            "sha256": "8c479f1fcddfd6693c736ce541da0955f6752834bdeeef4b928e27f5e974c247",
+            "bytes": 236176,
+            "mtime": "2024-08-09T02:33:22.000Z"
+        },
+        "python": {
+            "path": "/usr/bin/python3.12",
+            "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f",
+            "bytes": 8020928,
+            "mtime": "2026-08-31T10:18:26.000Z"
+        },
+        "tauriDriver": {
+            "path": "/home/rob-admin/.cargo/bin/tauri-driver",
+            "sha256": "f7f93b30f5fd3b6c8a3808e455f7f93d1c291f6acf1f2e0add198606c9634bb8",
+            "bytes": 2407680,
+            "mtime": "2026-10-18T10:58:31.878Z"
+        },
+        "webkitWebDriver": {
+            "path": "/mnt/data/local/share/freeshow-native/usr/bin/WebKitWebDriver",
+            "sha256": "488118541ba1dbeaca658073af84322900485b9435bc4fbb43eb1faf21db8b70",
+            "bytes": 1735024,
+            "mtime": "2026-08-21T17:04:27.000Z"
+        }
+    },
+    "workload": "empty-library visible retained editor, no projection/media/network servers; no automation requests during fixed steady window",
+    "settings": {
+        "pairs": 5,
+        "warmups": 1,
+        "settle": 20,
+        "seconds": 10,
+        "interval": 250,
+        "seed": 42,
+        "order": "alternating",
+        "width": 1280,
+        "height": 800
+    },
+    "environment": {
+        "platform": "linux",
+        "arch": "x64",
+        "kernel": "6.8.0-146-generic",
+        "parallelism": 6,
+        "memoryTotal": 16565227520,
+        "loadAverage": [0.5, 0.71, 1.07],
+        "clockTicks": 100,
+        "pageBytes": 4096,
+        "webkit": {
+            "status": 1,
+            "stdout": "",
+            "stderr": "Package webkit2gtk-4.1 was not found in the pkg-config search path.\nPerhaps you should add the directory containing `webkit2gtk-4.1.pc'\nto the PKG_CONFIG_PATH environment variable\nPackage 'webkit2gtk-4.1', required by 'virtual:world', not found"
+        },
+        "webkitPackage": {
+            "status": 0,
+            "stdout": "2.52.6-0ubuntu0.24.04.1",
+            "stderr": ""
+        },
+        "currentCgroup": "0::/user.slice/user-1000.slice/session-7.scope\n",
+        "schedulerConstraints": ["Cpus_allowed_list:\t0-5", "Mems_allowed_list:\t0"],
+        "cacheScope": "fresh application/XDG caches for every run; OS/filesystem caches NOT flushed and warmed by provenance hashing and earlier runs"
+    },
+    "cpuModels": ["Intel(R) Core(TM) i5-8500T CPU @ 2.10GHz"],
+    "node": {
+        "node": "22.21.1",
+        "acorn": "8.15.0",
+        "ada": "2.9.2",
+        "amaro": "1.1.4",
+        "ares": "1.34.5",
+        "brotli": "1.1.0",
+        "cjs_module_lexer": "2.1.0",
+        "cldr": "47.0",
+        "icu": "77.1",
+        "llhttp": "9.3.0",
+        "modules": "127",
+        "napi": "10",
+        "nbytes": "0.1.1",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.64.0",
+        "openssl": "3.5.4",
+        "simdjson": "3.13.0",
+        "simdutf": "6.4.2",
+        "sqlite": "3.50.4",
+        "tz": "2025b",
+        "undici": "6.22.0",
+        "unicode": "16.0",
+        "uv": "1.51.0",
+        "uvwasi": "0.0.23",
+        "v8": "12.4.254.21-node.33",
+        "zlib": "1.3.1-470d3a2",
+        "zstd": "1.5.7"
+    },
+    "fontManifestSha256": "b67076a7bef8c27a396867a82d3a55e6d235760274867a5f006ab3574445aa1a",
+    "runs": [
+        {
+            "index": 0,
+            "runtime": "electron",
+            "pair": -1,
+            "warmup": true,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "width": 1280,
+                "height": 800,
+                "dpr": 1
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 533501952,
+                    "p50": 541022208,
+                    "p95": 541410304,
+                    "max": 541546496
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 533501952,
+                        "p50": 541022208,
+                        "p95": 541410304,
+                        "max": 541546496
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 1119940608,
+                    "p50": 1127149568,
+                    "p95": 1127669760,
+                    "max": 1127735296
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.13,
+                "percentOneCore": 11.20130562212148,
+                "wallSeconds": 10.088109709000001,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 27.259620000000723,
+                "p50": 50.76169299999674,
+                "p95": 59.894076999997196,
+                "max": 71.31223899999895
+            },
+            "hostLoadAtStart": [0.5, 0.71, 1.07],
+            "hostLoadAtEnd": [0.55, 0.71, 1.05],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 12,
+            "rawSamples": {
+                "relativePath": "00-electron-warmup/samples.jsonl",
+                "sha256": "90ed4e5f595af007ed59b4a90c7f900e94ddbf3c111dc6f1ae809ef274adfa6d"
+            },
+            "runReceiptSha256": "1945bf6e566b5ecec9dd9dffa0dcb93488505926d20f786ab5b1e56f8d6d094f"
+        },
+        {
+            "index": 1,
+            "runtime": "rust",
+            "pair": -1,
+            "warmup": true,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "dpr": 1,
+                "height": 800,
+                "width": 1280
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 336342016,
+                    "p50": 336460800,
+                    "p95": 345029632,
+                    "max": 347069440
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 336342016,
+                        "p50": 336460800,
+                        "p95": 345029632,
+                        "max": 347069440
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 689917952,
+                    "p50": 690036736,
+                    "p95": 698605568,
+                    "max": 700645376
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.94,
+                "percentOneCore": 19.26882912979459,
+                "wallSeconds": 10.068074125999999,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 20.2953869999983,
+                "p50": 44.56234100000438,
+                "p95": 47.72737000000052,
+                "max": 48.891413999997894
+            },
+            "hostLoadAtStart": [0.74, 0.75, 1.06],
+            "hostLoadAtEnd": [0.51, 0.69, 1.03],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 4,
+            "rawSamples": {
+                "relativePath": "01-rust-warmup/samples.jsonl",
+                "sha256": "ddb03a9397e2412036248a92e3964b43ab14f9dd0cf664eae27699062217c883"
+            },
+            "runReceiptSha256": "bc82a6310146adcdfac8d295350e783afdb681e034557f39c406447a50551c52"
+        },
+        {
+            "index": 2,
+            "runtime": "rust",
+            "pair": 0,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "dpr": 1,
+                "height": 800,
+                "width": 1280
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 335026176,
+                    "p50": 335063040,
+                    "p95": 343635968,
+                    "max": 344774656
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 335026176,
+                        "p50": 335063040,
+                        "p95": 343635968,
+                        "max": 344774656
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 688312320,
+                    "p50": 688349184,
+                    "p95": 696922112,
+                    "max": 698060800
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.77,
+                "percentOneCore": 17.62829437591443,
+                "wallSeconds": 10.040676438999988,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 19.28621700000076,
+                "p50": 45.47584899999492,
+                "p95": 47.80932899999607,
+                "max": 57.70162700000219
+            },
+            "hostLoadAtStart": [0.51, 0.69, 1.03],
+            "hostLoadAtEnd": [0.83, 0.75, 1.04],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 5,
+            "rawSamples": {
+                "relativePath": "02-rust/samples.jsonl",
+                "sha256": "22e339c78301000ea6ff6ee6f2da003e1168e0bb3f640cb4aee809600cc07884"
+            },
+            "runReceiptSha256": "8d7773234ba21583fb6771465a150578e16460237869b82fa64e40c45917b85a"
+        },
+        {
+            "index": 3,
+            "runtime": "electron",
+            "pair": 0,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "width": 1280,
+                "height": 800,
+                "dpr": 1
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 535013376,
+                    "p50": 542160896,
+                    "p95": 542558208,
+                    "max": 542689280
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 535013376,
+                        "p50": 542160896,
+                        "p95": 542558208,
+                        "max": 542689280
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 1118093312,
+                    "p50": 1124999168,
+                    "p95": 1125482496,
+                    "max": 1125527552
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.07,
+                "percentOneCore": 10.606675933545612,
+                "wallSeconds": 10.087986158000014,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 27.645445000001928,
+                "p50": 55.19493300000613,
+                "p95": 58.99699700000929,
+                "max": 60.413346999994246
+            },
+            "hostLoadAtStart": [0.83, 0.75, 1.04],
+            "hostLoadAtEnd": [1.37, 0.89, 1.08],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 11,
+            "rawSamples": {
+                "relativePath": "03-electron/samples.jsonl",
+                "sha256": "ffccf1e822f3afeee6140417e97cbc17b9739a79ba5861a7a6b2e51a40f4dc2b"
+            },
+            "runReceiptSha256": "35fce4c04492968d0c9d9462b5cf3a8d625c6519959a8a2d57811be2aec6c9b5"
+        },
+        {
+            "index": 4,
+            "runtime": "electron",
+            "pair": 1,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "width": 1280,
+                "height": 800,
+                "dpr": 1
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 535815168,
+                    "p50": 543269888,
+                    "p95": 543664128,
+                    "max": 543769600
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 535815168,
+                        "p50": 543269888,
+                        "p95": 543664128,
+                        "max": 543769600
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 1118781440,
+                    "p50": 1125847040,
+                    "p95": 1126432768,
+                    "max": 1126477824
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.16,
+                "percentOneCore": 11.488892565211254,
+                "wallSeconds": 10.096708568000002,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 27.77416999998968,
+                "p50": 54.283062000002246,
+                "p95": 59.63049700000556,
+                "max": 61.1303590000025
+            },
+            "hostLoadAtStart": [1.34, 0.89, 1.08],
+            "hostLoadAtEnd": [0.94, 0.84, 1.05],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 11,
+            "rawSamples": {
+                "relativePath": "04-electron/samples.jsonl",
+                "sha256": "3f68ee18f0dc06d8ff4dfbde3c75da42e387bc8a2b1b3e21600559bc6fce1baa"
+            },
+            "runReceiptSha256": "d3e0afeb28a5e342830121ace1bf5196d1523a6024cbc7b6ec347bf4eb74824b"
+        },
+        {
+            "index": 5,
+            "runtime": "rust",
+            "pair": 1,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "dpr": 1,
+                "height": 800,
+                "width": 1280
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 335444992,
+                    "p50": 335457280,
+                    "p95": 344042496,
+                    "max": 345193472
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 335444992,
+                        "p50": 335457280,
+                        "p95": 344042496,
+                        "max": 345193472
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 688705536,
+                    "p50": 688717824,
+                    "p95": 697303040,
+                    "max": 698454016
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.8,
+                "percentOneCore": 17.927286972443454,
+                "wallSeconds": 10.040559972999995,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 19.544125999993412,
+                "p50": 45.36967400001595,
+                "p95": 48.198720999993384,
+                "max": 48.47221000000718
+            },
+            "hostLoadAtStart": [0.94, 0.84, 1.05],
+            "hostLoadAtEnd": [0.81, 0.82, 1.04],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 5,
+            "rawSamples": {
+                "relativePath": "05-rust/samples.jsonl",
+                "sha256": "b1cc0e95c2d9a562eae009a42243bb5ea22f2a30d8cf85d0007641b22e6c3d51"
+            },
+            "runReceiptSha256": "c4f17588f5d59248eb91dbcb5751a206a53d019b70d8d27fd39ff1026fb818b6"
+        },
+        {
+            "index": 6,
+            "runtime": "rust",
+            "pair": 2,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "dpr": 1,
+                "height": 800,
+                "width": 1280
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 335128576,
+                    "p50": 335165440,
+                    "p95": 343758848,
+                    "max": 344950784
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 335128576,
+                        "p50": 335165440,
+                        "p95": 343758848,
+                        "max": 344950784
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 688553984,
+                    "p50": 688590848,
+                    "p95": 697184256,
+                    "max": 698376192
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.74,
+                "percentOneCore": 17.326321974662477,
+                "wallSeconds": 10.042523753999994,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 19.65976100001717,
+                "p50": 46.728785000013886,
+                "p95": 49.399042000004556,
+                "max": 50.67866399997729
+            },
+            "hostLoadAtStart": [0.81, 0.82, 1.04],
+            "hostLoadAtEnd": [0.69, 0.79, 1.02],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 5,
+            "rawSamples": {
+                "relativePath": "06-rust/samples.jsonl",
+                "sha256": "489e4497c3007f9d785835771402c23345d5d4ce6fd8201e86239da52928e18d"
+            },
+            "runReceiptSha256": "2e17dd963883e4776c7b28d5febac6e78a472cb24c53a8647928007acd894073"
+        },
+        {
+            "index": 7,
+            "runtime": "electron",
+            "pair": 2,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "width": 1280,
+                "height": 800,
+                "dpr": 1
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 536497152,
+                    "p50": 543881216,
+                    "p95": 544252928,
+                    "max": 544483328
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 536497152,
+                        "p50": 543881216,
+                        "p95": 544252928,
+                        "max": 544483328
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 1118625792,
+                    "p50": 1125638144,
+                    "p95": 1126207488,
+                    "max": 1126240256
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.16,
+                "percentOneCore": 11.502912258388584,
+                "wallSeconds": 10.08440274900003,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 27.98961399999098,
+                "p50": 53.98558099998627,
+                "p95": 59.40175399999134,
+                "max": 59.86123700000462
+            },
+            "hostLoadAtStart": [0.79, 0.81, 1.03],
+            "hostLoadAtEnd": [0.54, 0.75, 1],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 14,
+            "rawSamples": {
+                "relativePath": "07-electron/samples.jsonl",
+                "sha256": "ba406cf6487cfc5ce21a084b671d48fbbdb2c442c9d11e7b78dcadf552f08416"
+            },
+            "runReceiptSha256": "26d8eda3bafbb3670515599e35ada7714bf6c7b4c48e7e91cb4f37b54b31f0f9"
+        },
+        {
+            "index": 8,
+            "runtime": "electron",
+            "pair": 3,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "width": 1280,
+                "height": 800,
+                "dpr": 1
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 534878208,
+                    "p50": 542513152,
+                    "p95": 542843904,
+                    "max": 543123456
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 534878208,
+                        "p50": 542513152,
+                        "p95": 542843904,
+                        "max": 543123456
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 1117130752,
+                    "p50": 1124306944,
+                    "p95": 1124913152,
+                    "max": 1124966400
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.08,
+                "percentOneCore": 10.674590001019324,
+                "wallSeconds": 10.117484605000005,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 28.57962500001304,
+                "p50": 54.24738900002558,
+                "p95": 60.5340369999758,
+                "max": 61.00125899998238
+            },
+            "hostLoadAtStart": [0.54, 0.75, 1],
+            "hostLoadAtEnd": [0.89, 0.82, 1.01],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 12,
+            "rawSamples": {
+                "relativePath": "08-electron/samples.jsonl",
+                "sha256": "7abafcbc27f0c5f5c09b9004bb462d94d87906da6d5259e3450c43a0643d869f"
+            },
+            "runReceiptSha256": "bace5345587432a2481cc30740668b6ad5def4af99c354ddf469b4c7c1e20d5f"
+        },
+        {
+            "index": 9,
+            "runtime": "rust",
+            "pair": 3,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "dpr": 1,
+                "height": 800,
+                "width": 1280
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 339703808,
+                    "p50": 339748864,
+                    "p95": 349095936,
+                    "max": 350296064
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 339703808,
+                        "p50": 339748864,
+                        "p95": 349095936,
+                        "max": 350296064
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 692867072,
+                    "p50": 692912128,
+                    "p95": 702259200,
+                    "max": 703459328
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.74,
+                "percentOneCore": 17.322340062367317,
+                "wallSeconds": 10.04483224399999,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 19.36823199997889,
+                "p50": 46.360939000034705,
+                "p95": 48.742628999985754,
+                "max": 57.48810199997388
+            },
+            "hostLoadAtStart": [0.89, 0.82, 1.01],
+            "hostLoadAtEnd": [0.7, 0.79, 0.99],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 4,
+            "rawSamples": {
+                "relativePath": "09-rust/samples.jsonl",
+                "sha256": "6923b8ff0170c40a5d124443433c3565a50254ab307422b5d3068c07663613f1"
+            },
+            "runReceiptSha256": "4c05787dd1f7f6cc751fd967bedc2cf83fc937308d813d3eb143dc2e26673677"
+        },
+        {
+            "index": 10,
+            "runtime": "rust",
+            "pair": 4,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "dpr": 1,
+                "height": 800,
+                "width": 1280
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 333844480,
+                    "p50": 337948672,
+                    "p95": 342466560,
+                    "max": 344375296
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 333844480,
+                        "p50": 337948672,
+                        "p95": 342466560,
+                        "max": 344375296
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 686776320,
+                    "p50": 690872320,
+                    "p95": 695390208,
+                    "max": 697298944
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 2.02,
+                "percentOneCore": 20.015049819307894,
+                "wallSeconds": 10.092405556000012,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 20.029777999967337,
+                "p50": 45.45493299997179,
+                "p95": 47.83331600000383,
+                "max": 48.329272000002675
+            },
+            "hostLoadAtStart": [0.7, 0.79, 0.99],
+            "hostLoadAtEnd": [0.76, 0.8, 0.99],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 4,
+            "rawSamples": {
+                "relativePath": "10-rust/samples.jsonl",
+                "sha256": "f3d67a1a466f8ad3dc5520abf185de690806d03c4ce333dfcfe6c6f9e3e1ca96"
+            },
+            "runReceiptSha256": "c531d1707c305efd54f80a9e9642c238e19c29b82cd44efb25851bd2fba1fb81"
+        },
+        {
+            "index": 11,
+            "runtime": "electron",
+            "pair": 4,
+            "warmup": false,
+            "valid": true,
+            "sampleCount": 42,
+            "viewport": {
+                "width": 1280,
+                "height": 800,
+                "dpr": 1
+            },
+            "profileSeedSha256": "61063090587a8934669abdb73f0cf69732fbd7c34c2376ede47eacfb258728d5",
+            "memory": {
+                "pssComplete": true,
+                "coverage": {
+                    "totalSamples": 42,
+                    "completePssSamples": 42,
+                    "incompletePssSamples": 0,
+                    "missingPssIdentities": []
+                },
+                "pssSumBytes": {
+                    "count": 42,
+                    "min": 533697536,
+                    "p50": 541085696,
+                    "p95": 541413376,
+                    "max": 541663232
+                },
+                "completeSampleSubsetPssSumBytes": {
+                    "meaning": "Only samples with PSS for every observed living process; selected subset, not the whole run",
+                    "distribution": {
+                        "count": 42,
+                        "min": 533697536,
+                        "p50": 541085696,
+                        "p95": 541413376,
+                        "max": 541663232
+                    }
+                },
+                "rssSumBytes": {
+                    "count": 42,
+                    "min": 1119010816,
+                    "p50": 1126002688,
+                    "p95": 1126526976,
+                    "max": 1126580224
+                },
+                "rssMeaning": "Sum of resident pages per observed process; shared mappings counted repeatedly, NOT unique physical memory",
+                "pssMeaning": "Proportional share of mapped resident pages among all host sharers, NOT a unique-physical-memory total; coverage describes observed membership only"
+            },
+            "cpu": {
+                "method": "observed-process-counters-lower-bound",
+                "cpuSeconds": 1.17,
+                "percentOneCore": 11.592135702412827,
+                "wallSeconds": 10.093049546999973,
+                "lateExisting": [],
+                "limitations": ["No cutime/cstime: avoids counting reaped child CPU twice", "Final CPU of helpers exiting between polls and entirely unobserved short-lived helpers can be missed", "Processes first observed late with earlier birth lose CPU before their first observation"]
+            },
+            "collectionMs": {
+                "count": 42,
+                "min": 27.815001000009943,
+                "p50": 54.87506599997869,
+                "p95": 59.86750699998811,
+                "max": 62.15042999997968
+            },
+            "hostLoadAtStart": [0.76, 0.8, 0.99],
+            "hostLoadAtEnd": [1.09, 0.88, 1.01],
+            "temporaryProfileRemoved": true,
+            "cleanupComplete": true,
+            "observedLifecycleIdentities": 11,
+            "rawSamples": {
+                "relativePath": "11-electron/samples.jsonl",
+                "sha256": "0c53403c00da0eeb233dcc70486879b5b4cfbd7179188fa37550a9686ad8c367"
+            },
+            "runReceiptSha256": "7d41b56c3a9037329bc0b4356dbb3cc70f139a101ca5b7526d9b66b0cec2aa50"
+        }
+    ],
+    "measurements": {
+        "valid": true,
+        "primaryMemoryMetric": "sum_pss_bytes_all_observed_processes",
+        "startupComparable": false,
+        "exactCpuComparable": false,
+        "runtime": {
+            "electron": {
+                "runs": 5,
+                "validRuns": 5,
+                "completePssRuns": 5,
+                "perRunMedianPssBytes": {
+                    "count": 5,
+                    "min": 541085696,
+                    "p50": 542513152,
+                    "p95": 543881216,
+                    "max": 543881216
+                },
+                "completePssRunSubset": {
+                    "meaning": "Selected complete runs only, not a universal comparison",
+                    "distribution": {
+                        "count": 5,
+                        "min": 541085696,
+                        "p50": 542513152,
+                        "p95": 543881216,
+                        "max": 543881216
+                    }
+                },
+                "pssCoverage": [
+                    {
+                        "run": 3,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    },
+                    {
+                        "run": 4,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    },
+                    {
+                        "run": 7,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    },
+                    {
+                        "run": 8,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    },
+                    {
+                        "run": 11,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    }
+                ],
+                "perRunMedianRssSumBytes": {
+                    "count": 5,
+                    "min": 1124306944,
+                    "p50": 1125638144,
+                    "p95": 1126002688,
+                    "max": 1126002688
+                },
+                "perRunCpuPercentOneCore": {
+                    "count": 5,
+                    "min": 10.606675933545612,
+                    "p50": 11.488892565211254,
+                    "p95": 11.592135702412827,
+                    "max": 11.592135702412827
+                },
+                "cpuMethods": ["observed-process-counters-lower-bound"]
+            },
+            "rust": {
+                "runs": 5,
+                "validRuns": 5,
+                "completePssRuns": 5,
+                "perRunMedianPssBytes": {
+                    "count": 5,
+                    "min": 335063040,
+                    "p50": 335457280,
+                    "p95": 339748864,
+                    "max": 339748864
+                },
+                "completePssRunSubset": {
+                    "meaning": "Selected complete runs only, not a universal comparison",
+                    "distribution": {
+                        "count": 5,
+                        "min": 335063040,
+                        "p50": 335457280,
+                        "p95": 339748864,
+                        "max": 339748864
+                    }
+                },
+                "pssCoverage": [
+                    {
+                        "run": 2,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    },
+                    {
+                        "run": 5,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    },
+                    {
+                        "run": 6,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    },
+                    {
+                        "run": 9,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    },
+                    {
+                        "run": 10,
+                        "valid": true,
+                        "totalSamples": 42,
+                        "completePssSamples": 42,
+                        "incompletePssSamples": 0,
+                        "missingPssIdentities": []
+                    }
+                ],
+                "perRunMedianRssSumBytes": {
+                    "count": 5,
+                    "min": 688349184,
+                    "p50": 688717824,
+                    "p95": 692912128,
+                    "max": 692912128
+                },
+                "perRunCpuPercentOneCore": {
+                    "count": 5,
+                    "min": 17.322340062367317,
+                    "p50": 17.62829437591443,
+                    "p95": 20.015049819307894,
+                    "max": 20.015049819307894
+                },
+                "cpuMethods": ["observed-process-counters-lower-bound"]
+            }
+        },
+        "ratios": null,
+        "note": "Descriptive run-level distributions only. No startup speedup, physical-memory reduction or production/hardware performance claim."
+    },
+    "cleanup": {
+        "profilesRemoved": true,
+        "allObservedProcessTreesClosed": true,
+        "displayClosed": true,
+        "supervisorComplete": true,
+        "exitCode": 0,
+        "reapedDescendants": 169,
+        "killedAdoptedChildren": [],
+        "remainingAdoptedChildren": []
+    },
+    "rawEvidence": {
+        "directory": "/home/rob-admin/GitHub/freeshow-rust/test-output-rust/release-comparison-full-20261018",
+        "reportSha256": "ea13ac7e070a2486a13158107c598aa061f96cdd5aa57e7e834986d34a4a3b71",
+        "supervisorSha256": "e3191724e1a4f35b09b1a404d384ce760e218ec538a6ffbf3c3a706906a5c955"
+    },
+    "limitations": [
+        "Matching visible editor and normalized profiles do not establish background feature parity; the Rust build is a partial migration.",
+        "One Linux software-rendered Xvfb host, with background services present and load recorded; workers/builds/other goal GUI tests were paused.",
+        "Application/XDG caches were fresh; OS page cache was uncontrolled/warmed, with seeded alternating paired order.",
+        "PSS is the summed proportional resident share of every observed living app process; it is not unique physical memory and cannot attest unseen escaped helpers.",
+        "RSS sums count shared pages repeatedly and are reported separately.",
+        "CPU uses sampled observed-process own counters and remains a lower bound; exited/unseen short-lived helpers can be missed. No delegated cgroup was available.",
+        "Launch/control paths differ; no comparable startup, frame timing, hardware, sustained media or full-feature application claim.",
+        "Rust had lower observed PSS and higher observed CPU in this workload; no overall speedup or significance claim."
+    ]
+}

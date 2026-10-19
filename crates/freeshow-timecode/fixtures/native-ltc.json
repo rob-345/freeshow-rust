@@ -1,0 +1,15 @@
+{
+    "platform": "linux",
+    "arch": "x64",
+    "node": "v22.21.1",
+    "version": "1.1.2",
+    "addon": {
+        "available": false,
+        "code": "MODULE_NOT_FOUND",
+        "message": "Cannot find module '../build/Release/ltc-native'"
+    },
+    "files": {
+        "dist/binding.js": "11add39f95a974541316c242cb1558ae1863646e1abddeb258282e2e758e4717",
+        "src/ltcnative.c": "eda296ab102d1af0676cd593be7b704fb69d68bc4be33ac78b462b20e26e9036"
+    }
+}

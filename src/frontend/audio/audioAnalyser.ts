@@ -18,7 +18,11 @@ export class AudioAnalyser {
     static maxChannels = AudioMultichannel.MAX_CHANNELS // support up to 8 channels (7.1 surround)
     static recorderFrameRate = 24 // fps
 
-    private static ac = new AudioContext({ latencyHint: "playback" })
+    // Keep one context for the page lifetime, starting at the first audio consumer.
+    private static context: AudioContext | null = null
+    private static get ac(): AudioContext {
+        return (this.context ??= new AudioContext({ latencyHint: "playback" }))
+    }
     private static splitter: ChannelSplitterNode | null = null
     private static analysers: AnalyserNode[] = []
     private static sources: Record<string, AudioNode> = {}
@@ -160,9 +164,10 @@ export class AudioAnalyser {
     }
 
     static setSourceVolume(id: string, volume: number, outputId?: string) {
-        if (this.ac.state === "suspended") this.ac.resume().catch(() => {})
+        if (this.context?.state === "suspended") this.context.resume().catch(() => {})
         if (outputId) this.sourceVolumes[`${id}_${outputId}`] = volume
         else this.sourceVolumes[id] = volume
+        if (!this.context) return
 
         const keys = Object.keys(this.gainNodes)
         const prefix = `${id}_`
@@ -176,9 +181,10 @@ export class AudioAnalyser {
     }
 
     static rampSourceVolume(id: string, targetVolume: number, durationMs: number, outputId?: string) {
-        if (this.ac.state === "suspended") this.ac.resume().catch(() => {})
+        if (this.context?.state === "suspended") this.context.resume().catch(() => {})
         if (outputId) this.sourceVolumes[`${id}_${outputId}`] = targetVolume
         else this.sourceVolumes[id] = targetVolume
+        if (!this.context) return
 
         const keys = Object.keys(this.gainNodes)
         const prefix = `${id}_`
@@ -358,6 +364,7 @@ export class AudioAnalyser {
 
         this.analysers = []
         this.channels = validated
+        if (!this.context) return
         this.splitter = AudioMultichannel.createChannelSplitter(this.ac, this.channels)
 
         for (const dest of this.destinationNodes.values()) {
@@ -450,7 +457,7 @@ export class AudioAnalyser {
     }
 
     static getOrCreateDestinationNode(targetId: string): GainNode {
-        const ctx = (this.ac ??= AudioAnalyser.getAudioContext())
+        const ctx = this.ac
         let destNode = this.destinationNodes.get(targetId)
         if (!destNode || destNode.context !== ctx) {
             destNode = AudioMultichannel.createMultichannelGainNode(ctx, this.channels)
@@ -462,6 +469,11 @@ export class AudioAnalyser {
 
     // RECORDER & AUDIO SENDER DELEGATION
     static recorderActivate() {
+        // Routing/meter setup also calls this before any sender or local graph exists.
+        if (!this.context && !AudioSender.shouldBeActive()) {
+            AudioSender.deactivate()
+            return
+        }
         AudioSender.activate(this.getAudioContext(), (targetId) => this.getOrCreateDestinationNode(targetId))
     }
     static recorderDeactivate() {

@@ -1,0 +1,55 @@
+{
+    "applicationRevision": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+    "dependency": {
+        "package": "libltc-wrapper",
+        "version": "1.1.2",
+        "revision": "9637e39773317e82e4112ff42b2c63afd144549f"
+    },
+    "baselineAddon": {
+        "available": false,
+        "reason": "MODULE_NOT_FOUND ../build/Release/ltc-native"
+    },
+    "privateOriginalAddon": {
+        "node": "v22.21.1",
+        "platform": "linux",
+        "architecture": "x64",
+        "compiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+        "sha256": "5c6f91aaf4209c4a38a70b2b6f4b7f35e52c2e91f15aa68e52d83a04dbf08810",
+        "inputs": {
+            "libltc/bin/libltc.so.11": "f02c75f982fe01d16f345875d2b09404b8b326bb847f2b5456616f6d0227d09f",
+            "libltc/include/ltc.h": "a2d5666fb300ffd05cbfada622029f2647dc26ba3ff03a834e3d5bd7ff77dff7",
+            "src/ltcnative.c": "eda296ab102d1af0676cd593be7b704fb69d68bc4be33ac78b462b20e26e9036",
+            "src/ltcnative.h": "2b38910857fb4375d5b396ffa4ebc5c8a0da4b8e8e08f9c97a5f23578dd46b30",
+            "dist/binding.js": "11add39f95a974541316c242cb1558ae1863646e1abddeb258282e2e758e4717"
+        },
+        "build": "crates/freeshow-ltc/tools/build-original.mjs; unchanged original ltcnative.c; pinned Node headers"
+    },
+    "library": {
+        "soname": "libltc.so.11",
+        "headerVersion": "1.3.1",
+        "runtimeVersionQueried": false,
+        "buildId": "3a8a7058c0af0ea897b687b850a14329f28ef900",
+        "needed": ["libm.so.6", "libc.so.6"]
+    },
+    "publicLayoutLinuxX64": {
+        "LTCFrame": 12,
+        "LTCFrameExt": 368,
+        "SMPTETimecode": 13,
+        "ltcsnd_sample_t": 1,
+        "ltc_off_t": 8,
+        "LTCFrameExt.off_start": 16,
+        "ownBridgeFrame": 64
+    },
+    "corpus": {
+        "differentialSuites": 7,
+        "fps": [24, 25, 29.97, 30],
+        "wrapperCases": 45,
+        "encoderBuffers": 30,
+        "comparedEncoderSamples": 53692,
+        "decodedPackets": 265,
+        "emptyReads": 2009,
+        "sourceLtcSendBuffers": 9,
+        "sourceLtcReceiveCallbacks": 9
+    },
+    "scope": "Real Linux x64 codec bytes/packets, no audio device or waveform delivery; unverified platforms explicitly unavailable."
+}

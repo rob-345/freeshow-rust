@@ -1,0 +1,257 @@
+{
+    "schemaVersion": 1,
+    "run": 39258039091,
+    "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39258039091",
+    "commit": "5a5ba2c52f2576f57fe55582e41053ef110d05ae",
+    "conclusion": "failure",
+    "jobs": [
+        {
+            "name": "native (windows-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39258039091/job/118078218424"
+        },
+        {
+            "name": "core (windows-latest)",
+            "conclusion": "failure",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39258039091/job/118078218879"
+        },
+        {
+            "name": "desktop-linux",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39258039091/job/118078218906"
+        },
+        {
+            "name": "core (macos-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39258039091/job/118078218944"
+        },
+        {
+            "name": "native (macos-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39258039091/job/118078218990"
+        },
+        {
+            "name": "core (ubuntu-24.04)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39258039091/job/118078219271"
+        }
+    ],
+    "windowsBrowse": {
+        "cases": [
+            {
+                "name": "engine::windows::scandir::record_tests::source_dot_terminal_nul_and_known_error_projection_are_explicit",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::scandir::record_tests::checked_public_abi_record_chain_rejects_truncation_offsets_and_utf16",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_entry_output_math_cancel_and_deadline_caps_apply_to_native_jobs",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_actual_open_directory_is_retained_across_parent_name_replacement",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_accepted_native_handle_survives_caller_drop_and_shutdown_waiter_drop",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_capture_uses_first_four_native_media_entries_and_source_cutoffs",
+                "result": "FAILED"
+            },
+            {
+                "name": "engine::windows::tests::windows_junction_follows_source_fixed_local_target_without_authorization_claim",
+                "result": "FAILED"
+            },
+            {
+                "name": "engine::windows::tests::windows_full_recursive_source_stats_unicode_spelling_and_depth",
+                "result": "FAILED"
+            },
+            {
+                "name": "engine::windows::tests::windows_unc_device_verbatim_relative_and_ambiguous_spelling_are_explicitly_unsupported",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_unpaired_utf16_filename_is_rejected_without_lossy_alias",
+                "result": "ok"
+            },
+            {
+                "name": "paths::windows::tests::explicit_capability_errors_and_work_boundaries",
+                "result": "ok"
+            },
+            {
+                "name": "paths::windows::tests::join_dot_roots_and_trailing_separator_are_lexical",
+                "result": "ok"
+            },
+            {
+                "name": "paths::windows::tests::raw_parts_borrow_original_path_and_parent_is_parse_dir",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::file_info_and_ordinary_listing_use_fixed_workers_with_separate_verbatim_capabilities",
+                "result": "FAILED"
+            },
+            {
+                "name": "stats::windows::tests::full_native_identity_is_checked_before_lossy_js_integer_conversion",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_native_multibatch_scandir_matches_actual_node_order_without_sorting",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_similar_preserves_native_ties_duplicates_utf16_and_directory_candidates",
+                "result": "ok"
+            },
+            {
+                "name": "engine::windows::tests::windows_missing_file_and_locked_directory_use_real_source_empty_listing",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_exceptional_times_are_explicit_unsupported_not_fabricated_null_or_wrapped_stat",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_exclusive_data_lock_still_allows_actual_source_and_native_attribute_stat",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_junction_and_available_file_symlink_follow_actual_source_targets",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_oracle_crlf_transport_preserves_values_and_strict_source_gate",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_readonly_mode_matches_source_without_inventing_executable_bits",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::stat_path_operation_and_cancel_budgets_apply_before_native_work",
+                "result": "ok"
+            },
+            {
+                "name": "tests::configuration_is_bounded",
+                "result": "ok"
+            },
+            {
+                "name": "tests::invalid_request_unknown_and_shutdown_are_explicit",
+                "result": "ok"
+            },
+            {
+                "name": "tests::operation_cell_string_and_cancel_bounds",
+                "result": "ok"
+            },
+            {
+                "name": "tests::shutdown_both_admission_orderings",
+                "result": "ok"
+            },
+            {
+                "name": "tests::shutdown_without_runtime_returns_without_panic",
+                "result": "ok"
+            },
+            {
+                "name": "tests::source_path_shapes_and_utf16_scores",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_source_stats_order_types_files_folders_links_allocation_and_raw_spelling",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_source_failure_null_is_certified_for_missing_nondirectory_empty_and_dangling",
+                "result": "ok"
+            },
+            {
+                "name": "stats::windows::tests::real_windows_fractional_and_unsigned32_time_boundary_matches_node_f64_projection",
+                "result": "ok"
+            }
+        ],
+        "passed": 29,
+        "failed": 4,
+        "logSha256": "75c5ea24eb53127a1a079051d10d9cb3b3f23b10ac965c58cb9bb61983f8319d",
+        "observedFailure": "Three complete record assertions compare JSON integer storage against equal f64 storage; one workflow size assertion compares21.0 to21. JavaScript Number bits remain the required source oracle; test-only correction pending.",
+        "productionChangedByCorrection": false
+    },
+    "macosCore": {
+        "result": "success",
+        "downloadActualOwnerExitFixture": "pass",
+        "logSha256": "d8949ed60ea7c51ec9b9937daa0503c7e6a9f947dba956e2546662aa5e96067b"
+    },
+    "linuxDesktop": {
+        "now-playing": {
+            "run": 39258039091,
+            "sha": "5a5ba2c52f2576f57fe55582e41053ef110d05ae",
+            "editorSteps": 187,
+            "ordinaryNowPlaying": 6,
+            "folderPhases": 3,
+            "metadataAndFolderCounts": [
+                [1, 4, 0],
+                [0, 2, 0],
+                [0, 1, 1]
+            ],
+            "nativeMenus": 4,
+            "dropScales": [1, 2],
+            "processExited": true,
+            "fullEditorDiagnostics": 54,
+            "scope": "Downloaded actual Linux receipts: exact source/native typed values excluding root picture position, exact folder callback/visible text, unchanged blocker hash, actual admitted/completed advances, ordinary idle and no reveal advance. No PNG encoded parity, global zero-error or per-operation terminal join claimed."
+        },
+        "cover": {
+            "editorSteps": 187,
+            "menus": 4,
+            "dropScales": [1, 2],
+            "coverPhases": 14,
+            "httpRequests": 141,
+            "httpStatusCounts": {
+                "200": 60,
+                "404": 63,
+                "206": 9,
+                "304": 9
+            },
+            "exactOriginalFolderAlerts": 3,
+            "coverRuntimeErrors": 0,
+            "coverBrowserErrors": 0,
+            "sourceAcks": 0,
+            "finalRetentionVerifiedZero": true,
+            "unchangedBlockerAndOldLibraryCoverHashesVerified": true,
+            "fullEditorDiagnostics": 54,
+            "processExited": true,
+            "scope": "Actual rebuilt Linux desktop, independent HTTP/file-byte checks and retained original UI callbacks/visible message. Zero counters are observed ordinary disposal, not per-operation IO-thread join or peer-receipt proof; separate native STOP/Weak test checks actual source lifetime. Full parity/performance remains unproven."
+        },
+        "pixel": {
+            "recordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+            "cases": [
+                {
+                    "id": "jpeg-apic",
+                    "width": 17,
+                    "height": 11,
+                    "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+                    "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+                    "nativePngBytes": 518,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                },
+                {
+                    "id": "jpeg-flac",
+                    "width": 64,
+                    "height": 48,
+                    "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+                    "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+                    "nativePngBytes": 8138,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                }
+            ],
+            "scope": "Actual migrated WebKit metadata/counters/filesystem receipts checked against actual packaged Electron recording; exact RGBA, not compressed bytes or unrestricted format support."
+        }
+    },
+    "scope": "Five of six jobs pass, including both complete native jobs and real Linux editor. New Windows listing execution is partial:29 of33 browse cases pass and4 test-number comparison assertions fail. Source/native complete numerical parity still requires original IEEE-bit comparisons and the corrected actual Windows run. No whole-app parity, foreign browser or performance claim."
+}

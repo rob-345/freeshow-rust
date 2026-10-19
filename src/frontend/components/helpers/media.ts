@@ -74,6 +74,10 @@ export function isLocalFile(path: string): boolean {
 // fix for media files with special characters in file name not playing
 export function encodeFilePath(path: string): string {
     if (typeof path !== "string") return ""
+    if (typeof window !== "undefined" && window.api?.resolveFilePath) {
+        const resolved = window.api.resolveFilePath(path)
+        if (resolved !== undefined) return resolved
+    }
     if (!isLocalFile(path)) return path
 
     if (path.startsWith("file://")) path = path.replace("file://", "")
@@ -607,7 +611,9 @@ export async function convertImagePathToIcon(path: string, size = 64): Promise<s
         }
 
         img.onerror = () => resolve(path)
-        img.src = encodeFilePath(path)
+        const source = encodeFilePath(path)
+        if (window.api.resolveFilePath && source !== path && source.startsWith("http://127.0.0.1:")) img.crossOrigin = "anonymous"
+        img.src = source
     })
 }
 
@@ -628,8 +634,8 @@ export function captureCanvas(data: { input: string; output: string; size: any; 
     const isImage = imageExtensions.includes(data.extension)
     mediaElem = document.createElement(isImage ? "img" : "video")
 
-    // Only request CORS for non-local sources.
-    if (!isLocalFile(data.input)) (mediaElem as any).crossOrigin = "anonymous"
+    const source = encodeFilePath(data.input)
+    if (!isLocalFile(data.input) || (window.api.resolveFilePath && source !== data.input && source.startsWith("http://127.0.0.1:"))) (mediaElem as any).crossOrigin = "anonymous"
 
     mediaElem.addEventListener(isImage ? "load" : "loadeddata", async () => {
         if (!mediaElem) return
@@ -674,7 +680,7 @@ export function captureCanvas(data: { input: string; output: string; size: any; 
         else setTimeout(() => (isImage ? "" : (mediaElem as HTMLVideoElement)?.load()), 3000)
     })
 
-    mediaElem.src = encodeFilePath(data.input)
+    mediaElem.src = source
     // document.body.appendChild(mediaElem) // DEBUG
 
     async function captureCanvasData(currentMediaSize) {

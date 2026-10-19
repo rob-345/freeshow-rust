@@ -1,0 +1,143 @@
+{
+    "schemaVersion": 1,
+    "kind": "local-functional-verification",
+    "linuxBuildCommit": "834e9da33cbaf02b1ad83408a5bde4e8e415e271",
+    "platform": "linux-x86_64",
+    "checks": {
+        "rustPassed": 501,
+        "supervisorDrivenIgnoredEntries": 5,
+        "nodePassed": 598,
+        "existingNodeSkips": 4,
+        "frontendPassed": 20,
+        "nativeExecutionsPassed": 355,
+        "nativeTargets": 36,
+        "workspaceAndNativeStrictAllTargetClippy": "pass",
+        "fmtAndImmutableSnapshot": "pass",
+        "completeParityGate": "incomplete-expected-exit1",
+        "foreignRuntimeScope": "Prior19d68467 all6CI jobs green, actualWindows36/Darwin8module+6integration browsing and18/12dedicatedcover cases. Newqueued admission runtime awaits newforeign CI.",
+        "archivedAblationValidation": "all134 rawfile hashes and504steadyinputs independently checked;4portable corruption controls pass"
+    },
+    "validatedDesktop": {
+        "now-playing": {
+            "run": "local",
+            "sha": "834e9da33cbaf02b1ad83408a5bde4e8e415e271",
+            "editorSteps": 187,
+            "ordinaryNowPlaying": 6,
+            "folderPhases": 3,
+            "metadataAndFolderCounts": [
+                [1, 4, 0],
+                [0, 2, 0],
+                [0, 1, 1]
+            ],
+            "nativeMenus": 4,
+            "dropScales": [1, 2],
+            "processExited": true,
+            "fullEditorDiagnostics": 55,
+            "scope": "Actual rebuilt local Linux receipts: exact source/native typed values excluding root picture position, exact folder callback/visible text, unchanged blocker hash, actual admitted/completed advances, ordinary idle and no reveal advance. No PNG encoded parity, global zero-error or per-operation terminal join claimed."
+        },
+        "cover": {
+            "editorSteps": 187,
+            "menus": 4,
+            "dropScales": [1, 2],
+            "coverPhases": 14,
+            "httpRequests": 141,
+            "httpStatusCounts": {
+                "200": 60,
+                "404": 63,
+                "206": 9,
+                "304": 9
+            },
+            "exactOriginalFolderAlerts": 3,
+            "coverRuntimeErrors": 0,
+            "coverBrowserErrors": 0,
+            "sourceAcks": 0,
+            "finalRetentionVerifiedZero": true,
+            "unchangedBlockerAndOldLibraryCoverHashesVerified": true,
+            "fullEditorDiagnostics": 55,
+            "processExited": true,
+            "scope": "Actual rebuilt Linux desktop, independent HTTP/file-byte checks and retained original UI callbacks/visible message. Zero counters are observed ordinary disposal, not per-operation IO-thread join or peer-receipt proof; separate native STOP/Weak test checks actual source lifetime. Full parity/performance remains unproven."
+        },
+        "pixel": {
+            "recordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+            "cases": [
+                {
+                    "id": "jpeg-apic",
+                    "width": 17,
+                    "height": 11,
+                    "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+                    "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+                    "nativePngBytes": 518,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                },
+                {
+                    "id": "jpeg-flac",
+                    "width": 64,
+                    "height": 48,
+                    "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+                    "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+                    "nativePngBytes": 8138,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                }
+            ],
+            "scope": "Actual migrated WebKit metadata/counters/filesystem receipts checked against actual packaged Electron recording; exact RGBA, not compressed bytes or unrestricted format support."
+        }
+    },
+    "receiptSha256": {
+        "desktop/receipt.json": "80fa30e9b946c0925c37cd69a99ee045a428c9fa022d1905b45ad0f97697b1a1",
+        "desktop/now-playing.json": "1e4b2d5b932bcae701adc6e50e64a9f42038243150ce1c6d2bc32bcbef15dd65",
+        "desktop/now-playing-folder-alerts.json": "7197c05bcacb156f29db651e73b4a264147537ab3da3d2933b380bb6afc137eb",
+        "desktop/remote-covers.json": "d33f5af6578e71b09b397fa1ae72a67a62ad6a450f0d3b1f57d0c089a504205d",
+        "desktop/close-drain.json": "2d68be5027e11c882ad828ceb3e21899fa2f367481c923c9c22918b785076d75",
+        "native-menu/receipt.json": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98",
+        "native-drop/receipt-1x.json": "f43b3da44c9ec5ee94ffe5a524a6d4baedfa148ecefe74b9cc9c48bc913c22de",
+        "native-drop/receipt-2x.json": "9cf05398c831469d834ba25a34888061a49b441b12bbab71fb7d1fe746599b57"
+    },
+    "scope": "Actual rebuilt retained Linux editor and source/native corpus, including bounded browse ownership and lazy analyser source tests. Separate full-app AudioPlayer and VideoPlayer functional fixtures, normal firstAudio mount and independently validated frozen production ablation retain their own origins/build identities. Complete parity, foreign browser/hardware/unrestricted paths and whole-application performance remain unproven.",
+    "frontendBuildRevision": "111620329d90fc702e3ef8deb89f6fa34d33f175",
+    "buildScope": "Normal production frontend and ordinary custom-protocol binary include AudioPlayer/VideoPlayer mapped-source CORS, the lazy analyser and bounded queued browsing. Actual normal compiler-artifact browse features=[]; no worker-entry harness in this binary. Subsequent root edits before publication only change CI/docs/acceptance metadata.",
+    "nativeExecutable": {
+        "path": "/mnt/data/cache/freeshow-rust-build/now-playing-634515a5/target/debug/freeshow-desktop",
+        "sha256": "cc9cb1ad3678d1a57a2dfd11cb25d88f5637528b64a034279ae2bff1c7d3a6f7",
+        "bytes": 108211416
+    },
+    "separateFullAppAudio": {
+        "receiptSha256": "ef41cc0a87ac936ecb84c8fe1f1629c13daafb7381f2e34767e9cdd7bb35775a",
+        "ordinaryVariants": ["immutable-eager-control", "candidate-lazy"],
+        "eachActualPcmPackets": 12,
+        "sampleRate": 44100,
+        "coordinatorActualOriginalReplay": "Both archived ordinary variants replay with actual source/NAPI1.4, one continuous encoder per run; actual HTTP/Ogg/CRCs compared",
+        "performanceSample": false,
+        "physicalAudioVerified": false,
+        "productionAnalyserSha256": "20630ed8e7f025ee664cb0bd7851e2daf5e80ba63c42fe10784d344168e361d1"
+    },
+    "normalBrowseFeatures": [],
+    "separateVideo": {
+        "receiptSha256": "b9ac9a98186bcc2170cda3e3de292dd39c800f50030be5d94927e139e2b94bef",
+        "coordinatorOriginalRawRoundtripAndObservations": "pass",
+        "performanceSample": false,
+        "physicalAudioVerified": false,
+        "untouchedVideoSvelteUiVerified": false
+    },
+    "separateFirstAudioMount": {
+        "receiptSha256": "452cac070c5e9a2258a0e06067fd39eb4d75d885076b99c9807b043a9b3583d6",
+        "normalProductionSource": "eb751551a8b8604940d1732b782ea5d6dc7db81c",
+        "profiles": 2,
+        "trustedTopAudioClicksPerProfile": 1,
+        "expectedRows": [2, 6],
+        "folderCounts": [2, 3, 1],
+        "allCount": 6,
+        "navigationRetry": false,
+        "normalCloseAndActualOwnedChildCleanup": "pass",
+        "knownIndependentStartupGapsPerProfile": 3
+    },
+    "separateProductionAblation": {
+        "receiptSha256": "3c8870716a35962be65ba3c40d34ae50169c7351abe1a1d94a51ad42a08ec82c",
+        "scope": "Controlled frozen eager/lazy release pair, separate from this current local debug/functionality build. ObservedCPU lowerbound and complete PSS for observedmembership only; no fullapp/hardware/startup/Electron performance claim."
+    }
+}

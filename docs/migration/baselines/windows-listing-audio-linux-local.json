@@ -1,0 +1,121 @@
+{
+    "schemaVersion": 1,
+    "kind": "local-functional-verification",
+    "linuxBuildCommit": "a4e1185cbf1cc20dedd8cfc83901df50a1b33ac4",
+    "platform": "linux-x86_64",
+    "checks": {
+        "rustPassed": 493,
+        "supervisorDrivenIgnoredEntries": 5,
+        "nodePassed": 584,
+        "existingNodeSkips": 4,
+        "frontendPassed": 20,
+        "nativeExecutionsPassed": 352,
+        "nativeTargets": 36,
+        "workspaceAndNativeStrictAllTargetClippy": "pass",
+        "foreignTargetStrictCrossClippy": ["windows-gnu", "macos-arm"],
+        "foreignFilesystemExecution": "Existing Darwin/Windows stat and cover corpus passed prior CI; new Windows listing execution pending",
+        "completeParityGate": "incomplete-expected-exit1",
+        "nodeFullSuitePassed": 581,
+        "additionalActualSourceIdentityTests": 3,
+        "downloadFixtureFollowup": "16 tests and strict all-target Clippy pass after actual owner-exit correction"
+    },
+    "validatedDesktop": {
+        "now-playing": {
+            "run": "local",
+            "sha": "a4e1185c",
+            "editorSteps": 187,
+            "ordinaryNowPlaying": 6,
+            "folderPhases": 3,
+            "metadataAndFolderCounts": [
+                [1, 4, 0],
+                [0, 2, 0],
+                [0, 1, 1]
+            ],
+            "nativeMenus": 4,
+            "dropScales": [1, 2],
+            "processExited": true,
+            "fullEditorDiagnostics": 55,
+            "scope": "Downloaded actual Linux receipts: exact source/native typed values excluding root picture position, exact folder callback/visible text, unchanged blocker hash, actual admitted/completed advances, ordinary idle and no reveal advance. No PNG encoded parity, global zero-error or per-operation terminal join claimed."
+        },
+        "cover": {
+            "editorSteps": 187,
+            "menus": 4,
+            "dropScales": [1, 2],
+            "coverPhases": 14,
+            "httpRequests": 141,
+            "httpStatusCounts": {
+                "200": 60,
+                "404": 63,
+                "206": 9,
+                "304": 9
+            },
+            "exactOriginalFolderAlerts": 3,
+            "coverRuntimeErrors": 0,
+            "coverBrowserErrors": 0,
+            "sourceAcks": 0,
+            "finalRetentionVerifiedZero": true,
+            "unchangedBlockerAndOldLibraryCoverHashesVerified": true,
+            "fullEditorDiagnostics": 55,
+            "processExited": true,
+            "scope": "Actual rebuilt Linux desktop, independent HTTP/file-byte checks and retained original UI callbacks/visible message. Zero counters are observed ordinary disposal, not per-operation IO-thread join or peer-receipt proof; separate native STOP/Weak test checks actual source lifetime. Full parity/performance remains unproven."
+        },
+        "pixel": {
+            "recordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+            "cases": [
+                {
+                    "id": "jpeg-apic",
+                    "width": 17,
+                    "height": 11,
+                    "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+                    "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+                    "nativePngBytes": 518,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                },
+                {
+                    "id": "jpeg-flac",
+                    "width": 64,
+                    "height": 48,
+                    "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+                    "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+                    "nativePngBytes": 8138,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                }
+            ],
+            "scope": "Actual migrated WebKit metadata/counters/filesystem receipts checked against actual packaged Electron recording; exact RGBA, not compressed bytes or unrestricted format support."
+        }
+    },
+    "receiptSha256": {
+        "desktop/receipt.json": "5f3dd1b549a6a868afbdd9122915afe9253585a0ec0eceddb6f538dc1f4b223b",
+        "desktop/now-playing.json": "d1190b3d6b7dddf00d69c9f187f79163c2ae43ee7ab9849229f247f7ecd10080",
+        "desktop/now-playing-folder-alerts.json": "1012cdb6c1d229a3582fff0526980033b79a6160e0179805bae79148b0792bc2",
+        "desktop/remote-covers.json": "f56289097df7b720378a925186b9e9a677c98450106d8de610e44f7d6b8299e6",
+        "desktop/close-drain.json": "fc13e1f9bc531b9c3174e0106215acddd9dfe6ad64c40226135459a719bb6b5f",
+        "native-menu/receipt.json": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98",
+        "native-drop/receipt-1x.json": "53293860fba5048812d8417a79a3ed7a1004406a097b9e04b94e9428a69b431c",
+        "native-drop/receipt-2x.json": "5e74dc704961dfae7264e6590797868fb7f0970fea275a7114283ee5003c0114"
+    },
+    "scope": "Actual rebuilt retained Linux editor and source/native corpus; AudioPlayer CORS actual full-app evidence and independent source/original codec replay are separate declared functional fixtures. The13 new Windows listing bodies have strict cross compilation but require genuine Windows CI. Full parity, foreign browser/hardware, arbitrary paths and application performance improvement remain unproven.",
+    "frontendBuildRevision": "8d9a868a",
+    "buildScope": "Normal production frontend includes AudioPlayer CORS; subsequent source revisions add test-only download-exit support and the unimported diagnostic harness. The lazy analyser runtime is not imported.",
+    "nativeExecutable": {
+        "path": "/mnt/data/cache/freeshow-rust-build/now-playing-634515a5/target/debug/freeshow-desktop",
+        "sha256": "45c964fe9304a91b2f55b01f24b099cb353c16c28930938b656a87ee463435a3",
+        "bytes": 108178824
+    },
+    "separateFullAppAudio": {
+        "receiptSha256": "ef41cc0a87ac936ecb84c8fe1f1629c13daafb7381f2e34767e9cdd7bb35775a",
+        "ordinaryVariants": ["immutable-eager-control", "candidate-lazy"],
+        "eachActualPcmPackets": 12,
+        "sampleRate": 44100,
+        "coordinatorActualOriginalReplay": "Both archived ordinary variants replay with actual source/NAPI1.4, one continuous encoder per run; actual HTTP/Ogg/CRCs compared",
+        "performanceSample": false,
+        "physicalAudioVerified": false,
+        "productionAnalyserUnchanged": true
+    }
+}

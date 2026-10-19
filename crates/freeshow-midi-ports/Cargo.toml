@@ -1,0 +1,22 @@
+[package]
+name = "freeshow-midi-ports"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Bounded native MIDI port ownership for retained FreeShow MIDI flows"
+
+[features]
+default = ["native"]
+native = ["dep:midir"]
+
+[dependencies]
+freeshow-midi = { path = "../freeshow-midi" }
+midir = { version = "=0.11.1", optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+tokio = { version = "1", features = ["sync", "rt", "time", "macros"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+
+[[bin]]
+name = "freeshow-midi-ports-parity"
+path = "src/bin/parity.rs"

@@ -1,0 +1,15 @@
+# Applied Icecast metadata observations
+
+The actual pinned `IcecastSender.updateMetadata` assigns its title before refreshing connected stream headers. It catches header-generation errors and the now-playing caller continues. Native `update_metadata` previously returned only an error after the same assignment, so a future host could mistakenly treat the title as unapplied and abort remaining file effects.
+
+`IcecastService::update_metadata_observed` now returns a native-only `MetadataReceipt` containing the actual ordinary owner receipt plus an optional header diagnostic. It has no Deserialize/renderer constructor and is not a source ACK. Context/cancellation/title validation, closed owner, saturation and pre-operation terminal failures remain `Err`; those paths do not fabricate application. An identical title retains the source no-op behavior. The legacy `update_metadata` API still projects the header diagnostic to its original error result.
+
+The real owner still processes socket-write failures through disconnect, and resource/random/event failures retain existing terminal policy. Actual failed EOS/socket teardown remains a sticky cleanup error. An observed applied title does not certify written headers, remote acceptance, clean socket closure or future service health. No diagnostic is erased by the applied-title receipt.
+
+The native AUDIO host consumes this observation, records `MetadataApplied { run }`, retains the actual diagnostic and binds the real run. The receipt stays private and has no source event. NOW_PLAYING itself is still awaiting host wiring; continued cover/text effects are a subsequent integration requirement.
+
+Two new Rust tests distinguish real admission rejection from applied disconnected metadata, and exercise a real loopback TCP connection whose write half is shut down through the kernel after initial headers. The ordinary queued metadata command retains its applied title, reports `socket_write`, actually closes the socket and preserves the resulting `teardown_failed`. The peer receives EOF and only the initial successful headers. The existing20 Icecast tests remain green, including real packets/Ogg/EOS, queue ownership, cancellation, write deadline, status and shutdown tests.
+
+The pinned-source suite adds a controlled throwing header boundary on the actual source method. It verifies title assignment, undefined return, caller continuation and no duplicate retry for the already applied title. This is source-boundary evidence, distinct from the real Rust kernel test. All ten Icecast source suites pass.
+
+The native AUDIO integration adds a deliberately missing Opus-library test: actual metadata title application still works through the existing real owners without encoding or a source ACK, and all owners actually join. All19 native AUDIO tests pass. This corrects the host plan's initial interpretation: unavailable codec capability does not mean the Opus service owner is absent. Construction/terminal failures still reject work. Strict all-target workspace audio/Icecast Clippy passes; full native integration checks are recorded separately.

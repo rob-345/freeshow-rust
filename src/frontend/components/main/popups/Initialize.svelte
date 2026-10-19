@@ -5,6 +5,8 @@
     import { activePopup, dataPath, dictionary, guideActive, language, popupData, timeFormat } from "../../../stores"
     import { createData } from "../../../utils/createData"
     import { getLanguageList, setLanguage, translateText } from "../../../utils/language"
+    import { uses12HourClock } from "../../../utils/localeTime"
+    import { changeDataLocation } from "../../../utils/dataLocation"
     import Icon from "../../helpers/Icon.svelte"
     import T from "../../helpers/T.svelte"
     import HRule from "../../input/HRule.svelte"
@@ -19,7 +21,7 @@
 
         // check time format (based on browser language)
         const locale = navigator.language
-        const use12Hour = Intl.DateTimeFormat(locale, { hour: "numeric" }).resolvedOptions().hour12
+        const use12Hour = uses12HourClock(locale)
         if (use12Hour === true) timeFormat.set("12")
     })
 
@@ -42,11 +44,7 @@
 
     // same as Files.svelte
     function updateDataPath(e: any) {
-        const oldPath = $dataPath
-        const newPath = e.detail
-
-        sendMain(Main.UPDATE_DATA_PATH, { newPath, oldPath })
-        dataPath.set(newPath)
+        void changeDataLocation(e.detail)
     }
 </script>
 

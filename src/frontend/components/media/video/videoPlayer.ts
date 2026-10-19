@@ -63,6 +63,21 @@ export type PlayingVideoState = {
     isFadingOut?: boolean
 }
 
+// A CORS hint for this exact native resource; weak keys retain no element,
+// context or grant. Byte authority and revocation stay with the native host.
+const nativeVideoAudioSources = new WeakMap<HTMLAudioElement, string>()
+function isNativeVideoSource(path: string, source: string): boolean {
+    return typeof window !== "undefined" && !!window.api?.resolveFilePath && source !== path && source.startsWith("http://127.0.0.1:")
+}
+function createVideoAudioElement(path: string): { audio: HTMLAudioElement; nativeSource?: string } {
+    const source = encodeFilePath(path)
+    if (!isNativeVideoSource(path, source)) return { audio: new Audio(source) }
+    const audio = new Audio()
+    audio.crossOrigin = "anonymous"
+    nativeVideoAudioSources.set(audio, source)
+    return { audio, nativeSource: source }
+}
+
 export class VideoPlayer {
     private static replayGainCache: Map<string, number> = new Map()
 
@@ -275,7 +290,7 @@ export class VideoPlayer {
             }
         }
 
-        const audio = new Audio(encodeFilePath(audioPath))
+        const { audio, nativeSource } = createVideoAudioElement(audioPath)
 
         audio.addEventListener("ended", async () => {
             if (this.getOptions(originalId, outputIds)?.loop) {
@@ -314,7 +329,9 @@ export class VideoPlayer {
             // absolute end
             this.checkIfEnding(originalId, outputIds, true)
         })
-        const loaded = await this.waitForAudio(originalId, audio)
+        const pending = this.waitForAudio(originalId, audio)
+        if (nativeSource !== undefined) audio.src = nativeSource
+        const loaded = await pending
         if (!loaded) return null
 
         return loaded
@@ -733,7 +750,10 @@ export class VideoPlayer {
 
         return new Promise((resolve) => {
             const el = document.createElement("audio")
-            el.setAttribute("src", encodeFilePath(path))
+            const source = encodeFilePath(path)
+            const nativeSource = isNativeVideoSource(path, source)
+            if (nativeSource) el.crossOrigin = "anonymous"
+            else el.setAttribute("src", source)
             el.preload = "metadata"
 
             const cleanup = (duration: number) => {
@@ -750,6 +770,7 @@ export class VideoPlayer {
 
             el.addEventListener("loadedmetadata", () => cleanup(el.duration || 0), { once: true })
             el.addEventListener("error", () => cleanup(0), { once: true })
+            if (nativeSource) el.setAttribute("src", source)
         })
     }
 
@@ -927,7 +948,13 @@ export class VideoPlayer {
         if (audio instanceof HTMLAudioElement) {
             let nextAudio = crossfadeAudio
             if (!nextAudio) {
-                nextAudio = new Audio(audio.src)
+                const source = audio.src
+                if (nativeVideoAudioSources.get(audio) === source && audio.crossOrigin !== null) {
+                    nextAudio = new Audio()
+                    nextAudio.crossOrigin = audio.crossOrigin
+                    nativeVideoAudioSources.set(nextAudio, source)
+                    nextAudio.src = source
+                } else nextAudio = new Audio(source)
                 nextAudio.currentTime = fromTime
                 nextAudio.volume = 0
                 const hasCustomBounds = fromTime > 0 || (toTime > 0 && toTime < audio.duration)

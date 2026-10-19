@@ -1,0 +1,16 @@
+[package]
+name = "freeshow-provider-shows"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Bounded source-shaped ChurchApps show preparation, without provider IO"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+ryu-js = "0.2.2"
+indexmap = "2"
+
+[[bin]]
+name = "freeshow-provider-shows-parity"
+path = "src/bin/parity.rs"

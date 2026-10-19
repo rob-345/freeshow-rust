@@ -1,0 +1,66 @@
+--- socketioxide-0.18.7/src/client.rs
++++ socketioxide-0.18.7/src/client.rs
+@@ -1,5 +1,5 @@
+ use std::borrow::Cow;
+-use std::collections::HashMap;
++use std::collections::{HashMap, HashSet};
+ use std::fmt;
+ use std::sync::{Arc, Mutex, OnceLock, RwLock};
+ 
+@@ -25,6 +25,18 @@
+     socket::DisconnectReason,
+ };
+ 
++// FreeShow: admit at most one connect task per known namespace/engine session.
++// Guard cleanup also runs when the isolated listener runtime cancels the task.
++struct ConnectGuard {
++    pending: Arc<Mutex<HashSet<Str>>>,
++    namespace: Str,
++}
++impl Drop for ConnectGuard {
++    fn drop(&mut self) {
++        self.pending.lock().unwrap().remove(&self.namespace);
++    }
++}
++
+ pub struct Client<A: Adapter> {
+     pub(crate) config: SocketIoConfig,
+     pub(crate) nsps: RwLock<HashMap<Str, Arc<Namespace<A>>>>,
+@@ -66,7 +78,21 @@
+         #[cfg(feature = "tracing")]
+         tracing::debug!("auth: {:?}", auth);
+         let protocol: ProtocolVersion = esocket.protocol.into();
++        let guard = if let Some(ns) = self.get_ns(ns_path) {
++            if ns.get_socket(esocket.id).is_ok() {
++                return;
++            }
++            let namespace = Str::copy_from_slice(ns_path);
++            let pending = esocket.data.pending_connects.clone();
++            if !pending.lock().unwrap().insert(namespace.clone()) {
++                return;
++            }
++            Some(ConnectGuard { pending, namespace })
++        } else {
++            None
++        };
+         let connect = async move |ns: Arc<Namespace<A>>, esocket: Arc<EIoSocket<SocketData<A>>>| {
++            let _guard = guard;
+             if ns.connect(esocket.id, esocket.clone(), auth).await.is_ok() {
+                 // cancel the connect timeout task for v5
+                 if let Some(tx) = esocket.data.connect_recv_tx.lock().unwrap().take() {
+@@ -213,6 +239,7 @@
+ }
+ 
+ pub struct SocketData<A: Adapter> {
++    pending_connects: Arc<Mutex<HashSet<Str>>>,
+     pub parser_state: ParserState,
+     /// Channel used to notify the socket that it has been connected to a namespace for v5
+     pub connect_recv_tx: Mutex<Option<oneshot::Sender<()>>>,
+@@ -223,6 +250,7 @@
+ impl<A: Adapter> Default for SocketData<A> {
+     fn default() -> Self {
+         Self {
++            pending_connects: Arc::default(),
+             parser_state: ParserState::default(),
+             connect_recv_tx: Mutex::new(None),
+             io: OnceLock::new(),
