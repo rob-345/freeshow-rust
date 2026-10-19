@@ -124,6 +124,23 @@ the immutable-control binary was
 The corrected VideoPlayer input SHA-256 was
 `4336e54d32395b0c0242ef4950895235772ff8509883b429a7026d9aacb8c006`.
 
+The durable [browser receipt](../../../tests/desktop/video_cors/receipt.json)
+contains both complete ordinary receipt values, including their build identities,
+all 14 observations each, exact known capability errors, normal-CLOSE fields,
+and actual `ownedChildren: ""` cleanup results. It is 362,765 bytes (below the
+384KiB evidence bound), SHA-256
+`b9ac9a98186bcc2170cda3e3de292dd39c800f50030be5d94927e139e2b94bef`.
+The container's `inputs` records the byte lengths and SHA-256 hashes of the
+original ignored receipt/build files. Both embedded receipts were checked for
+exact equality with those original files; serializing each with Python
+`json.dumps(value, ensure_ascii=False, indent=2)` reproduces its original receipt
+bytes and hash. Build values also match the separately hashed original build
+files. No cleanup/pass fields or diagnostics were rewritten, and no new app run
+was performed for this durable copy. Recorded hook hashes preserve the control's
+earlier observation version and the corrected run's fixture-identity/guard
+observations; the causal same-element/same-URL reload remains within the
+original control itself.
+
 Raw receipts/build hashes/logs are under the worktree's ignored
 `test-output-rust/video-cors/`. The original control is preserved in
 `original-control/` and `corrected-control/`. Earlier failed receipts are retained: initial clock sampling
