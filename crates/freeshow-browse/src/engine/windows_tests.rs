@@ -730,13 +730,13 @@ mod record_comparison {
             }
             for key in STAT_KEYS {
                 let number = native[key].as_f64().expect("native Stats Number");
-                let source_number = projected[key].as_f64().expect("source Stats Number");
-                assert_eq!(
-                    number, source_number,
-                    "source JSON Number value {label}:{key}"
+                assert!(
+                    projected[key].is_number(),
+                    "source Stats Number type {label}:{key}"
                 );
-                // JSON loses -0's sign and has no integer/f64 distinction in
-                // JavaScript. The pre-JSON capture remains the bitwise oracle.
+                // JSON loses -0's sign; serde's decimal reparse can also differ
+                // by a bit. The projected Number establishes type only, while
+                // the original pre-JSON capture is the bitwise oracle.
                 let actual_bits = number
                     .to_le_bytes()
                     .iter()
@@ -810,6 +810,27 @@ mod record_comparison {
             "source JSON loses -0 sign",
         );
         rejects(&negative_zero, &source, Some(&bits));
+
+        // Actual Node22.21.1 JSON.stringify emits this decimal for source bits
+        // 427a1544d23c0006; serde_json's default decimal parser yields the next
+        // binary64 value. Only the source's pre-JSON bits establish its Number.
+        let mut source_decimal = source.clone();
+        source_decimal["stats"]["mtimeMs"] = serde_json::from_str("1792415704000.0015").unwrap();
+        let mut native_decimal = native.clone();
+        native_decimal["stats"]["mtimeMs"] =
+            serde_json::json!(f64::from_bits(0x427a_1544_d23c_0006));
+        let reparsed = source_decimal["stats"]["mtimeMs"].as_f64().unwrap();
+        assert_eq!(reparsed.to_bits(), 0x427a_1544_d23c_0007);
+        let mut decimal_bits = bits.clone();
+        decimal_bits["mtimeMs"] = serde_json::json!("06003cd244157a42");
+        assert_record(
+            &native_decimal,
+            &source_decimal,
+            Some(&decimal_bits),
+            "fractional date decimal transport",
+        );
+        native_decimal["stats"]["mtimeMs"] = serde_json::json!(reparsed);
+        rejects(&native_decimal, &source_decimal, Some(&decimal_bits));
     }
 
     #[test]
@@ -853,6 +874,8 @@ mod record_comparison {
         rejects(&wrong_type, &source, Some(&bits));
         let mut wrong_type = source.clone();
         wrong_type["stats"]["size"] = json!("21");
+        rejects(&native, &wrong_type, Some(&bits));
+        wrong_type["stats"]["size"] = json!(null);
         rejects(&native, &wrong_type, Some(&bits));
         rejects(&native, &source, None);
     }
