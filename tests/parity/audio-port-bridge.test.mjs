@@ -15,8 +15,8 @@ const hashes = {
     "public/assets/pcm-worklet.js": "8317a6217e2b248f0b385c8f0d65393472b272fb6fe0d46037dc9bb62786a24a"
 }
 function immutable(file) {
-    const source = fs.readFileSync(path.join(root, file), "utf8")
-    assert.equal(createHash("sha256").update(source).digest("hex"), hashes[file], `${file}: actual immutable 2d94def source`)
+    const source = fs.readFileSync(path.join(root, file), "utf8").replace(/\r\n/g, "\n")
+    assert.equal(createHash("sha256").update(source).digest("hex"), hashes[file], `${file}: actual immutable 2d94def source after CRLF normalization`)
     return source
 }
 const sourcePreload = immutable("src/electron/preload.ts")
