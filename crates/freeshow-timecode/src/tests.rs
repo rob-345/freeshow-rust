@@ -434,3 +434,76 @@ fn renewal_requires_drain_reseals_tokens_and_preserves_source_globals() {
     r.complete(&fresh_token, Completion::Opened).unwrap();
     assert_eq!(r.snapshot().owned_listeners, 1);
 }
+
+#[test]
+fn retired_abandonment_is_only_nonaccepted_constructor_not_failure_or_disposal() {
+    let mut r = Router::new(false);
+    let ctor = start(&mut r, "receive", "LTC", 25.0);
+    let t = token(&ctor);
+    assert!(r
+        .complete(&t, Completion::Abandoned(Error::native("not admitted")))
+        .is_err());
+    let mut foreign = Router::new(false);
+    foreign.retire().unwrap();
+    assert!(foreign
+        .complete(&t, Completion::Abandoned(Error::native("foreign")))
+        .is_err());
+    r.retire().unwrap();
+    let completed = r
+        .complete(&t, Completion::Abandoned(Error::native("not admitted")))
+        .unwrap();
+    assert!(completed.effects.is_empty());
+    assert!(!r.snapshot().decoder_failed);
+    assert!(r.drained());
+    assert!(r
+        .complete(&t, Completion::Abandoned(Error::native("duplicate")))
+        .is_err());
+    r.renew_after_drain().unwrap();
+    let ctor = start(&mut r, "receive", "LTC", 25.0);
+    r.retire().unwrap();
+    r.complete(
+        &token(&ctor),
+        Completion::Failed(Error::native("actual constructor failed")),
+    )
+    .unwrap();
+    assert!(r.snapshot().decoder_failed);
+    let mut r = Router::new(false);
+    start(&mut r, "send", "LTC", 25.0);
+    let ctor = r.begin(Command::Value(Number::new(1000.0))).unwrap();
+    let encode = r.complete(&token(&ctor), Completion::Opened).unwrap();
+    r.retire().unwrap();
+    assert!(r
+        .complete(
+            &token(&encode),
+            Completion::Abandoned(Error::native("accepted encode cannot be abandoned"))
+        )
+        .is_err());
+    let stop = r
+        .complete(&token(&encode), Completion::Encoded(vec![1]))
+        .unwrap();
+    for e in stop.effects {
+        if let Some(t) = e.token {
+            r.complete(&t, Completion::Done).unwrap();
+        }
+    }
+    assert!(r.drained());
+    r.renew_after_drain().unwrap();
+    let ctor = r.begin(Command::Value(Number::new(1000.0))).unwrap();
+    let encode = r.complete(&token(&ctor), Completion::Opened).unwrap();
+    r.complete(&token(&encode), Completion::Encoded(vec![1]))
+        .unwrap();
+    let replacement = r.begin(Command::Value(Number::new(500.0))).unwrap();
+    r.retire().unwrap();
+    let stop = r
+        .complete(
+            &token(&replacement),
+            Completion::Abandoned(Error::native("replacement not admitted")),
+        )
+        .unwrap();
+    assert!(r.snapshot().encoder);
+    assert!(!r.snapshot().encoder_failed);
+    assert!(!r.drained());
+    assert!(matches!(stop.effects[0].effect, Effect::StopEncoder));
+    r.complete(&token(&stop), Completion::Done).unwrap();
+    assert!(r.drained());
+}

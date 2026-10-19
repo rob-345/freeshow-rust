@@ -343,6 +343,9 @@ pub fn ltc_time(frame: &LtcFrame, fps: f64) -> Number {
 pub enum Completion {
     Opened,
     Failed(Error),
+    /// Native-only retired receipt for a constructor rejected before acceptance.
+    /// It is not an actual constructor failure or disposal of an accepted codec.
+    Abandoned(Error),
     Done,
     Decoded(Option<LtcFrame>),
     Encoded(Vec<u8>),
@@ -861,6 +864,36 @@ impl Router {
     pub fn complete(&mut self, token: &EffectToken, outcome: Completion) -> Result<Step, Error> {
         if !self.valid(token) {
             return Err(Error::state("Foreign effect token"));
+        }
+        if let Completion::Abandoned(error) = outcome {
+            if !self.retired {
+                return Err(Error::state(
+                    "Only a retired nonaccepted constructor may be abandoned",
+                ));
+            }
+            let operation = self
+                .sync
+                .as_ref()
+                .filter(|op| op.token.id == token.id)
+                .ok_or_else(|| Error::state("No matching retired constructor continuation"))?;
+            if !matches!(
+                operation.kind,
+                SyncKind::Decoder { .. } | SyncKind::Encoder { .. }
+            ) {
+                return Err(Error::state(
+                    "Only a nonaccepted constructor may be abandoned",
+                ));
+            }
+            let operation = self.sync.take().unwrap();
+            if let SyncKind::Decoder { listener, .. } = operation.kind {
+                self.remove_listener(&listener);
+            }
+            let mut step = self.retire()?;
+            step.errors.push(Error {
+                code: error.code,
+                ..Error::native(&error.message)
+            });
+            return Ok(step);
         }
         let outcome = match outcome {
             Completion::Failed(error) => Completion::Failed(Error {
