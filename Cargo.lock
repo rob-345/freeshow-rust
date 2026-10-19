@@ -963,10 +963,13 @@ dependencies = [
 name = "freeshow-system"
 version = "0.1.0"
 dependencies = [
+ "getrandom 0.4.3",
  "libc",
  "mach2",
  "serde",
  "serde_json",
+ "sha2",
+ "tempfile",
  "tokio",
  "windows-sys 0.61.2",
 ]

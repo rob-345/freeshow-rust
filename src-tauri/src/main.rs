@@ -7,6 +7,7 @@ mod audio_input;
 mod audio_pipeline;
 mod browse;
 mod context_changes;
+mod device_id;
 mod discovery;
 #[cfg(target_os = "linux")]
 mod documents_path;
@@ -82,6 +83,7 @@ struct AppState {
     imports: imports::NativeImports,
     browse: browse::NativeBrowse,
     system: SystemService,
+    device_id: device_id::DeviceIdentity,
     network_snapshots: network_snapshot::NetworkSnapshots,
     network_queries: network_queries::NativeNetworkQueries,
     api: api::NativeApi,
@@ -1052,6 +1054,13 @@ async fn dispatch_native(
             }
             return Ok(imported.events);
         }
+        if command == "DEVICE_ID" {
+            let state = app.state::<AppState>();
+            return state
+                .device_id
+                .dispatch(&state.library, request, window.label())
+                .await;
+        }
         if system::COMMANDS.contains(&command) {
             let state = app.state::<AppState>();
             return system::dispatch(&state.library, &state.system, request).await;
@@ -1187,6 +1196,7 @@ async fn dispatch_native(
             }
             "CLOSE" => {
                 let state = app.state::<AppState>();
+                state.device_id.seal();
                 let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
                 let context = state.library.context().map_err(WireError::from)?;
                 state.cover_publications.retire(&context, true);
@@ -1942,6 +1952,7 @@ fn main() {
                 imports,
                 browse,
                 system,
+                device_id: device_id::DeviceIdentity::new(),
                 network_snapshots,
                 network_queries,
                 api,

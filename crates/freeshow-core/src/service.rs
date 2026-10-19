@@ -80,6 +80,10 @@ struct Snapshot {
 
 type Reply = oneshot::Receiver<Result<Vec<Event>>>;
 type LibraryCommit = Box<dyn FnOnce(&mut Runtime) -> Result<Vec<Event>> + Send>;
+struct OrderedCommit {
+    operation: LibraryCommit,
+    refresh_media_settings: bool,
+}
 
 enum Job {
     Phase(Box<PhaseJob>),
@@ -89,7 +93,7 @@ enum Job {
     Dispatch {
         sequence: Option<u64>,
         request: Box<Request>,
-        commit: Option<LibraryCommit>,
+        commit: Option<OrderedCommit>,
         window: String,
         reply: oneshot::Sender<Result<Vec<Event>>>,
     },
@@ -198,7 +202,9 @@ impl LibraryService {
                             window,
                             reply,
                         } => {
-                            let refresh_media_settings = commit.is_some()
+                            let refresh_media_settings = commit
+                                .as_ref()
+                                .is_some_and(|commit| commit.refresh_media_settings)
                                 || (request.channel == "MAIN"
                                     && (matches!(
                                         request.data["channel"].as_str(),
@@ -219,7 +225,7 @@ impl LibraryService {
                             let prepared = if let Some(commit) = commit {
                                 runtime
                                     .validate_context(&request)
-                                    .and_then(|()| commit(&mut runtime))
+                                    .and_then(|()| (commit.operation)(&mut runtime))
                                     .map(Into::into)
                             } else {
                                 runtime.prepare_dispatch(*request, &window)
@@ -398,7 +404,7 @@ impl LibraryService {
         &self,
         request: Request,
         window: &str,
-        commit: Option<LibraryCommit>,
+        commit: Option<OrderedCommit>,
     ) -> Result<Reply> {
         let (reply, received) = oneshot::channel();
         // FIFO asynchronous admission makes shutdown wait behind callers that
@@ -515,7 +521,39 @@ impl LibraryService {
         operation: impl FnOnce(&mut Runtime) -> Result<Vec<Event>> + Send + 'static,
     ) -> Result<Vec<Event>> {
         let received = self
-            .enqueue_operation(request, window, Some(Box::new(operation)))
+            .enqueue_operation(
+                request,
+                window,
+                Some(OrderedCommit {
+                    operation: Box::new(operation),
+                    refresh_media_settings: true,
+                }),
+            )
+            .await?;
+        self.receive_reply(received, false).await
+    }
+
+    /// Apply a trusted native operation which preserves mediaFolderPath. Unlike
+    /// ordinary `commit`, this does not perform an implicit unbounded CONFIG
+    /// reread after the closure. The caller must retain the existing media
+    /// setting; DEVICE_ID changes only machineId, and ACCESS queries change none.
+    /// Context validation, ordered admission, accepted Drop ownership, mutation
+    /// fences and terminal drain are identical to `commit`.
+    pub async fn commit_without_media_refresh(
+        &self,
+        request: Request,
+        window: &str,
+        operation: impl FnOnce(&mut Runtime) -> Result<Vec<Event>> + Send + 'static,
+    ) -> Result<Vec<Event>> {
+        let received = self
+            .enqueue_operation(
+                request,
+                window,
+                Some(OrderedCommit {
+                    operation: Box::new(operation),
+                    refresh_media_settings: false,
+                }),
+            )
             .await?;
         self.receive_reply(received, false).await
     }
