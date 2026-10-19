@@ -43,6 +43,18 @@ four source suites retain existing platform/capability skips. Strict workspace
 and native all-target Clippy, focused TypeScript, formatting and immutable-source
 snapshot checks pass. The full parity gate intentionally remains incomplete.
 
+Published `19d68467` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39260766076).
+Actual Windows core passes all 36 browsing cases, including complete source
+records and the three strict Number-comparison controls. Darwin passes eight
+module and six integration cases; eight are platform-specific. Native Windows
+and Darwin again pass their dedicated eighteen and twelve cover cases,
+Source cases and actual three-port TCP/STOP lifetime tests. Independently
+validated downloaded Linux artifacts preserve all 187 editor steps, 141 HTTP
+responses, exact supported JPEG pixels, original callbacks and visible text,
+unchanged blockers/sentinels, menus/drops and real process exit. This complete
+editor receipt retains 53 expected other-feature diagnostics.
+[Current CI receipt](baselines/windows-listing-native-ci.json).
+
 The rebuilt **187-step Linux editor**, four GTK menus and both native drop scales
 pass. Fourteen actual cover phases make **141 HTTP requests** across all three
 ports, comparing current file bytes/hash/MIME/length, HEAD, range and conditional
@@ -172,8 +184,9 @@ strict non-Stats shapes/order and exact numeric field types. It also preserves
 a real decimal-transport control: source bits for1792415704000.0015 differ from
 serde's reparsed decimal by one ULP, and substituting the latter must fail.
 Three independently rerun portable comparator controls pass; production and
-all original Windows test bodies remain unchanged. The next actual Windows run
-will include these three additional controls alongside the original33 cases.
+all original Windows test bodies remain unchanged. The corrected actual Windows
+run at `19d68467` passes all 36 cases, including the original 33 and the three
+new comparator controls, with none ignored.
 [Number comparison](workers/browse-windows-number-comparison.md).
 [Listing integration and limits](workers/browse-windows-integration.md).
 

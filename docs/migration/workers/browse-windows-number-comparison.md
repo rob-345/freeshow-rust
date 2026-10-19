@@ -55,8 +55,11 @@ and the same workspace serde_json `1.0.154`/preserve_order dependency. Strict
 used the existing private target with jobs 1 and incremental/debug information
 disabled; workspace manifests and lockfiles are unchanged.
 
-Actual Windows execution of the correction remains pending the coordinator's
-next CI. All 11 original engine tests and 11 original stat tests are retained;
-the other original Windows tests are untouched, with three comparator tests
-added. Cross compilation does not turn the earlier four failures into passed
-runtime evidence.
+Actual Windows execution at `19d68467` now passes all 36 browsing cases in
+[CI run 39260766076](https://github.com/rob-345/freeshow-rust/actions/runs/39260766076).
+All 11 original engine tests and 11 original stat tests are retained; the other
+original Windows tests are untouched, with three comparator tests added.
+None is ignored. All six CI jobs pass, including both complete native jobs and
+the Linux desktop workflow. The coordinator independently checked the actual
+logs and downloaded Linux artifacts.
+[Durable receipt](../baselines/windows-listing-native-ci.json).
