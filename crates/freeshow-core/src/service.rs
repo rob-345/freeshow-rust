@@ -16,6 +16,12 @@ use std::sync::{
 };
 use tokio::sync::{mpsc, oneshot, watch, Mutex as AsyncMutex};
 
+mod phase;
+pub use phase::{
+    LibraryPhase, PhaseTicket, PHASE_CAPACITY, PHASE_FINISH_CAPACITY, PHASE_JOB_CAPACITY,
+    PHASE_JOB_LIMIT, PHASE_REPLY_BYTES, PHASE_REQUEST_BYTES,
+};
+
 const QUEUE_CAPACITY: usize = 8;
 const READ_WORKERS: usize = 2;
 
@@ -43,6 +49,15 @@ pub struct LibraryStatus {
     pub read_workers: usize,
     pub active_reads: usize,
     pub accepting_requests: bool,
+    /// Whole pending/active/retained phase capabilities, including retained replies.
+    pub retained_phases: usize,
+    pub phase_capacity: usize,
+    pub retained_phase_jobs: usize,
+    pub phase_job_capacity: usize,
+    pub phase_job_limit: usize,
+    pub phase_admission_closed: bool,
+    pub retained_phase_observers: usize,
+    pub phase_finish_capacity: usize,
 }
 
 /// Committed media configuration and its library provenance, captured together.
@@ -67,6 +82,7 @@ type Reply = oneshot::Receiver<Result<Vec<Event>>>;
 type LibraryCommit = Box<dyn FnOnce(&mut Runtime) -> Result<Vec<Event>> + Send>;
 
 enum Job {
+    Phase(Box<PhaseJob>),
     Drain {
         reply: oneshot::Sender<Result<Vec<Event>>>,
     },
@@ -91,6 +107,12 @@ enum Job {
     Stop,
 }
 
+struct PhaseJob {
+    request: Request,
+    owner: phase::Owner,
+    reply: oneshot::Sender<Result<()>>,
+}
+
 enum ReadJob {
     Dispatch {
         request: Request,
@@ -112,6 +134,7 @@ pub struct LibraryService {
     accepting: Arc<AtomicBool>,
     progress: watch::Receiver<u64>,
     snapshot: Arc<RwLock<Snapshot>>,
+    phases: Arc<phase::Registry>,
 }
 
 impl LibraryService {
@@ -160,6 +183,11 @@ impl LibraryService {
                 )> = None;
                 while let Some(job) = receiver.blocking_recv() {
                     match job {
+                        Job::Phase(job) => {
+                            if !run_phase(*job, &mut runtime, &shared, &files, &completed) {
+                                break;
+                            }
+                        }
                         Job::Drain { reply } => {
                             let _ = reply.send(Ok(Vec::new()));
                         }
@@ -273,6 +301,7 @@ impl LibraryService {
             accepting: Arc::new(AtomicBool::new(true)),
             progress,
             snapshot,
+            phases: Arc::new(phase::Registry::new()),
         })
     }
 
@@ -288,6 +317,12 @@ impl LibraryService {
     }
 
     pub fn status(&self) -> Result<LibraryStatus> {
+        let (
+            retained_phases,
+            retained_phase_jobs,
+            retained_phase_observers,
+            phase_admission_closed,
+        ) = self.phases.status();
         let state = self
             .snapshot
             .read()
@@ -303,6 +338,14 @@ impl LibraryService {
             read_workers: READ_WORKERS,
             active_reads: state.active_reads,
             accepting_requests: self.accepting.load(Ordering::Acquire),
+            retained_phases,
+            phase_capacity: PHASE_CAPACITY,
+            retained_phase_jobs,
+            phase_job_capacity: PHASE_JOB_CAPACITY,
+            phase_job_limit: PHASE_JOB_LIMIT,
+            phase_admission_closed,
+            retained_phase_observers,
+            phase_finish_capacity: PHASE_FINISH_CAPACITY,
         })
     }
 
@@ -436,6 +479,10 @@ impl LibraryService {
     /// once this barrier owns admission, new requests are rejected. Accepted
     /// file jobs are attempted in order even if this caller drops its wait.
     pub async fn finish_writes(&self) -> Result<()> {
+        // A live phase owns admission. Independent terminal control must seal
+        // it before waiting for admission, even if every result slot is full.
+        // Accepted phase IO still drains before this terminal queue fence.
+        self.phases.close();
         let admission = self.admission.lock().await;
         self.accepting.store(false, Ordering::Release);
         let (reply, received) = oneshot::channel();
@@ -473,6 +520,53 @@ impl LibraryService {
         self.receive_reply(received, false).await
     }
 
+    /// Fence earlier ordered work, then retain normal admission for a bounded
+    /// native continuation. Subjobs use `LibraryPhase::submit`, never ordinary
+    /// `commit` (which intentionally waits behind the phase). The IO barrier is
+    /// acquired only while executing each actual subjob, not while awaiting a
+    /// different native capability. Status/context and idle-phase SHOW remain
+    /// independent. Dropping a pending begin cannot retain admission.
+    pub async fn begin_phase(&self, request: Request, window: &str) -> Result<LibraryPhase> {
+        if self.jobs.is_closed() {
+            return Err(unavailable("library worker stopped"));
+        }
+        let (phase, owner) =
+            self.phases
+                .create(&request, window, self.admitted_sequence.clone())?;
+        let admission = self.admission.clone().lock_owned().await;
+        if !self.accepting.load(Ordering::Acquire) || phase.is_closed() {
+            return Err(phase::closed());
+        }
+        let permit = self
+            .jobs
+            .reserve()
+            .await
+            .map_err(|_| unavailable("request queue closed"))?;
+        if phase.is_closed() {
+            return Err(phase::closed());
+        }
+        phase.attach_admission(admission)?;
+        let (reply, received) = oneshot::channel();
+        permit.send(Job::Phase(Box::new(PhaseJob {
+            request,
+            owner,
+            reply,
+        })));
+        self.receive_phase_reply(received).await?;
+        Ok(phase)
+    }
+
+    async fn receive_phase_reply(&self, received: oneshot::Receiver<Result<()>>) -> Result<()> {
+        // Like ordinary replies, observe receiver closure even if a reserved
+        // permit published after the IO receiver's actual exit.
+        tokio::select! {
+            biased;
+            result = received => result.map_err(|_| unavailable("worker stopped before phase admission"))??,
+            _ = self.jobs.closed() => return Err(unavailable("library worker stopped")),
+        }
+        Ok(())
+    }
+
     async fn receive_reply(&self, received: Reply, read: bool) -> Result<Vec<Event>> {
         // A reserved mpsc permit may publish after its receiver has dropped.
         // In that race the queued job can retain its oneshot sender while this
@@ -484,6 +578,102 @@ impl LibraryService {
             _ = self.reads.closed(), if read => Err(unavailable("show readers stopped")),
         }
     }
+}
+
+fn run_phase(
+    job: PhaseJob,
+    runtime: &mut Runtime,
+    snapshot: &Arc<RwLock<Snapshot>>,
+    files: &RwLock<()>,
+    completed: &watch::Sender<u64>,
+) -> bool {
+    let PhaseJob {
+        request,
+        mut owner,
+        reply,
+    } = job;
+    if !owner.enter() {
+        let _ = reply.send(Err(phase::closed()));
+        owner.complete();
+        return true;
+    }
+    let Ok(mut state) = snapshot.write() else {
+        return false;
+    };
+    let idle = ActiveJob {
+        channel: request.channel.clone(),
+        command: request.data["channel"].as_str().unwrap_or("").into(),
+        listener_id: request.listener_id.clone(),
+        phase: "nativePhaseIdle",
+    };
+    state.active_job = Some(idle.clone());
+    drop(state);
+    let Ok(exclusive) = files.write() else {
+        return false;
+    };
+    let validation = runtime.validate_context(&request);
+    drop(exclusive);
+    let valid = validation.is_ok();
+    let _ = reply.send(validation);
+    if valid {
+        while let Some(mut work) = owner.receiver.blocking_recv() {
+            let Ok(mut state) = snapshot.write() else {
+                return false;
+            };
+            state.active_job = Some(ActiveJob {
+                channel: work.request.channel.clone(),
+                command: work.request.data["channel"].as_str().unwrap_or("").into(),
+                listener_id: work.request.listener_id.clone(),
+                phase: "nativePhase",
+            });
+            drop(state);
+            let Ok(exclusive) = files.write() else {
+                return false;
+            };
+            let operation = work
+                .operation
+                .take()
+                .expect("phase operation consumed once");
+            let mut result = runtime
+                .validate_context(&work.request)
+                .and_then(|()| operation(runtime));
+            let context = runtime.context();
+            let settings = runtime
+                .stores
+                .get_key("config", "mediaFolderPath")
+                .map_err(|error| error.to_string());
+            let Ok(mut state) = snapshot.write() else {
+                return false;
+            };
+            state.context = context.clone();
+            state.reader = runtime.show_reader();
+            state.media_settings = settings;
+            state.active_job = Some(idle.clone());
+            drop(state);
+            // Exactly like an ordinary mutation: publish the dependency fence
+            // after actual IO/snapshot refresh, before dropping the FS barrier.
+            completed.send_replace(work.sequence);
+            drop(exclusive);
+            if let Ok(events) = &mut result {
+                for event in events.iter_mut() {
+                    event.context = Some(context.clone());
+                }
+                if let Err(error) = phase::validate_events(events) {
+                    result = Err(error);
+                }
+            }
+            work.finish(result);
+        }
+    }
+    let Ok(mut state) = snapshot.write() else {
+        return false;
+    };
+    state.active_job = None;
+    drop(state);
+    // A completed-but-uncollected reply retains its quota, never admission.
+    // The completion signal certifies accepted IO and this guard's release.
+    owner.complete();
+    true
 }
 
 fn show_reader_loop(
@@ -1390,6 +1580,155 @@ mod tests {
                 .unwrap(),
             Err(Error::WorkerUnavailable(_))
         ));
+    }
+
+    #[tokio::test]
+    async fn reserved_phase_after_receiver_exit_cannot_retain_admission_or_hide_failure() {
+        let (_temp, service) = service_with_capacity(2);
+        let context = service.context().unwrap();
+        let source = request("NOW_PLAYING", Value::Null, &context);
+        let (phase, owner) = service
+            .phases
+            .create(&source, "main", service.admitted_sequence.clone())
+            .unwrap();
+        phase
+            .attach_admission(service.admission.clone().lock_owned().await)
+            .unwrap();
+        let permit = service.jobs.reserve().await.unwrap();
+        service.jobs.send(Job::Stop).await.unwrap();
+        timeout(DEADLINE, service.jobs.closed()).await.unwrap();
+        let (reply, received) = oneshot::channel();
+        permit.send(Job::Phase(Box::new(PhaseJob {
+            request: source,
+            owner,
+            reply,
+        })));
+        assert!(matches!(
+            timeout(DEADLINE, service.receive_phase_reply(received))
+                .await
+                .unwrap(),
+            Err(Error::WorkerUnavailable(_))
+        ));
+        // The retained closed-queue marker never entered the actual IO owner.
+        // Canceling begin/closing its capability must release admission now.
+        drop(phase);
+        drop(timeout(DEADLINE, service.admission.lock()).await.unwrap());
+        assert!(matches!(
+            timeout(
+                DEADLINE,
+                service.commit(request("AFTER", Value::Null, &context), "main", |_| panic!(
+                    "worker stopped"
+                ))
+            )
+            .await
+            .unwrap(),
+            Err(Error::WorkerUnavailable(_))
+        ));
+        assert!(matches!(
+            timeout(
+                DEADLINE,
+                service.begin_phase(request("NOW_PLAYING", Value::Null, &context), "main")
+            )
+            .await
+            .unwrap(),
+            Err(Error::WorkerUnavailable(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn closed_late_phase_marker_cannot_regress_or_strand_real_mutation_fences() {
+        let (temp, service) = service_with_capacity(2);
+        let context = service.context().unwrap();
+        let mut old = context.clone();
+        old.library_generation += 1;
+        // A stale embedded SAVE would write a recovery artifact if a closed
+        // late marker incorrectly ran validation or any source effect.
+        let source = request("SAVE", json!({"runtimeContext":old}), &context);
+        let (phase, owner) = service
+            .phases
+            .create(&source, "main", service.admitted_sequence.clone())
+            .unwrap();
+        phase
+            .attach_admission(service.admission.clone().lock_owned().await)
+            .unwrap();
+        let reserved = service.jobs.reserve().await.unwrap();
+        phase.close();
+        let (entered, received) = oneshot::channel();
+        let (release, wait) = std::sync::mpsc::channel();
+        let mut mutation = Box::pin(service.commit(
+            request("REAL_MUTATION", Value::Null, &context),
+            "main",
+            move |runtime| {
+                let _ = entered.send(());
+                wait.recv().unwrap();
+                runtime.save(&json!({"showsCache":{"song":{"name":"Live","text":"real"}}}))?;
+                Ok(vec![])
+            },
+        ));
+        tokio::select! {
+            result = &mut mutation => panic!("mutation escaped gate: {result:?}"),
+            result = received => result.unwrap(),
+        }
+        assert_eq!(service.admitted_sequence.load(Ordering::Acquire), 1);
+        assert_eq!(*service.progress.borrow(), 0);
+        // Publish the reserved closed marker after the real mutation's send.
+        let (reply, received) = oneshot::channel();
+        reserved.send(Job::Phase(Box::new(PhaseJob {
+            request: source,
+            owner,
+            reply,
+        })));
+        let mut show = Box::pin(service.dispatch(
+            request("SHOW", json!({"id":"song","name":"Live"}), &context),
+            "main",
+        ));
+        assert!(timeout(Duration::from_millis(30), &mut show).await.is_err());
+        release.send(()).unwrap();
+        timeout(DEADLINE, mutation).await.unwrap().unwrap();
+        assert!(matches!(
+            timeout(DEADLINE, service.receive_phase_reply(received))
+                .await
+                .unwrap(),
+            Err(Error::NativeOperation {
+                code: "library_phase_closed",
+                ..
+            })
+        ));
+        let events = timeout(DEADLINE, show).await.unwrap().unwrap();
+        assert_eq!(
+            events[0].message.data.as_ref().unwrap()["content"][1]["text"],
+            "real"
+        );
+        assert_eq!(*service.progress.borrow(), 1);
+        assert!(!temp.path().join("app/Recovery").exists());
+        phase.finish().await.unwrap();
+        service
+            .commit(
+                request("SECOND_MUTATION", Value::Null, &context),
+                "main",
+                |runtime| {
+                    runtime
+                        .save(&json!({"showsCache":{"song":{"name":"Live","text":"second"}}}))?;
+                    Ok(vec![])
+                },
+            )
+            .await
+            .unwrap();
+        let events = timeout(
+            DEADLINE,
+            service.dispatch(
+                request("SHOW", json!({"id":"song","name":"Live"}), &context),
+                "main",
+            ),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            events[0].message.data.as_ref().unwrap()["content"][1]["text"],
+            "second"
+        );
+        assert_eq!(*service.progress.borrow(), 2);
     }
 
     #[tokio::test]
