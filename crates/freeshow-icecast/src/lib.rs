@@ -84,6 +84,25 @@ impl Receipt {
     }
 }
 
+/// Native-only proof that a validated metadata command reached the title owner.
+/// A header diagnostic does not undo the applied title. This is not a source ACK.
+#[derive(Debug)]
+pub struct MetadataReceipt {
+    receipt: Receipt,
+    diagnostic: Option<Error>,
+}
+impl MetadataReceipt {
+    pub fn receipt(&self) -> &Receipt {
+        &self.receipt
+    }
+    pub fn diagnostic(&self) -> Option<&Error> {
+        self.diagnostic.as_ref()
+    }
+    pub fn into_parts(self) -> (Receipt, Option<Error>) {
+        (self.receipt, self.diagnostic)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Limits {
     pub queue: usize,

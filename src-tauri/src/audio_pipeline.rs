@@ -185,6 +185,9 @@ pub enum Effect {
         disposition: ice::Disposition,
         run: u64,
     },
+    MetadataApplied {
+        run: u64,
+    },
     Failure {
         index: usize,
         stage: pipe::FailureStage,
@@ -1225,12 +1228,17 @@ async fn process(
         Operation::Metadata(title) => {
             let _gate = shared.publication.lock().await;
             shared.current(&job.context)?;
-            let receipt = icecast
-                .update_metadata(ice::ContextId(epoch, 0), title, CancellationToken::new())
+            let observed = icecast
+                .update_metadata_observed(ice::ContextId(epoch, 0), title, CancellationToken::new())
                 .await
                 .map_err(ie)?;
+            let (receipt, diagnostic) = observed.into_parts();
             bind_run(shared, &job.context, &receipt).await?;
-            Ok((vec![], vec![], None))
+            Ok((
+                vec![Effect::MetadataApplied { run: receipt.run() }],
+                diagnostic.into_iter().map(ie).collect(),
+                None,
+            ))
         }
         Operation::Disconnect => {
             let _gate = shared.publication.lock().await;

@@ -34,7 +34,7 @@ enum Operation {
 }
 struct Command {
     op: Operation,
-    reply: oneshot::Sender<Result<Receipt>>,
+    reply: oneshot::Sender<Result<MetadataReceipt>>,
     _bytes: OwnedSemaphorePermit,
 }
 struct Shared {
@@ -170,6 +170,19 @@ impl IcecastService {
         bytes: usize,
         cancel: &CancellationToken,
     ) -> Result<Receipt> {
+        let observed = self.submit_observed(context, op, bytes, cancel).await?;
+        match observed.diagnostic {
+            Some(error) => Err(error),
+            None => Ok(observed.receipt),
+        }
+    }
+    async fn submit_observed(
+        &self,
+        context: ContextId,
+        op: impl FnOnce() -> Operation,
+        bytes: usize,
+        cancel: &CancellationToken,
+    ) -> Result<MetadataReceipt> {
         self.check(context, cancel)?;
         let permit = self
             .bytes
@@ -236,6 +249,22 @@ impl IcecastService {
         title: &str,
         cancel: CancellationToken,
     ) -> Result<Receipt> {
+        let observed = self
+            .update_metadata_observed(context, title, cancel)
+            .await?;
+        match observed.diagnostic {
+            Some(error) => Err(error),
+            None => Ok(observed.receipt),
+        }
+    }
+    /// Unlike the legacy error projection, retains actual title application when
+    /// connected header regeneration fails. Admission/context errors remain Err.
+    pub async fn update_metadata_observed(
+        &self,
+        context: ContextId,
+        title: &str,
+        cancel: CancellationToken,
+    ) -> Result<MetadataReceipt> {
         self.check(context, &cancel)?;
         if title.len() > self.limits.metadata_bytes
             || title.bytes().any(|b| b == 0 || b == b'\r' || b == b'\n')
@@ -245,7 +274,7 @@ impl IcecastService {
                 "Song title size/control characters",
             ));
         }
-        self.submit(
+        self.submit_observed(
             context,
             || Operation::Metadata(title.into()),
             title.len(),
@@ -532,11 +561,11 @@ impl Owner {
         }
         status.and(close_status)
     }
-    async fn operation(&mut self, op: Operation) -> Result<Receipt> {
+    async fn operation(&mut self, op: Operation) -> Result<MetadataReceipt> {
         let disposition = match op {
             Operation::Audio { packet, config } => {
                 let Some(config) = config else {
-                    return Ok(self.receipt(Disposition::Ignored));
+                    return Ok(self.observation(Disposition::Ignored, None));
                 };
                 if self.config.as_ref().is_some_and(|old| old != &config) {
                     self.last_attempt = None;
@@ -570,9 +599,14 @@ impl Owner {
                 if self.song != title {
                     self.song = title;
                     if self.status.connected {
-                        self.ogg = OggState::new(Self::serial()?);
-                        self.last_real = Instant::now();
-                        self.headers().await?;
+                        let diagnostic = async {
+                            self.ogg = OggState::new(Self::serial()?);
+                            self.last_real = Instant::now();
+                            self.headers().await
+                        }
+                        .await
+                        .err();
+                        return Ok(self.observation(Disposition::Updated, diagnostic));
                     }
                 }
                 Disposition::Updated
@@ -588,7 +622,13 @@ impl Owner {
                 Disposition::Ignored
             }
         };
-        Ok(self.receipt(disposition))
+        Ok(self.observation(disposition, None))
+    }
+    fn observation(&self, disposition: Disposition, diagnostic: Option<Error>) -> MetadataReceipt {
+        MetadataReceipt {
+            receipt: self.receipt(disposition),
+            diagnostic,
+        }
     }
     fn receipt(&self, disposition: Disposition) -> Receipt {
         Receipt {
@@ -609,7 +649,7 @@ impl Owner {
                 command=receiver.recv()=>match command{
                     Some(command)=>{
                         let result=if let Some(error)=self.shared.error(){Err(error)}else{self.operation(command.op).await};
-                        if let Err(error)=&result{
+                        if let Some(error)=match &result {Err(error)=>Some(error),Ok(observed)=>observed.diagnostic.as_ref()}{
                             if matches!(error.code,"socket_write"|"write_timeout"){let _=self.disconnect(None).await;}
                             else if matches!(error.code,"event_overflow"|"resource_limit"|"random_unavailable"){self.shared.fail(error.clone());}
                         }

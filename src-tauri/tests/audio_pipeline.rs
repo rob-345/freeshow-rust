@@ -588,6 +588,43 @@ async fn dropped_timed_out_retirement_stays_owned_and_terminal_retry_joins_actua
 }
 
 #[tokio::test]
+async fn metadata_applies_without_available_opus_and_does_not_encode_or_publish_a_source_ack() {
+    let _serial = SERIAL.lock().await;
+    let absent = std::env::temp_dir().join("freeshow-native-metadata-absent-opus-c8ea17.so");
+    let setup = setup(
+        unsafe { LibrarySource::trusted_path(&absent) }.unwrap(),
+        AudioLimits::default(),
+    );
+    assert!(matches!(
+        setup.native.capability().await.unwrap(),
+        Capability::Unavailable(_)
+    ));
+    let context = setup.library.context().unwrap();
+    let receipt = setup
+        .native
+        .metadata(
+            &context,
+            "Artist - Actual title owner without Opus",
+            cancel(),
+        )
+        .await
+        .unwrap();
+    assert!(matches!(
+        receipt.effects(),
+        [Effect::MetadataApplied { run: 0 }]
+    ));
+    assert!(receipt.diagnostics().is_empty());
+    assert!(receipt.failure().is_none());
+    assert_eq!(receipt.context(), &context);
+    assert!(setup.events.lock().unwrap().is_empty());
+    drop(receipt);
+    setup.native.shutdown().await.unwrap();
+    setup.delivery.await.unwrap();
+    assert_eq!(setup.native.status()["drainedOwners"], 15);
+    assert_eq!(setup.native.status()["joined"], true);
+}
+
+#[tokio::test]
 async fn real_pcm_opus_ogg_status_metadata_and_eos_or_explicit_unavailable() {
     let _serial = SERIAL.lock().await;
     let setup = setup(LibrarySource::system(), AudioLimits::default());

@@ -108,7 +108,7 @@ There is a concrete receipt mismatch to resolve before host wiring:
 
 The minimal seam is an actual metadata disposition/diagnostic receipt that preserves source continuation after the caught header failure while retaining real socket cleanup/status. Do not map every error to success, nor abort all cover/text work merely because an already-applied title's header update failed. Context/cancellation/input rejection remains distinct and must not be hydrated as applied.
 
-There is also a capability boundary: [audio_pipeline.rs:1551](../../../src-tauri/src/audio_pipeline.rs#L1551) gates all operations on pipeline+Opus codec+Icecast availability. Source title state can update without Opus capability. Either allow the actual metadata owner independently or report this platform/capability gap explicitly. Existing 8192-byte and no NUL/CR/LF title limits are narrower than source strings; unsupported inputs stay explicit.
+Coordinator follow-up corrected the capability interpretation: the gate requires actual pipeline, Opus-service and Icecast **owners**, rather than an available Opus library. An unavailable codec still has a real service owner, and metadata does not call encode. A native integration regression now verifies an applied title with a deliberately missing Opus library, zero source events and actual owner joins. Owner-construction/terminal faults remain distinct. Existing 8192-byte and no NUL/CR/LF title limits are narrower than source strings; unsupported inputs stay explicit.
 
 ## Retirement and shutdown order
 

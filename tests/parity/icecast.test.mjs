@@ -220,6 +220,29 @@ test("source exact60ms starvation,20ms timer and chained metadata reset", () => 
     o.tick(3000)
     assert.equal(o.sockets.length, 1, "no disconnected timer reconnect")
 })
+test("actual source applies metadata before a caught header failure and continues the caller", () => {
+    const o = oracle()
+    o.sender.sendAudio(Buffer.from([1]), { enabled: true })
+    o.sockets[0].callback()
+    const original = o.sender.startStreamHeaders
+    let attempts = 0
+    o.sender.startStreamHeaders = () => {
+        attempts++
+        throw new Error("controlled header boundary failure")
+    }
+    const trace = []
+    const value = o.sender.updateMetadata("Artist - Applied despite failed headers")
+    trace.push("next source filesystem continuation")
+    assert.equal(value, undefined)
+    assert.equal(o.sender.currentSongTitle, "Artist - Applied despite failed headers")
+    assert.deepEqual(trace, ["next source filesystem continuation"])
+    o.sender.updateMetadata("Artist - Applied despite failed headers")
+    assert.equal(attempts, 1, "the applied title prevents a duplicate header retry")
+    o.sender.startStreamHeaders = original
+    o.sender.disconnect()
+    o.flush()
+    assert.equal(o.intervals.size, 0)
+})
 test("source cooldown is send-triggered and rejection error is then cleared by close", () => {
     for (const [response, error] of [
         ["HTTP/1.1 409 Conflict\r\n", "Mountpoint in use"],

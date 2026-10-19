@@ -53,6 +53,108 @@ fn loopback_real_packets_metadata_eos_and_retirement() {
         assert_eq!(serials[0],serials[2]);assert_eq!(serials[3],serials[6]);
     });
 }
+
+#[test]
+fn observed_metadata_keeps_admission_failures_separate_from_applied_title() {
+    let _guard = TEST_OWNER.lock().unwrap();
+    runtime().block_on(async {
+        let context = ContextId(19, 3);
+        let service = IcecastService::start(context, Limits::default()).unwrap();
+        assert_eq!(
+            service
+                .update_metadata_observed(ContextId(19, 2), "foreign", cancel())
+                .await
+                .unwrap_err()
+                .code,
+            "stale_context"
+        );
+        let stopped = cancel();
+        stopped.cancel();
+        assert_eq!(
+            service
+                .update_metadata_observed(context, "cancelled", stopped)
+                .await
+                .unwrap_err()
+                .code,
+            "cancelled"
+        );
+        assert_eq!(
+            service
+                .update_metadata_observed(context, "invalid\n", cancel())
+                .await
+                .unwrap_err()
+                .code,
+            "unsupported_metadata"
+        );
+        let observed = service
+            .update_metadata_observed(context, "Artist - Applied without a socket", cancel())
+            .await
+            .unwrap();
+        assert_eq!(observed.receipt().context(), context);
+        assert_eq!(observed.receipt().disposition(), Disposition::Updated);
+        assert!(observed.diagnostic().is_none());
+        service.shutdown().await.unwrap();
+        assert!(service.thread.lock().unwrap().is_none());
+    });
+}
+
+#[tokio::test]
+async fn real_kernel_header_failure_retains_title_receipt_and_actual_cleanup_failure() {
+    // The real socket is shut down for writing only after initial headers reach
+    // the kernel. No fabricated write result or disconnected-title cache is used.
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let client = TcpStream::connect(listener.local_addr().unwrap())
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let state = shared(64);
+    let context = ContextId(19, 4);
+    let mut owner = Owner::new(context, Limits::default(), state.clone());
+    owner.config = Config::parse(
+        Some(&json!({"enabled":true,"host":"127.0.0.1"})),
+        &owner.limits,
+    )
+    .unwrap();
+    owner.song = "Initial title".into();
+    owner.connected(client).await.unwrap();
+    // Avoid an unrelated idle-silence write before the admitted metadata job.
+    owner.timer = None;
+    SockRef::from(owner.socket.as_ref().unwrap())
+        .shutdown(std::net::Shutdown::Write)
+        .unwrap();
+    let (sender, receiver) = mpsc::channel(1);
+    let (reply, observed) = oneshot::channel();
+    sender
+        .send(Command {
+            op: Operation::Metadata("Artist - Applied despite failed headers".into()),
+            reply,
+            _bytes: Arc::new(Semaphore::new(1)).acquire_owned().await.unwrap(),
+        })
+        .await
+        .unwrap();
+    drop(sender);
+    owner.run(receiver).await.unwrap();
+    let receipt = observed.await.unwrap().unwrap();
+    assert_eq!(receipt.receipt().context(), context);
+    assert_eq!(receipt.receipt().disposition(), Disposition::Updated);
+    assert_eq!(receipt.diagnostic().unwrap().code, "socket_write");
+    assert_eq!(owner.song, "Artist - Applied despite failed headers");
+    assert!(!owner.status.connected);
+    assert!(owner.socket.is_none());
+    assert!(owner.timer.is_none());
+    assert_eq!(state.error().unwrap().code, "teardown_failed");
+    let mut bytes = Vec::new();
+    tokio::time::timeout(Duration::from_secs(3), peer.read_to_end(&mut bytes))
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(bytes
+        .windows(b"TITLE=Initial title".len())
+        .any(|w| w == b"TITLE=Initial title"));
+    assert!(!bytes
+        .windows(b"Applied despite failed headers".len())
+        .any(|w| w == b"Applied despite failed headers"));
+}
 #[test]
 fn admitted_drop_saturation_cancel_and_shutdown_drain() {
     let _guard = TEST_OWNER.lock().unwrap();
