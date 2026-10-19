@@ -67,6 +67,7 @@ def free_api_port():
 def run():
     for name in ["now-playing.json", "timecode.json", "audio-stream.json", "midi.json", "network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "device-providers.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
+    shutil.rmtree(ARTIFACTS / "imported-shows", ignore_errors=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     (ARTIFACTS / "ffmpeg-download.json").unlink(missing_ok=True)
     (ARTIFACTS / "now-playing-folder-alerts.json").unlink(missing_ok=True)
@@ -746,11 +747,27 @@ def run():
             assert all(item["sendUndefined"] for item in imported["requests"])
             assert sum(item["rawMatchesSource"] is True for item in imported["requests"]) == 9
             assert any(event["message"] == {"channel":"ALERT","data":"popup.importing"} for event in imported["events"]), "Original project alert was lost"
+            persisted_imports = ARTIFACTS / "imported-shows"
+            persisted_imports.mkdir()
+            imported["persistedFiles"] = []
+            saved_by_name = {item["name"]: item for item in imported["saved"]}
+            expected_filenames = {expected["name"] + ".show" for expected in import_fixture["shows"]}
+            assert len(expected_filenames) == len(saved_by_name) == 15, "Duplicate or missing persisted import names"
             for expected in import_fixture["shows"]:
-                actual = json.loads((data_dir / "Shows" / (expected["name"] + ".show")).read_text())
+                filename = expected["name"] + ".show"
+                assert Path(filename).name == filename, "Fixture archive must contain only direct show files"
+                actual_bytes = (data_dir / "Shows" / filename).read_bytes()
+                actual = json.loads(actual_bytes)
                 assert actual[1]["name"] == expected["name"]
+                assert actual[0] == saved_by_name[expected["name"]]["id"], "Persisted import ID differs from native SHOW read"
                 text = "\n".join(span.get("value", "") for slide in actual[1].get("slides", {}).values() for item in slide.get("items", []) for line in item.get("lines", []) for span in line.get("text", []))
                 assert expected["text"] in text, expected["name"] + " persisted lyric differs"
+                archived = persisted_imports / filename
+                archived.write_bytes(actual_bytes)
+                assert archived.read_bytes() == actual_bytes, "Archived persisted import bytes differ"
+                imported["persistedFiles"].append({"path":archived.relative_to(ARTIFACTS).as_posix(),"name":expected["name"],"id":actual[0],"bytes":len(actual_bytes),"sha256":hashlib.sha256(actual_bytes).hexdigest()})
+            assert {entry.name for entry in persisted_imports.iterdir()} == expected_filenames, "Duplicate or missing archived import files"
+            assert len({entry["path"] for entry in imported["persistedFiles"]}) == len(imported["persistedFiles"]) == 15
             raw_bundle = json.loads(next(item for item in imported["requests"] if item["id"] == "freeshow_project")["raw"][0]["content"])
             installed_media = Path(raw_bundle["files"][0])
             assert installed_media.is_relative_to(data_dir / "Imports" / "Projects"), installed_media
