@@ -10,12 +10,31 @@ retained across context replacement. Raw duration, typed picture buffers,
 NaN/own undefined and void source commands are preserved on the tested corpus.
 [Contracts, evidence and explicit gaps](native-now-playing.md).
 
-The latest local integration passes **460 Rust + 494 pinned-Node + 20 frontend
-checks** (974), plus **314 native executions** (304 host integration and ten
+The next local foundation adds the bounded source-compared HTTP cover planner,
+exact route/OPTIONS handling, guarded Linux fixed-cover file preparation,
+POSIX-to-Node timestamp projection, and independent native/frontend folder-alert
+receipt owners. The endpoint remains unconnected. The native publisher now
+serializes sequence assignment with actual enqueue; four process-lifetime slots
+survive both HTTP owner disposal and unknown UI delivery across library changes
+until actual completion or permanently sealed terminal shutdown. [Native receipt contract](workers/remote-cover-publications.md).
+
+Downloads now wake their fixed owners on accepted work, phase changes and actual
+prepared deadlines instead of an empty 20 ms polling loop. Shutdown retries retain
+only handles whose actual joins remain unfinished. Network snapshot admission
+also survives actual consumer destruction; its Windows CI fixture now waits for
+real reply-frame disposal. Controlled negative tests detect both old scheduling
+and disposal behavior. No whole-application CPU improvement is claimed.
+
+The combined local foundation passes **474 Rust + 522 pinned-Node + 20 frontend
+checks** (1,016), plus **345 native executions** (332 host integration and thirteen
 desktop binary unit cases, including shared cases repeated by importing targets).
-Five ignored Rust subprocess entry fixtures are driven by their supervisor tests;
-four source suites have existing platform/capability skips. Strict workspace and
-native all-target Clippy, focused TypeScript, formatting and snapshot checks pass.
+The final full native rerun includes all eight publication tests, including deterministic late-ACK/retirement interleaving and
+terminal disposal of a genuine live receipt. Three controlled negative variants
+fail the ordering, unknown-quota and atomic-observation regressions. Five ignored Rust subprocess
+entry fixtures are driven by their supervisor tests; four source suites have
+existing platform/capability skips. Strict workspace/native all-target Clippy,
+focused TypeScript and upstream snapshot checks pass for the foundation; the new
+publication target also passes strict Clippy.
 
 The new caught-folder-failure slice retains up to five independent publications
 per source operation and twenty completion promises across context replacement.
@@ -27,16 +46,23 @@ callback is invoked. The complete **169-step Linux editor**, four GTK menus and
 both native drop scales pass; the full receipt retains the expected other-feature
 and deliberate capability diagnostics.
 
-Published `c889317f` passes Windows/macOS core, Windows/macOS native and Linux
-desktop in [CI 39225346104](https://github.com/rob-345/freeshow-rust/actions/runs/39225346104).
-The Windows parent-directory lifetime fixture now passes. Linux core instead
-exposes the media test's initial executable selection. A controlled local
-ETXTBSY reproduction matches a writable-executable fixture hazard, though CI's
-original errno is unknown. The correction uses committed immutable scripts,
-actual child gates and a direct pending-invalidation check; production resolution
-is unchanged. It passes local workspace tests and strict lint, plus twenty-five
-consecutive focused runs. A full CI run for that correction and the folder-alert
-integration is pending.
+Published `84822efc` passes all three core platforms, macOS native and the
+169-step Linux desktop workflow in
+[CI 39228374634](https://github.com/rob-345/freeshow-rust/actions/runs/39228374634).
+Downloaded artifacts independently verify all four ordinary and three
+folder-failure now-playing cases, their exact callbacks/visible messages, actual
+native counter advances, unchanged blockers, four menus and both drop scales.
+The full CI receipt retains 53 expected other-feature/capability diagnostics.
+Windows native exposed a separate snapshot test treating idle counters as a
+ready-result disposal fence. The correction above adds an actual post-frame
+fence and a production guard-before-permit destruction fix; a new Windows CI run
+is still required. The earlier Windows parent-directory and immutable media
+executable fixture corrections pass their relevant jobs. These changes do not
+yet have a completely green six-job run.
+
+The current combined production binary also passes a second full local Linux
+editor/menu/drop run. Its 169-step editor receipt contains 54 expected
+other-feature/capability diagnostics; it is not a global zero-error claim.
 
 Now-playing remains partial: remote cover HTTP, broader image/metadata/resize
 fidelity, root common-picture insertion position, physical audio/reveal and

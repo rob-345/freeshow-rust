@@ -264,7 +264,12 @@
         "tests/desktop/now_playing_probe.js",
         "tests/desktop/now_playing_desktop_oracle.mjs",
         "tests/parity/now-playing-folder-alerts.test.mjs",
-        "tests/desktop/now_playing_folder_probe.js"
+        "tests/desktop/now_playing_folder_probe.js",
+        "crates/freeshow-cover-http/src/lib.rs",
+        "tests/parity/cover-http.test.mjs",
+        "src-tauri/tests/now_playing_cover_file.rs",
+        "src-tauri/tests/remote_cover_publications.rs",
+        "tests/parity/cover-bridge.test.mjs"
       ],
       "remaining": [
         "video codecs and seeking",
