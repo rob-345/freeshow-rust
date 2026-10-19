@@ -13,8 +13,9 @@ use std::{
     io::Read,
     os::windows::fs::{symlink_file, MetadataExt, OpenOptionsExt},
     process::{Child, Command, ExitStatus, Stdio},
-    time::{Duration, Instant, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
+use windows_sys::Win32::Foundation::ERROR_SHARING_VIOLATION;
 
 static SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 struct Fixture {
@@ -187,6 +188,12 @@ process.stdout.write(JSON.stringify({node:process.versions.node,size:stat.size,m
     let value: serde_json::Value = serde_json::from_slice(&output).unwrap();
     assert_eq!(value["node"], "22.21.1", "use the pinned source runtime");
     value
+}
+fn epoch_nanoseconds(time: SystemTime) -> i128 {
+    match time.duration_since(UNIX_EPOCH) {
+        Ok(duration) => i128::try_from(duration.as_nanos()).unwrap(),
+        Err(before_epoch) => -i128::try_from(before_epoch.duration().as_nanos()).unwrap(),
+    }
 }
 
 #[tokio::test]
@@ -434,7 +441,11 @@ async fn windows_real_sharing_failure_is_explicit_not_an_unproven_exists_false()
     let phase = f.phase().await;
     let value = f.prepare(&phase).await;
     assert_eq!(failed(&value).kind, FailureKind::Io);
-    assert!(failed(&value).os_code.is_some());
+    assert_eq!(
+        failed(&value).os_code,
+        Some(ERROR_SHARING_VIOLATION as i32),
+        "The actual sharing fixture must not pass on an unrelated IO failure"
+    );
     assert!(value.observation().folder_failure().is_none());
     drop(value);
     drop(lock);
@@ -661,14 +672,33 @@ async fn windows_actual_node_stat_etag_matches_ordinary_times_and_records_gated_
             false,
         ),
     ] {
+        let requested_nanoseconds = epoch_nanoseconds(modified);
+        assert_eq!(
+            requested_nanoseconds.rem_euclid(100),
+            0,
+            "{label}: fixture must be exactly representable as native 100ns ticks"
+        );
         fs::OpenOptions::new()
             .write(true)
             .open(f.leaf())
             .unwrap()
             .set_times(FileTimes::new().set_modified(modified))
             .unwrap();
+        let actual_modified = fs::metadata(f.leaf()).unwrap().modified().unwrap();
+        assert_eq!(
+            epoch_nanoseconds(actual_modified),
+            requested_nanoseconds,
+            "{label}: actual filesystem must preserve the requested time, not quantize or clamp the boundary case"
+        );
         let value = f.prepare(&phase).await;
         let stat = file(&value).stat();
+        assert!((0..1_000_000_000).contains(&stat.modified_nanoseconds()));
+        assert_eq!(
+            i128::from(stat.modified_seconds()) * 1_000_000_000
+                + i128::from(stat.modified_nanoseconds()),
+            requested_nanoseconds,
+            "{label}: signed native fields must retain the exact real requested epoch nanoseconds"
+        );
         let node = original_node_stat(&f.leaf());
         assert_eq!(node["size"].as_u64().unwrap(), stat.length());
         if same_projection {

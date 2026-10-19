@@ -103,7 +103,12 @@ separate verification before widening that interval.
 The dedicated Windows target invokes actual pinned Node `fs.statSync` and the
 installed source `etag` package against the same real file. It compares ETag for
 ordinary time, fractional values below/above the rounding boundary, and the
-upper supported seconds boundary. For pre-epoch and beyond-u32 dates it records
+upper supported seconds boundary. Every case first asserts 100ns alignment and
+the exact requested epoch nanoseconds in both real filesystem metadata and the
+signed native seconds/nanoseconds, including the exceptional dates. Quantized or
+clamped timestamps cannot masquerade as rounding-boundary evidence. The sharing
+fixture requires actual `ERROR_SHARING_VIOLATION`, not just any IO failure.
+For pre-epoch and beyond-u32 dates it records
 the real Node result and signed native time without constructing POSIX headers
 or asserting guessed overflow behavior. Node must be 22.21.1. The default oracle
 root is the repository above `CARGO_MANIFEST_DIR`; temporary harnesses may set
