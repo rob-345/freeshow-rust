@@ -140,6 +140,10 @@ jobs:
       - run: npm run rust:frontend:build
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: python3 tests/desktop/freeze_binary_test.py
+      - name: Check Spotify browser fixture and actual owned peer controls
+        run: |
+          node --test tests/desktop/spotify_command_fixture.test.mjs
+          dbus-run-session -- /usr/bin/python3 tests/desktop/spotify_command_fixture_test.py -v
       - name: Build and freeze the normal GUI binary before test builds
         run: |
           mkdir -p test-output-rust/normal-binary

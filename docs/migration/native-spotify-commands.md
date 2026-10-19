@@ -13,7 +13,7 @@ as at most 64 KiB of raw bytes. The native iterative preflight bounds depth and
 work before recursive decoding; duplicate/ambiguous fields are rejected. Numeric
 tokens are parsed directly from the same raw frame, rather than rounded through
 generic `serde_json::Value`. Foundation validation and source-compatible rounding
-remain shared. Other selectors retain their bounded, source-ignored values.
+remain shared. Other selectors retain bounded JSON-compatible, source-ignored values.
 Ordinary typed `ipc_dispatch` rejects playback controls so it cannot silently
 bypass this exact-number boundary.
 
