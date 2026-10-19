@@ -1,0 +1,22 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "bundle": {
+        "active": true,
+        "targets": ["deb"],
+        "publisher": "FreeShow Rust contributors",
+        "homepage": "https://github.com/rob-345/freeshow-rust",
+        "category": "Video",
+        "shortDescription": "FreeShow Rust migration preview",
+        "longDescription": "Native Rust migration of the FreeShow presentation application, retaining its Svelte interface. Unsigned local review build; migration capability and distribution gaps remain documented.",
+        "license": "GPL-3.0-only",
+        "licenseFile": "../LICENSE",
+        "linux": {
+            "deb": {
+                "section": "video",
+                "priority": "optional",
+                "depends": ["libc6 (>= 2.39)", "libasound2t64 | libasound2", "libopus0 (>= 1.3.1)"],
+                "recommends": ["gstreamer1.0-plugins-good", "gstreamer1.0-plugins-bad", "gstreamer1.0-libav", "xdg-utils"]
+            }
+        }
+    }
+}
