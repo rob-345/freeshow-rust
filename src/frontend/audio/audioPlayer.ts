@@ -42,6 +42,18 @@ export type AudioData = {
     index?: number
 }
 
+function createAudioElement(path: string): { audio: HTMLAudioElement; nativeSource?: string } {
+    const source = encodeFilePath(path)
+    if (window.api?.resolveFilePath && source !== path && source.startsWith("http://127.0.0.1:")) {
+        const audio = new Audio()
+        // Native assets cross the Tauri origin. Configure CORS before the only
+        // fetch, which the caller starts after installing its existing listeners.
+        audio.crossOrigin = "anonymous"
+        return { audio, nativeSource: source }
+    }
+    return { audio: new Audio(source) }
+}
+
 export class AudioPlayer {
     static channelCount = AudioMultichannel.DEFAULT_CHANNELS // default, will be updated dynamically
     static maxChannels = AudioMultichannel.MAX_CHANNELS // support up to 8 channels (7.1 surround)
@@ -225,7 +237,7 @@ export class AudioPlayer {
     }
 
     private static async createAudio(id: string, path: string): Promise<HTMLAudioElement | null> {
-        const audio = new Audio(encodeFilePath(path))
+        const { audio, nativeSource } = createAudioElement(path)
         const onPlay = () => {
             updatePlayingStore(id, "paused", false)
             this.initCheckLoop()
@@ -248,7 +260,9 @@ export class AudioPlayer {
             audio.removeEventListener("ended", onEnded)
         }
 
-        return await this.waitForAudio(id, audio)
+        const waiting = this.waitForAudio(id, audio)
+        if (nativeSource !== undefined) audio.src = nativeSource
+        return await waiting
     }
 
     private static async createAudioFromStream(id: string, stream: MediaStream): Promise<HTMLAudioElement | null> {
@@ -681,7 +695,7 @@ function updateAudioStore(id: string, key: string, value: any) {
 
 export async function loadAudioFile(path: string): Promise<HTMLAudioElement | null> {
     return new Promise((resolve) => {
-        const audio = new Audio(encodeFilePath(path))
+        const { audio, nativeSource } = createAudioElement(path)
 
         audio.addEventListener("loadedmetadata", loaded, { once: true })
         audio.addEventListener("error", error, { once: true })
@@ -696,5 +710,6 @@ export async function loadAudioFile(path: string): Promise<HTMLAudioElement | nu
             console.error("Could not get audio:", err)
             resolve(null)
         }
+        if (nativeSource !== undefined) audio.src = nativeSource
     })
 }
