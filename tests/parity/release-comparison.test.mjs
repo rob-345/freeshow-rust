@@ -1,14 +1,65 @@
 import assert from "node:assert/strict"
-import { spawn } from "node:child_process"
+import { spawn, execFileSync } from "node:child_process"
+import { createHash } from "node:crypto"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { test } from "node:test"
 import { aggregateSample, distribution, membership, memorySummary, observedCpu, pairOrder, parseRollup, parseStat, readProcesses } from "../../scripts/migration/release-process-metrics.mjs"
-import { options, summarize, visibleEditorSignature } from "../../scripts/migration/compare-releases.mjs"
+import { ablationProvenance, artifactTree, assertProductionState, captureTauriBuild, comparisonLanes, comparisonPlan, options, summarize, verifyTauriBuild, visibleEditorSignature } from "../../scripts/migration/compare-releases.mjs"
 
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const fixture = (pid, start, extra = {}) => ({ pid, startTicks: start, identity: `${pid}:${start}`, ppid: 1, pgid: pid, sid: pid, cpuTicks: 0, rssBytes: 4096, state: "S", ...extra })
+const sha = (value) => createHash("sha256").update(value).digest("hex")
+function ablationArgs(before = "/tmp/before/target/release/app", after = "/tmp/after/target/release/app") {
+    return ["--mode", "tauri-ablation", "--before-bin", before, "--after-bin", after, "--before-label", "eager", "--after-label", "lazy", "--before-build-receipt", "/tmp/before.json", "--after-build-receipt", "/tmp/after.json", "--expect-before-sha256", "a".repeat(64), "--expect-after-sha256", "b".repeat(64), "--allowed-source-change", "src/frontend/audio/audioAnalyser.ts", "--seed", "42"]
+}
+async function buildFixture() {
+    const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "release-provenance-test-")),
+        repo = path.join(temporary, "repo")
+    fs.mkdirSync(repo)
+    const git = (...args) => execFileSync("git", args, { cwd: repo, encoding: "utf8", timeout: 5000, stdio: ["ignore", "pipe", "pipe"] }).trim()
+    const write = (root, file, bytes) => {
+        fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
+        fs.writeFileSync(path.join(root, file), bytes)
+    }
+    git("init", "-q")
+    for (const file of ["Cargo.toml", "Cargo.lock", "src-tauri/Cargo.toml", "src-tauri/Cargo.lock", "package.json", "package-lock.json", "vite.rust.config.mjs", "scripts/migration/build-frontend.mjs"]) write(repo, file, `controlled provenance fixture ${file}\n`)
+    write(repo, "rust-toolchain.toml", fs.readFileSync("rust-toolchain.toml"))
+    write(repo, "src/frontend/audio/audioAnalyser.ts", "controlled eager source\n")
+    git("add", ".")
+    git("-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "before")
+    const beforeCommit = git("rev-parse", "HEAD"),
+        before = path.join(temporary, "before")
+    git("worktree", "add", "--quiet", "--detach", before, beforeCommit)
+    write(repo, "src/frontend/audio/audioAnalyser.ts", "controlled lazy source\n")
+    git("add", ".")
+    git("-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "after")
+    const after = path.join(temporary, "after")
+    git("worktree", "add", "--quiet", "--detach", after, git("rev-parse", "HEAD"))
+    const receipts = {}
+    for (const [side, root] of [
+        ["before", before],
+        ["after", after]
+    ]) {
+        write(root, "target/release/app", `controlled non-executed ${side} artifact`)
+        write(root, "dist-rust/index.html", "<main>production fixture</main>")
+        write(root, "dist-rust/assets/main.js", `globalThis.controlledVariant=${JSON.stringify(side)}`)
+        for (const kind of ["remote", "stage", "controller"]) write(root, `target/release/remotes/${kind}/index.html`, "controlled common client")
+        write(root, "build.log", "vite v6 building for production...\nFinished `release` profile [optimized]\n")
+        // These are controlled provenance fixtures, never executed apps or
+        // evidence that fake logs establish a genuine production binary.
+        receipts[side] = await captureTauriBuild({ sourceRoot: root, binary: path.join(root, "target/release/app"), buildLog: path.join(root, "build.log") })
+        write(temporary, `${side}.json`, JSON.stringify(receipts[side]))
+    }
+    const args = ablationArgs(path.join(before, "target/release/app"), path.join(after, "target/release/app"))
+    for (const side of ["before", "after"]) {
+        args[args.indexOf(`--${side}-build-receipt`) + 1] = path.join(temporary, `${side}.json`)
+        args[args.indexOf(`--expect-${side}-sha256`) + 1] = receipts[side].executable.sha256
+    }
+    args.push("--source-root", repo)
+    return { temporary, before, after, repo, receipts, write, git, opts: options(args), dispose: () => fs.rmSync(temporary, { recursive: true, force: true }) }
+}
 test("proc stat parsing handles spaces/parentheses and uses self CPU, not child counters", () => {
     const fields = Array(30).fill("0")
     fields[0] = "S"
@@ -117,6 +168,151 @@ test("paired orders are reproducible, bounded, balanced and keep warmups out of 
     assert.equal(summary.ratios, null)
     assert.equal(summary.startupComparable, false)
     assert.deepEqual(distribution([9, 1, 4]), { count: 3, min: 1, p50: 4, p95: 9, max: 9 })
+})
+test("two-Tauri lanes preserve explicit labels, paired order and warmup exclusion", () => {
+    const opts = options(ablationArgs())
+    assert.deepEqual(comparisonLanes(opts), [
+        { key: "before", label: "eager", adapter: "tauri" },
+        { key: "after", label: "lazy", adapter: "tauri" }
+    ])
+    const plan = comparisonPlan(opts)
+    assert.equal(plan.length, 12)
+    assert.equal(plan.filter((row) => row.warmup).length, 2)
+    for (let i = 0; i < plan.length; i += 2) assert.deepEqual(new Set(plan.slice(i, i + 2).map((row) => row.label)), new Set(["eager", "lazy"]))
+    assert.notEqual(plan[0].runtime, plan[2].runtime)
+    const row = { valid: true, memory: { pssComplete: true, pssSumBytes: { p50: 12 }, rssSumBytes: { p50: 20 } }, cpu: { method: "observed-process-counters-lower-bound", percentOneCore: 3 } }
+    const summary = summarize(
+        plan.map((entry) => ({ ...row, ...entry })),
+        comparisonLanes(opts)
+    )
+    assert.equal(summary.runtime.before.label, "eager")
+    assert.equal(summary.runtime.after.label, "lazy")
+    assert.equal(summary.runtime.before.runs, 5)
+    assert.equal(summary.runtime.after.runs, 5)
+    assert.equal(summary.exactCpuComparable, false)
+    assert.equal(summary.ratios, null)
+    assert.deepEqual(
+        comparisonLanes(options([])).map((row) => row.adapter),
+        ["electron", "tauri"]
+    )
+})
+test("ablation rejects ambiguous labels/artifacts, missing hashes and unbounded source allowlists", () => {
+    const invalid = (flag, value) => {
+        const args = ablationArgs()
+        args[args.indexOf(flag) + 1] = value
+        assert.throws(() => options(args))
+    }
+    invalid("--after-label", "eager")
+    invalid("--after-label", "a".repeat(49))
+    invalid("--after-label", "../lazy")
+    invalid("--after-bin", "/tmp/before/target/release/app")
+    invalid("--expect-before-sha256", "not-a-hash")
+    invalid("--allowed-source-change", "src/../native.rs")
+    assert.throws(() => options(["--mode", "tauri-ablation"]))
+    assert.throws(() => options(["--before-bin", "file"]))
+    assert.throws(() => options(["--allowedSourceChanges", "file"]))
+    assert.throws(() => options([...ablationArgs(), "--allowed-source-change", "src/frontend/audio/audioAnalyser.ts"]))
+    const args = ablationArgs()
+    for (let i = 0; i < 16; i++) args.push("--allowed-source-change", `src/${i}.ts`)
+    assert.throws(() => options(args))
+})
+test("frozen actual files/Git receipts verify two variants and reject changed resources, logs and binaries", { skip: process.platform !== "linux", timeout: 20000 }, async () => {
+    const f = await buildFixture()
+    try {
+        const observed = await ablationProvenance(f.opts)
+        assert.deepEqual(observed.labels, { before: "eager", after: "lazy" })
+        assert.deepEqual(observed.sourceChanges, ["src/frontend/audio/audioAnalyser.ts"])
+        assert.notEqual(observed.before.frontend.sha256, observed.after.frontend.sha256)
+        const file = path.join(f.before, "target/release/remotes/remote/index.html"),
+            original = fs.readFileSync(file)
+        fs.writeFileSync(file, "changed external resource")
+        await assert.rejects(ablationProvenance(f.opts), /resources changed/)
+        fs.writeFileSync(file, original)
+        const binary = f.opts.beforeBin,
+            contents = fs.readFileSync(binary)
+        fs.writeFileSync(binary, "different executable")
+        await assert.rejects(ablationProvenance(f.opts), /Selected binary changed/)
+        fs.writeFileSync(binary, contents)
+        const env = path.join(f.before, ".env.production")
+        fs.writeFileSync(env, "VITE_CONTROLLED_FIXTURE=changed")
+        await assert.rejects(ablationProvenance(f.opts), /Build inputs changed/)
+        fs.unlinkSync(env)
+        fs.appendFileSync(path.join(f.before, "build.log"), "altered build receipt log")
+        await assert.rejects(ablationProvenance(f.opts), /Build log changed/)
+    } finally {
+        f.dispose()
+    }
+})
+test("build provenance rejects debug/instrumented logs, missing clients, hooks and dirty tracked inputs", { skip: process.platform !== "linux", timeout: 20000 }, async () => {
+    const f = await buildFixture()
+    const capture = () => captureTauriBuild({ sourceRoot: f.before, binary: f.opts.beforeBin, buildLog: path.join(f.before, "build.log") })
+    try {
+        const log = path.join(f.before, "build.log"),
+            original = fs.readFileSync(log)
+        fs.writeFileSync(log, "building for production\nFinished `dev` profile")
+        await assert.rejects(capture(), /release build log/)
+        fs.writeFileSync(log, original)
+        fs.appendFileSync(log, "__audioFullFork")
+        await assert.rejects(capture(), /Instrumented build log/)
+        fs.writeFileSync(log, original)
+        const client = path.join(f.before, "target/release/remotes/stage/index.html")
+        fs.renameSync(client, client + ".moved")
+        await assert.rejects(capture(), /Missing actual stage resource/)
+        fs.renameSync(client + ".moved", client)
+        const script = path.join(f.before, "dist-rust/assets/main.js"),
+            code = fs.readFileSync(script)
+        // The marker straddles a stream read boundary; whole-file scan only
+        // via independent chunks must not overlook the injected early hook.
+        fs.writeFileSync(script, "x".repeat(65530) + "__audioFullFork")
+        await assert.rejects(capture(), /Production hook/)
+        fs.writeFileSync(script, code)
+        fs.appendFileSync(path.join(f.before, "Cargo.lock"), "changed input")
+        await assert.rejects(capture(), /Tracked build source must be clean/)
+    } finally {
+        f.dispose()
+    }
+})
+test("source delta and recorded tool/profile evidence cannot silently broaden an ablation", { skip: process.platform !== "linux", timeout: 20000 }, async () => {
+    const f = await buildFixture()
+    try {
+        await assert.rejects(ablationProvenance({ ...f.opts, allowedSourceChanges: ["src-tauri/src/main.rs"] }), /Runtime change differs/)
+        const receipt = structuredClone(f.receipts.after)
+        receipt.tools.rustc.stdout = "a different toolchain"
+        f.write(f.temporary, "after.json", JSON.stringify(receipt))
+        await assert.rejects(ablationProvenance(f.opts), /toolchains differ/)
+        receipt.tools = f.receipts.after.tools
+        receipt.sourceCommit = "0".repeat(40)
+        f.write(f.temporary, "after.json", JSON.stringify(receipt))
+        await assert.rejects(ablationProvenance(f.opts), /Build sourceCommit changed/)
+        receipt.sourceCommit = f.receipts.after.sourceCommit
+        receipt.build.profile = "dev"
+        f.write(f.temporary, "after.json", JSON.stringify(receipt))
+        await assert.rejects(verifyTauriBuild(f.opts.afterBuildReceipt, f.opts.afterBin, f.opts.expectAfterSha256))
+    } finally {
+        f.dispose()
+    }
+})
+test("artifact trees reject symlinks/empty inputs and actual-WebView hook checks fail closed", { skip: process.platform !== "linux" }, async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "release-tree-test-"))
+    try {
+        await assert.rejects(artifactTree(root), /Empty artifact/)
+        fs.writeFileSync(path.join(root, "plain.js"), "ordinary production code")
+        const actual = await artifactTree(root)
+        assert.equal(actual.files[0].sha256, sha("ordinary production code"))
+        fs.symlinkSync(path.join(root, "plain.js"), path.join(root, "alias.js"))
+        await assert.rejects(artifactTree(root), /symlink/)
+        fs.unlinkSync(path.join(root, "alias.js"))
+        const oversized = path.join(root, "oversized.bin")
+        fs.closeSync(fs.openSync(oversized, "w"))
+        fs.truncateSync(oversized, 128 * 1024 * 1024 + 1)
+        await assert.rejects(artifactTree(root), /Artifact byte limit/)
+        fs.unlinkSync(oversized)
+        assert.doesNotThrow(() => assertProductionState({ productionHooks: [] }))
+        assert.throws(() => assertProductionState({ productionHooks: ["__audioFullFork"] }))
+        assert.throws(() => assertProductionState({}))
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true })
+    }
 })
 test("exec launcher and real proc reader attribute a child after it changes session and is reparented", { skip: process.platform !== "linux", timeout: 10000 }, async () => {
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), "release-metric-test-")),

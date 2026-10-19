@@ -12,6 +12,12 @@ import { aggregateSample, distribution, memorySummary, observedCpu, pairOrder, p
 const HERE = path.dirname(fileURLToPath(import.meta.url)),
     ROOT = path.resolve(HERE, "../.."),
     LAUNCHER = path.join(HERE, "release-process-launcher.py")
+const PRODUCTION_HOOKS = ["__audioFullFork", "__audioContextProbe", "declared-fullfork-audio-observer"]
+const BUILD_INPUTS = ["Cargo.toml", "Cargo.lock", "src-tauri/Cargo.toml", "src-tauri/Cargo.lock", "package.json", "package-lock.json", "rust-toolchain.toml", "vite.rust.config.mjs", "scripts/migration/build-frontend.mjs"]
+const OPTIONAL_BUILD_INPUTS = [".cargo/config", ".cargo/config.toml", ".env", ".env.local", ".env.production", ".env.production.local"]
+const RUNTIME_PATHS = ["src", "src-tauri", "crates", "public", "config", "scripts", "vendor", ".cargo", "Cargo.toml", "Cargo.lock", "package.json", "package-lock.json", "rust-toolchain.toml"]
+const FRONTEND_COMMAND = ["node", "scripts/migration/build-frontend.mjs"]
+const NATIVE_COMMAND = ["cargo", "build", "--release", "--manifest-path", "src-tauri/Cargo.toml", "--features", "custom-protocol", "--locked"]
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const json = (file, value) => fs.writeFileSync(file, JSON.stringify(value, null, 2) + "\n")
 const shortError = (error) => ({ message: String(error), code: error.code })
@@ -38,8 +44,26 @@ function executable(name) {
     return result.stdout
 }
 export function options(args) {
-    const value = { pairs: 5, warmups: 1, seconds: 10, settle: 20, interval: 250, order: "alternating", seed: Math.floor(Math.random() * 2 ** 32), width: 1280, height: 800, sourceRoot: ROOT, electronBin: path.join(os.homedir(), ".local/share/freeshow-electron-baseline/v1.6.7-beta.2/extracted/opt/FreeShow/freeshow"), rustBin: null, output: null }
-    const aliases = { "source-root": "sourceRoot", "electron-bin": "electronBin", "rust-bin": "rustBin", "rust-source-commit": "rustSourceCommit", "expect-rust-sha256": "expectRustSha256", "baseline-receipt": "baselineReceipt", "cgroup-parent": "cgroupParent", "font-dir": "fontDir", "electron-package": "electronPackage" }
+    const value = { mode: "electron-rust", pairs: 5, warmups: 1, seconds: 10, settle: 20, interval: 250, order: "alternating", seed: Math.floor(Math.random() * 2 ** 32), width: 1280, height: 800, sourceRoot: ROOT, electronBin: path.join(os.homedir(), ".local/share/freeshow-electron-baseline/v1.6.7-beta.2/extracted/opt/FreeShow/freeshow"), rustBin: null, output: null, allowedSourceChanges: [] }
+    const aliases = {
+        "source-root": "sourceRoot",
+        "electron-bin": "electronBin",
+        "rust-bin": "rustBin",
+        "rust-source-commit": "rustSourceCommit",
+        "expect-rust-sha256": "expectRustSha256",
+        "baseline-receipt": "baselineReceipt",
+        "cgroup-parent": "cgroupParent",
+        "font-dir": "fontDir",
+        "electron-package": "electronPackage",
+        "before-bin": "beforeBin",
+        "after-bin": "afterBin",
+        "before-label": "beforeLabel",
+        "after-label": "afterLabel",
+        "before-build-receipt": "beforeBuildReceipt",
+        "after-build-receipt": "afterBuildReceipt",
+        "expect-before-sha256": "expectBeforeSha256",
+        "expect-after-sha256": "expectAfterSha256"
+    }
     for (let i = 0; i < args.length; i++) {
         const argument = args[i]
         if (argument === "--help" || argument === "--dry-run") {
@@ -47,7 +71,15 @@ export function options(args) {
             continue
         }
         if (!argument.startsWith("--") || i + 1 >= args.length) throw new Error(`Invalid argument ${argument}`)
+        if (argument === "--allowed-source-change") {
+            const file = args[++i]
+            if (value.allowedSourceChanges.length >= 16 || !/^[a-zA-Z0-9_./-]{1,256}$/.test(file) || file.startsWith("/") || file.split("/").some((part) => !part || part === "." || part === "..")) throw new Error("Invalid/bounded allowed source change")
+            if (value.allowedSourceChanges.includes(file)) throw new Error("Duplicate allowed source change")
+            value.allowedSourceChanges.push(file)
+            continue
+        }
         const key = aliases[argument.slice(2)] || argument.slice(2)
+        if (key === "allowedSourceChanges") throw new Error("Use bounded --allowed-source-change")
         if (!(key in value) && !Object.values(aliases).includes(key)) throw new Error(`Unknown option ${argument}`)
         value[key] = ["pairs", "warmups", "seconds", "settle", "interval", "seed", "width", "height"].includes(key) ? Number(args[++i]) : args[++i]
     }
@@ -63,12 +95,41 @@ export function options(args) {
     ])
         if (!Number.isInteger(value[key]) || value[key] < min || value[key] > max) throw new Error(`${key} must be in ${min}..${max}`)
     if (!["alternating", "random"].includes(value.order)) throw new Error("order must be alternating or random")
+    if (!["electron-rust", "tauri-ablation"].includes(value.mode)) throw new Error("mode must be electron-rust or tauri-ablation")
+    if (value.mode === "tauri-ablation" && !value.help) {
+        for (const side of ["before", "after"]) {
+            for (const key of ["Bin", "BuildReceipt", "Label"]) if (!value[side + key]) throw new Error(`Require --${side}-${key === "BuildReceipt" ? "build-receipt" : key.toLowerCase()}`)
+            if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,47}$/.test(value[side + "Label"])) throw new Error("Labels must be distinct bounded identifiers")
+            const key = "expect" + side[0].toUpperCase() + side.slice(1) + "Sha256"
+            if (!/^[a-f0-9]{64}$/.test(value[key] || "")) throw new Error(`Require --expect-${side}-sha256`)
+            value[side + "Bin"] = path.resolve(value[side + "Bin"])
+            value[side + "BuildReceipt"] = path.resolve(value[side + "BuildReceipt"])
+        }
+        if (value.beforeLabel === value.afterLabel) throw new Error("Labels must differ")
+        if (value.beforeBin === value.afterBin) throw new Error("Before/after artifacts must differ")
+        if (!value.allowedSourceChanges.length) throw new Error("Require bounded --allowed-source-change")
+    } else if (value.mode === "electron-rust" && (value.allowedSourceChanges.length || Object.keys(value).some((key) => /^(before|after|expectBefore|expectAfter)/.test(key)))) throw new Error("Ablation options require --mode tauri-ablation")
     value.sourceRoot = path.resolve(value.sourceRoot)
     value.rustBin = path.resolve(value.rustBin || path.join(value.sourceRoot, "target/release/freeshow-desktop"))
     value.electronBin = path.resolve(value.electronBin)
     value.output = path.resolve(value.output || path.join(value.sourceRoot, "test-output-rust/release-comparison", new Date().toISOString().replace(/[:.]/g, "-")))
     value.baselineReceipt = path.resolve(value.baselineReceipt || path.join(value.sourceRoot, "docs/migration/baselines/electron-release-linux.json"))
     return value
+}
+export function comparisonLanes(opts) {
+    return opts.mode === "tauri-ablation"
+        ? [
+              { key: "before", label: opts.beforeLabel, adapter: "tauri" },
+              { key: "after", label: opts.afterLabel, adapter: "tauri" }
+          ]
+        : [
+              { key: "electron", label: "electron", adapter: "electron" },
+              { key: "rust", label: "rust", adapter: "tauri" }
+          ]
+}
+export function comparisonPlan(opts) {
+    const lanes = comparisonLanes(opts)
+    return pairOrder(opts.pairs, opts.warmups, opts.seed, opts.order).map((entry) => ({ ...entry, runtime: lanes[entry.runtime === "electron" ? 0 : 1].key, label: lanes[entry.runtime === "electron" ? 0 : 1].label }))
 }
 async function hash(file) {
     const digest = createHash("sha256")
@@ -80,6 +141,147 @@ async function fileEvidence(file) {
     assert.ok(stat.isFile(), file)
     return { path: fs.realpathSync(file), sha256: await hash(file), bytes: stat.size, mtime: stat.mtime.toISOString() }
 }
+function git(root, args) {
+    const result = command("git", args, { cwd: root })
+    assert.equal(result.status, 0, `Git evidence failed: ${result.stderr || result.error}`)
+    return result.stdout
+}
+async function noProductionHooks(file) {
+    let tail = Buffer.alloc(0)
+    for await (const chunk of fs.createReadStream(file)) {
+        const text = Buffer.concat([tail, chunk]).toString("utf8")
+        assert.ok(!PRODUCTION_HOOKS.some((hook) => text.includes(hook)), `Production hook in ${file}`)
+        tail = chunk.subarray(Math.max(0, chunk.length - 128))
+    }
+}
+// Content manifests are bounded, deterministic and symlink-free. They attest
+// observed files, not an independent reconstruction of embedded Tauri assets.
+export async function artifactTree(directory) {
+    const root = path.resolve(directory),
+        files = []
+    let bytes = 0,
+        entries = 0,
+        pathBytes = 0
+    const walk = async (relative, depth) => {
+        assert.ok(depth <= 32 && !fs.lstatSync(path.join(root, relative)).isSymbolicLink(), "Artifact directory depth/symlink")
+        for (const entry of fs.readdirSync(path.join(root, relative), { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) {
+            assert.ok(++entries <= 8192, "Artifact entry limit")
+            const name = path.join(relative, entry.name),
+                file = path.join(root, name)
+            pathBytes += Buffer.byteLength(name)
+            assert.ok(pathBytes <= 1024 * 1024, "Artifact aggregate path limit")
+            assert.ok(Buffer.byteLength(name) <= 4096 && !entry.isSymbolicLink(), "Artifact path/symlink limit")
+            if (entry.isDirectory()) await walk(name, depth + 1)
+            else {
+                assert.ok(entry.isFile() && files.length < 4096, "Artifact ordinary-file/count limit")
+                const stat = fs.statSync(file)
+                bytes += stat.size
+                assert.ok(stat.size <= 128 * 1024 * 1024 && bytes <= 512 * 1024 * 1024, "Artifact byte limit")
+                if (/\.(?:[cm]?js|html)$/i.test(name)) await noProductionHooks(file)
+                files.push({ file: name.split(path.sep).join("/"), bytes: stat.size, sha256: await hash(file) })
+            }
+        }
+    }
+    await walk("", 0)
+    assert.ok(files.length, "Empty artifact tree")
+    return { root: fs.realpathSync(root), files, bytes, sha256: createHash("sha256").update(JSON.stringify(files)).digest("hex") }
+}
+// Called by the trusted builder AFTER the normal frontend/native commands.
+// The recorded command/log declaration is provenance, not a binary attestation.
+export async function captureTauriBuild({ sourceRoot, binary, buildLog }) {
+    sourceRoot = fs.realpathSync(sourceRoot)
+    const sourceCommit = git(sourceRoot, ["rev-parse", "HEAD"])
+    assert.match(sourceCommit, /^[a-f0-9]{40}$/)
+    assert.equal(git(sourceRoot, ["status", "--porcelain=v1", "--untracked-files=no"]), "", "Tracked build source must be clean")
+    assert.ok(fs.statSync(binary).size <= 1024 * 1024 * 1024, "Release executable exceeds1GiB")
+    const executable = await fileEvidence(binary)
+    assert.equal(path.basename(path.dirname(executable.path)), "release", "Require release artifact layout")
+    assert.equal(path.basename(path.dirname(path.dirname(executable.path))), "target", "Keep physical target/release resource layout")
+    const logBytes = fs.statSync(buildLog).size
+    assert.ok(logBytes > 0 && logBytes <= 16 * 1024 * 1024, "Bounded actual build log required")
+    const log = await fileEvidence(buildLog)
+    const text = fs.readFileSync(log.path, "utf8")
+    assert.match(text, /building[^\n]*production/i, "Normal production frontend build log required")
+    assert.match(text, /Finished [`']release[`'] profile/, "Native release build log required")
+    assert.ok(!PRODUCTION_HOOKS.some((hook) => text.includes(hook)), "Instrumented build log")
+    const inputs = {}
+    for (const file of BUILD_INPUTS) {
+        assert.ok(fs.statSync(path.join(sourceRoot, file)).size <= 16 * 1024 * 1024, "Build input exceeds16MiB")
+        const evidence = await fileEvidence(path.join(sourceRoot, file))
+        inputs[file] = { sha256: evidence.sha256, bytes: evidence.bytes }
+    }
+    for (const file of OPTIONAL_BUILD_INPUTS) {
+        const location = path.join(sourceRoot, file)
+        if (!fs.existsSync(location)) inputs[file] = null
+        else {
+            assert.ok(fs.statSync(location).size <= 16 * 1024 * 1024, "Optional build input exceeds16MiB")
+            const evidence = await fileEvidence(location)
+            inputs[file] = { sha256: evidence.sha256, bytes: evidence.bytes }
+        }
+    }
+    const frontend = await artifactTree(path.join(sourceRoot, "dist-rust")),
+        resources = await artifactTree(path.join(path.dirname(executable.path), "remotes"))
+    for (const kind of ["remote", "stage", "controller"])
+        assert.ok(
+            resources.files.some((file) => file.file === `${kind}/index.html`),
+            `Missing actual ${kind} resource`
+        )
+    const tools = { node: process.versions, rustc: command("rustc", ["-Vv"], { cwd: sourceRoot }), cargo: command("cargo", ["-V"], { cwd: sourceRoot }) }
+    assert.equal(tools.rustc.status, 0, "Record actual build rustc")
+    assert.equal(tools.cargo.status, 0, "Record actual build cargo")
+    const buildEnvironment = Object.fromEntries(
+        Object.keys(process.env)
+            .filter((key) => key !== "CARGO_TARGET_DIR" && /^(?:RUSTFLAGS|RUSTC|RUSTC_WRAPPER|RUSTC_WORKSPACE_WRAPPER|CARGO_ENCODED_RUSTFLAGS|CARGO_BUILD_.*|CARGO_TARGET_.*|CARGO_PROFILE_RELEASE_.*|RUSTUP_TOOLCHAIN|NODE_ENV|CC|CXX|CFLAGS|CXXFLAGS|LDFLAGS|PKG_CONFIG_.*)$/.test(key))
+            .sort()
+            .map((key) => [key, process.env[key]])
+    )
+    // Vite variables may contain credentials. Compare their hashes, never dump
+    // their raw values into receipts. Files above are likewise content hashes.
+    const viteEnvironment = Object.fromEntries(
+        Object.keys(process.env)
+            .filter((key) => key.startsWith("VITE_"))
+            .sort()
+            .map((key) => [key, createHash("sha256").update(process.env[key]).digest("hex")])
+    )
+    assert.ok(Object.keys(buildEnvironment).length <= 64 && Buffer.byteLength(JSON.stringify(buildEnvironment)) <= 32768, "Build environment bound")
+    assert.ok(Object.keys(viteEnvironment).length <= 128 && Buffer.byteLength(JSON.stringify(viteEnvironment)) <= 32768, "Vite environment bound")
+    return { schemaVersion: 1, kind: "tauri-production-release-build", sourceRoot, sourceCommit, build: { profile: "release", features: ["custom-protocol"], instrumentation: "none", frontendCommand: FRONTEND_COMMAND, nativeCommand: NATIVE_COMMAND }, executable, buildLog: log, inputs, frontend, resources, tools, buildEnvironment, viteEnvironment, limit: "Host-recorded build provenance; logs/manifests do not independently prove embedded binary contents" }
+}
+export async function verifyTauriBuild(receiptFile, binary, expectedSha256) {
+    assert.ok(fs.statSync(receiptFile).size <= 8 * 1024 * 1024, "Build receipt exceeds8MiB")
+    const receipt = JSON.parse(fs.readFileSync(receiptFile, "utf8"))
+    assert.equal(receipt.schemaVersion, 1)
+    assert.equal(receipt.kind, "tauri-production-release-build")
+    assert.deepEqual(receipt.build, { profile: "release", features: ["custom-protocol"], instrumentation: "none", frontendCommand: FRONTEND_COMMAND, nativeCommand: NATIVE_COMMAND })
+    const observed = await captureTauriBuild({ sourceRoot: receipt.sourceRoot, binary, buildLog: receipt.buildLog.path })
+    assert.equal(observed.executable.sha256, expectedSha256, "Selected binary changed")
+    for (const key of ["sourceRoot", "sourceCommit", "inputs", "frontend", "resources"]) assert.deepEqual(observed[key], receipt[key], `Build ${key} changed`)
+    for (const key of ["path", "sha256", "bytes"]) {
+        assert.equal(observed.executable[key], receipt.executable[key], "Build executable mismatch")
+        assert.equal(observed.buildLog[key], receipt.buildLog[key], "Build log changed")
+    }
+    return { ...receipt, receiptFile: await fileEvidence(receiptFile) }
+}
+export async function ablationProvenance(opts) {
+    const before = await verifyTauriBuild(opts.beforeBuildReceipt, opts.beforeBin, opts.expectBeforeSha256),
+        after = await verifyTauriBuild(opts.afterBuildReceipt, opts.afterBin, opts.expectAfterSha256)
+    assert.notEqual(before.executable.sha256, after.executable.sha256, "Ablation binaries must differ")
+    assert.notEqual(before.sourceCommit, after.sourceCommit, "Ablation source commits must differ")
+    assert.deepEqual(before.inputs, after.inputs, "Build inputs/features/lockfiles differ")
+    assert.deepEqual(before.tools, after.tools, "Recorded build toolchains differ")
+    assert.deepEqual(before.buildEnvironment, after.buildEnvironment, "Recorded build environment differs")
+    assert.deepEqual(before.viteEnvironment, after.viteEnvironment, "Recorded Vite environment differs")
+    assert.equal(before.resources.sha256, after.resources.sha256, "Unrelated remote resources differ")
+    const changed = git(opts.sourceRoot, ["diff", "--name-only", "-z", before.sourceCommit, after.sourceCommit, "--", ...RUNTIME_PATHS])
+        .split("\0")
+        .filter(Boolean)
+    assert.ok(changed.length && changed.length <= 16, "Require bounded actual runtime change")
+    assert.deepEqual([...changed].sort(), [...opts.allowedSourceChanges].sort(), "Runtime change differs from explicit allowlist")
+    return { before, after, sourceChanges: changed, labels: { before: opts.beforeLabel, after: opts.afterLabel } }
+}
+export function assertProductionState(state) {
+    assert.ok(Array.isArray(state.productionHooks) && state.productionHooks.length === 0, "Known test hook present in actual production WebView")
+}
 function fontFiles(directory) {
     const files = []
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -90,17 +292,21 @@ function fontFiles(directory) {
     return files.sort()
 }
 async function provenance(opts) {
-    const baseline = JSON.parse(fs.readFileSync(opts.baselineReceipt)),
-        electron = await fileEvidence(opts.electronBin),
-        rust = await fileEvidence(opts.rustBin)
-    assert.equal(baseline.release, "v1.6.7-beta.2")
-    assert.equal(baseline.upstreamCommit, "2d94defcf98175e4f5c9504e7f4fd1d33c35c975")
-    assert.ok(baseline.sha256VerifiedAgainstPublishedDigest && baseline.readiness?.ready, "Require verified official release readiness receipt")
-    if (opts.expectRustSha256) assert.equal(rust.sha256, opts.expectRustSha256, "Rust binary changed from expected release")
-    const asset = path.resolve(opts.electronPackage || path.join(path.dirname(opts.electronBin), "../../..", baseline.asset.name))
-    const packageFile = await fileEvidence(asset)
-    assert.equal("sha256:" + packageFile.sha256, baseline.asset.digest, "Official package checksum mismatch")
-    const asar = path.join(path.dirname(opts.electronBin), "resources/app.asar")
+    let selected
+    if (opts.mode === "tauri-ablation") selected = { ablation: await ablationProvenance(opts) }
+    else {
+        const baseline = JSON.parse(fs.readFileSync(opts.baselineReceipt)),
+            electron = await fileEvidence(opts.electronBin),
+            rust = await fileEvidence(opts.rustBin)
+        assert.equal(baseline.release, "v1.6.7-beta.2")
+        assert.equal(baseline.upstreamCommit, "2d94defcf98175e4f5c9504e7f4fd1d33c35c975")
+        assert.ok(baseline.sha256VerifiedAgainstPublishedDigest && baseline.readiness?.ready, "Require verified official release readiness receipt")
+        if (opts.expectRustSha256) assert.equal(rust.sha256, opts.expectRustSha256, "Rust binary changed from expected release")
+        const asset = path.resolve(opts.electronPackage || path.join(path.dirname(opts.electronBin), "../../..", baseline.asset.name)),
+            packageFile = await fileEvidence(asset)
+        assert.equal("sha256:" + packageFile.sha256, baseline.asset.digest, "Official package checksum mismatch")
+        selected = { electron, rust, officialPackage: packageFile, officialReceipt: baseline, officialAppAsar: await fileEvidence(path.join(path.dirname(opts.electronBin), "resources/app.asar")) }
+    }
     const fonts = [...(command("fc-list", ["--format", "%{file}\n"]).stdout?.split("\n").filter(Boolean) || []), ...(opts.fontDir ? fontFiles(path.resolve(opts.fontDir)) : [])]
     assert.ok(fonts?.length, "Font inventory is empty")
     const fontEvidence = []
@@ -114,11 +320,7 @@ async function provenance(opts) {
     const runner = []
     for (const file of [fileURLToPath(import.meta.url), LAUNCHER, path.join(HERE, "release-process-metrics.mjs")]) runner.push(await fileEvidence(file))
     return {
-        electron,
-        rust,
-        officialPackage: packageFile,
-        officialReceipt: baseline,
-        officialAppAsar: await fileEvidence(asar),
+        ...selected,
         source,
         runner,
         tools,
@@ -145,7 +347,8 @@ async function provenance(opts) {
                 .readFileSync("/proc/self/status", "utf8")
                 .split("\n")
                 .filter((line) => /^(Cpus_allowed_list|Mems_allowed_list):/.test(line)),
-            inheritedRuntimeOverrides: Object.fromEntries(["LD_LIBRARY_PATH", "GI_TYPELIB_PATH", "FONTCONFIG_FILE", "FONTCONFIG_PATH", "TAURI_DRIVER", "WEBKIT_WEBDRIVER"].filter((key) => process.env[key]).map((key) => [key, process.env[key]])),
+            inheritedRuntimeOverrides: Object.fromEntries(["LD_LIBRARY_PATH", "GI_TYPELIB_PATH", "FONTCONFIG_FILE", "FONTCONFIG_PATH", "TAURI_DRIVER", "WEBKIT_WEBDRIVER", "FREESHOW_RUST_LTC_LIBRARY"].filter((key) => process.env[key]).map((key) => [key, process.env[key]])),
+            audioBackend: { overrides: Object.fromEntries(["PULSE_SERVER", "PULSE_SINK", "PULSE_SOURCE", "PULSE_LATENCY_MSEC", "ALSA_CONFIG_PATH", "AUDIODEV", "GST_PLUGIN_PATH", "GST_PLUGIN_SYSTEM_PATH", "GST_PLUGIN_FEATURE_RANK"].filter((key) => process.env[key]).map((key) => [key, process.env[key]])), accounting: "Shared/externally activated audio services are outside the observed app tree; record/freeze the actual provider separately" },
             displayMode: "private Xvfb 1600x1100x24, 96 DPI; software-oriented render policy",
             cacheScope: "fresh application/XDG caches for every run; OS/filesystem caches NOT flushed and warmed by provenance hashing and earlier runs",
             observerCpuIncluded: false
@@ -240,7 +443,7 @@ function seedProfile(base, opts) {
         }
     }
 }
-const readyScript = `return (()=>{const e=document.querySelector('.top'),r=e?.getBoundingClientRect();const css=e?getComputedStyle(e):null;return {ready:!!window.api?.send&&!!r&&r.width>0&&r.height>0&&css.display!=='none'&&css.visibility!=='hidden'&&!document.querySelector('#guideButtons')&&!document.querySelector('.popup'),viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},title:document.title,url:location.href,fontStatus:document.fonts.status,nav:[...document.querySelectorAll('.top button')].map(e=>e.dataset.title||e.textContent.trim()),bodyText:document.body.innerText.slice(0,1000),documentReady:document.readyState,visibility:document.visibilityState}})()`
+const readyScript = `return (()=>{const e=document.querySelector('.top'),r=e?.getBoundingClientRect();const css=e?getComputedStyle(e):null;return {ready:!!window.api?.send&&!!r&&r.width>0&&r.height>0&&css.display!=='none'&&css.visibility!=='hidden'&&!document.querySelector('#guideButtons')&&!document.querySelector('.popup'),viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},title:document.title,url:location.href,fontStatus:document.fonts.status,nav:[...document.querySelectorAll('.top button')].map(e=>e.dataset.title||e.textContent.trim()),bodyText:document.body.innerText.slice(0,1000),documentReady:document.readyState,visibility:document.visibilityState,productionHooks:${JSON.stringify(PRODUCTION_HOOKS)}.filter(key=>key in window)}})()`
 export function visibleEditorSignature(state) {
     return { viewport: state.viewport, nav: state.nav, emptyLibrary: ["Projects", "Nothing here", "New project", "New show", "Shows", "No shows", "Import"].map((label) => ({ label, present: state.bodyText.includes(label) })) }
 }
@@ -468,7 +671,22 @@ async function runOne(entry, index, opts, display, evidence) {
         profile = seedProfile(temporary, opts),
         runId = randomUUID(),
         receipt = path.join(artifacts, "launch.json")
-    const record = { ...entry, runtimeName: entry.runtime, index, runId, artifacts, temporary, profileSeed: profile.seed, profileSeedSha256: createHash("sha256").update(JSON.stringify(profile.seed)).digest("hex"), startup: { comparable: false, reason: "Different Playwright/Electron debugger and WebKitWebDriver/Tauri launch paths; not a startup metric" }, valid: false }
+    const lane = comparisonLanes(opts).find((lane) => lane.key === entry.runtime)
+    assert.ok(lane, "Unknown comparison lane")
+    const record = {
+        ...entry,
+        runtimeName: entry.runtime,
+        label: lane.label,
+        adapter: lane.adapter,
+        index,
+        runId,
+        artifacts,
+        temporary,
+        profileSeed: profile.seed,
+        profileSeedSha256: createHash("sha256").update(JSON.stringify(profile.seed)).digest("hex"),
+        startup: { comparable: false, reason: opts.mode === "tauri-ablation" ? "Driver/readiness/polling/resizing overhead included; diagnostic only" : "Different Playwright/Electron debugger and WebKitWebDriver/Tauri launch paths; not a startup metric" },
+        valid: false
+    }
     record.hostLoadAtStart = os.loadavg()
     let adapter,
         bus,
@@ -500,7 +718,7 @@ async function runOne(entry, index, opts, display, evidence) {
         supportEnv.FREESHOW_COMPARISON_LAUNCH_CONFIG = launchConfig
         monitor = new Monitor({ artifacts, receipt, runId, cgroup, hz: evidence.environment.clockTicks, pageBytes: evidence.environment.pageBytes })
         monitor.start(opts.interval)
-        adapter = entry.runtime === "electron" ? await electronAdapter(wrapper, supportEnv, artifacts) : await tauriAdapter(wrapper, supportEnv, artifacts)
+        adapter = lane.adapter === "electron" ? await electronAdapter(wrapper, supportEnv, artifacts) : await tauriAdapter(wrapper, supportEnv, artifacts)
         record.startup.adapterReadyMs = performance.now() - began
         await wait(async () => {
             const state = await adapter.execute(readyScript)
@@ -524,7 +742,8 @@ async function runOne(entry, index, opts, display, evidence) {
                 library: await adapter.execute("return window.__TAURI__.core.invoke('library_status')"),
                 capabilities: adapter.capabilities
             }
-        if (entry.runtime === "rust") assert.equal(record.runtimeObservation.library.context.dataPath, profile.data, "Escaped Rust library profile")
+        if (lane.adapter === "tauri") assert.equal(record.runtimeObservation.library.context.dataPath, profile.data, "Escaped Rust library profile")
+        if (opts.mode === "tauri-ablation") assertProductionState(before)
         record.viewport = before.viewport
         record.before = before
         assert.ok(
@@ -543,6 +762,7 @@ async function runOne(entry, index, opts, display, evidence) {
         monitor.phase = "validation"
         if (monitor.error) throw monitor.error
         record.after = await adapter.execute(readyScript)
+        if (opts.mode === "tauri-ablation") assertProductionState(record.after)
         assert.equal(record.after.ready, true)
         assert.deepEqual(record.after.viewport, before.viewport)
         await adapter.screenshot(path.join(artifacts, "editor.png"))
@@ -604,14 +824,21 @@ async function runOne(entry, index, opts, display, evidence) {
     }
     return record
 }
-export function summarize(runs) {
+export function summarize(
+    runs,
+    lanes = [
+        { key: "electron", label: "electron" },
+        { key: "rust", label: "rust" }
+    ]
+) {
     const measured = runs.filter((run) => !run.warmup),
         valid = measured.length > 0 && measured.every((run) => run.valid),
         pssComplete = valid && measured.every((run) => run.memory?.pssComplete)
     const runtime = {}
-    for (const name of ["electron", "rust"]) {
+    for (const { key: name, label } of lanes) {
         const rows = measured.filter((run) => run.runtime === name || run.runtimeName === name || run.kind === name)
         runtime[name] = {
+            label,
             runs: rows.length,
             validRuns: rows.filter((row) => row.valid).length,
             completePssRuns: rows.filter((row) => row.valid && row.memory?.pssComplete).length,
@@ -632,16 +859,17 @@ async function main(opts) {
     const evidence = await provenance(opts),
         report = {
             schemaVersion: 2,
-            kind: "release-idle-editor-comparison",
+            kind: opts.mode === "tauri-ablation" ? "tauri-release-idle-editor-ablation" : "release-idle-editor-comparison",
             startedAt: new Date().toISOString(),
             settings: opts,
+            lanes: comparisonLanes(opts),
             evidence,
             workload: "empty-library visible retained editor, no projection/media/network servers; no automation requests during fixed steady window",
             cacheScope: evidence.environment.cacheScope,
             measurements: null,
             runs: [],
             scope: [
-                "Rust declared source is a partial feature migration; matching visible workload does not establish background feature parity",
+                opts.mode === "tauri-ablation" ? "Before/after use the same native adapter; allowed runtime source changes and actual build/resource receipts are checked. This idle workload does not establish full application performance" : "Rust declared source is a partial feature migration; matching visible workload does not establish background feature parity",
                 "software-oriented Xvfb Linux only",
                 "App processes include Chromium/WebKit helpers through ancestry, private session/group, retained identities, marker and optional cgroup",
                 "Automation driver, observer, Xvfb and session-bus services excluded; externally activated services are not app descendants",
@@ -650,7 +878,7 @@ async function main(opts) {
         }
     json(path.join(opts.output, "report.json"), report)
     if (opts.dryRun) {
-        report.plan = pairOrder(opts.pairs, opts.warmups, opts.seed, opts.order)
+        report.plan = comparisonPlan(opts)
         report.state = "preflight-only-no-GUI-launched"
         json(path.join(opts.output, "report.json"), report)
         console.log(`Preflight only: ${opts.output}`)
@@ -660,14 +888,17 @@ async function main(opts) {
     try {
         xvfb = await fdService(executable("Xvfb"), ["-displayfd", "3", "-screen", "0", "1600x1100x24", "-dpi", "96", "-nolisten", "tcp"], path.join(opts.output, "xvfb.log"), { ...process.env, LC_ALL: "C.UTF-8", LANG: "C.UTF-8" })
         report.display = { display: `:${xvfb.value}`, pid: xvfb.child.pid }
-        for (const [index, entry] of pairOrder(opts.pairs, opts.warmups, opts.seed, opts.order).entries()) {
-            console.log(`Run ${index + 1}: ${entry.runtime}${entry.warmup ? " warmup" : ""}`)
+        for (const [index, entry] of comparisonPlan(opts).entries()) {
+            console.log(`Run ${index + 1}: ${entry.label}${entry.warmup ? " warmup" : ""}`)
             const run = await runOne(entry, index, opts, report.display.display, evidence)
             report.runs.push(run)
             json(path.join(opts.output, "report.json"), report)
             if (!run.valid) throw new Error(`Invalid ${entry.runtime} run: ${JSON.stringify(run.error || run.cleanup || run.adapterCleanupError)}`)
-            assert.equal(await hash(opts.rustBin), evidence.rust.sha256, "Rust release changed during comparison")
-            assert.equal(await hash(opts.electronBin), evidence.electron.sha256, "Electron release changed during comparison")
+            if (opts.mode === "tauri-ablation") await ablationProvenance(opts)
+            else {
+                assert.equal(await hash(opts.rustBin), evidence.rust.sha256, "Rust release changed during comparison")
+                assert.equal(await hash(opts.electronBin), evidence.electron.sha256, "Electron release changed during comparison")
+            }
         }
         const seeds = new Set(report.runs.map((run) => run.profileSeedSha256))
         assert.equal(seeds.size, 1, "Profiles differ semantically")
@@ -676,7 +907,7 @@ async function main(opts) {
             assert.deepEqual(visibleEditorSignature(run.before), visibleSignature, "Visible editor workload differs across runs")
             assert.deepEqual(visibleEditorSignature(run.after), visibleSignature, "Visible editor workload changed during run")
         }
-        report.measurements = summarize(report.runs)
+        report.measurements = summarize(report.runs, comparisonLanes(opts))
         report.state = "completed"
         report.finishedAt = new Date().toISOString()
     } catch (error) {
@@ -702,7 +933,7 @@ if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === imp
         const opts = options(process.argv.slice(2))
         if (opts.help)
             console.log(
-                "Linux release idle-editor comparison; --dry-run performs preflight only. Options: --electron-bin PATH --rust-bin PATH --source-root PATH --baseline-receipt PATH --electron-package PATH --rust-source-commit SHA --expect-rust-sha256 SHA --pairs 5 --warmups 1 --settle 20 --seconds 10 --interval 250 --order alternating|random --seed N --font-dir PATH --cgroup-parent DELEGATED_PATH --output NEW_DIRECTORY. Never rebuilds. Startup is non-comparable; no automatic speedup ratios."
+                "Linux release idle-editor comparison; --dry-run performs preflight only. Default --mode electron-rust: --electron-bin PATH --rust-bin PATH --baseline-receipt PATH --electron-package PATH --rust-source-commit SHA --expect-rust-sha256 SHA. --mode tauri-ablation: --before-bin PATH --after-bin PATH --before-label ID --after-label ID --before-build-receipt PATH --after-build-receipt PATH --expect-before-sha256 SHA --expect-after-sha256 SHA --allowed-source-change EXACT_PATH (1..16). Common: --source-root PATH --pairs 5 --warmups 1 --settle 20 --seconds 10 --interval 250 --order alternating|random --seed N --font-dir PATH --cgroup-parent DELEGATED_PATH --output NEW_DIRECTORY. Never builds or launches apps for --dry-run. Startup remains diagnostic; no automatic speedup ratios."
             )
         else if (!opts.dryRun && !process.env.FREESHOW_COMPARISON_SUPERVISED) {
             const child = spawn(executable("python3"), [LAUNCHER, "--supervise", process.execPath, fileURLToPath(import.meta.url), ...process.argv.slice(2), "--output", opts.output], { stdio: "inherit", env: { ...process.env, FREESHOW_COMPARISON_SUPERVISOR_RECEIPT: path.join(opts.output, "supervisor.json") } })
