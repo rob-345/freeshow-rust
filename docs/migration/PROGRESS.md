@@ -2,6 +2,33 @@
 
 Status: **active, incomplete**. Full feature parity and application performance improvement have not been demonstrated. The complete parity gate intentionally fails.
 
+Native now-playing now runs through the retained Svelte bridge, one lazy Rust
+supervisor, four overlapping metadata preparations and ordered source phases.
+Actual registered descriptors, parser/cover/image owners, library file jobs and
+shared Icecast metadata are composed with one four-operation/result budget
+retained across context replacement. Raw duration, typed picture buffers,
+NaN/own undefined and void source commands are preserved on the tested corpus.
+[Contracts, evidence and explicit gaps](native-now-playing.md).
+
+The latest local integration passes **459 Rust + 485 pinned-Node + 20 frontend
+checks** (964), plus **307 native executions** (297 host integration and ten
+desktop binary unit cases, including shared cases repeated by importing targets).
+Five ignored Rust subprocess entry fixtures are driven by their supervisor tests;
+four source suites have existing platform/capability skips. Strict workspace and
+native all-target Clippy, focused TypeScript, formatting and snapshot checks pass.
+The actual **160-step Linux editor**, four GTK menus and both native drop scales
+pass. Four new WebView SET/UNSET cases compare actual WAV/FLAC/MP3 metadata and
+formatting with pinned source, prove real file effects/cleanup, typed callbacks,
+send-time snapshots and explicit post-metadata unsupported-image rejection.
+The complete receipt retains 54 expected/capability/stale diagnostic entries,
+including the deliberately unsupported image; no global zero-error claim is made.
+New cross-platform CI is pending publication of this milestone.
+
+Now-playing remains partial: caught folder-creation ALERT ordering, remote cover
+HTTP, broader image/metadata/resize fidelity, root common-picture insertion
+position, physical audio/reveal and Windows/macOS GUI remain open. These changes
+establish no new performance gain.
+
 Retained timecode now has production main-window typed/raw IPC, exact native
 Uint8Array/IEEE hydration and a verified Linux LTC backend. One fixed supervisor
 owns bounded MIDI/LTC effects and real joins; four shared lifecycle observers and
@@ -10,7 +37,7 @@ failures and invoke-response ordering. Source STOP remains reopenable and native
 library retirement preserves process-global source mode/framerate/failure state.
 [Contracts, source quirks and remaining gaps](native-timecode.md).
 
-The latest local integration passes **390 Rust + 419 pinned-Node + 20 frontend
+The preceding timecode integration passes **390 Rust + 419 pinned-Node + 20 frontend
 checks** (829), with four existing OS/capability skips, plus **246 native test
 executions**: 236 host integration executions and ten desktop binary unit cases,
 including shared cases repeated across importing targets. Strict workspace and

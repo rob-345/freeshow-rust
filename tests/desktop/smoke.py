@@ -64,7 +64,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["timecode.json", "audio-stream.json", "midi.json", "network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["now-playing.json", "timecode.json", "audio-stream.json", "midi.json", "network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     (ARTIFACTS / "ffmpeg-download.json").unlink(missing_ok=True)
@@ -86,6 +86,7 @@ def run():
         audio_fixture = temp / "音量 Native tags.flac"
         subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=8000:duration=1", "-c:a", "flac", "-threads", "1", "-metadata", "title=Native 敬拜 café", "-metadata", "artist=Artist Ελληνικά", "-metadata", "replaygain_album_gain=+9.0 dB", "-metadata", "replaygain_track_peak=0.8", "-y", str(audio_fixture)], check=True, timeout=15)
         expected_audio = json.loads(subprocess.check_output(["node", "tests/desktop/audio_oracle.mjs", str(audio_fixture)], cwd=ROOT, text=True, timeout=15))
+        now_playing_fixtures = json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE", "node"), "tests/desktop/now_playing_desktop_oracle.mjs", "--fixtures", str(temp / "now-playing-fixtures")], cwd=ROOT, text=True, timeout=15))
         expected_network = json.loads(subprocess.check_output(["node", "tests/desktop/network_queries_oracle.mjs"], cwd=ROOT, text=True, timeout=15))
         assert expected_audio["common"]["title"] == "Native 敬拜 café" and expected_audio["replayGainMultiplier"] == 1.25
         expected_system = json.loads(subprocess.check_output(["node", "tests/desktop/system_oracle.mjs"], cwd=ROOT, text=True, timeout=15))
@@ -646,7 +647,7 @@ def run():
             shutil.copyfile(ROOT / "crates/freeshow-assets/tools/fixtures/blue.webm", asset_video)
             asset_show = json.loads(json.dumps(saved[1]))
             asset_show["name"] = "Native asset delivery"
-            asset_show["media"] = {str(index): {"path":str(path)} for index,path in enumerate([installed_media,asset_audio,asset_video])}
+            asset_show["media"] = {str(index): {"path":str(path)} for index,path in enumerate([installed_media,asset_audio,asset_video,*[entry["path"] for entry in now_playing_fixtures["cases"]]])}
             (data_dir / "Shows" / "Native asset delivery.show").write_text(json.dumps(["native-assets-show",asset_show]))
             script((ROOT / "tests/desktop/assets_probe.js").read_text(), {"id":"native-assets-show","name":asset_show["name"],"image":str(installed_media),"audio":str(asset_audio),"video":str(asset_video),"importUrlAtCallback":imported.get("importUrlAtCallback")})
             assets = wait(lambda: script("return window.__assetsProbe.done ? window.__assetsProbe : null"), "Native grants reach retained callbacks and actual WebKit image/audio/video decoders", seconds=40)
@@ -666,6 +667,41 @@ def run():
             (ARTIFACTS / "assets.json").write_text(json.dumps(assets, ensure_ascii=False, indent=2))
             steps.append("Native HTTP GET, HEAD and Range preserve imported PNG bytes and CORS canvas pixels")
             steps.append("Native media capabilities support real WebKit WAV/VP8 seeking and playback")
+            now_playing_receipts = []
+            def now_playing_values(raw):
+                # Keep every typed value and nested key order. The separate
+                # skipCovers/native read cannot certify root picture position.
+                assert raw[0] == "object", raw
+                return {"ordinary":[row for row in raw[1] if row[0] != "picture"], "picture":[row for row in raw[1] if row[0] == "picture"]}
+            for entry in now_playing_fixtures["cases"]:
+                observed = script((ROOT / "tests/desktop/now_playing_probe.js").read_text(), {"phase":"initial-" + entry["id"], "action":"set", "case":entry})
+                replay_file = temp / "now-playing-script.json"
+                replay_file.write_text(json.dumps(observed["script"],ensure_ascii=False))
+                expected = json.loads(subprocess.check_output([os.environ.get("FREESHOW_TEST_NODE", "node"), "tests/desktop/now_playing_desktop_oracle.mjs", "--replay", str(replay_file)], cwd=ROOT, text=True, timeout=15))
+                assert observed["context"] == observed["current"] == invoke("runtime_context"), observed
+                assert observed["sourceAcks"] == observed["browserErrors"] == [] and observed["ordinaryIdleVerified"], observed
+                assert len(observed["events"]) == 1, observed
+                assert now_playing_values(observed["events"][0]["raw"]) == now_playing_values(expected["metadataRaw"]), (observed,expected)
+                audio_folder = Path(observed["script"]["audioFolder"])
+                text_path, cover_path = audio_folder / "NowPlaying.txt", audio_folder / "NowPlayingCover.png"
+                files = {"textExists":text_path.exists(), "coverExists":cover_path.exists()}
+                if expected["text"] is not None:
+                    files["text"] = text_path.read_text(encoding="utf-8")
+                    assert files["text"] == expected["text"], (files,expected)
+                if expected["coverExpectedAbsent"]:
+                    assert not cover_path.exists(), (entry,files)
+                elif entry["imageCapability"] == "small-png":
+                    actual_png = cover_path.read_bytes()
+                    assert actual_png[:8] == b'\x89PNG\r\n\x1a\n'
+                    assert list(int.from_bytes(actual_png[index:index+4], "big") for index in [16,20]) == [1,1]
+                    files["coverSha256"] = hashlib.sha256(actual_png).hexdigest()
+                    files["coverDimensions"] = [1,1]
+                cleared = script((ROOT / "tests/desktop/now_playing_probe.js").read_text(), {"phase":"unset-" + entry["id"], "action":"unset"})
+                assert text_path.read_bytes() == b'' and not cover_path.exists(), (entry,cleared)
+                assert cleared["sourceAcks"] == cleared["browserErrors"] == cleared["events"] == cleared["errors"] == [], cleared
+                now_playing_receipts.append({"native":observed,"source":expected,"files":files,"unset":cleared,"rootPicturePositionCompared":False,"encodedPngParityClaimed":False})
+                (ARTIFACTS / "now-playing.json").write_text(json.dumps(now_playing_receipts,ensure_ascii=False,indent=2))
+                steps.append("Retained now-playing " + entry["id"] + " preserves raw source metadata, send-time input, actual file effects and void UNSET with drained native work")
             read_text = import_dir / "日本語 literal%20.txt"
             read_text.write_bytes(b"\xef\xbb\xbfNative\x00\n\xf0\x9f\x80 invalid\xff")
             read_image = import_dir / "日本語 literal%20.jpg"
