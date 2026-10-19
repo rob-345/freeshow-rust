@@ -72,6 +72,19 @@ struct Group {
     cancel: CancellationToken,
     guards: AtomicUsize,
     changed: Notify,
+    retirement: Mutex<Retirement>,
+}
+#[derive(Clone, Serialize)]
+pub struct RetirementStatus {
+    context: RuntimeContext,
+    run: Option<u64>,
+    disconnected: bool,
+}
+enum Retirement {
+    Open,
+    Queued,
+    Active,
+    Finished(Result<Option<RetirementStatus>>),
 }
 impl Group {
     fn new(context: RuntimeContext) -> Arc<Self> {
@@ -81,11 +94,22 @@ impl Group {
             cancel: CancellationToken::new(),
             guards: AtomicUsize::new(0),
             changed: Notify::new(),
+            retirement: Mutex::new(Retirement::Open),
         })
     }
-    fn close(&self) {
+    fn close(&self, retry: bool) {
         self.closed.store(true, Ordering::Release);
         self.cancel.cancel();
+        let mut retirement = lock(&self.retirement);
+        if matches!(*retirement, Retirement::Open)
+            || (retry && matches!(*retirement, Retirement::Finished(Err(_))))
+        {
+            *retirement = Retirement::Queued;
+        }
+    }
+    fn drained(&self) -> bool {
+        self.guards.load(Ordering::Acquire) == 0
+            && matches!(*lock(&self.retirement), Retirement::Finished(Ok(_)))
     }
 }
 struct GroupGuard(Arc<Group>);
@@ -146,6 +170,7 @@ struct State {
     cells: Vec<Weak<Cell>>,
     closed: bool,
     failure: Option<IngressError>,
+    last_retirement: Option<RetirementStatus>,
 }
 struct Shared {
     library: LibraryService,
@@ -196,6 +221,9 @@ impl Shared {
             if group.is_some_and(|g| !Arc::ptr_eq(g, &cell.group)) {
                 continue;
             }
+            // The real native owner sees cancellation synchronously, before
+            // its plan-acceptance check; no forwarding task/poll race exists.
+            cell.explicit_cancel.cancel();
             let mut value = lock(&cell.state);
             if matches!(value.phase, Phase::Queued | Phase::Ready) {
                 value.dispose(Some(IngressError::cancelled()));
@@ -206,9 +234,10 @@ impl Shared {
     }
     fn close_all(&self) {
         let mut state = lock(&self.state);
+        let retry = !state.closed;
         state.closed = true;
         for group in [&state.group, &state.previous].into_iter().flatten() {
-            group.close();
+            group.close(retry);
         }
         self.retire_cells(&mut state, None);
         self.wake.notify_waiters();
@@ -224,6 +253,14 @@ impl Shared {
         let group = match existing {
             Some(g) => g,
             None => {
+                if state.closed {
+                    return Err(state.failure.clone().unwrap_or_else(|| {
+                        IngressError::new(
+                            "audio_ingress_closed",
+                            "Terminal AUDIO ingress cannot create a new cleanup group",
+                        )
+                    }));
+                }
                 let current = self
                     .library
                     .context()
@@ -250,11 +287,15 @@ impl Shared {
                 }
                 // An older context absent from both retained groups cannot own
                 // queued/active/ready data: replacement required its actual
-                // guard count to reach zero. Retain no synthetic history entry.
+                // guards AND socket retirement to finish. No native operation
+                // or synthetic history entry is needed for this proven absence.
+                if *context != current {
+                    *lock(&g.retirement) = Retirement::Finished(Ok(None));
+                }
                 g
             }
         };
-        group.close();
+        group.close(!state.closed);
         self.retire_cells(&mut state, Some(&group));
         self.wake.notify_waiters();
         Ok(group)
@@ -292,6 +333,13 @@ impl Shared {
             if let Some(cell) = state.active.take() {
                 lock(&cell.state).dispose(state.failure.clone());
                 cell.changed.notify_waiters();
+            }
+            for group in [&state.group, &state.previous].into_iter().flatten() {
+                if !matches!(*lock(&group.retirement), Retirement::Finished(_)) {
+                    *lock(&group.retirement) =
+                        Retirement::Finished(Err(state.failure.clone().unwrap()));
+                    group.changed.notify_waiters();
+                }
             }
         }
     }
@@ -398,6 +446,7 @@ pub struct IngressStatus {
     pub accepted_packets: u64,
     pub completed_packets: u64,
     pub retained_controls: usize,
+    pub last_retirement: Option<RetirementStatus>,
 }
 impl AudioIngress {
     pub fn new(library: LibraryService, audio: NativeAudioPipeline) -> Result<Self> {
@@ -439,6 +488,7 @@ impl AudioIngress {
                 cells: Vec::with_capacity(CAPACITY),
                 closed: false,
                 failure: None,
+                last_retirement: None,
             }),
             slots: Arc::new(Semaphore::new(CAPACITY)),
             controls: Arc::new(Semaphore::new(CAPACITY)),
@@ -530,9 +580,7 @@ impl AudioIngress {
                 }
                 group.clone()
             } else {
-                if !group.closed.load(Ordering::Acquire)
-                    || group.guards.load(Ordering::Acquire) != 0
-                {
+                if !group.closed.load(Ordering::Acquire) || !group.drained() {
                     return Err(IngressError::new(
                         "audio_ingress_context_drain",
                         "The previous full AUDIO context must really drain first",
@@ -564,6 +612,7 @@ impl AudioIngress {
                     Some(n.saturating_add(1))
                 });
         }
+        let explicit_cancel = cancel.child_token();
         let cell = Arc::new(Cell {
             group,
             shared: Arc::downgrade(shared),
@@ -576,7 +625,7 @@ impl AudioIngress {
                 cancelled: None,
             }),
             caller_cancel: cancel,
-            explicit_cancel: CancellationToken::new(),
+            explicit_cancel,
             abandoned: AtomicBool::new(false),
             changed: Notify::new(),
         });
@@ -643,7 +692,9 @@ impl AudioIngress {
                 changed.as_mut().enable();
                 self.handle.shared.recover_after_native_join();
                 if group.guards.load(Ordering::Acquire) == 0 {
-                    return Ok(());
+                    if let Retirement::Finished(outcome) = &*lock(&group.retirement) {
+                        return outcome.as_ref().map(|_| ()).map_err(Clone::clone);
+                    }
                 }
                 tokio::select! { _=changed=>{}, _=tokio::time::sleep(Duration::from_millis(5))=>{} }
             }
@@ -678,6 +729,7 @@ impl AudioIngress {
             accepted_packets: shared.accepted_packets.load(Ordering::Acquire),
             completed_packets: shared.completed_packets.load(Ordering::Acquire),
             retained_controls: CAPACITY - shared.controls.available_permits(),
+            last_retirement: state.last_retirement.clone(),
         }
     }
     /// Stops/drains only this ingress. The host separately shuts down the real
@@ -707,7 +759,16 @@ impl AudioIngress {
                 }
                 let joined=lock(&shared.supervisor).take();
                 if let Some(joined)=joined { joined.await.map_err(|e|IngressError::new("audio_ingress_supervisor",e.to_string()))?; }
-                lock(&shared.state).failure.clone().map_or(Ok(()),Err)
+                let state = lock(&shared.state);
+                if let Some(error) = &state.failure { return Err(error.clone()); }
+                for group in [&state.group,&state.previous].into_iter().flatten() {
+                    match &*lock(&group.retirement) {
+                        Retirement::Finished(Ok(_)) => {},
+                        Retirement::Finished(Err(error)) => return Err(error.clone()),
+                        _ => return Err(IngressError::new("audio_ingress_drain_timeout", "Actual socket retirement remains unproven; retain the native owner")),
+                    }
+                }
+                Ok(())
             }).await.map_err(|_|IngressError::new("audio_ingress_drain_timeout","Real AUDIO pump/group ownership remains retained; retry shutdown"))?
         }
     }
@@ -718,28 +779,72 @@ impl AudioIngress {
     }
 }
 async fn pump(shared: Arc<Shared>) {
+    enum Work {
+        Packet(Arc<Cell>, Option<Input>),
+        Retire(Arc<Group>),
+    }
     loop {
         let wake = shared.wake.notified();
         tokio::pin!(wake);
         wake.as_mut().enable();
         let next = {
             let mut state = lock(&shared.state);
-            if let Some(cell) = state.queue.pop_front() {
+            let retirement = [&state.previous, &state.group]
+                .into_iter()
+                .flatten()
+                .find(|group| {
+                    group.guards.load(Ordering::Acquire) == 0
+                        && matches!(*lock(&group.retirement), Retirement::Queued)
+                })
+                .cloned();
+            if let Some(group) = retirement {
+                *lock(&group.retirement) = Retirement::Active;
+                Some(Work::Retire(group))
+            } else if let Some(cell) = state.queue.pop_front() {
                 let mut value = lock(&cell.state);
                 let input = value.input.take();
                 value.phase = Phase::Active;
                 drop(value);
                 state.active = Some(cell.clone());
-                Some((cell, input))
+                Some(Work::Packet(cell, input))
             } else if state.closed {
                 return;
             } else {
                 None
             }
         };
-        let Some((cell, input)) = next else {
-            wake.await;
-            continue;
+        let (cell, input) = match next {
+            Some(Work::Packet(cell, input)) => (cell, input),
+            Some(Work::Retire(group)) => {
+                // This fixed owner, rather than a public drain waiter, owns the
+                // guard-drain -> socket-retirement continuation through Drop.
+                let result = shared
+                    .audio
+                    .retire_context(&group.context)
+                    .await
+                    .map(|receipt| {
+                        let evidence = RetirementStatus {
+                            context: receipt.context.clone(),
+                            run: receipt.run,
+                            disconnected: receipt.disconnected,
+                        };
+                        drop(receipt); // Release the actual reserved native result.
+                        evidence
+                    })
+                    .map_err(IngressError::from);
+                let mut state = lock(&shared.state);
+                if let Ok(evidence) = &result {
+                    state.last_retirement = Some(evidence.clone());
+                }
+                *lock(&group.retirement) = Retirement::Finished(result.map(Some));
+                group.changed.notify_waiters();
+                shared.changed.notify_waiters();
+                continue;
+            }
+            None => {
+                wake.await;
+                continue;
+            }
         };
         let outcome = if cell.group.cancel.is_cancelled()
             || cell.caller_cancel.is_cancelled()
@@ -749,7 +854,7 @@ async fn pump(shared: Arc<Shared>) {
         } else if let Err(e) = shared.current(&cell.group.context) {
             Err(e)
         } else {
-            let cancel = cell.group.cancel.child_token();
+            let cancel = cell.explicit_cancel.clone();
             let call = async {
                 match input.expect("an active AUDIO cell owns exactly one input") {
                     Input::Pcm { bytes, meta, sinks } => {
@@ -782,16 +887,10 @@ async fn pump(shared: Arc<Shared>) {
             };
             tokio::pin!(call);
             #[cfg(not(test))]
-            let outcome = tokio::select! {
-                result=&mut call=>result,
-                _=cell.caller_cancel.cancelled()=>{cancel.cancel();call.await},
-                _=cell.explicit_cancel.cancelled()=>{cancel.cancel();call.await},
-            };
+            let outcome = call.await;
             #[cfg(test)]
             let outcome = tokio::select! {
                 result=&mut call=>result,
-                _=cell.caller_cancel.cancelled()=>{cancel.cancel();call.await},
-                _=cell.explicit_cancel.cancelled()=>{cancel.cancel();call.await},
                 _=shared.panic.cancelled()=>panic!("controlled fixed AUDIO pump failure"),
             };
             outcome

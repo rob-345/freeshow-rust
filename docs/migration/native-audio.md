@@ -55,8 +55,14 @@ changes must **not** destroy this host. All three foundations use a private stab
 process audio epoch, preserving the original single encoder, resampler and global
 accumulator. `context_changed()` only cancels obsolete status completions. Call it
 after library retirement; current-context checks also gate every native delivery
-and private completion. The coordinator still must reject stale renderer events
-at actual handler delivery. Reconstructing the host is a terminal process-audio
+and private completion. The shared bridge rejects stale renderer events
+at actual handler delivery. Reserved `retire_context(old_context)` closes only the
+actual matching Icecast run after accepted input drains. Its single control
+lease/FIFO slot runs on the existing native owner independently of ordinary
+packet quota; accepted cleanup survives a dropped or timed-out public future.
+Before new-context PCM can connect, any genuine obsolete stream closes. A
+delayed old cleanup cannot close a genuinely newer run. The original reconnect
+cooldown and global codec state remain intact. Reconstructing the host is a terminal process-audio
 boundary; that differs from the original source-global lifetime if done on every
 library change.
 
@@ -265,9 +271,9 @@ Obsolete events cannot retag the current library. MAIN.CLOSE attempts native
 shutdown even after frontend audio retirement fails, so independent native
 owners still receive real drain/join attempts before final library shutdown.
 
-The local153-step Linux editor, four native menu checks and both actual file-drop
+The local 153-step Linux editor, four native menu checks and both actual file-drop
 scales passed. Three controlled audio phases ran in one application process:
-normal use, after library selection and while the same real64MiB ZIP compression
+normal use, after library selection and while the same real 64 MiB ZIP compression
 remained active. Twelve actual encoded inputs used one continuous original addon
 encoder. Native/source HTTP, tags, lacing and real Opus payloads matched after the
 explicit serial/idle-page normalization documented in
@@ -278,7 +284,28 @@ zero source ACKs are retained in `test-output-rust/desktop/audio-stream.json`.
 The probe reports controlled PCM and browser worklet availability separately;
 it does not claim an actual AudioWorklet/device recording or decoded playback.
 
-Connected-idle context retirement is being strengthened separately: packet/group
-drain alone does not prove an already connected socket closed. The full parity
-gate remains incomplete while that actual native lifecycle proof and the wider
-capture/output/backend cases remain open.
+Connected-idle context retirement is owned by the fixed ingress pump. Closing
+requests group cleanup synchronously; public wait futures only observe it. The
+pump selects cleanup after real group guards reach zero, consumes/drops the
+reserved native retirement receipt, records bounded private evidence and only
+then admits a replacement group. Both current/previous group records remain
+bounded. No per-caller continuation task is created. Dropping an unpolled or
+active wait cannot suppress cleanup; timeout/busy outcomes remain explicit.
+
+Fourteen composed ingress tests and eighteen native host tests pass with strict
+real-codec/source-oracle requirements. A real peer verifies valid raw CRC/EOS and
+EOF after the library-retirement caller drops while actual PCM remains gated;
+no later PCM, CLOSE_PORT or terminal shutdown triggers that closure. Separate
+actual two-connection tests preserve cooldown/codec sequence, exercise reserved
+retirement under ordinary quota saturation and prove obsolete cleanup cannot
+close a new run. Terminal error/retry and late-close tests retain the real error
+without requeuing work on an exited pump or creating synthetic groups. Private
+native cancellation is a direct caller-child token, synchronously canceled by
+explicit group/ticket retirement; sixteen actual pre-acceptance regression runs
+pass without relying on a later pump poll to forward cancellation. The complete
+native suite passes **206 Linux host test executions**; repeated shared OS cases are
+included in that execution count.
+
+The full parity gate remains incomplete. Actual device/worklet recording,
+playback, foreign OS browser/media behavior, broader socket/pacing variants and
+unimplemented output backends still need implementation and evidence.

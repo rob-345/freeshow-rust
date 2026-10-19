@@ -747,3 +747,165 @@ async fn lifecycle_waiters_are_bounded_and_cancel_before_busy_rejection() {
     );
     done(setup).await;
 }
+
+#[tokio::test]
+async fn dropped_library_retirement_waiter_still_drains_actual_pcm_then_closes_the_idle_stream() {
+    let _serial = SERIAL.lock().await;
+    let setup = setup(true, Duration::from_secs(3));
+    if let Capability::Unavailable(error) = setup.native.capability().await.unwrap() {
+        eprintln!("REAL RETIREMENT OPUS UNAVAILABLE: {error}; socket delivery not claimed");
+        assert!(std::env::var_os("FREESHOW_REQUIRE_OPUS").is_none());
+        done(setup).await;
+        return;
+    }
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let wire = tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut bytes = vec![];
+        socket.read_to_end(&mut bytes).await.unwrap();
+        bytes
+    });
+    let old = setup.library.context().unwrap();
+    let meta = AudioMetadata {
+        sample_rate: JsInput::Number(48000.0),
+        target_id: JsInput::Json(json!("icecast")),
+        icecast: Some(
+            json!({"enabled":true,"host":"127.0.0.1","port":port,"mount":"retire","password":"secret"}),
+        ),
+    };
+    let bytes: Vec<u8> = (0..1920).flat_map(|_| 0.2f32.to_le_bytes()).collect();
+    setup
+        .ingress
+        .submit(&old, &bytes, &meta, &SinkAvailability::default(), token())
+        .unwrap()
+        .finish()
+        .await
+        .unwrap()
+        .into_void()
+        .unwrap();
+    wait(|| {
+        setup
+            .events
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|event| event["connected"] == true)
+    })
+    .await;
+    let (entered, release) = gate(&setup, true);
+    let actual = setup
+        .ingress
+        .submit(&old, &bytes, &meta, &SinkAvailability::default(), token())
+        .unwrap();
+    entered.await.unwrap();
+    let current = switch(&setup, &old).await;
+    let caller_owned_wait = setup.ingress.context_changed();
+    assert!(
+        setup.ingress.status().group_closed,
+        "retirement is requested before the public future is polled"
+    );
+    drop(caller_owned_wait);
+    assert_eq!(setup.ingress.status().retained_controls, 0);
+    assert_eq!(setup.ingress.status().group_outstanding, 1);
+    assert!(
+        !wire.is_finished(),
+        "active native work still owns the old socket"
+    );
+    release.send(()).unwrap();
+    assert_eq!(
+        code(actual.finish().await.unwrap().into_void()),
+        "stale_library"
+    );
+    // No new PCM/CLOSE_PORT/terminal shutdown is allowed to trigger this EOF.
+    let wire = tokio::time::timeout(Duration::from_secs(4), wire)
+        .await
+        .unwrap()
+        .unwrap();
+    wait(|| setup.ingress.status().last_retirement.is_some()).await;
+    let proof = serde_json::to_value(setup.ingress.status()).unwrap();
+    assert_eq!(proof["lastRetirement"]["context"], json!(old));
+    assert_eq!(proof["lastRetirement"]["disconnected"], true);
+    assert!(proof["lastRetirement"]["run"].as_u64().unwrap() > 0);
+    let mut offset = wire
+        .windows(4)
+        .position(|bytes| bytes == b"\r\n\r\n")
+        .unwrap()
+        + 4;
+    let mut eos = false;
+    while offset < wire.len() {
+        assert_eq!(&wire[offset..offset + 4], b"OggS");
+        let payload = offset + 27 + wire[offset + 26] as usize;
+        let end = payload
+            + wire[offset + 27..payload]
+                .iter()
+                .map(|byte| *byte as usize)
+                .sum::<usize>();
+        let mut page = wire[offset..end].to_vec();
+        let crc = u32::from_le_bytes(page[22..26].try_into().unwrap());
+        page[22..26].fill(0);
+        assert_eq!(freeshow_icecast::crc32(&page), crc);
+        eos |= page[5] & 4 != 0;
+        offset = end;
+    }
+    assert!(
+        eos,
+        "actual owned retirement writes valid EOS before dropping its socket"
+    );
+    submit(&setup, &current)
+        .finish()
+        .await
+        .unwrap()
+        .into_void()
+        .unwrap();
+    setup.ingress.close_context(&old).await.unwrap();
+    assert!(
+        !setup.ingress.status().group_closed,
+        "late old cleanup cannot close the current group"
+    );
+    done(setup).await;
+}
+
+#[tokio::test]
+async fn unused_terminal_ingress_rejects_late_cleanup_without_creating_a_synthetic_group() {
+    let _serial = SERIAL.lock().await;
+    let setup = setup(false, Duration::from_secs(2));
+    let context = setup.library.context().unwrap();
+    setup.ingress.shutdown().await.unwrap();
+    assert_eq!(
+        code(setup.ingress.close_context(&context).await),
+        "audio_ingress_closed"
+    );
+    assert_eq!(setup.ingress.status().retained_controls, 0);
+    assert!(!setup.ingress.status().group_closed);
+    setup.ingress.shutdown().await.unwrap();
+    done(setup).await;
+}
+
+#[tokio::test]
+async fn terminal_retirement_error_survives_real_native_join_and_repeated_shutdown() {
+    let _serial = SERIAL.lock().await;
+    let setup = setup(false, Duration::from_secs(2));
+    let context = setup.library.context().unwrap();
+    submit(&setup, &context)
+        .finish()
+        .await
+        .unwrap()
+        .into_void()
+        .unwrap();
+    // The actual native owner has closed/drained before the queued ingress
+    // retirement can enter. Keep its precise error after the fixed pump exits.
+    setup.native.shutdown().await.unwrap();
+    assert_eq!(code(setup.ingress.shutdown().await), "audio_host_closed");
+    assert!(setup.ingress.status().pump_joined);
+    setup.native.shutdown().await.unwrap();
+    for _ in 0..3 {
+        assert_eq!(code(setup.ingress.shutdown().await), "audio_host_closed");
+        assert_eq!(
+            code(setup.ingress.close_context(&context).await),
+            "audio_host_closed"
+        );
+    }
+    setup.deliveries.await.unwrap();
+    setup.library.finish_writes().await.unwrap();
+}
