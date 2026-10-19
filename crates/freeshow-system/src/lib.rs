@@ -1,3 +1,4 @@
+pub mod device_id;
 mod native;
 pub use native::meminfo_field;
 use serde::{Deserialize, Serialize};
