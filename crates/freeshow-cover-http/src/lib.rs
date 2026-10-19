@@ -41,6 +41,21 @@ pub struct SourceFileStat {
 }
 
 impl SourceFileStat {
+    /// POSIX native timespec projection used by pinned Node's ordinary Stats.
+    /// Cast each signed field separately, then preserve the JS operation order;
+    /// aggregating integer nanoseconds before conversion can change the ETag.
+    /// This does not implement Node's distinct Windows unsigned-long casts.
+    pub fn from_posix(length: u64, seconds: i64, nanoseconds: i64) -> Result<Self, Error> {
+        if !(0..1_000_000_000).contains(&nanoseconds) {
+            return Err(error(
+                "cover_mtime",
+                "POSIX nanoseconds must be in 0..1000000000",
+            ));
+        }
+        let whole_milliseconds = seconds as f64 * 1000.0;
+        let fractional_milliseconds = nanoseconds as f64 / 1_000_000.0;
+        Self::new(length, whole_milliseconds + fractional_milliseconds)
+    }
     pub fn new(length: u64, mtime_ms: f64) -> Result<Self, Error> {
         if length > MAX_BODY_BYTES {
             return Err(error("cover_body_limit", "source file exceeds 4 MiB"));
@@ -593,6 +608,62 @@ mod tests {
         );
         assert!(SourceFileStat::new(MAX_BODY_BYTES + 1, 0.0).is_err());
         assert!(SourceFileStat::new(1, f64::INFINITY).is_err());
+    }
+    #[test]
+    fn posix_timespec_preserves_node_float_order_negative_times_and_native_bounds() {
+        let boundary = SourceFileStat::from_posix(37, 1_700_000_000, 499_841).unwrap();
+        assert_eq!(boundary.etag(), "W/\"25-18bcfe56800\"");
+        let aggregated = (1_700_000_000_i128 * 1_000_000_000 + 499_841) as f64 / 1_000_000.0;
+        assert_ne!(
+            boundary.etag(),
+            SourceFileStat::new(37, aggregated).unwrap().etag()
+        );
+        assert_eq!(
+            SourceFileStat::from_posix(37, -2, 750_000_000)
+                .unwrap()
+                .etag(),
+            "W/\"25--4e2\""
+        );
+        assert_eq!(
+            SourceFileStat::from_posix(37, -1, 999_500_000)
+                .unwrap()
+                .etag(),
+            "W/\"25-0\""
+        );
+        assert_eq!(
+            SourceFileStat::from_posix(1, -11_644_473_600, 0)
+                .unwrap()
+                .last_modified(),
+            "Mon, 01 Jan 1601 00:00:00 GMT"
+        );
+        assert_eq!(
+            SourceFileStat::from_posix(1, 253_402_300_799, 999_000_000)
+                .unwrap()
+                .last_modified(),
+            "Fri, 31 Dec 9999 23:59:59 GMT"
+        );
+        for (seconds, nanoseconds) in [
+            (0, -1),
+            (0, 1_000_000_000),
+            (-11_644_473_601, 0),
+            (253_402_300_800, 0),
+            (253_402_300_799, 999_999_999),
+            (i64::MIN, 0),
+            (i64::MAX, 0),
+        ] {
+            assert_eq!(
+                SourceFileStat::from_posix(1, seconds, nanoseconds)
+                    .unwrap_err()
+                    .code,
+                "cover_mtime"
+            );
+        }
+        assert_eq!(
+            SourceFileStat::from_posix(MAX_BODY_BYTES + 1, 0, 0)
+                .unwrap_err()
+                .code,
+            "cover_body_limit"
+        );
     }
     #[test]
     fn source_exact_midnight_rolls_days_months_years_but_invalid_hours_stay_nan() {

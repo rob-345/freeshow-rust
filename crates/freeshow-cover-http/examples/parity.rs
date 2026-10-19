@@ -14,11 +14,20 @@ struct Input {
     #[serde(default)]
     headers: Vec<(String, String)>,
     length: u64,
-    mtime_ms: Box<RawValue>,
+    #[serde(default)]
+    mtime_ms: Option<Box<RawValue>>,
+    #[serde(default)]
+    posix: Option<PosixTime>,
     #[serde(default)]
     production: bool,
     #[serde(default)]
     route_target: Option<String>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PosixTime {
+    seconds: i64,
+    nanoseconds: i64,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -48,16 +57,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             let state = match input.source.as_str() {
                 "file" => {
-                    // Preserve the original JSON numeric spelling until Rust's
-                    // correctly-rounded f64 parse (no shared serde features).
-                    let ms = input
-                        .mtime_ms
-                        .get()
-                        .parse::<f64>()
-                        .map_err(|_| "invalid parity mtime")?;
-                    SourceState::File(
-                        SourceFileStat::new(input.length, ms).map_err(|err| err.code.to_owned())?,
-                    )
+                    let stat = match (input.mtime_ms, input.posix) {
+                        (Some(ms), None) => {
+                            // Preserve original JSON numeric spelling until
+                            // Rust's correctly-rounded f64 parse.
+                            let ms = ms
+                                .get()
+                                .parse::<f64>()
+                                .map_err(|_| "invalid parity mtime")?;
+                            SourceFileStat::new(input.length, ms)
+                        }
+                        (None, Some(time)) => {
+                            SourceFileStat::from_posix(input.length, time.seconds, time.nanoseconds)
+                        }
+                        _ => return Err("exactly one parity mtime representation required".into()),
+                    }
+                    .map_err(|err| err.code.to_owned())?;
+                    SourceState::File(stat)
                 }
                 "missing" => SourceState::Missing,
                 "failed" => SourceState::Failed,

@@ -52,6 +52,9 @@ const fsAST = ts.createSourceFile("node-internal-fs-utils.js", fsUtils, ts.Scrip
 const dateDeclaration = fsAST.statements.find((node) => ts.isFunctionDeclaration(node) && node.name?.text === "dateFromMs")
 assert.ok(dateDeclaration, "actual Node fs dateFromMs declaration")
 const nodeStatDate = new Function("MathRound", `return (${dateDeclaration.getText(fsAST)})`)(Math.round)
+const msDeclaration = fsAST.statements.find((node) => ts.isFunctionDeclaration(node) && node.name?.text === "msFromTimeSpec")
+assert.ok(msDeclaration, "actual Node fs msFromTimeSpec declaration")
+const nodeStatMs = new Function("kMsPerSec", "kNsPerMs", `return (${msDeclaration.getText(fsAST)})`)(1000, 1_000_000)
 const fixtureBytes = Buffer.from("89504e470d0a1a0a00112233445566778899aabbccddeeffeeddccbbaa99887766554433221100", "hex")
 const stableHeaders = (headers) => Object.fromEntries(Object.entries(headers).filter(([name]) => name !== "date" && name !== "connection"))
 const usedPorts = new Set()
@@ -350,6 +353,89 @@ test("actual file mtime and pre-epoch behavior; direct pinned stat ETags cover f
             assert.equal(native.plan.headers.etag, etag(stats), `stat projection ${ms}`)
             assert.equal(native.plan.headers["last-modified"], stats.mtime.toUTCString())
         }
+    })
+})
+
+test("raw POSIX timespecs use actual Node separate float projection, Date rounding and etag, with real held-fstat observations", async (t) => {
+    const etag = require("etag")
+    const rawInput = (seconds, nanoseconds, length = 37) => ({ source: "file", length, posix: { seconds, nanoseconds }, method: "GET", headers: [], production: true })
+    const tuples = [
+        [1_700_000_000, 499_841],
+        [1_700_000_000, 499_877],
+        [1_700_000_000, 499_878],
+        [1_700_000_000, 500_000],
+        [-2, 750_000_000],
+        [-1, 999_500_000],
+        [-1, 999_499_999],
+        [-1, 998_500_000],
+        [-1, 0],
+        [0, 0],
+        [-11_644_473_600, 0],
+        [-11_644_473_600, 1],
+        [-11_644_473_601, 0],
+        [-11_644_473_601, 999_999_999],
+        [253_402_300_799, 999_000_000],
+        [253_402_300_799, 999_499_999],
+        [253_402_300_799, 999_999_999],
+        [253_402_300_800, 0]
+    ]
+    const ms = nodeStatMs(1_700_000_000, 499_841)
+    const incorrectlyAggregated = Number(1_700_000_000n * 1_000_000_000n + 499_841n) / 1_000_000
+    assert.equal(nodeStatDate(ms).getTime(), 1_700_000_000_000)
+    assert.equal(nodeStatDate(incorrectlyAggregated).getTime(), 1_700_000_000_001, "a single integer-ns conversion would change the actual source ETag")
+    const check = (native, seconds, nanoseconds, size = 37, actualStat) => {
+        const mtime = nodeStatDate(nodeStatMs(seconds, nanoseconds))
+        if (mtime.getTime() < -11_644_473_600_000 || mtime.getTime() > 253_402_300_799_999) {
+            assert.deepEqual(native, { ok: false, code: "cover_mtime" })
+            return
+        }
+        assert.equal(native.ok, true)
+        assert.equal(native.plan.headers.etag, etag(actualStat || { ctime: new Date(0), mtime, ino: 1, size }))
+        assert.equal(native.plan.headers["last-modified"], mtime.toUTCString())
+    }
+    rust(tuples.map(([sec, ns]) => rawInput(sec, ns))).forEach((native, index) => check(native, ...tuples[index]))
+    assert.deepEqual(rust([rawInput(0, -1), rawInput(0, 1_000_000_000)]), [
+        { ok: false, code: "cover_mtime" },
+        { ok: false, code: "cover_mtime" }
+    ])
+    if (process.platform === "win32") {
+        t.diagnostic("signed POSIX tuple math is tested above; no Windows native timespec projection is claimed")
+        return
+    }
+    await oracle("production", async ({ file }) => {
+        const fd = fs.openSync(file, "r")
+        let checked = 0
+        try {
+            for (const time of [new Date(-1250), new Date(0), new Date(1_700_000_000_001), 1_700_000_000 + 0.000499841]) {
+                try {
+                    fs.utimesSync(file, time, time)
+                } catch (error) {
+                    if (time instanceof Date && time.getTime() < 0 && ["EINVAL", "EPERM", "ENOSYS", "EOVERFLOW"].includes(error.code)) {
+                        t.diagnostic(`native filesystem cannot set the pre-epoch tuple: ${error.code}`)
+                        continue
+                    }
+                    throw error
+                }
+                const raw = fs.fstatSync(fd, { bigint: true }),
+                    stat = fs.fstatSync(fd)
+                if (time instanceof Date && time.getTime() < 0 && stat.mtimeMs >= 0) {
+                    t.diagnostic(`native filesystem did not retain the pre-epoch tuple; observed ${stat.mtimeMs}`)
+                    continue
+                }
+                let sec = raw.mtimeNs / 1_000_000_000n,
+                    ns = raw.mtimeNs % 1_000_000_000n
+                if (ns < 0) {
+                    sec--
+                    ns += 1_000_000_000n
+                }
+                assert.equal(stat.mtimeMs, nodeStatMs(Number(sec), Number(ns)), "real same-descriptor Stats must use the extracted Node projection")
+                check(rust([rawInput(Number(sec), Number(ns), stat.size)])[0], Number(sec), Number(ns), stat.size, stat)
+                checked++
+            }
+        } finally {
+            fs.closeSync(fd)
+        }
+        assert.ok(checked >= 3, "all ordinary native tuples must execute; a source synthetic tuple is not substituted for real stat")
     })
 })
 

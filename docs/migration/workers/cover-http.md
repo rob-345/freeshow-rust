@@ -21,8 +21,10 @@ provenance and upstream MIT notices are retained in the crate's NOTICES.md.
 use freeshow_cover_http::{plan, Body, ErrorRendering, Headers, Method,
     SourceFileStat, SourceState};
 
-// Trusted native observations of the already-authorized held fixed file:
-let stat = SourceFileStat::new(observed_length, node_mtime_ms)?;
+// Trusted POSIX observations of the already-authorized held fixed file:
+let stat = SourceFileStat::from_posix(observed_length, signed_seconds, nanoseconds)?;
+// SourceFileStat::new(observed_length, node_mtime_ms) remains available for an
+// already correctly projected binary64 Node Stats value.
 let headers = Headers::new(normalized_node_request_headers)?;
 let representation = plan(SourceState::File(stat), Method::Get, &headers,
     ErrorRendering::Deferred)?;
@@ -35,7 +37,7 @@ match representation.body {
 }
 ```
 
-The constructor receives a binary64 `fs.Stats.mtimeMs` projection, not a Rust
+The existing `new` constructor receives a binary64 `fs.Stats.mtimeMs` projection, not a Rust
 mtime duration rounded toward zero. It performs pinned Node22's Date
 `Math.round(Number(ms))`, including negative half ties toward positive infinity,
 then emits the stat weak ETag and whole-second UTC Last-Modified. Native IO must
@@ -141,6 +143,43 @@ Static fallback body/status, general OPTIONS routing, disappearing-file HTML,
 symlink policy, directory behavior and post-header IO recovery remain integration
 responsibilities beyond this bounded route/representation component.
 
+## POSIX raw-stat projection followup
+
+`SourceFileStat::from_posix(length, seconds:i64, nanoseconds:i64)` validates
+`0 <= nanoseconds < 1_000_000_000`, casts each signed field to binary64 separately,
+then computes `seconds * 1000 + nanoseconds / 1_000_000` in that operation order.
+It passes that value through the unchanged `SourceFileStat::new` bounds and
+source Date rounding. Length remains bounded4MiB; the rounded Date remains
+bounded1601..9999. Invalid native nanoseconds return `cover_mtime` before any
+conversion. This is a pure native constructor, with no descriptor or path
+authority and no Deserialize.
+
+This matches the POSIX casts in pinned Node22.21.1
+[`FillStatsArray`](https://github.com/nodejs/node/blob/v22.21.1/src/node_file-inl.h#L85-L110)
+and the operation order in
+[`msFromTimeSpec` and `dateFromMs`](https://github.com/nodejs/node/blob/v22.21.1/lib/internal/fs/utils.js#L403-L423).
+The actual running Node declarations, rather than copied projection functions,
+execute in the source tests. Aggregating integer nanoseconds before the float
+conversion is observably wrong: seconds1700000000,nanoseconds499841 projects
+to1700000000000.4998 and Date1700000000000, while converting the aggregate first
+projects to1700000000000.5 and Date1700000000001. The ETag differs by1ms.
+Negative tuples, negative half ties, nanosecond boundaries and the rounded
+1601/9999 limits are covered. Eighteen native tuples compare the real Node math,
+Date and installed etag result; invalid nanoseconds are separately rejected.
+
+On this Linux run, four same-descriptor real `fstat` observations compare normal
+Stats to raw BigInt nanoseconds and the native POSIX constructor, including a
+real pre-epoch timestamp. Filesystem precision is observed; the synthetic
+499841ns boundary is not falsely claimed to survive `utimesSync`. Other POSIX
+filesystems explicitly diagnose unavailable pre-epoch setters/retention while
+requiring the three ordinary observations. Windows real-stat projection is
+deliberately excluded: Node's Windows binding uses different unsigned-long
+casts. This API does not supply that backend or certify an immutable file.
+
+The private test adapter accepts exactly one `mtime_ms` or typed `posix` tuple
+for a file case. This is a bounded fixture transport only, not a production
+request, grant or native stat provenance proof.
+
 ## Focused evidence and integration
 
 Linux source runtime: standalone Node22.21.1 (the pinned Electron release also
@@ -150,9 +189,9 @@ Windows/macOS native filesystem evidence is claimed from this Linux run. The
 suite runs real files on each host OS; only actual pre-epoch filesystem mtime
 capability failures are diagnosed/skipped individually.
 
-Eight Rust tests cover source rounding, pre-epoch dates, type/header/aggregate/
+Nine Rust tests cover source rounding, pre-epoch dates, type/header/aggregate/
 range/body budgets, ordering, deferred error distinction and conditional
-precedence, raw route boundaries and method/target budgets. Nine Node tests
+precedence, raw route boundaries and method/target budgets. Ten Node tests
 execute the original callback and server-instance routes using actual Express,
 send and finalhandler on sequential controlled127.0.0.1 listeners. The only
 injected source boundaries are fixed path lookup/existence (and finalhandler
@@ -172,7 +211,7 @@ development error Content-Length is explicitly unknown in the deferred outcome.
 The fixture waits for actual socket close events, not just server.close callback.
 All listeners/files are bounded and closed; no external endpoints are used.
 
-Final local receipt:8 Rust tests and9 Node tests passed, with455 completed real
+Final local receipt:9 Rust tests and10 Node tests passed, with455 completed real
 loopback HTTP exchanges (384 representation,70 full-source route and1 explicit
 legacy-parser gap) and all fixture socket joins. No filesystem pre-epoch
 case was skipped on this Linux run. Strict Clippy for all targets, rustfmt,
