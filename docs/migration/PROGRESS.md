@@ -35,8 +35,8 @@ survives actual consumer destruction; its Windows CI fixture waits for real
 reply-frame disposal. Controlled negative tests detect the old behavior.
 No whole-application CPU improvement is claimed.
 
-The current JPEG/parser integration passes **493 Rust + 573 pinned-Node + 20 frontend
-checks** (1,086), plus **352 native executions** (339 host integration and thirteen
+The current integration passes **493 Rust + 584 pinned-Node + 20 frontend
+checks** (1,097), plus **352 native executions** (339 host integration and thirteen
 desktop binary unit cases, including shared cases repeated by importing targets).
 Five ignored Rust subprocess entry fixtures are driven by supervisor tests;
 four source suites retain existing platform/capability skips. Strict workspace
@@ -121,8 +121,8 @@ the Missing status set is unchanged.
 [Actual platform diagnostic receipt](baselines/platform-cover-diagnostic-ci.json).
 
 Reviewed browsing backends are integrated locally: Darwin uses the existing
-POSIX FILE_INFO/READ_FOLDER/GET_SIMILAR engine; Windows supports ordinary-drive
-FILE_INFO only. Both reuse the existing two filesystem owners. Strict
+POSIX FILE_INFO/READ_FOLDER/GET_SIMILAR engine. The first Windows milestone
+supports ordinary-drive FILE_INFO. Both reuse the existing two filesystem owners. Strict
 Linux/Windows GNU/macOS ARM compilation and nineteen focused source suites pass.
 Main integration also passes **493 Rust + 573 pinned-Node + 20 frontend checks**
 (1,086), **352 native executions**, and strict workspace/native all-target
@@ -149,6 +149,48 @@ JPEG/metadata/HTTP values, menus/drops and real quit, with 54 expected diagnosti
 [Actual native CI receipt](baselines/platform-cover-native-ci.json).
 [Local receipt](baselines/browse-platforms-linux-local.json).
 [Integration scope](workers/browse-platform-integration.md).
+
+Windows folder and similarity workflows are now integrated for the narrower
+ordinary fixed-local-drive path subset. Bounded native directory records retain
+the actual OS enumeration order; the held directory's actual volume is checked.
+No worker, Node sidecar or file authority is added. Thirteen new Windows tests
+cover real source comparisons, multibatch Unicode listing, capture/depth/ties,
+locking/junctions, malformed records and retained worker cleanup. Strict Linux,
+Windows GNU and macOS ARM lint and nineteen focused source suites pass; genuine
+Windows listing execution remains pending the next complete CI run.
+[Listing integration and limits](workers/browse-windows-integration.md).
+
+The full retained application exposed silent Web Audio for native HTTP assets:
+the original AudioPlayer fetched across the Tauri origin without CORS. Both
+ordinary eager and lazy analyser controls reproduce silence, then nonzero
+samples after same-URL CORS recovery. The narrow AudioPlayer correction sets
+anonymous CORS before the native asset's first fetch and preserves the original
+direct/Electron constructors. Corrected ordinary full-app runs each produce
+twelve genuine 44,100Hz PCM packets, continuous native Opus and actual TCP/Ogg;
+independent coordinator replay matches the immutable source/original NAPI1.4
+after raw CRC validation. Both use normal CLOSE and real child cleanup. The
+declared diagnostic hook is functional evidence, not a performance build.
+Video creators, physical devices and recording success remain separate gaps.
+[CORS correction](workers/audio-player-cors.md) and
+[full application evidence](workers/audio-context-fullfork.md).
+
+The integrated source checks comprise 581 full-suite passes plus three new
+effective-source identity tests. The latter reject unknown/mislabeled analyser
+code and use actual hashes rather than environment labels; the lazy candidate
+is not imported into the application. A reviewed two-Tauri release collector
+passes fourteen tests, preserving original process accounting. Clean eager/lazy
+production builds are underway with one runtime-source delta and matching
+toolchain/features/resources. No new performance sampling or improvement is
+claimed. The separate download shutdown fixture now observes actual retained
+network and file-thread exit before strict final joins/sticky faults; all sixteen
+crate tests pass locally, with production deadlines and join order unchanged.
+The integrated production build again passes all 187 Linux editor steps, four
+menus and both actual drop scales. Independent validation preserves both JPEG
+pixel hashes, all typed metadata/folder effects and141 HTTP responses, unchanged
+blockers/sentinels and real quit, with55 expected other-feature diagnostics.
+[Current local receipt](baselines/windows-listing-audio-linux-local.json).
+[Collector](workers/release-ablation-collector.md) and
+[download fixture](workers/download-owner-exit-fixture.md).
 
 Now-playing remains partial: broader image/metadata/resize fidelity, root
 common-picture insertion position, fixed-cover HTTP parser/date/error-rendering

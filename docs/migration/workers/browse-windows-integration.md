@@ -26,6 +26,14 @@ source's empty folder/similarity functions; they assert no Windows filesystem
 observation. All source gates normalize checkout/Git CRLF and still enforce
 fixed source hashes and reject actual edits.
 
+Main integration also passes493 Rust,584 source/harness and20 frontend checks,
+352 Linux native executions across36 targets, strict workspace/native lint and
+the normal production builds. The actual187-step Linux editor, four menus and
+both drop scales pass; independent validation preserves typed metadata, JPEG
+pixels,141 HTTP responses, unchanged blocker/sentinel and actual process exit.
+These are Linux checks, not new Windows listing runtime evidence.
+[Current local receipt](../baselines/windows-listing-audio-linux-local.json).
+
 Actual Windows listing execution remains pending. The thirteen new engine test
 bodies compile, alongside the eleven existing stat cases and the three pure
 lexical module cases. Their real Windows/source corpus must pass native CI
