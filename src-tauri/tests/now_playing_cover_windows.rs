@@ -9,13 +9,26 @@ use freeshow_core::{
     service::{LibraryPhase, LibraryService},
 };
 use std::{
-    fs::{self, FileTimes},
+    fs::{self, File, FileTimes},
     io::Read,
-    os::windows::fs::{symlink_file, MetadataExt, OpenOptionsExt},
+    mem::{size_of, MaybeUninit},
+    os::windows::{
+        fs::{symlink_file, MetadataExt, OpenOptionsExt},
+        io::AsRawHandle,
+    },
+    path::{Path, PathBuf},
     process::{Child, Command, ExitStatus, Stdio},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
-use windows_sys::Win32::Foundation::ERROR_SHARING_VIOLATION;
+use windows_sys::Win32::{
+    Foundation::ERROR_SHARING_VIOLATION,
+    Storage::FileSystem::{
+        FileAttributeTagInfo, FileIdInfo, GetFileInformationByHandleEx,
+        FILE_ATTRIBUTE_REPARSE_POINT, FILE_ATTRIBUTE_TAG_INFO, FILE_FLAG_BACKUP_SEMANTICS,
+        FILE_FLAG_OPEN_REPARSE_POINT, FILE_ID_INFO, FILE_INFO_BY_HANDLE_CLASS,
+        FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE,
+    },
+};
 
 static SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 struct Fixture {
@@ -167,6 +180,65 @@ fn junction(link: &std::path::Path, target: &std::path::Path) {
         0
     );
 }
+#[derive(Debug, PartialEq, Eq)]
+struct EntryIdentity {
+    volume: u64,
+    file: [u8; 16],
+}
+#[derive(Debug, PartialEq, Eq)]
+struct JunctionSnapshot {
+    identity: EntryIdentity,
+    attributes: u32,
+    tag: u32,
+    target: PathBuf,
+}
+fn no_follow_fixture_handle(path: &Path) -> File {
+    fs::OpenOptions::new()
+        .access_mode(FILE_READ_ATTRIBUTES)
+        .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
+        .custom_flags(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)
+        .open(path)
+        .unwrap()
+}
+fn fixture_information<T>(file: &File, class: FILE_INFO_BY_HANDLE_CLASS) -> T {
+    let mut value = MaybeUninit::<T>::zeroed();
+    // SAFETY: the two private call sites pair the exact FILE_ID_INFO or
+    // FILE_ATTRIBUTE_TAG_INFO ABI with its information class and fixed size.
+    // The owned no-follow handle remains live, and only success is initialized.
+    let success = unsafe {
+        GetFileInformationByHandleEx(
+            file.as_raw_handle(),
+            class,
+            value.as_mut_ptr().cast(),
+            size_of::<T>() as u32,
+        )
+    };
+    assert_ne!(success, 0, "{}", std::io::Error::last_os_error());
+    unsafe { value.assume_init() }
+}
+fn fixture_identity(file: &File) -> EntryIdentity {
+    let value: FILE_ID_INFO = fixture_information(file, FileIdInfo);
+    EntryIdentity {
+        volume: value.VolumeSerialNumber,
+        file: value.FileId.Identifier,
+    }
+}
+fn junction_snapshot(path: &Path) -> JunctionSnapshot {
+    let file = no_follow_fixture_handle(path);
+    let value: FILE_ATTRIBUTE_TAG_INFO = fixture_information(&file, FileAttributeTagInfo);
+    assert_ne!(value.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT, 0);
+    JunctionSnapshot {
+        identity: fixture_identity(&file),
+        attributes: value.FileAttributes,
+        tag: value.ReparseTag,
+        target: fs::read_link(path).unwrap(),
+    }
+    // The snapshot handle closes here, before the paused production call runs.
+}
+fn assert_absent(path: &Path) {
+    let actual = fs::symlink_metadata(path).unwrap_err();
+    assert_eq!(actual.kind(), std::io::ErrorKind::NotFound, "{actual}");
+}
 fn original_node_stat(file: &std::path::Path) -> serde_json::Value {
     let root = std::env::var_os("FREESHOW_COVER_WINDOWS_ORACLE_ROOT")
         .map(std::path::PathBuf::from)
@@ -268,6 +340,107 @@ async fn windows_real_mkdir_missing_and_regular_audio_blocker_preserve_actual_ob
     assert_eq!(blocker.observation().diagnostics().len(), 1);
     assert_eq!(fs::read(f.audio()).unwrap(), b"original blocker bytes");
     drop(blocker);
+    f.done(phase).await;
+}
+
+#[tokio::test]
+async fn windows_raced_broken_junction_after_absent_probe_is_not_followed_or_replaced() {
+    let _serial = SERIAL.lock().await;
+    let f = Fixture::new();
+    let outside = f.temp.path().join("absent-external-target");
+    assert_absent(&f.audio());
+    assert_absent(&outside);
+    let phase = f.phase().await;
+    let (ready, release) = f.files.test_pause_windows_before_mkdir();
+    let ticket = f.files.submit(&phase, Control::default()).unwrap();
+    // No Audio existed until the actual initial FILE_OPEN returned missing.
+    // Install a real broken junction only after that probe, immediately before
+    // the production FILE_CREATE. This is not the at-start reparse fixture.
+    entered(ready).await;
+    junction(&f.audio(), &outside);
+    let before = junction_snapshot(&f.audio());
+    assert_absent(&outside);
+    release.send(()).unwrap();
+    let value = ticket.finish().await.unwrap();
+
+    // Check actual effects independently of the returned outcome. A candidate
+    // that creates the junction target or replaces the entry fails these checks
+    // even if a later metadata probe rejects the resulting object.
+    assert_absent(&outside);
+    assert_eq!(junction_snapshot(&f.audio()), before);
+    let evidence = observation_evidence(&value);
+    let actual = value.observation().folder_failure().unwrap();
+    assert_eq!(actual.folder(), f.audio());
+    assert_eq!(actual.diagnostic().kind, FailureKind::Io, "{evidence}");
+    assert!(actual.diagnostic().os_code.is_some(), "{evidence}");
+    // Depending on whether FILE_CREATE detects the existing name first or the
+    // object parser encounters its reparse, either is a real rejection. Never
+    // accept INVALID_PARAMETER as evidence that the new create options work.
+    assert!(
+        actual.diagnostic().message.contains("0xC0000035")
+            || actual.diagnostic().message.contains("0xC000050B"),
+        "{evidence}"
+    );
+    assert_eq!(failed(&value).kind, FailureKind::Unsupported, "{evidence}");
+    assert_eq!(
+        value
+            .observation()
+            .revalidate(&phase, Control::default())
+            .err()
+            .unwrap()
+            .kind,
+        FailureKind::Unsupported,
+        "Failed preparation must not retain external-target authority: {evidence}"
+    );
+    eprintln!("Actual raced broken-junction rejection: {evidence}");
+    drop(value);
+    f.done(phase).await;
+}
+
+#[tokio::test]
+async fn windows_raced_regular_collision_after_absent_probe_preserves_identity_and_bytes() {
+    let _serial = SERIAL.lock().await;
+    let f = Fixture::new();
+    assert_absent(&f.audio());
+    let phase = f.phase().await;
+    let (ready, release) = f.files.test_pause_windows_before_mkdir();
+    let ticket = f.files.submit(&phase, Control::default()).unwrap();
+    entered(ready).await;
+    fs::write(f.audio(), b"raced ordinary entry must survive").unwrap();
+    let before = fixture_identity(&no_follow_fixture_handle(&f.audio()));
+    release.send(()).unwrap();
+    let value = ticket.finish().await.unwrap();
+    assert_eq!(
+        fixture_identity(&no_follow_fixture_handle(&f.audio())),
+        before
+    );
+    assert_eq!(
+        fs::read(f.audio()).unwrap(),
+        b"raced ordinary entry must survive"
+    );
+    let evidence = observation_evidence(&value);
+    let actual = value.observation().folder_failure().unwrap();
+    assert_eq!(actual.folder(), f.audio());
+    assert_eq!(actual.diagnostic().kind, FailureKind::Io, "{evidence}");
+    assert!(actual.diagnostic().os_code.is_some(), "{evidence}");
+    assert!(
+        actual.diagnostic().message.contains("NTSTATUS"),
+        "{evidence}"
+    );
+    assert!(
+        !actual.diagnostic().message.contains("0xC000000D"),
+        "{evidence}"
+    );
+    // The regular-file RootDirectory continuation is not certified as missing
+    // for every Windows error. Preserve the existing status classification:
+    // either an already certified Missing or an explicit actual IO failure.
+    match value.outcome() {
+        Outcome::Missing => {}
+        Outcome::Failed(error) => assert_eq!(error.kind, FailureKind::Io, "{evidence}"),
+        Outcome::File(_) => panic!("A collided ordinary Audio cannot grant a cover: {evidence}"),
+    }
+    eprintln!("Actual raced ordinary-collision continuation: {evidence}");
+    drop(value);
     f.done(phase).await;
 }
 

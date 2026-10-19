@@ -4,7 +4,8 @@ This slice adds only the private Windows backend, its dedicated Windows test
 target, and this handoff. It does not install a route or publish an ALERT. The
 parent API remains `CoverFiles::submit(&LibraryPhase, Control)` and opaque
 `HeldCover`/`Observation` revalidation. Local evidence is Windows GNU compilation
-and strict lint, not execution on Windows or verified Windows HTTP parity.
+and strict lint. The partial actual Windows CI results and subsequent unexecuted
+mkdir correction are recorded below; they do not establish Windows HTTP parity.
 
 ## Native authority and limits
 
@@ -32,8 +33,9 @@ component relative to a retained directory handle using the maintained
 `windows-sys 0.61.2` bindings. The user-mode API is linked from `ntdll.dll`.
 `NtCreateFile` documents relative `RootDirectory` opens and
 `FILE_OPEN_REPARSE_POINT`; the latter opens the point itself rather than following
-its target. The same returned handle is inspected before use. Synchronous opens
-include `SYNCHRONIZE`. See Microsoft's
+its target. Existing opens inspect that same returned handle before use. The
+separate directory-create options and object-parser guard are described below.
+Synchronous opens include `SYNCHRONIZE`. See Microsoft's
 [NtCreateFile contract](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntcreatefile).
 
 Root and Audio comparisons retain the full volume serial and 128-bit file ID.
@@ -55,9 +57,11 @@ No public clone is introduced. See the
 [Rust Windows FileExt contract](https://doc.rust-lang.org/std/os/windows/fs/trait.FileExt.html).
 
 Preparation records an actual attempted Audio mkdir failure before continuing.
-A regular-file Audio blocker remains a typed folder failure followed by an
-observed missing guard. A raced, already-created actual directory follows the
-existing source-derived handling. Missing is permitted only for known namespace
+A regular-file Audio blocker retains a typed folder failure; its continuation
+uses the existing narrow missing-status set or returns an explicit IO failure.
+The strict source-compatible Missing assertion awaits the actual post-fix CI
+execution. A raced, already-created actual directory follows the existing
+source-derived handling. Missing is permitted only for known namespace
 statuses (`OBJECT_NAME_NOT_FOUND`, `OBJECT_PATH_NOT_FOUND`, `NO_SUCH_FILE`,
 `NOT_A_DIRECTORY`). A denied or share-locked metadata-handle open is an explicit
 IO failure: it does not prove that Node's by-name exists guard was false. This is
@@ -220,3 +224,84 @@ This preserves an actual folder failure followed by identity Changed without
 requiring parent rename or guessing a nondirectory RootDirectory failure. The
 former blocker bytes are checked unchanged. It uses the single bounded test
 pause slot sequentially and introduces no product task or behavior.
+
+## Observed mkdir status and creation-only correction
+
+Diagnostic milestone `ef7fadfb`, actual run `39249175360`, Windows native job
+`118048476728`, executed 16 tests: 15 passed. The corrected Audio-namespace
+fixture passed. The only failure was the real absent-Audio mkdir:
+
+```text
+outcome=Missing
+folder_failure=now_playing_cover_io os=Some(87)
+Audio mkdir: NTSTATUS 0xC000000D, Win32 87 (parameter incorrect)
+continuation: NTSTATUS 0xC0000034, Win32 2 (Audio remains absent)
+```
+
+The actual invalid-parameter result agrees with the documented restricted
+`FILE_DIRECTORY_FILE` option combination. The sole `FILE_CREATE` call now uses
+`FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT`, without the incompatible
+`FILE_OPEN_REPARSE_POINT`/`FILE_OPEN_NO_RECALL` create options. It also sets
+`OBJ_DONT_REPARSE` in `OBJECT_ATTRIBUTES`, whose documented purpose is to reject
+reparse traversal while parsing the supplied relative name. This preserves a
+no-follow policy for creation rather than relying on a later rejection after
+an external target might already have been created. See the primary
+[directory options and create disposition contract](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntcreatefile)
+and [OBJECT_ATTRIBUTES contract](https://learn.microsoft.com/en-us/windows/win32/api/ntdef/ns-ntdef-_object_attributes).
+Existing opens retain their original reparse/no-recall flags. Ancestor access
+rights, sharing, Missing status classifications and public authority API do not
+change. There is no added Cargo dependency or feature.
+
+The new private `BeforeMkdir` stage uses the existing single cfg(test) pause slot.
+It is reached only after an actual absent-or-nondirectory metadata probe and
+immediately before the actual create call. Two mandatory native Windows fixtures
+start with genuinely absent Audio and install a conflicting entry at that seam:
+
+- A real directory junction points at an absent private external target. After
+  preparation, the target must still be absent; the junction's full volume and
+  128-bit identity, reparse tag, attributes and stored target must be unchanged.
+  Snapshot handles close before production resumes. The original FolderFailure
+  must retain an actual name-collision (`0xC0000035`) or reparse rejection
+  (`0xC000050B`) status, never the former invalid-parameter result. The next
+  no-follow probe must reject the junction, return Unsupported and expose no
+  revalidation authority. A candidate that follows and creates the external
+  target, replaces the junction, or returns an authority fails independent
+  filesystem/result assertions. A collision before reparse processing is also
+  a valid non-creation outcome; this fixture does not observe invisible filter
+  callbacks or claim a kernel syscall trace.
+- An ordinary file installed at the same seam must retain its full identity and
+  exact bytes, with a genuine bounded mkdir failure. Its later continuation may
+  only use the unchanged certified Missing set or expose actual IO failure;
+  this collision fixture does not preemptively certify another native status.
+  The existing combined mkdir/blocker fixture still requires Missing and prints
+  the real NTSTATUS if that expectation fails in the next Windows run.
+
+Both fixtures retain the actual original status in their assertions and bounded
+test output. They add no runtime skip, product task, thread or authority. Junction
+setup uses the existing one-child, five-second kill/reap fixture helper. A phase
+and ordered IO fence still proves only real work completion, not a library
+thread join.
+
+The refreshed private composition imports the unchanged parent from
+`90fda94e5da6717b98366e5ee456e5236c4c70ab`, this actual backend and dedicated target,
+and the current root Source/publication modules with production-shaped API use.
+The following passed on Linux after the correction:
+
+```sh
+CARGO_TARGET_DIR=/mnt/data/cache/freeshow-cover-native-portability \
+CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 \
+CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 \
+cargo +1.99.1 clippy \
+  --manifest-path /tmp/freeshow-cover-windows-ci-check/Cargo.toml \
+  --offline --all-targets --target x86_64-pc-windows-gnu -- -D warnings
+
+rustfmt +1.99.1 --edition 2021 --config skip_children=true --check \
+  src-tauri/src/now_playing_cover_file/windows.rs \
+  src-tauri/tests/now_playing_cover_windows.rs
+```
+
+This compiles 14 async Windows fixtures plus four private backend unit tests; it
+does not execute them. Actual corrected mkdir, regular-file parent continuation
+and both new race fixtures must pass genuine Windows CI before runtime support
+is claimed. No root source, parent dispatch, manifest, lock, CI or app is changed
+by this correction.

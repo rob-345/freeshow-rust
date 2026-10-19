@@ -23,7 +23,7 @@ use windows_sys::{
     Win32::{
         Foundation::{
             RtlNtStatusToDosError, ERROR_ALREADY_EXISTS, HANDLE, INVALID_HANDLE_VALUE,
-            OBJ_CASE_INSENSITIVE, STATUS_NOT_A_DIRECTORY, STATUS_NO_SUCH_FILE,
+            OBJ_CASE_INSENSITIVE, OBJ_DONT_REPARSE, STATUS_NOT_A_DIRECTORY, STATUS_NO_SUCH_FILE,
             STATUS_OBJECT_NAME_NOT_FOUND, STATUS_OBJECT_PATH_NOT_FOUND, UNICODE_STRING,
         },
         Storage::FileSystem::{
@@ -265,6 +265,17 @@ fn open_at(
     options: u32,
 ) -> std::result::Result<File, OpenError> {
     debug_assert!(!name.is_empty() && name.len() <= 255);
+    // The sole FILE_CREATE call creates Audio as a directory. Directory creation
+    // cannot combine FILE_DIRECTORY_FILE with OPEN_REPARSE_POINT/OPEN_NO_RECALL
+    // (NtCreateFile's compatible-options contract). Reject raced reparses in the
+    // object parser instead; FILE_CREATE never replaces an existing entry.
+    let creating_directory = disposition == FILE_CREATE;
+    debug_assert!(!creating_directory || options == FILE_DIRECTORY_FILE);
+    let create_options = if creating_directory {
+        FILE_SYNCHRONOUS_IO_NONALERT | options
+    } else {
+        NO_FOLLOW | options
+    };
     let unicode = UNICODE_STRING {
         Length: (name.len() * 2) as u16,
         MaximumLength: (name.len() * 2) as u16,
@@ -274,7 +285,12 @@ fn open_at(
         Length: size_of::<OBJECT_ATTRIBUTES>() as u32,
         RootDirectory: parent.as_raw_handle(),
         ObjectName: &unicode,
-        Attributes: OBJ_CASE_INSENSITIVE,
+        Attributes: OBJ_CASE_INSENSITIVE
+            | if creating_directory {
+                OBJ_DONT_REPARSE
+            } else {
+                0
+            },
         SecurityDescriptor: null(),
         SecurityQualityOfService: null(),
     };
@@ -282,8 +298,8 @@ fn open_at(
     let mut completion = MaybeUninit::<IO_STATUS_BLOCK>::zeroed();
     // SAFETY: retained live parent, one validated relative component (no path
     // separators/ADS/NUL), initialized exact public ABI structs, synchronous IO,
-    // and no borrowed buffers escape this call. Reparse processing is bypassed
-    // for this single child; inspect that same returned handle before use.
+    // and no borrowed buffers escape this call. For the single child, existing
+    // opens bypass reparses and inspect the same handle; creation rejects them.
     let status = unsafe {
         NtCreateFile(
             &mut handle,
@@ -294,7 +310,7 @@ fn open_at(
             0,
             SHARE,
             disposition,
-            NO_FOLLOW | options,
+            create_options,
             null(),
             0,
         )
@@ -414,6 +430,8 @@ pub(super) fn prepare(
     };
     if make {
         control.check()?;
+        #[cfg(test)]
+        pause(Stage::BeforeMkdir);
         if let Err(error) = open_at(
             &held_root,
             &audio_name,
@@ -574,6 +592,7 @@ pub(super) fn read_at(file: &File, offset: u64, buffer: &mut [u8]) -> io::Result
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Stage {
     Root,
+    BeforeMkdir,
     AfterMkdir,
     Audio,
     BeforeLeaf,
@@ -625,6 +644,15 @@ impl CoverFiles {
     )]
     pub fn test_pause_windows_root(&self) -> (oneshot::Receiver<()>, std::sync::mpsc::Sender<()>) {
         install_pause(Stage::Root)
+    }
+    #[allow(
+        dead_code,
+        reason = "Dedicated Windows fixtures exercise this bounded actual-IO hook"
+    )]
+    pub fn test_pause_windows_before_mkdir(
+        &self,
+    ) -> (oneshot::Receiver<()>, std::sync::mpsc::Sender<()>) {
+        install_pause(Stage::BeforeMkdir)
     }
     #[allow(
         dead_code,
