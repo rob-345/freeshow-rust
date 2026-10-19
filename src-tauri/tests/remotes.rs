@@ -6,6 +6,15 @@ mod discovery;
 #[allow(dead_code)]
 #[path = "../src/network_snapshot.rs"]
 mod network_snapshot;
+#[allow(dead_code)]
+#[path = "../src/now_playing_cover_file.rs"]
+mod now_playing_cover_file;
+#[allow(dead_code)]
+#[path = "../src/remote_cover.rs"]
+mod remote_cover;
+#[allow(dead_code)]
+#[path = "../src/remote_cover_publications.rs"]
+mod remote_cover_publications;
 #[path = "../src/remotes.rs"]
 mod remotes;
 
@@ -1188,4 +1197,140 @@ async fn context_control_retires_discovery_work_after_timed_out_stop_removed_lis
     start(&fixture.native, &fixture.context()).await;
     fixture.native.shutdown().await.unwrap();
     no_late_positive(&fixture.peer).await;
+}
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn configured_native_start_serves_real_selected_covers_and_stop_drains_independent_alert_delivery(
+) {
+    use freeshow_remotes::{CoverErrorRendering, CoverSource};
+    let (_temp, library, native, _ordinary_events) = fixture();
+    let context = library.context().unwrap();
+    let audio = context.data_path.join("Audio");
+    std::fs::create_dir_all(&audio).unwrap();
+    std::fs::write(audio.join("NowPlayingCover.png"), b"WIRE-COVER").unwrap();
+    let files = now_playing_cover_file::CoverFiles::default();
+    let publications = remote_cover_publications::Publications::new();
+    let (send, mut alerts) = mpsc::channel(4);
+    let source = std::sync::Arc::new(remote_cover::Source::new(
+        context.clone(),
+        library.clone(),
+        files.clone(),
+        publications.clone(),
+        std::sync::Arc::new(move |event| send.try_send(event).map_err(|e| e.to_string())),
+        CoverErrorRendering::Production,
+    ));
+    assert!(matches!(
+        source.error_rendering(),
+        CoverErrorRendering::Production
+    ));
+    let weak_source = std::sync::Arc::downgrade(&source);
+    let ready_owner = publications.clone();
+    let ready_context = context.clone();
+    let ready_files = files.clone();
+    let cover = remotes::CoverStart::new(source, move || {
+        assert_eq!(
+            ready_files.retained(),
+            0,
+            "ready follows actual old IO disposal"
+        );
+        ready_owner
+            .ready(ready_context)
+            .map_err(|e| freeshow_core::WireError::new(e.code, e.message))
+    });
+    let options = json!({"ports":{"remote":"0","stage":"0","controller":"0"},"disabled":{"remote":false,"stage":false,"controller":false},"max":10,"data":{}});
+    native
+        .dispatch_with_cover(
+            request("MAIN", "START", options, &context),
+            "main",
+            Some(cover),
+        )
+        .await
+        .unwrap();
+    assert!(weak_source.upgrade().is_some());
+    for kind in ServerKind::ALL {
+        let address: SocketAddr = native.status()["binding"]["bound"]["endpoints"][kind.channel()]
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert_eq!(
+            http(address, "GET", "/NoWpLaYiNgCoVeR/?file=/other.png", "").await,
+            "WIRE-COVER"
+        );
+    }
+    assert!(alerts.try_recv().is_err());
+    timeout(Duration::from_secs(3), async {
+        while files.retained() != 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    std::fs::remove_file(audio.join("NowPlayingCover.png")).unwrap();
+    std::fs::remove_dir(&audio).unwrap();
+    let blocker = b"unchanged real native Audio blocker";
+    std::fs::write(&audio, blocker).unwrap();
+    let address: SocketAddr = native.status()["binding"]["bound"]["endpoints"]["REMOTE"]
+        .as_str()
+        .unwrap()
+        .parse()
+        .unwrap();
+    let wire = timeout(Duration::from_secs(3), async {
+        let mut socket = TcpStream::connect(address).await.unwrap();
+        socket
+            .write_all(
+                b"GET /nowplayingcover HTTP/1.1\r\nHost:127.0.0.1\r\nConnection:close\r\n\r\n",
+            )
+            .await
+            .unwrap();
+        let mut raw = Vec::new();
+        socket.read_to_end(&mut raw).await.unwrap();
+        raw
+    })
+    .await
+    .unwrap();
+    let response = String::from_utf8(wire).unwrap();
+    assert!(response.starts_with("HTTP/1.1 404"), "{response}");
+    assert!(response.ends_with("\r\n\r\n"));
+    let alert = alerts.try_recv().unwrap();
+    assert_eq!(
+        alert.message.data,
+        Some(json!(format!(
+            "Error: Could not create folder at: {}!",
+            audio.display()
+        )))
+    );
+    assert_eq!(
+        (files.retained(), publications.retained()),
+        (1, 1),
+        "response completion is not private notification disposal"
+    );
+    let stop_request = request("MAIN", "STOP", Value::Null, &context);
+    let mut stop = Box::pin(native.dispatch(stop_request, "main"));
+    poll_fn(|cx| {
+        assert!(stop.as_mut().poll(cx).is_pending());
+        Poll::Ready(())
+    })
+    .await;
+    assert!(
+        weak_source.upgrade().is_some(),
+        "actual run still owns its emitter"
+    );
+    publications
+        .complete(
+            &context,
+            alert.native_cover.as_ref().unwrap()["id"].as_str().unwrap(),
+            true,
+        )
+        .unwrap();
+    stop.await.unwrap();
+    assert_eq!((files.retained(), publications.retained()), (0, 0));
+    assert!(
+        weak_source.upgrade().is_none(),
+        "joined stop releases actual per-run source/emitter"
+    );
+    assert_eq!(std::fs::read(&audio).unwrap(), blocker);
+    assert!(alerts.try_recv().is_err());
+    native.shutdown().await.unwrap();
 }

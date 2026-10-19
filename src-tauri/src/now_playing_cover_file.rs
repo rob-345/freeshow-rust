@@ -30,7 +30,21 @@ pub enum FailureKind {
     Deadline,
     Unsupported,
     Changed,
+    #[cfg_attr(
+        not(target_os = "linux"),
+        allow(
+            dead_code,
+            reason = "The explicitly unavailable anchored backend constructs this variant only on Linux"
+        )
+    )]
     Io,
+    #[cfg_attr(
+        not(target_os = "linux"),
+        allow(
+            dead_code,
+            reason = "The explicitly unavailable anchored backend constructs this variant only on Linux"
+        )
+    )]
     Resource,
     Phase,
 }
@@ -54,6 +68,7 @@ impl Failure {
             os_code: None,
         }
     }
+    #[cfg(target_os = "linux")]
     fn os(stage: &str, error: io::Error) -> Self {
         Self {
             os_code: error.raw_os_error(),
@@ -117,7 +132,7 @@ struct Lease {
 /// A future host must retain/drain its own accepted Phase and HTTP owners.
 #[derive(Clone, Default)]
 pub struct CoverFiles {
-    #[cfg(test)]
+    #[cfg(all(test, target_os = "linux"))]
     hook: Arc<std::sync::Mutex<Option<Pause>>>,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -131,9 +146,25 @@ pub struct FileStat {
     changed_nanoseconds: i64,
 }
 impl FileStat {
+    #[cfg(test)]
+    #[cfg_attr(
+        test,
+        allow(
+            dead_code,
+            reason = "Dedicated cover integration targets exercise this observation/test hook"
+        )
+    )]
     pub fn device(&self) -> u64 {
         self.device
     }
+    #[cfg(test)]
+    #[cfg_attr(
+        test,
+        allow(
+            dead_code,
+            reason = "Dedicated cover integration targets exercise this observation/test hook"
+        )
+    )]
     pub fn inode(&self) -> u64 {
         self.inode
     }
@@ -146,9 +177,25 @@ impl FileStat {
     pub fn modified_nanoseconds(&self) -> i64 {
         self.modified_nanoseconds
     }
+    #[cfg(test)]
+    #[cfg_attr(
+        test,
+        allow(
+            dead_code,
+            reason = "Dedicated cover integration targets exercise this observation/test hook"
+        )
+    )]
     pub fn changed_seconds(&self) -> i64 {
         self.changed_seconds
     }
+    #[cfg(test)]
+    #[cfg_attr(
+        test,
+        allow(
+            dead_code,
+            reason = "Dedicated cover integration targets exercise this observation/test hook"
+        )
+    )]
     pub fn changed_nanoseconds(&self) -> i64 {
         self.changed_nanoseconds
     }
@@ -198,7 +245,21 @@ impl Observation {
     }
 }
 pub enum Outcome {
+    #[cfg_attr(
+        not(target_os = "linux"),
+        allow(
+            dead_code,
+            reason = "Only the verified Linux backend constructs a successful outcome"
+        )
+    )]
     Missing,
+    #[cfg_attr(
+        not(target_os = "linux"),
+        allow(
+            dead_code,
+            reason = "Only the verified Linux backend constructs held cover authority"
+        )
+    )]
     File(HeldCover),
     Failed(Failure),
 }
@@ -207,9 +268,25 @@ pub struct Prepared {
     outcome: Outcome,
 }
 impl Prepared {
+    #[cfg(test)]
+    #[cfg_attr(
+        test,
+        allow(
+            dead_code,
+            reason = "Dedicated cover integration targets exercise this observation/test hook"
+        )
+    )]
     pub fn observation(&self) -> &Observation {
         &self.observation
     }
+    #[cfg(test)]
+    #[cfg_attr(
+        test,
+        allow(
+            dead_code,
+            reason = "Dedicated cover integration targets exercise this observation/test hook"
+        )
+    )]
     pub fn outcome(&self) -> &Outcome {
         &self.outcome
     }
@@ -265,7 +342,9 @@ impl HeldCover {
 }
 struct Authority {
     context: RuntimeContext,
+    #[cfg(target_os = "linux")]
     root: File,
+    #[cfg(target_os = "linux")]
     audio: Option<File>,
     leaf: Option<(File, FileStat)>,
     validating: AtomicBool,
@@ -727,7 +806,7 @@ mod backend {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TestStage {
     RootAnchored,
@@ -735,14 +814,21 @@ pub enum TestStage {
     BeforeLeafOpen,
     LeafOpened,
 }
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 struct Pause {
     stage: TestStage,
     entered: oneshot::Sender<()>,
     release: std::sync::mpsc::Receiver<()>,
 }
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 impl CoverFiles {
+    #[cfg_attr(
+        test,
+        allow(
+            dead_code,
+            reason = "Dedicated cover integration targets exercise this observation/test hook"
+        )
+    )]
     pub fn test_pause(
         &self,
         stage: TestStage,

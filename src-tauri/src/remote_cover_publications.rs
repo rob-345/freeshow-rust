@@ -296,6 +296,10 @@ impl Receipt {
         }
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "The dedicated publication integration target exercises this atomic interleaving hook"
+    )]
     pub fn observe_state_interleaved(&self, between: impl FnOnce()) -> Option<Result<()>> {
         self.settled_result(between)
     }

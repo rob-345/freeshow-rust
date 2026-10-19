@@ -93,8 +93,14 @@ queries, controller replies, and library switching. A separate ephemeral WebKit
 view loads each actual client page; its DOM and resource observations are recorded
 in `test-output-rust/desktop/remotes.json` when the workflow succeeds.
 
+Linux remote covers now use a per-START native source for the fixed selected
+library file on all three ports. Bounded source-compared GET/HEAD/range/cache/
+OPTIONS behavior and independent original folder alerts pass actual desktop HTTP
+checks; native STOP retains entered file work and the actual emitter through
+cleanup. [Contract, evidence and remaining gaps](native-remote-covers.md).
+
 Still unported or uncertified: OUTPUT_STREAM and native OUTPUT_FRAME/capture,
-stage mirror frame acquisition, Bonjour advertisements, now-playing covers,
+stage mirror frame acquisition, actual Bonjour registration, broader now-playing cover HTTP/filesystem behavior,
 binary attachments and nonfinite/lone-surrogate wire cases, complete static HTTP
 edge behavior, broad remote/controller action and stage-item workflows, actual
 Windows/macOS browser and hardware behavior, service-worker lifecycle, IPv6 and

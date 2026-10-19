@@ -40,15 +40,15 @@ receipts stay outside source payloads. See the [wire contract](workers/now-playi
 
 ## Local evidence, 2026-10-19
 
-- Full portable workspace: 460 Rust tests pass. Five ignored subprocess entry
+- Full portable workspace: 482 Rust tests pass. Five ignored subprocess entry
   fixtures are invoked by their supervisor tests.
-- Full source-parity suite: 494 pass; four existing platform/capability skips.
+- Full source-parity suite: 549 pass; four existing platform/capability skips.
   Twenty retained frontend unit tests pass. Workspace and native all-target
   Clippy deny warnings; formatting and focused TypeScript checks pass.
-- Full native run passes 314 executions (304 host integration plus ten desktop
+- Full native run passes 352 executions (339 host integration plus thirteen desktop
   binary unit cases), including repeated shared modules and the four owner tests
   with actual terminal-error persistence after joined cleanup and retry.
-- Real Linux custom-protocol desktop: 169 editor steps, four GTK menu steps and
+- Real Linux custom-protocol desktop: 181 editor steps, four GTK menu steps and
   native drops at both scales pass. Original LTC and continuous Opus source
   comparisons, actual ZIP workload, library switches and real Quit still pass.
 - Four actual WebView SET/UNSET cases execute pinned-source metadata/formatter
@@ -72,15 +72,15 @@ complete editor receipt. The latter retains 55 diagnostics in this local run,
 including the deliberate image capability rejection and expected unsupported,
 stale, backend and filesystem cases; it is not a zero-error application claim.
 
-Published `c889317f` passes Windows/macOS core, both native jobs and Linux desktop
-in [CI 39225346104](https://github.com/rob-345/freeshow-rust/actions/runs/39225346104),
-confirming the Windows parent-directory fixture correction. Linux core instead
-exposes the media test's initial executable selection. A local controlled
-ETXTBSY reproduction matches a writable-fixture hazard, though the original CI
-errno is unknown. Immutable executable fixtures, real child gates and a direct
-pending-invalidation observation now pass local workspace tests and strict lint;
-CI for that correction and the folder alerts is pending. There is no completely
-green six-job run for these changes yet.
+Published foundation `6a111747` passes all six jobs in
+[CI 39234231075](https://github.com/rob-345/freeshow-rust/actions/runs/39234231075),
+including Windows native and the 169-step Linux desktop workflow. Independently
+validated downloaded artifacts preserve the seven now-playing cases, exact
+visible original folder messages, counter advances, unchanged blocker hashes,
+menus/drops and process exit. Its complete editor receipt retains 54 expected
+diagnostics. The current 181-step local run additionally verifies ten running
+remote-cover phases and 93 HTTP requests; that integration needs its own CI run.
+[Native remote-cover contract and evidence](native-remote-covers.md).
 
 ## Remaining acceptance gaps
 
@@ -99,10 +99,13 @@ variants, unrestricted resource sizes, physical audio, packaged codecs,
 Windows/macOS GUI and successful OS folder reveal remain open.
 
 Folder-failure counts above apply to the stated valid fixture; a formatter error
-can stop earlier. The remote `/nowplayingcover` endpoint still returns an explicit
-unsupported response; its [source-backed plan](workers/remote-cover-plan.md)
-remains separate from local alert parity. That route, unrestricted filesystem
-variants and the other gaps above remain in the acceptance inventory.
+can stop earlier. The remote `/nowplayingcover` endpoint now serves the fixed
+selected-library file on Linux through a retained native source. Tested ordinary
+GET/HEAD/range/conditional/missing/OPTIONS behavior, original folder alerts,
+context changes and actual native disposal are documented in the
+[remote-cover contract](native-remote-covers.md). Broader parser/date/development
+error rendering, unrestricted filesystem variants and foreign OS backends remain
+in the acceptance inventory.
 
 These changes establish no new performance gain. Concurrent ownership and
 resource limits are tested; comparable release measurements remain required.

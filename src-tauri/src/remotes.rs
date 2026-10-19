@@ -9,8 +9,8 @@ use freeshow_core::{
 };
 use freeshow_discovery::DiscoveryName;
 use freeshow_remotes::{
-    BoundServers, RemoteConfig, RemoteEventKind, RemoteEvents, RemoteGeneration, RemoteOrigin,
-    RemoteService, ServerKind,
+    BoundServers, CoverSource, RemoteConfig, RemoteEventKind, RemoteEvents, RemoteGeneration,
+    RemoteOrigin, RemoteService, ServerKind,
 };
 use serde_json::{json, Value};
 use std::{
@@ -108,8 +108,31 @@ struct Shared {
     fault: CancellationToken,
     failure: Mutex<Option<(&'static str, String)>>,
 }
+pub struct CoverStart {
+    source: Arc<dyn CoverSource>,
+    ready: Box<dyn FnOnce() -> Result<(), WireError> + Send>,
+}
+impl CoverStart {
+    #[cfg_attr(
+        test,
+        allow(
+            dead_code,
+            reason = "Production START supplies the authority; Linux integration exercises this constructor"
+        )
+    )]
+    pub fn new(
+        source: Arc<dyn CoverSource>,
+        ready: impl FnOnce() -> Result<(), WireError> + Send + 'static,
+    ) -> Self {
+        Self {
+            source,
+            ready: Box::new(ready),
+        }
+    }
+}
 struct Job {
     request: Request,
+    cover: Option<CoverStart>,
     reply: oneshot::Sender<Result<Vec<Event>, WireError>>,
     _permit: OwnedSemaphorePermit,
 }
@@ -251,6 +274,22 @@ impl NativeRemotes {
             "failure":*self.shared.failure.lock().unwrap_or_else(|e|e.into_inner())})
     }
     pub async fn dispatch(&self, request: Request, window: &str) -> Result<Vec<Event>, WireError> {
+        self.dispatch_with_cover(request, window, None).await
+    }
+    /// Native-only START authority is owned by its bounded accepted job/run.
+    /// No factory or emitter is retained permanently in Shared/AppState.
+    pub async fn dispatch_with_cover(
+        &self,
+        request: Request,
+        window: &str,
+        cover: Option<CoverStart>,
+    ) -> Result<Vec<Event>, WireError> {
+        if cover.is_some() && (request.channel != "MAIN" || request.data["channel"] != "START") {
+            return Err(WireError::new(
+                "cover_start",
+                "Only START can configure a native cover source",
+            ));
+        }
         if window != "main" {
             return Err(WireError::new(
                 "window_error",
@@ -290,6 +329,7 @@ impl NativeRemotes {
         self.jobs
             .try_send(Job {
                 request,
+                cover,
                 reply,
                 _permit: permit,
             })
@@ -656,7 +696,7 @@ async fn owner(
                 let result=tokio::select!{biased;
                     _=shared.terminal.cancelled()=>Err(stopped()),
                     _=shared.fault.cancelled()=>Err(stopped()),
-                    result=dispatch(&shared,&pump,job.request)=>result,
+                    result=dispatch(&shared,&pump,job.request,job.cover)=>result,
                 };
                 if let Err(Err(error))=job.reply.send(result){eprintln!("Detached remote request failed: {}",error.message);}
             },
@@ -702,6 +742,7 @@ async fn dispatch(
     shared: &Shared,
     pump: &mpsc::Sender<PumpControl>,
     request: Request,
+    cover: Option<CoverStart>,
 ) -> Result<Vec<Event>, WireError> {
     validate_context(shared, &request)?;
     if request.channel == "MAIN" {
@@ -714,6 +755,7 @@ async fn dispatch(
                     pump,
                     request.context.unwrap(),
                     request.data["data"].clone(),
+                    cover,
                 )
                 .await?;
             }
@@ -752,12 +794,21 @@ async fn start(
     pump: &mpsc::Sender<PumpControl>,
     context: RuntimeContext,
     options: Value,
+    cover: Option<CoverStart>,
 ) -> Result<(), WireError> {
     // Early connections wait until their complete frozen binding is installed.
     let _publication = shared.publication.lock().await;
+    let source = match cover {
+        Some(cover) => {
+            // dispatch already awaited actual old transport/body/file drain.
+            (cover.ready)()?;
+            Some(cover.source)
+        }
+        None => None,
+    };
     let bound = shared
         .service
-        .start(&options, context.library_generation)
+        .start_with_cover(&options, context.library_generation, source)
         .await
         .map_err(error)?;
     if shared.library.context().map_err(WireError::from)? != context {

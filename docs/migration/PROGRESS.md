@@ -10,65 +10,76 @@ retained across context replacement. Raw duration, typed picture buffers,
 NaN/own undefined and void source commands are preserved on the tested corpus.
 [Contracts, evidence and explicit gaps](native-now-playing.md).
 
-The next local foundation adds the bounded source-compared HTTP cover planner,
-exact route/OPTIONS handling, guarded Linux fixed-cover file preparation,
-POSIX-to-Node timestamp projection, and independent native/frontend folder-alert
-receipt owners. The endpoint remains unconnected. The native publisher now
-serializes sequence assignment with actual enqueue; four process-lifetime slots
-survive both HTTP owner disposal and unknown UI delivery across library changes
-until actual completion or permanently sealed terminal shutdown. [Native receipt contract](workers/remote-cover-publications.md).
+Native remote covers now run through all three retained server ports. Each START
+captures only the selected library and an actual per-run emitter; the fixed
+`Audio/NowPlayingCover.png` path never comes from HTTP or renderer input. Two
+existing file workers retain preparation, pre-header validation, streaming and
+independent notification cleanup through actual body disposition and thread
+joins. The verified anchored filesystem backend is Linux; other OS backends
+remain explicitly unsupported. [Native contract and gaps](native-remote-covers.md).
+
+The source-compared HTTP planner preserves tested GET/HEAD, ranges, conditional
+responses, weak ETags, Last-Modified, missing files and automatic OPTIONS.
+Independent folder-alert receipts preserve the original public callback. Four
+process-lifetime slots survive unknown queued UI delivery across context changes;
+actual completion or terminal sealing releases them. Headers do not wait for UI
+acknowledgement, while actual native finish retains its independent observation.
+The retained bridge strips all private cover fields before the original callback.
 
 Downloads now wake their fixed owners on accepted work, phase changes and actual
 prepared deadlines instead of an empty 20 ms polling loop. Shutdown retries retain
 only handles whose actual joins remain unfinished. Network snapshot admission
-also survives actual consumer destruction; its Windows CI fixture now waits for
-real reply-frame disposal. Controlled negative tests detect both old scheduling
-and disposal behavior. No whole-application CPU improvement is claimed.
+survives actual consumer destruction; its Windows CI fixture waits for real
+reply-frame disposal. Controlled negative tests detect the old behavior.
+No whole-application CPU improvement is claimed.
 
-The combined local foundation passes **474 Rust + 522 pinned-Node + 20 frontend
-checks** (1,016), plus **345 native executions** (332 host integration and thirteen
+The current local integration passes **482 Rust + 549 pinned-Node + 20 frontend
+checks** (1,051), plus **352 native executions** (339 host integration and thirteen
 desktop binary unit cases, including shared cases repeated by importing targets).
-The final full native rerun includes all eight publication tests, including deterministic late-ACK/retirement interleaving and
-terminal disposal of a genuine live receipt. Three controlled negative variants
-fail the ordering, unknown-quota and atomic-observation regressions. Five ignored Rust subprocess
-entry fixtures are driven by their supervisor tests; four source suites have
-existing platform/capability skips. Strict workspace/native all-target Clippy,
-focused TypeScript and upstream snapshot checks pass for the foundation; the new
-publication target also passes strict Clippy.
+Five ignored Rust subprocess entry fixtures are driven by supervisor tests;
+four source suites retain existing platform/capability skips. Strict workspace
+and native all-target Clippy, focused TypeScript, formatting and immutable-source
+snapshot checks pass. The full parity gate intentionally remains incomplete.
 
-The new caught-folder-failure slice retains up to five independent publications
-per source operation and twenty completion promises across context replacement.
-Its three real Linux WebView cases verify metadata then four SET alerts, two
-UNSET alerts, and OPEN's folder then missing-text alert. Exact callback envelopes,
-visible final popup text, actual admitted/completed advances, settled work and
-independently unchanged regular-file blocker bytes pass. No trusted native reveal
-callback is invoked. The complete **169-step Linux editor**, four GTK menus and
-both native drop scales pass; the full receipt retains the expected other-feature
-and deliberate capability diagnostics.
+The rebuilt **181-step Linux editor**, four GTK menus and both native drop scales
+pass. Ten new actual cover phases make **93 HTTP requests** across all three
+ports, comparing current file bytes/hash/MIME/length, HEAD, range and conditional
+responses. OPTIONS precedes the actual Audio-folder effects. An independently
+verified regular-file Audio blocker produces three exact original public alerts
+and the actual visible popup; its bytes remain unchanged. New-library requests
+return missing rather than the unchanged old-library cover sentinel. All phases
+preserve full context, source void behavior and zero observed retained cover
+owners. These idle observations are not IO-thread-join or peer-receipt proof;
+a separate actual TCP STOP/Weak test proves the per-run source/emitter lifetime.
+The complete editor receipt retains **55 expected other-feature/capability
+diagnostics**, not a global zero-error result. Real backup/pending writes and
+final process exit still pass.
 
-Published `84822efc` passes all three core platforms, macOS native and the
-169-step Linux desktop workflow in
-[CI 39228374634](https://github.com/rob-345/freeshow-rust/actions/runs/39228374634).
-Downloaded artifacts independently verify all four ordinary and three
-folder-failure now-playing cases, their exact callbacks/visible messages, actual
-native counter advances, unchanged blockers, four menus and both drop scales.
-The full CI receipt retains 53 expected other-feature/capability diagnostics.
-Windows native exposed a separate snapshot test treating idle counters as a
-ready-result disposal fence. The correction above adds an actual post-frame
-fence and a production guard-before-permit destruction fix; a new Windows CI run
-is still required. The earlier Windows parent-directory and immutable media
-executable fixture corrections pass their relevant jobs. These changes do not
-yet have a completely green six-job run.
+The four ordinary and three caught-folder-failure now-playing cases remain in
+that workflow. They preserve typed metadata, original callback envelopes,
+SET/UNSET/OPEN alert order, visible popup text, actual admitted/completed advances,
+ordinary idle and independently unchanged blockers, without a trusted reveal
+callback or invented source ACK. Eight actual shared-bridge integration tests
+exercise cover completion and lifecycle behavior. Configured transport tests
+compare 84 complete original/native responses, with separate raw-TCP parser
+boundary controls. Actual private native modules also pass strict cross checks
+on Windows GNU and macOS ARM; these are compilation evidence only.
 
-The current combined production binary also passes a second full local Linux
-editor/menu/drop run. Its 169-step editor receipt contains 54 expected
-other-feature/capability diagnostics; it is not a global zero-error claim.
+Published foundation `6a111747` passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39234231075),
+including Windows native and the full 169-step Linux workflow. Independently
+validated downloaded artifacts confirm all seven now-playing cases, original
+visible messages, exact public callbacks, counter advances, blocker hashes,
+menus/drops and final process exit. That run contains 54 expected other-feature
+or capability diagnostics. The new running HTTP integration above still needs
+its own complete CI run.
 
-Now-playing remains partial: remote cover HTTP, broader image/metadata/resize
-fidelity, root common-picture insertion position, physical audio/reveal and
-Windows/macOS GUI remain open. The recorded failure counts apply to valid tested
-formatter inputs; earlier formatter failures can stop before all lookups.
-These changes establish no new performance gain.
+Now-playing remains partial: broader image/metadata/resize fidelity, root
+common-picture insertion position, fixed-cover HTTP parser/date/error-rendering
+edge cases and foreign filesystem/browser behavior remain open. Actual packaged
+Electron JPEG comparisons demonstrate ordinary pure-Rust decoder pixel
+mismatches; an installed Linux consumer matches the measured fifteen-file
+corpus, but its production JPEG integration is separate work. No new application
+performance gain is established.
 
 Retained timecode now has production main-window typed/raw IPC, exact native
 Uint8Array/IEEE hydration and a verified Linux LTC backend. One fixed supervisor

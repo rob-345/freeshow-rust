@@ -34,6 +34,7 @@ from gi.repository import Atspi
 from menu import native_menu, find as find_native_menu
 from script_receipts import wrap_script
 from audio_peer import AudioPeer
+from remote_cover_http import probe_cover_http
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "test-output-rust" / "desktop"
@@ -669,6 +670,14 @@ def run():
             steps.append("Native HTTP GET, HEAD and Range preserve imported PNG bytes and CORS canvas pixels")
             steps.append("Native media capabilities support real WebKit WAV/VP8 seeking and playback")
             now_playing_receipts = []
+            cover_http_receipts = []
+            def probe_selected_cover(phase, expected_path=None, blocker=False):
+                context = invoke("runtime_context")
+                receipt = probe_cover_http(script, invoke, ROOT, phase, context, expected_path, blocker=blocker)
+                cover_http_receipts.append(receipt)
+                (ARTIFACTS / "remote-covers.json").write_text(json.dumps(cover_http_receipts,ensure_ascii=False,indent=2))
+                steps.append("Native remote cover " + phase + " preserves selected-library HTTP responses on all three ports with original alerts and zero retained owners")
+                return receipt
             def now_playing_values(raw):
                 # Keep every typed value and nested key order. The separate
                 # skipCovers/native read cannot certify root picture position.
@@ -697,9 +706,11 @@ def run():
                     assert list(int.from_bytes(actual_png[index:index+4], "big") for index in [16,20]) == [1,1]
                     files["coverSha256"] = hashlib.sha256(actual_png).hexdigest()
                     files["coverDimensions"] = [1,1]
+                probe_selected_cover("set-" + entry["id"], cover_path if cover_path.exists() else None)
                 cleared = script((ROOT / "tests/desktop/now_playing_probe.js").read_text(), {"phase":"unset-" + entry["id"], "action":"unset"})
                 assert text_path.read_bytes() == b'' and not cover_path.exists(), (entry,cleared)
                 assert cleared["sourceAcks"] == cleared["browserErrors"] == cleared["events"] == cleared["errors"] == [], cleared
+                probe_selected_cover("unset-" + entry["id"])
                 now_playing_receipts.append({"native":observed,"source":expected,"files":files,"unset":cleared,"rootPicturePositionCompared":False,"encodedPngParityClaimed":False})
                 (ARTIFACTS / "now-playing.json").write_text(json.dumps(now_playing_receipts,ensure_ascii=False,indent=2))
                 steps.append("Retained now-playing " + entry["id"] + " preserves raw source metadata, send-time input, actual file effects and void UNSET with drained native work")
@@ -712,6 +723,16 @@ def run():
             folder_receipts = []
             try:
                 audio_folder.write_bytes(blocker)
+                remote_blocker = probe_selected_cover("blocked-audio-http", blocker=True)
+                assert audio_folder.is_file() and not audio_folder.is_symlink() and audio_folder.read_bytes() == blocker
+                remote_blocker["filesystem"] = {"regularBlockerBytesUnchanged":True,"blockerBytes":len(blocker),"blockerSha256":hashlib.sha256(blocker).hexdigest(),"verifiedBy":"independent Python filesystem read"}
+                expected_remote_alert = remote_blocker["observer"]["expectedFolderMessage"]
+                remote_visible = wait(lambda: script("const p=document.querySelector('.popup p');return p?.textContent?.trim()===arguments[0] && document.querySelector('.popup button') ? p.textContent.trim() : null", expected_remote_alert), "Actual original HTTP folder alert text visible")
+                assert remote_visible == expected_remote_alert
+                remote_blocker["visibleAlertText"] = remote_visible
+                (ARTIFACTS / "remote-covers.json").write_text(json.dumps(cover_http_receipts,ensure_ascii=False,indent=2))
+                click('.popup button.outlined')
+                wait(lambda: script("return !document.querySelector('.popup')"), "Remote cover folder alert dismissed")
                 wav_entry = next(entry for entry in now_playing_fixtures["cases"] if entry["path"].lower().endswith(".wav"))
                 for action, expected_counts in [("set", (1, 4, 0)), ("unset", (0, 2, 0)), ("open", (0, 1, 1))]:
                     observed = script((ROOT / "tests/desktop/now_playing_folder_probe.js").read_text(), {"phase":"blocked-audio-" + action, "action":action, "audioFolder":str(audio_folder), "case":wav_entry})
@@ -1199,6 +1220,9 @@ def run():
             # Switch an already-loaded library with unsaved work. The target has
             # a different song using the SAME ID, exercising cache invalidation.
             old_context = script("return window.api.getRuntimeContext()")
+            old_cover_sentinel = Path(old_context["dataPath"]) / "Audio/NowPlayingCover.png"
+            old_cover_bytes = b"Old library cover must never be served by the new run"
+            old_cover_sentinel.write_bytes(old_cover_bytes)
             other = temp / "other-library"
             (other / "Shows").mkdir(parents=True)
             (other / "Config").mkdir()
@@ -1260,6 +1284,12 @@ def run():
             probe_api("switched", "Second library lyric")
             steps.append("Native API automatically restarts for the selected library and returns its same-ID show")
             probe_remotes('switched','Second library lyric')
+            switched_cover_context = invoke("runtime_context")
+            assert switched_cover_context != old_context and old_cover_sentinel.read_bytes() == old_cover_bytes
+            assert not (Path(switched_cover_context["dataPath"]) / "Audio/NowPlayingCover.png").exists()
+            switched_cover = probe_selected_cover("switched-library")
+            switched_cover["previousLibraryCoverUnchanged"] = {"path":str(old_cover_sentinel),"bytes":len(old_cover_bytes),"sha256":hashlib.sha256(old_cover_bytes).hexdigest(),"verifiedBy":"independent Python filesystem read"}
+            (ARTIFACTS / "remote-covers.json").write_text(json.dumps(cover_http_receipts,ensure_ascii=False,indent=2))
             timecode_retired = invoke("timecode_status")
             assert timecode_retired["lastRetired"]["allPortOwnersJoined"] and timecode_retired["lastRetired"]["ltcJoined"], timecode_retired
             probe_timecode("switched", 29.97)

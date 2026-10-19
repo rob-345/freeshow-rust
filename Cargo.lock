@@ -916,6 +916,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "form_urlencoded",
+ "freeshow-cover-http",
  "httpdate",
  "hyper",
  "hyper-util",

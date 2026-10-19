@@ -23,12 +23,15 @@ mod midi;
 mod network_queries;
 mod network_snapshot;
 mod now_playing;
+mod now_playing_cover_file;
 mod now_playing_files;
 mod now_playing_input;
 mod now_playing_owner;
 mod now_playing_prepare;
 mod now_playing_schedule;
 mod output;
+mod remote_cover;
+mod remote_cover_publications;
 mod remotes;
 mod scriptures;
 mod system;
@@ -66,6 +69,8 @@ struct AppState {
     audio: std::sync::Arc<AudioService>,
     covers: std::sync::Arc<freeshow_cover_images::CoverImageService>,
     now_playing: now_playing_owner::Owner,
+    cover_files: now_playing_cover_file::CoverFiles,
+    cover_publications: remote_cover_publications::Publications,
     audio_pipeline: audio_pipeline::NativeAudioPipeline,
     audio_ingress: audio_ingress::AudioIngress,
     audio_last_receipt: std::sync::Mutex<serde_json::Value>,
@@ -188,7 +193,10 @@ fn api_status(app: tauri::AppHandle) -> serde_json::Value {
 
 #[tauri::command]
 fn remotes_status(app: tauri::AppHandle) -> serde_json::Value {
-    app.state::<AppState>().remotes.status()
+    let state = app.state::<AppState>();
+    let mut status = state.remotes.status();
+    status["cover"] = json!({"filesRetained":state.cover_files.retained(), "publicationsRetained":state.cover_publications.retained()});
+    status
 }
 
 #[tauri::command]
@@ -504,6 +512,24 @@ fn now_playing_complete(
 }
 
 #[tauri::command]
+fn cover_complete(
+    window: tauri::WebviewWindow,
+    context: RuntimeContext,
+    id: String,
+    accepted: bool,
+) -> Result<(), WireError> {
+    audio_window(&window)?;
+    // The saved context/nonce proves historical receipt disposal without
+    // adopting that context or granting any path/file operation.
+    window
+        .app_handle()
+        .state::<AppState>()
+        .cover_publications
+        .complete(&context, &id, accepted)
+        .map_err(|e| WireError::new(e.code, e.message))
+}
+
+#[tauri::command]
 fn now_playing_status(window: tauri::WebviewWindow) -> Result<serde_json::Value, WireError> {
     audio_window(&window)?;
     Ok(window.app_handle().state::<AppState>().now_playing.status())
@@ -811,6 +837,49 @@ async fn dispatch_native(
         || request.channel == "MAIN"
             && remotes::COMMANDS.contains(&request.data["channel"].as_str().unwrap_or(""))
     {
+        if request.channel == "MAIN"
+            && request.data["channel"] == "START"
+            && window.label() == "main"
+        {
+            let state = app.state::<AppState>();
+            let frozen = request.context.clone().ok_or_else(|| {
+                WireError::new("cover_context", "Remote START requires its full context")
+            })?;
+            let notifications = state.cover_publications.clone();
+            let ready_context = frozen.clone();
+            let publisher = app.clone();
+            // Match Express's explicit NODE_ENV production finalhandler policy.
+            // Rust debug/release compilation does not choose response semantics.
+            let rendering = if std::env::var("NODE_ENV").as_deref() == Ok("production") {
+                freeshow_remotes::CoverErrorRendering::Production
+            } else {
+                freeshow_remotes::CoverErrorRendering::Deferred
+            };
+            let source = std::sync::Arc::new(remote_cover::Source::new(
+                frozen,
+                state.library.clone(),
+                state.cover_files.clone(),
+                state.cover_publications.clone(),
+                std::sync::Arc::new(move |event| {
+                    publisher
+                        .emit_to("main", "freeshow://ipc", event)
+                        .map_err(|e| e.to_string())
+                }),
+                rendering,
+            ));
+            return state
+                .remotes
+                .dispatch_with_cover(
+                    request,
+                    window.label(),
+                    Some(remotes::CoverStart::new(source, move || {
+                        notifications
+                            .ready(ready_context)
+                            .map_err(|e| WireError::new(e.code, e.message))
+                    })),
+                )
+                .await;
+        }
         return app
             .state::<AppState>()
             .remotes
@@ -1119,6 +1188,8 @@ async fn dispatch_native(
             "CLOSE" => {
                 let state = app.state::<AppState>();
                 let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
+                let context = state.library.context().map_err(WireError::from)?;
+                state.cover_publications.retire(&context, true);
                 state.context_changes.close_and_drain().await?;
                 let (now_playing_drained, now_playing_result) =
                     state.now_playing.retire(None, true).await;
@@ -1267,6 +1338,11 @@ async fn dispatch_native(
         Prepared::Forward(request)
     };
     let library = app.state::<AppState>().library.clone();
+    let previous_cover_context = if command == "UPDATE_DATA_PATH" {
+        Some(library.context().map_err(WireError::from)?)
+    } else {
+        None
+    };
     let mut events = match prepared {
         Prepared::Forward(request) => library
             .dispatch(request, &label)
@@ -1307,6 +1383,9 @@ async fn dispatch_native(
     if command == "UPDATE_DATA_PATH" {
         let context = library.context().map_err(WireError::from)?;
         let state = app.state::<AppState>();
+        if let Some(previous) = previous_cover_context.filter(|previous| previous != &context) {
+            state.cover_publications.retire(&previous, false);
+        }
         if let Err(error) = synchronize_now_playing_context(&app).await {
             let mut alert = Event::reply(
                 "MAIN",
@@ -1851,6 +1930,8 @@ fn main() {
                 audio,
                 covers,
                 now_playing,
+                cover_files: now_playing_cover_file::CoverFiles::default(),
+                cover_publications: remote_cover_publications::Publications::new(),
                 audio_pipeline,
                 audio_ingress,
                 audio_last_receipt: std::sync::Mutex::new(serde_json::Value::Null),
@@ -1927,6 +2008,7 @@ fn main() {
             timecode_status,
             now_playing_command,
             now_playing_complete,
+            cover_complete,
             now_playing_retire,
             now_playing_status,
             remote_delivery_complete,
