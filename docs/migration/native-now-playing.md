@@ -57,6 +57,13 @@ complete editor receipt. The latter retains 54 diagnostics in this local run,
 including the deliberate image capability rejection and expected unsupported,
 stale, backend and filesystem cases; it is not a zero-error application claim.
 
+Published `634515a5` also passes Linux/macOS core, Windows/macOS native and
+Linux desktop [CI 39223737677](https://github.com/rob-345/freeshow-rust/actions/runs/39223737677).
+Downloaded desktop artifacts independently confirm all 160 steps, four new source
+comparisons, four menus and both drops. Windows core exposes the parent-directory
+rename fixture described in PROGRESS; an isolated OS-lifetime correction is being
+verified. This is not yet a completely green six-job run.
+
 ## Remaining acceptance gaps
 
 Native JPEG input, broader PNG/color/alpha/chunk handling, certified resizing,

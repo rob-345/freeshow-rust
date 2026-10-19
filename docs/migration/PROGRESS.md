@@ -22,7 +22,15 @@ formatting with pinned source, prove real file effects/cleanup, typed callbacks,
 send-time snapshots and explicit post-metadata unsupported-image rejection.
 The complete receipt retains 54 expected/capability/stale diagnostic entries,
 including the deliberately unsupported image; no global zero-error claim is made.
-New cross-platform CI is pending publication of this milestone.
+Published `634515a5` passes five jobs in [CI 39223737677](https://github.com/rob-345/freeshow-rust/actions/runs/39223737677):
+Linux/macOS core, Windows/macOS native and Linux desktop. Downloaded artifacts
+independently confirm all 160 editor steps, four new real source/native now-playing
+SET/UNSET receipts, four menus and both drop scales. Windows core reaches tests
+and exposes a fixture assuming an open child permits its parent directory rename.
+The correction verifies the refused mutation still yields only permitted bytes,
+then waits for actual descriptor disposal and a successful real rename before
+checking the protected target. All 17 asset tests and strict Linux/Windows-target
+lint pass locally; complete CI for that isolated fixture correction is pending.
 
 Now-playing remains partial: caught folder-creation ALERT ordering, remote cover
 HTTP, broader image/metadata/resize fidelity, root common-picture insertion

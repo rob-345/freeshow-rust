@@ -413,22 +413,70 @@ async fn canonical_leaf_and_parent_symlink_swaps_cannot_gain_protected_file_auth
             .await
             .unwrap();
         let read = opened(&server).await;
+        #[cfg(windows)]
+        let mut read = Some(read);
+        #[cfg(not(windows))]
+        let read = Some(read);
         let swapped = if parent { &allowed } else { &path };
-        fs::rename(swapped, swapped.with_extension("old")).unwrap();
+        match fs::rename(swapped, swapped.with_extension("old")) {
+            Ok(()) => (),
+            #[cfg(windows)]
+            Err(error) if parent && matches!(error.raw_os_error(), Some(5 | 32)) => {
+                // Windows can pin a directory while its child descriptors are
+                // open. Prove the refused mutation still exposes only the old
+                // permitted bytes; do not pretend a parent swap took place.
+                let held = read.as_mut().unwrap();
+                let mut bytes = Vec::new();
+                held.file_mut().read_to_end(&mut bytes).unwrap();
+                assert_eq!(bytes, b"permitted");
+                held.authority()
+                    .revalidate(Control::default())
+                    .await
+                    .unwrap();
+                let mut fresh = opened(&server).await;
+                let mut bytes = Vec::new();
+                fresh.file_mut().read_to_end(&mut bytes).unwrap();
+                assert_eq!(bytes, b"permitted");
+                drop((fresh, read.take()));
+                // Worker-owned anchor disposal is independent of exported
+                // descriptor disposal. The successful real rename, rather
+                // than a counter or cancellation signal, proves OS release.
+                let deadline = Instant::now() + Duration::from_secs(5);
+                loop {
+                    match fs::rename(swapped, swapped.with_extension("old")) {
+                        Ok(()) => break,
+                        Err(error) if matches!(error.raw_os_error(), Some(5 | 32)) => {
+                            assert!(
+                                Instant::now() < deadline,
+                                "Actual parent remained pinned after descriptor disposal: {error}"
+                            );
+                            tokio::time::sleep(Duration::from_millis(1)).await;
+                        }
+                        Err(error) => {
+                            panic!("Parent swap after actual descriptor disposal failed: {error}")
+                        }
+                    }
+                }
+                assert_eq!(server.status().native_reads, 0);
+            }
+            Err(error) => panic!("Actual registered-path swap failed (parent={parent}): {error}"),
+        }
         let target = if parent {
             protected.clone()
         } else {
             protected.join("source.wav")
         };
         if symlink(&target, swapped, parent) {
-            assert_eq!(
-                read.authority()
-                    .revalidate(Control::default())
-                    .await
-                    .unwrap_err()
-                    .code,
-                "assets_protected"
-            );
+            if let Some(read) = &read {
+                assert_eq!(
+                    read.authority()
+                        .revalidate(Control::default())
+                        .await
+                        .unwrap_err()
+                        .code,
+                    "assets_protected"
+                );
+            }
             assert_eq!(
                 server
                     .open_registered_media(
