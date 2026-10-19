@@ -1,7 +1,58 @@
 use freeshow_system::provider_connections::{
-    project, ProjectionError, MAX_SNAPSHOT_BYTES, MAX_SNAPSHOT_DEPTH, MAX_SNAPSHOT_NODES,
+    catalogue, project, ProjectionError, MAX_SNAPSHOT_BYTES, MAX_SNAPSHOT_DEPTH, MAX_SNAPSHOT_NODES,
 };
 use serde_json::{json, Value};
+
+#[test]
+fn declared_catalogue_preserves_rows_keys_types_and_fixed_output_bound() {
+    let value = catalogue();
+    let rows = value.as_array().unwrap();
+    assert_eq!(rows.len(), 5);
+    assert!(serde_json::to_vec(&value).unwrap().len() < 1024);
+    for row in rows {
+        assert_eq!(
+            row.as_object()
+                .unwrap()
+                .keys()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
+            ["providerId", "displayName", "hasContentLibrary"]
+        );
+        assert!(row["providerId"].is_string());
+        assert!(row["displayName"].is_string());
+        assert!(row["hasContentLibrary"].is_boolean());
+    }
+    let connected = project(&json!({"contentProviders":{
+        "canva":{"folder:read design:content:read design:meta:read":true},
+        "onstage":{"presenter":true},"amazinglife":{"openid profile email":true},
+        "planningcenter":{"services":true},"churchApps":{"plans":true}
+    }}))
+    .unwrap();
+    assert_eq!(
+        rows.iter()
+            .map(|row| row["providerId"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        connected
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(project(&json!({})).unwrap(), json!({}));
+    assert!(rows.iter().any(|row| row["hasContentLibrary"] == true));
+}
+
+#[test]
+fn catalogue_returns_fresh_data_independently_of_previous_consumer_edits() {
+    let original = catalogue();
+    let mut changed = catalogue();
+    changed[0]["displayName"] = json!("Caller changed its snapshot");
+    changed[0]["hasContentLibrary"] = json!(false);
+    changed.as_array_mut().unwrap().reverse();
+    assert_ne!(changed, original);
+    assert_eq!(catalogue(), original);
+}
 
 #[test]
 fn registration_order_and_combined_scope_keys_are_preserved() {

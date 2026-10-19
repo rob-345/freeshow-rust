@@ -1,5 +1,5 @@
 //! Test-only bounded projection driver; no runtime sidecar or real stores.
-use freeshow_system::provider_connections::{project, MAX_SNAPSHOT_BYTES};
+use freeshow_system::provider_connections::{catalogue, project, MAX_SNAPSHOT_BYTES};
 use serde_json::{json, Value};
 use std::io::{self, Read};
 
@@ -12,6 +12,10 @@ fn main() {
         .unwrap();
     let reply = if bytes.len() > MAX_SNAPSHOT_BYTES {
         json!({"ok":false,"error":{"code":"provider_connections_transport","message":"Test input exceeds transport limit"}})
+    } else if std::env::args().nth(1).as_deref() == Some("--catalogue") {
+        // Only this private fixture selector changes mode. Renderer payloads
+        // cannot select production catalogue/providers or native IO authority.
+        json!({"ok":true,"value":catalogue()})
     } else {
         match serde_json::from_slice::<Value>(&bytes) {
             Err(_) => {

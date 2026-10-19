@@ -1,8 +1,10 @@
-//! The pinned registry's stored-access indication, without provider IO.
+//! The pinned registry's declared catalogue and stored-access indication,
+//! without provider IO.
 //!
-//! The host supplies a successful, bounded ACCESS store snapshot from its
-//! trusted app-data owner. This does not authenticate, refresh, revoke, open an
-//! OAuth listener, or establish that a provider backend is available.
+//! For the stored-access projection, the host supplies a successful, bounded
+//! ACCESS store snapshot from its trusted app-data owner. The catalogue takes
+//! no input. Neither API authenticates, refreshes, revokes, opens an OAuth
+//! listener, or establishes that a provider backend is available.
 use serde_json::{Map, Value};
 use std::fmt;
 
@@ -14,11 +16,24 @@ pub const MAX_SNAPSHOT_DEPTH: usize = 16;
 
 // Registration order and each provider's supportedScopes, not OAuth scope
 // tokenization. In particular, APlay and Canva use one combined scope key.
-const PROVIDERS: &[(&str, &[&str])] = &[
-    ("churchApps", &["plans"]),
-    (
-        "planningcenter",
-        &[
+struct ProviderDeclaration {
+    id: &'static str,
+    display_name: &'static str,
+    has_content_library: bool,
+    scopes: &'static [&'static str],
+}
+const PROVIDERS: &[ProviderDeclaration] = &[
+    ProviderDeclaration {
+        id: "churchApps",
+        display_name: "ChurchApps",
+        has_content_library: true,
+        scopes: &["plans"],
+    },
+    ProviderDeclaration {
+        id: "planningcenter",
+        display_name: "Planning Center",
+        has_content_library: false,
+        scopes: &[
             "calendar",
             "check_ins",
             "giving",
@@ -27,14 +42,52 @@ const PROVIDERS: &[(&str, &[&str])] = &[
             "publishing",
             "services",
         ],
-    ),
-    ("amazinglife", &["openid profile email"]),
-    ("onstage", &["presenter"]),
-    (
-        "canva",
-        &["folder:read design:content:read design:meta:read"],
-    ),
+    },
+    ProviderDeclaration {
+        id: "amazinglife",
+        display_name: "APlay",
+        has_content_library: true,
+        scopes: &["openid profile email"],
+    },
+    ProviderDeclaration {
+        id: "onstage",
+        display_name: "OnStage",
+        has_content_library: false,
+        scopes: &["presenter"],
+    },
+    ProviderDeclaration {
+        id: "canva",
+        display_name: "Canva",
+        has_content_library: true,
+        scopes: &["folder:read design:content:read design:meta:read"],
+    },
 ];
+
+/// The fixed GET_CONTENT_PROVIDERS declaration, in original registration and
+/// own-property order. This takes no renderer input, store snapshot or native
+/// IO authority. Every call returns a fresh five-row value; output is less than
+/// one KiB and its allocation/work is fixed independently of request payloads.
+///
+/// `hasContentLibrary` describes the pinned source class declaration. Neither
+/// this flag nor a returned row asserts authentication, connection, a working
+/// native content backend, or permission to perform provider operations.
+pub fn catalogue() -> Value {
+    Value::Array(
+        PROVIDERS
+            .iter()
+            .map(|provider| {
+                let mut row = Map::new();
+                row.insert("providerId".into(), provider.id.into());
+                row.insert("displayName".into(), provider.display_name.into());
+                row.insert(
+                    "hasContentLibrary".into(),
+                    provider.has_content_library.into(),
+                );
+                Value::Object(row)
+            })
+            .collect(),
+    )
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProjectionError {
@@ -85,16 +138,16 @@ pub fn project(access_snapshot: &Value) -> Result<Value, ProjectionError> {
     Budget::default().value(access_snapshot, 0)?;
     let stored = access.get("contentProviders").and_then(Value::as_object);
     let mut connections = Map::new();
-    for &(provider, scopes) in PROVIDERS {
+    for provider in PROVIDERS {
         let provider_data = stored
-            .and_then(|stored| stored.get(provider))
+            .and_then(|stored| stored.get(provider.id))
             .and_then(Value::as_object);
-        if scopes.iter().any(|scope| {
+        if provider.scopes.iter().any(|scope| {
             provider_data
                 .and_then(|data| data.get(*scope))
                 .is_some_and(truthy)
         }) {
-            connections.insert(provider.into(), Value::Bool(true));
+            connections.insert(provider.id.into(), Value::Bool(true));
         }
     }
     Ok(Value::Object(connections))
