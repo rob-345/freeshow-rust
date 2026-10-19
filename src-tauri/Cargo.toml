@@ -33,6 +33,8 @@ freeshow-ltc = { path = "../crates/freeshow-ltc" }
 freeshow-midi-ports = { path = "../crates/freeshow-midi-ports" }
 freeshow-files = { path = "../crates/freeshow-files" }
 freeshow-system = { path = "../crates/freeshow-system" }
+freeshow-ai-local = { path = "../crates/freeshow-ai-local" }
+freeshow-spotify = { path = "../crates/freeshow-spotify" }
 freeshow-api = { path = "../crates/freeshow-api" }
 freeshow-imports = { path = "../crates/freeshow-imports" }
 freeshow-import-effects = { path = "../crates/freeshow-import-effects" }

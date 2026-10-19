@@ -1,6 +1,24 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
+
+/// Rust-only publication resource; never serialized or accepted from JSON.
+#[derive(Clone)]
+pub struct NativeLifetime {
+    _hold: Arc<dyn Send + Sync>,
+}
+impl NativeLifetime {
+    pub fn new<T: Send + Sync + 'static>(value: T) -> Self {
+        Self {
+            _hold: Arc::new(value),
+        }
+    }
+}
+impl std::fmt::Debug for NativeLifetime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("NativeLifetime(..)")
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,6 +52,9 @@ pub struct Message {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Event {
+    /// Retains native resources through event clones/encoding and actual Drop.
+    #[serde(skip)]
+    pub native_lifetime: Option<NativeLifetime>,
     pub channel: String,
     pub message: Message,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -74,6 +95,7 @@ pub struct Event {
 impl Event {
     pub fn reply(outer: &str, inner: &str, data: Value, listener_id: Option<String>) -> Self {
         Self {
+            native_lifetime: None,
             channel: outer.into(),
             message: Message {
                 channel: inner.into(),

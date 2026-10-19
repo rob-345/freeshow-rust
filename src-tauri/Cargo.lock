@@ -1300,6 +1300,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-ai-local"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-api"
 version = "0.1.0"
 dependencies = [
@@ -1432,6 +1442,7 @@ name = "freeshow-desktop"
 version = "0.1.0"
 dependencies = [
  "flate2",
+ "freeshow-ai-local",
  "freeshow-api",
  "freeshow-asset-plans",
  "freeshow-assets",
@@ -1461,6 +1472,7 @@ dependencies = [
  "freeshow-opus",
  "freeshow-remotes",
  "freeshow-scriptures",
+ "freeshow-spotify",
  "freeshow-system",
  "freeshow-thumbnail-effects",
  "freeshow-thumbnails",
@@ -1747,6 +1759,18 @@ name = "freeshow-scriptures"
 version = "0.1.0"
 dependencies = [
  "libc",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "freeshow-spotify"
+version = "0.1.0"
+dependencies = [
+ "futures-util",
+ "regex",
  "serde",
  "serde_json",
  "tokio",

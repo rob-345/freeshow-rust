@@ -545,6 +545,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-ai-local"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "freeshow-api"
 version = "0.1.0"
 dependencies = [
@@ -923,6 +934,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-provider-shows"
+version = "0.1.0"
+dependencies = [
+ "indexmap",
+ "ryu-js",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "freeshow-remotes"
 version = "0.1.0"
 dependencies = [
@@ -955,6 +976,18 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "freeshow-spotify"
+version = "0.1.0"
+dependencies = [
+ "futures-util",
+ "regex",
+ "serde",
+ "serde_json",
  "tokio",
  "tokio-util",
 ]

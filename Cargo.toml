@@ -1,6 +1,9 @@
 [workspace]
 members = [
     "crates/freeshow-core",
+    "crates/freeshow-ai-local",
+    "crates/freeshow-spotify",
+    "crates/freeshow-provider-shows",
     "crates/freeshow-media",
     "crates/freeshow-ffmpeg-download",
     "crates/freeshow-network",

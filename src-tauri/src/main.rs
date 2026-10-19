@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod ai_local;
 mod api;
 mod assets;
 mod audio_ingress;
@@ -84,6 +85,7 @@ struct AppState {
     imports: imports::NativeImports,
     browse: browse::NativeBrowse,
     system: SystemService,
+    ai_local: ai_local::NativeInventory,
     device_id: device_id::DeviceIdentity,
     provider_connections: provider_connections::ProviderConnections,
     network_snapshots: network_snapshot::NetworkSnapshots,
@@ -1056,6 +1058,13 @@ async fn dispatch_native(
             }
             return Ok(imported.events);
         }
+        if command == "AI_GET_BIN" {
+            let state = app.state::<AppState>();
+            return state
+                .ai_local
+                .dispatch(&state.library, request, window.label())
+                .await;
+        }
         if command == "PROVIDER_CONNECTIONS" {
             let state = app.state::<AppState>();
             return state
@@ -1206,6 +1215,7 @@ async fn dispatch_native(
             "CLOSE" => {
                 let state = app.state::<AppState>();
                 state.device_id.seal();
+                state.ai_local.seal();
                 state.provider_connections.seal();
                 let discard = request.data["data"]["discardUnsaved"].as_bool() == Some(true);
                 let context = state.library.context().map_err(WireError::from)?;
@@ -1230,6 +1240,7 @@ async fn dispatch_native(
                     _,
                     files_result,
                     system_result,
+                    ai_local_result,
                     api_result,
                     imports_result,
                     browse_result,
@@ -1251,6 +1262,7 @@ async fn dispatch_native(
                     state.osc.shutdown(),
                     state.files.shutdown(),
                     state.system.shutdown(),
+                    state.ai_local.shutdown(),
                     state.api.shutdown(),
                     state.imports.shutdown(),
                     state.browse.shutdown(),
@@ -1284,6 +1296,7 @@ async fn dispatch_native(
                 files_result.map_err(|error| WireError::new("files_worker", error.to_string()))?;
                 system_result
                     .map_err(|error| WireError::new("system_worker", error.to_string()))?;
+                ai_local_result?;
                 api_result?;
                 imports_result?;
                 browse_result?;
@@ -1403,6 +1416,7 @@ async fn dispatch_native(
     if command == "UPDATE_DATA_PATH" {
         let context = library.context().map_err(WireError::from)?;
         let state = app.state::<AppState>();
+        state.ai_local.context_changed(&context);
         if let Some(previous) = previous_cover_context.filter(|previous| previous != &context) {
             state.cover_publications.retire(&previous, false);
         }
@@ -1733,6 +1747,7 @@ fn main() {
             let covers = std::sync::Arc::new(freeshow_cover_images::CoverImageService::new()?);
             let files = files::NativeFiles::new(FilesService::start(FilesLimits::default())?);
             let system = SystemService::start(SystemLimits::default())?;
+            let ai_local = ai_local::NativeInventory::new(app_data.clone());
             let imports = imports::NativeImports::new(freeshow_imports::ImportService::new(
                 freeshow_imports::ImportConfig::default(),
             )?);
@@ -1962,6 +1977,7 @@ fn main() {
                 imports,
                 browse,
                 system,
+                ai_local,
                 device_id: device_id::DeviceIdentity::new(),
                 provider_connections: provider_connections::ProviderConnections::new(),
                 network_snapshots,

@@ -5,8 +5,6 @@ edition = "2021"
 license = "GPL-3.0-only"
 description = "Bounded native Linux Spotify desktop state queries"
 
-[workspace]
-
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
