@@ -29,6 +29,6 @@ Formatting and `git diff --check` also pass. No root/native/frontend production 
 
 ## Remaining validation
 
-The coordinator must validate real WebKit cold/programmatic first use, resume policy, worklet/port startup, genuine playback/capture and routing/reactivation before shipping this optimization. In particular, first use without a new user gesture must remain functional. No fake context test certifies browser autoplay or device policy.
+Subsequent [isolated native WebKit functional evidence](audio-context-webkit.md) covers cold/programmatic first use, real WAV/SoundTouch, PCM worklet/port delivery, routing/reactivation and actual software OS capture, with explicit MIME/hardware/app gaps. The coordinator must still validate the final fork's retained UI, origin, permissions, native delivery and lifecycle before shipping this optimization. In particular, first use without a new user gesture must remain functional. No fake context test certifies browser autoplay or device policy.
 
 Any release CPU claim requires immutable before/after release binaries with identical feature scope, UI/profile/workload and environment, repeated alternating/randomized whole-process-tree measurements, and the existing cleanup/coverage rules. The earlier archived partial migration is not a valid current-feature before/after control. No new performance comparison, app or profiler run was performed for this patch.
