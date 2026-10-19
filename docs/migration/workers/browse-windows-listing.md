@@ -147,10 +147,13 @@ A suggested shared-file wiring diff is at
 remain untouched. Integrate alongside the independent macOS cfg rather than
 expanding the POSIX helper globally. The historical stat worker test explicitly
 expects both other commands to return `unsupported_platform`; update that
-assertion during coordinator dispatch integration. Its verbatim fixture remains
-outside this new ordinary-drive listing subset, so substituting a success
-assertion there would be incorrect. The new engine tests below use explicit
-ordinary-drive fixture spellings and require actual success.
+assertion during coordinator dispatch integration. That test uses raw
+`temp.path()`, without explicit canonicalization: do not assume its spelling is
+verbatim. Ordinary-drive spellings should now require source-equivalent success.
+An explicitly canonicalized verbatim fixture remains outside the new listing
+subset and must still require a typed unsupported result. Retain the original
+FILE_INFO coverage for either accepted spelling. The new engine fixtures below
+construct explicit ordinary-drive paths and require actual success.
 
 ## Verification and pending evidence
 
