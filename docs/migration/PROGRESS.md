@@ -109,11 +109,31 @@ passed all three core jobs, native macOS and the full Linux desktop job. Actual
 macOS logs confirm twelve dedicated filesystem cases, three Source cases and
 the real three-port TCP/STOP lifetime test. Windows passed fourteen of sixteen
 cases in its dedicated cover target, then failed missing-Audio creation and a
-parent-rename fixture assumption. Later native targets were not reached.
-The fixture now uses actual Audio namespace replacement, and diagnostic assertions
-retain the real mkdir NTSTATUS before choosing a production correction. No test
-is skipped and the Missing status set is unchanged.
+parent-rename fixture assumption. The diagnostic
+[follow-up run](https://github.com/rob-345/freeshow-rust/actions/runs/39249175360)
+again passes the other five jobs. Its corrected namespace fixture passes;
+Windows now passes fifteen of sixteen dedicated cases and reports the genuine
+mkdir error: NTSTATUS `0xC000000D` / Win32 87, invalid parameter. Later native
+targets were not reached. A creation-only option correction and actual
+post-probe junction/ordinary-collision race fixtures are integrated, awaiting
+the next genuine Windows run. No test is skipped and
+the Missing status set is unchanged.
 [Platform integration](workers/cover-platform-integration.md).
+[Actual platform diagnostic receipt](baselines/platform-cover-diagnostic-ci.json).
+
+Reviewed browsing backends are integrated locally: Darwin uses the existing
+POSIX FILE_INFO/READ_FOLDER/GET_SIMILAR engine; Windows supports ordinary-drive
+FILE_INFO only. Both reuse the existing two filesystem owners. Strict
+Linux/Windows GNU/macOS ARM compilation and eighteen focused source suites pass.
+Main integration also passes **493 Rust + 572 pinned-Node + 20 frontend checks**
+(1,085), **352 native executions**, and strict workspace/native all-target
+Clippy. Five ignored Rust subprocess entry fixtures remain supervisor-driven;
+four existing source capability/platform skips remain explicit. The rebuilt
+187-step Linux editor, four menus and both native drop scales pass again;
+independent receipt validation preserves all JPEG/metadata/HTTP/blocker/quit
+checks and 55 expected other-feature diagnostics. Actual new foreign filesystem
+execution remains pending. [Local receipt](baselines/browse-platforms-linux-local.json).
+[Integration scope](workers/browse-platform-integration.md).
 
 Now-playing remains partial: broader image/metadata/resize fidelity, root
 common-picture insertion position, fixed-cover HTTP parser/date/error-rendering

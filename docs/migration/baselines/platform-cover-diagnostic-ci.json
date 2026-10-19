@@ -1,0 +1,135 @@
+{
+    "schemaVersion": 1,
+    "run": 39249175360,
+    "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39249175360",
+    "commit": "ef7fadfbb1d9986ae119f9f2ec94290036516400",
+    "conclusion": "failure",
+    "jobs": [
+        {
+            "name": "native (macos-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39249175360/job/118048476272"
+        },
+        {
+            "name": "core (macos-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39249175360/job/118048476386"
+        },
+        {
+            "name": "core (ubuntu-24.04)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39249175360/job/118048476538"
+        },
+        {
+            "name": "desktop-linux",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39249175360/job/118048476701"
+        },
+        {
+            "name": "native (windows-latest)",
+            "conclusion": "failure",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39249175360/job/118048476728"
+        },
+        {
+            "name": "core (windows-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39249175360/job/118048476866"
+        }
+    ],
+    "macOS": {
+        "dedicatedCases": [
+            "absent_audio_is_created_and_real_regular_blocker_keeps_one_mkdir_failure_and_missing",
+            "accepted_caller_drop_does_not_cancel_actual_ordered_preparation_or_release_early",
+            "actual_read_permission_failures_are_failed_not_missing_and_do_not_claim_source_parity",
+            "before_header_revalidation_detects_changes_but_held_reads_are_not_immutable_snapshots",
+            "cancellation_deadline_and_root_work_bounds_do_not_dispose_accepted_results_early",
+            "completed_uncollected_results_keep_all_four_leases_until_real_receipt_disposal",
+            "global_four_leases_span_contexts_and_held_descriptor_outlives_discarded_observation",
+            "opaque_empty_and_limit_files_use_positional_reads_and_raw_signed_darwin_times",
+            "real_mkdir_failure_is_preserved_when_later_parent_check_or_cancellation_fails",
+            "root_parent_leaf_swaps_and_exists_true_then_unlink_never_return_false_missing",
+            "symlink_ancestors_parents_leaves_and_nonregular_variants_are_never_followed",
+            "validation_queued_active_ready_and_collected_receipts_keep_one_real_continuation_guard"
+        ],
+        "sourceCases": ["held_opaque_bytes_and_posix_stat_survive_until_actual_header_validation_and_disposal", "actual_folder_alert_precedes_missing_http_continuation_but_completion_owns_its_private_lease", "native_source_reports_actual_platform_capability_and_settles_file_ownership"],
+        "tcpLifetimeCase": "configured_native_start_serves_real_selected_covers_and_stop_drains_independent_alert_delivery",
+        "logSha256": "9cc0716f1faa5e842edce2fa378252989f13bad78a7724a181877184f3a4c487",
+        "result": "pass"
+    },
+    "windows": {
+        "dedicatedCases": [
+            {
+                "name": "cover::backend::tests::native_epoch_conversion_keeps_signed_subseconds",
+                "result": "ok"
+            },
+            {
+                "name": "cover::backend::tests::only_proven_namespace_failure_can_become_missing",
+                "result": "ok"
+            },
+            {
+                "name": "cover::backend::tests::unsupported_namespaces_fail_before_attempting_remote_or_device_opens",
+                "result": "ok"
+            },
+            {
+                "name": "cover::backend::tests::ambiguous_relative_components_are_explicitly_unsupported",
+                "result": "ok"
+            },
+            {
+                "name": "windows_actual_node_stat_etag_matches_ordinary_times_and_records_gated_exceptional_times",
+                "result": "ok"
+            },
+            {
+                "name": "windows_dropped_caller_and_timeout_keep_blocked_ordered_io_until_real_return",
+                "result": "ok"
+            },
+            {
+                "name": "windows_actual_folder_error_survives_later_audio_namespace_change",
+                "result": "ok"
+            },
+            {
+                "name": "windows_exists_true_then_actual_open_failure_never_turns_into_missing",
+                "result": "ok"
+            },
+            {
+                "name": "windows_global_four_slots_follow_descriptors_and_ready_revalidation_not_phase_fences",
+                "result": "ok"
+            },
+            {
+                "name": "windows_held_bytes_explicit_offsets_signed_native_times_and_resource_bounds",
+                "result": "ok"
+            },
+            {
+                "name": "windows_held_identity_survives_replacement_but_inplace_and_foreign_validation_fail",
+                "result": "ok"
+            },
+            {
+                "name": "windows_missing_is_an_observed_guard_result_not_a_promise_of_later_absence",
+                "result": "ok"
+            },
+            {
+                "name": "windows_real_junctions_and_symlink_leaf_are_never_followed",
+                "result": "ok"
+            },
+            {
+                "name": "windows_real_mkdir_missing_and_regular_audio_blocker_preserve_actual_observation",
+                "result": "FAILED"
+            },
+            {
+                "name": "windows_real_sharing_failure_is_explicit_not_an_unproven_exists_false",
+                "result": "ok"
+            },
+            {
+                "name": "windows_root_audio_and_opened_leaf_swaps_fail_actual_handle_revalidation",
+                "result": "ok"
+            }
+        ],
+        "logSha256": "b10c777c3157c3740b900559986b2315f4c93ab8813bd4ecd37573dc911e8b8a",
+        "failureDiagnostic": "Real Audio mkdir did not create a directory: outcome=Missing; folder_failure=now_playing_cover_io os=Some(87) Audio mkdir: NTSTATUS 0xC000000D, Win32 87 (The parameter is incorrect. (os error 87)); diagnostics=1 [\"now_playing_cover_io os=Some(2) Cover existence below absent/nondirectory Audio: NTSTATUS 0xC0000034, Win32 2 (The system cannot find the file specified. (os error 2))\"]",
+        "ntstatus": "0xC000000D",
+        "win32Error": 87,
+        "laterNativeTargetsReached": false,
+        "productionOptionsChanged": false,
+        "missingClassificationsChanged": false
+    },
+    "scope": "Actual native diagnostic execution: macOS filesystem/Source/TCP subset passes; Windows 15 of 16 dedicated cases pass and real mkdir invalid-parameter remains. This run is not green and establishes no whole-platform/browser parity or performance gain."
+}

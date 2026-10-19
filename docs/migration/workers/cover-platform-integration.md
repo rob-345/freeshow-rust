@@ -52,7 +52,20 @@ not reached. The fixture now replaces the actual Audio namespace while retaining
 its genuine earlier folder failure. Diagnostic assertions expose actual mkdir
 NTSTATUS/Win32 evidence before selecting a production fix. No test is skipped
 and no unobserved status is relabeled Missing. A corrected complete run remains
-required. These checks do not establish foreign browser, physical delivery,
+required. The diagnostic follow-up at `ef7fadfb`
+([actual run](https://github.com/rob-345/freeshow-rust/actions/runs/39249175360))
+again passes the other five jobs, and Windows passes fifteen of sixteen
+dedicated cases. The corrected namespace-change fixture passes. Missing-Audio
+creation reports actual NTSTATUS `0xC000000D` / Win32 87 (invalid parameter),
+with the genuine retained folder failure; the later native targets remain
+unreached. Production options were unchanged in that diagnostic run. A focused
+create-option correction is now integrated with a creation-only object-parser
+no-reparse guard. Two new native fixtures race an absent-target junction and an
+ordinary file between the actual absent probe and FILE_CREATE, checking exact
+entry identities and filesystem effects. All eighteen test bodies compile with
+strict Windows GNU lint; their actual corrected Windows execution is pending.
+These checks do not
+establish foreign browser, physical delivery,
 immutable file snapshots, forced cancellation of synchronous OS calls, arbitrary
 network/reparse volumes, or complete Node path/error equivalence. Backend-specific
 contracts and capability gaps remain in

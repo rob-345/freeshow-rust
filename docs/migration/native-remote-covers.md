@@ -3,8 +3,9 @@
 The Rust desktop now configures a native fixed-cover source for each retained
 MAIN START run. REMOTE, STAGE and CONTROLLER use the same bounded source contract.
 The anchored filesystem backend has actual runtime evidence on Linux and the
-tested Darwin subset. The new Windows backend's first native CI run exposed
-directory creation and fixture failures under correction. Other systems return
+tested Darwin subset. The Windows diagnostic CI run passes fifteen of sixteen
+dedicated cases and exposes a real directory-creation invalid-parameter error
+(NTSTATUS `0xC000000D`, Win32 87), under correction. Other systems return
 an explicit unsupported preparation. Compilation is not filesystem or GUI
 parity. Complete remote-cover parity remains unfinished.
 

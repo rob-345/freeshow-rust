@@ -1,0 +1,102 @@
+{
+    "schemaVersion": 1,
+    "kind": "local-functional-verification",
+    "linuxBuildCommit": "482ea09e8e19abf9b6f6f7ee124b1204ea8b367e",
+    "subsequentWindowsOnlyCorrection": "df55f5bf9e21d61e8885fc3e0642977473f98619",
+    "platform": "linux-x86_64",
+    "checks": {
+        "rustPassed": 493,
+        "supervisorDrivenIgnoredEntries": 5,
+        "nodePassed": 572,
+        "existingNodeSkips": 4,
+        "frontendPassed": 20,
+        "nativeExecutionsPassed": 352,
+        "nativeTargets": 36,
+        "workspaceAndNativeStrictAllTargetClippy": "pass",
+        "foreignTargetStrictCrossClippy": ["windows-gnu", "macos-arm"],
+        "foreignFilesystemExecution": "pending",
+        "completeParityGate": "incomplete-expected-exit1"
+    },
+    "validatedDesktop": {
+        "now-playing": {
+            "run": "local",
+            "sha": "482ea09e",
+            "editorSteps": 187,
+            "ordinaryNowPlaying": 6,
+            "folderPhases": 3,
+            "metadataAndFolderCounts": [
+                [1, 4, 0],
+                [0, 2, 0],
+                [0, 1, 1]
+            ],
+            "nativeMenus": 4,
+            "dropScales": [1, 2],
+            "processExited": true,
+            "fullEditorDiagnostics": 55,
+            "scope": "Downloaded actual Linux receipts: exact source/native typed values excluding root picture position, exact folder callback/visible text, unchanged blocker hash, actual admitted/completed advances, ordinary idle and no reveal advance. No PNG encoded parity, global zero-error or per-operation terminal join claimed."
+        },
+        "cover": {
+            "editorSteps": 187,
+            "menus": 4,
+            "dropScales": [1, 2],
+            "coverPhases": 14,
+            "httpRequests": 141,
+            "httpStatusCounts": {
+                "200": 60,
+                "404": 63,
+                "206": 9,
+                "304": 9
+            },
+            "exactOriginalFolderAlerts": 3,
+            "coverRuntimeErrors": 0,
+            "coverBrowserErrors": 0,
+            "sourceAcks": 0,
+            "finalRetentionVerifiedZero": true,
+            "unchangedBlockerAndOldLibraryCoverHashesVerified": true,
+            "fullEditorDiagnostics": 55,
+            "processExited": true,
+            "scope": "Actual rebuilt Linux desktop, independent HTTP/file-byte checks and retained original UI callbacks/visible message. Zero counters are observed ordinary disposal, not per-operation IO-thread join or peer-receipt proof; separate native STOP/Weak test checks actual source lifetime. Full parity/performance remains unproven."
+        },
+        "pixel": {
+            "recordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+            "cases": [
+                {
+                    "id": "jpeg-apic",
+                    "width": 17,
+                    "height": 11,
+                    "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+                    "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+                    "nativePngBytes": 518,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                },
+                {
+                    "id": "jpeg-flac",
+                    "width": 64,
+                    "height": 48,
+                    "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+                    "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+                    "nativePngBytes": 8138,
+                    "compressedPngBytesEqualObserved": false,
+                    "fullSourceSetCompared": true,
+                    "actualFilesystemRead": true,
+                    "unsetVerified": true
+                }
+            ],
+            "scope": "Actual migrated WebKit metadata/counters/filesystem receipts checked against actual packaged Electron recording; exact RGBA, not compressed bytes or unrestricted format support."
+        }
+    },
+    "receiptSha256": {
+        "desktop/receipt.json": "d2a0bc93a5e6ad6554624512c7248ec6e48a8e7380c44904a2bcf06661507533",
+        "desktop/now-playing.json": "d9d28516f3301a583c6e2baf9ecc1d02070c7caf800819053be01fe4f8dd4f06",
+        "desktop/now-playing-folder-alerts.json": "2fda798b01c79aae4acfd5cc88c4bb3a3b85f415f4d23d9fb831d90fc24b93b5",
+        "desktop/remote-covers.json": "3efc2a39e2b5d5c71f1df096e14567d3492b8ea5eb5564e0080e1ef59a8bfac5",
+        "desktop/close-drain.json": "8dafbbc216c88d405cfd45b3840427318a3a5d6eeba8a3430d1581730d128c04",
+        "native-menu/receipt.json": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98",
+        "native-drop/receipt-1x.json": "501a923c66aee7fd15bfd9d5eb7fced3520b9f77b02314f2d54163f6491b50c4",
+        "native-drop/receipt-2x.json": "218464cb844b224ab02d1745d7cc40dc7f5761156cc15871bc3385af47452cbf"
+    },
+    "scope": "Actual rebuilt retained Linux editor and existing source/native corpus. Darwin browsing and Windows stat need genuine native CI execution; Windows creation/race correction is compiled only. Source picture root position, compressed PNG equality, unrestricted foreign browser/filesystem behavior and performance remain unproven."
+}

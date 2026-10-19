@@ -33,12 +33,23 @@ pinned-Node source suites with no skips. The Node suites include 8,192 generated
 Windows lexical cases; they execute the actual pure Rust helper, not a Windows
 filesystem simulation. Both native target lockfile resolutions succeed.
 
+Main integration passes 493 Rust, 572 pinned-Node and twenty frontend checks,
+plus all 352 Linux native executions across 36 targets. Five ignored Rust entry
+fixtures remain driven by supervisor tests, and four existing source capability
+skips remain explicit. Strict workspace and native all-target Clippy pass. The
+rebuilt 187-step Linux editor, four menus and both drop scales pass again.
+Independent validation preserves both exact source JPEG pixel hashes, all six
+ordinary and three folder-error now-playing cases, fourteen cover phases/141
+HTTP responses, blocker/old-library sentinel bytes and real process exit.
+The complete editor retains 55 expected other-feature diagnostics.
+[Durable local receipt](../baselines/browse-platforms-linux-local.json).
+
 Actual macOS and Windows execution remains pending. The new platform fixtures
 must run under their real native CI jobs before their filesystem corpora are
 claimed: six Darwin integration fixtures plus two module tests, and eleven
 Windows module tests. Cross-compilation is compilation evidence only. The
-existing shared Linux source/native tests remain independently required at the
-main integration milestone. Foreign GUI/IPC behavior, physical media,
+existing shared Linux source/native checks pass in the main integration.
+Foreign GUI/IPC behavior, physical media,
 unrestricted Windows paths/volumes, external mutation races and performance
 improvement are not established here.
 
