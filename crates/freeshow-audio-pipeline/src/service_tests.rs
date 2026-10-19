@@ -374,6 +374,16 @@ async fn accepted_expiry_terminates_owner_and_rejects_late_completion() {
             .code,
         "audio_owner_timeout"
     );
+    // finish rejects the expired lease synchronously; the real owner still
+    // has to observe its deadline before shutdown can claim terminal drain.
+    tokio::time::timeout(Duration::from_secs(3), async {
+        while s.terminal_error().is_none() {
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(s.terminal_error().unwrap().code, "audio_owner_timeout");
     assert_eq!(s.shutdown().await.unwrap_err().code, "audio_owner_timeout");
     assert_eq!(
         s.prepare(&[], &meta(), &sinks(), CancellationToken::new())
