@@ -19,6 +19,10 @@ use tokio_util::sync::CancellationToken;
 
 pub use freeshow_browse::COMMANDS;
 
+// Ten live host requests cover execution, the bounded waiting queue and
+// prepared thumbnail work. Actual filesystem permits separately survive Drop.
+const HOST_REQUESTS: usize = 10;
+
 #[derive(Default)]
 struct Registry {
     closed: bool,
@@ -56,7 +60,7 @@ impl NativeBrowse {
         Self {
             service,
             registry: Arc::new(Mutex::new(Registry::default())),
-            slots: Arc::new(Semaphore::new(2)),
+            slots: Arc::new(Semaphore::new(HOST_REQUESTS)),
         }
     }
 
@@ -156,7 +160,7 @@ impl NativeBrowse {
             let error = |error: freeshow_browse::BrowseError| WireError::new(error.code, error.message);
             if command == "READ_FOLDER" {
                 if let Some((thumbnails, assets, publish)) = capture {
-                    let mut listing = self.service.prepare_listing_with_cancel(&request.data["data"], lease.cancel.clone()).await.map_err(error)?;
+                    let mut listing = self.service.prepare_listing_queued_with_cancel(&request.data["data"], lease.cancel.clone()).await.map_err(error)?;
                     if listing.thumbnail_intents.len() > 32 {
                         return Err(WireError::new("browse_resource_limit", "Folder listing exceeds 32 thumbnail captures"));
                     }
@@ -179,10 +183,10 @@ impl NativeBrowse {
                         Ok::<_, WireError>(freeshow_browse::BrowseReply { data:listing.data, thumbnail_intents:vec![], diagnostics:listing.diagnostics })
                     }).await.map_err(|_| WireError::new("browse_resource_limit", "Folder capture exceeded its 30-second deadline"))?
                 } else {
-                    self.service.dispatch_with_cancel(command, &request.data["data"], lease.cancel.clone()).await.map_err(error)
+                    self.service.dispatch_queued_with_cancel(command, &request.data["data"], lease.cancel.clone()).await.map_err(error)
                 }
             } else {
-                self.service.dispatch_with_cancel(command, &request.data["data"], lease.cancel.clone()).await.map_err(error)
+                self.service.dispatch_queued_with_cancel(command, &request.data["data"], lease.cancel.clone()).await.map_err(error)
             }
         }.await;
         // Suppress errors and results belonging to a library that has changed.
