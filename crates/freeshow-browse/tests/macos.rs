@@ -150,12 +150,26 @@ async fn symlinks_follow_real_targets_and_missing_loops_fifo_and_devices_match_s
             info(dangling),
             info(cycle),
             info(fifo),
-            info("/dev/null"),
             info(""),
             info(file.join("not-directory")),
         ],
     )
     .await;
+    // /dev/null is shared with the entire runner. Other processes can update
+    // its timestamps while the source child and native worker take turns.
+    // Keep private files exact; bracket only actually changed device times.
+    let cases = json!([info("/dev/null")]);
+    let before = evidence::oracle("--requests", &cases);
+    let native = service
+        .dispatch("FILE_INFO", &json!("/dev/null"))
+        .await
+        .unwrap();
+    let after = evidence::oracle("--requests", &cases);
+    assert_eq!(before["actualFilesystemObserved"], true);
+    assert_eq!(after["actualFilesystemObserved"], true);
+    assert!(native.thumbnail_intents.is_empty());
+    check_stats(&native.data);
+    evidence::assert_live_device(&native.data, &before["results"][0], &after["results"][0]);
     service.shutdown().await.unwrap();
 }
 #[tokio::test]
