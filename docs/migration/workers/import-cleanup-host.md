@@ -33,3 +33,9 @@ Local logs use the `/tmp/freeshow-spotify-cleanup-` prefix:
 `imports-host-restored.log`, `imports-core-tests.log` and `native-focused.log`.
 Normal application verification and foreign native lifecycle execution remain
 separate from this focused host composition evidence.
+
+The subsequent normal Linux workflow completes195 observations, four menu cases
+and both drop scales, including original real Quit after queued save/backup/writes.
+Actual process disappearance corroborates application exit; it does not independently
+reconstruct every native thread join. The focused component/host gates above are
+the explicit join evidence. [Frozen local receipt](../baselines/spotify-commands-cleanup-linux-local.json).

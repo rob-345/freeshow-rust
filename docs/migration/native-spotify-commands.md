@@ -47,8 +47,17 @@ Four additional bridge cases cover all six selectors, single-clone snapshots,
 primitive guards, raw framing and old-context publication. Three real bridge
 mutations fail; the restored complete 51-case bridge suite passes.
 
-These focused checks and cross-target lint are separate from a normal desktop
-workflow and native foreign-platform execution. Linux is the implemented command
+The isolated normal Linux binary now completes195 editor observations, four
+menu cases and both drop scales. Six ordinary commands produce six original
+callbacks and seven actual private-peer effects; a held seek retains its original
+callback through real GTK library selection and then produces both source-matched
+effects. Its recorded release at0.893778319 seconds remains within the unchanged
+2-second native budget. Both nonraw routes reject without commands or effects.
+Source queries bracket each phase; actual command counters/PID waits and zero
+retention are independently checked. Zero retention is not a native runtime join.
+The complete audit passes37 negative controls and preserves actual normal Quit.
+[Normal runtime, frozen logs and independent report](baselines/spotify-commands-cleanup-linux-local.json).
+Native foreign-platform execution remains separate. Linux is the implemented command
 backend. Actual accounts, playback/audio devices, macOS/Windows command backends,
 full transport-buffer disposal and whole-application performance are not certified.
 

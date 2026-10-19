@@ -92,7 +92,9 @@ Windows and macOS state backends return explicit unsupported capability errors.
 All six bounded Linux playback controls now have native raw IPC and retained
 bridge routing. Accepted controls remain global across library selection;
 their early callbacks retain the original context without retagging the UI.
-Normal desktop command verification is still pending.
+The normal195-observation Linux workflow now compares seven original callbacks
+and nine actual private-peer effects, including held seek across real selection;
+actual accounts/audio playback remain unverified.
 [Native control contract](native-spotify-commands.md) and
 [foundation limits](workers/spotify-commands.md).
 OAuth, account providers, real Spotify sessions, actual audio playback, broad

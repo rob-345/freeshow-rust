@@ -7,15 +7,33 @@ exact raw numeric IPC. Accepted global effects survive library selection, while
 original-context early callbacks never retag the selected library. Terminal CLOSE
 retains actual child waits and owner joins. Five host entries, six parser cases
 and four added bridge cases pass; three real bridge mutations fail and the
-restored 51-case suite passes. A fresh normal binary from `a37f555e` is frozen
-before broader test builds. Its new GUI fixture and full integration verification
-are still pending. [Native control contract](native-spotify-commands.md).
+restored 51-case suite passes. The fresh normal binary from `a37f555e` is frozen
+before test builds. Its actual Linux desktop now passes **195 observations,
+four GTK menus and both drop scales**. Seven original callbacks and nine real
+private-peer effects match source across six ordinary controls and a held seek
+through actual GTK library selection; release occurs at0.893778319 seconds within
+the unchanged2-second deadline. Both nonraw routes reject without effects.
+Actual native settlement and peer waits remain separate from early callbacks.
+[Native control contract](native-spotify-commands.md).
 
 Native import shutdown now releases the real queued host plans between preparation
 close and terminal cleanup-thread join. Four bounded shutdown observers can be
 abandoned and retried without losing stages or native handles. The 28 foundation
 and eight host cases pass, including a genuine fence-only regression control.
 [Actual host composition and initial weak-control correction](workers/import-cleanup-host.md).
+
+The current integrated local checks pass **600 workspace Rust tests, 401 native
+entries across44 targets, 684 Node checks and20 frontend tests**. Node records689
+total entries with five foreign-platform skips. The AI feature run has18 passes,
+including three additional cases and15 repeats. Four JS and four Python fixture
+controls, strict workspace/native Clippy and normal/frontend builds pass.
+The independent completed audit verifies all15 persisted imports, three
+AI/catalogue phases,141 cover responses, two captured source pixel comparisons,
+actual Quit and37 negative controls.49 other editor diagnostics remain.
+The final audit and38 completed verification logs are frozen in a125-file reviewed
+archive before recording their digests.
+[Hashed local receipt](baselines/spotify-commands-cleanup-linux-local.json).
+
 
 Published `5434778f` CI completed with **three successes, two failures and one
 unexecuted cancellation**. Linux core/desktop and Windows native passed. Windows
@@ -51,8 +69,8 @@ on the same fixed runtime thread while preserving its sequential state lane and
 shared four-job budget. Early true means scheduling acceptance. Actual child
 kill/wait, retained effects after receipt Drop and real owner joins are tested.
 A reproduced stale-capability race now updates cached/public observations
-together and recovers through an actual reprobe. The new application command IPC above is integrated locally; its normal
-desktop command verification remains pending. [Foundation](workers/spotify-commands.md) and
+together and recovers through an actual reprobe. The application command IPC and actual retained desktop command phases above
+now pass the reviewed normal Linux workflow. [Foundation](workers/spotify-commands.md) and
 [race reproduction](workers/spotify-capability-race.md).
 
 The full local milestone passes **593 workspace Rust checks, 678 required-source

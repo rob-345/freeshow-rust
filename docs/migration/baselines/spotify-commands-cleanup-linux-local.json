@@ -1,0 +1,2450 @@
+{
+  "schemaVersion": 1,
+  "observedAtUtc": "2026-10-19T18:18:24.359903+00:00",
+  "baseline": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+  "runtimeSourceCommit": "a37f555e45b311777518bd4493bec052436013b3",
+  "guiFixtureCommit": "185d6c635c6d286089295b427731121ff952c6c9",
+  "normalBinary": {
+    "schemaVersion": 1,
+    "binary": {
+      "source": "/mnt/data/cache/freeshow-rust-build/device-id-integration/target/debug/freeshow-desktop",
+      "path": "/mnt/data/cache/freeshow-rust-build/spotify-cleanup/final-normal-a37f555e/target/debug/freeshow-desktop",
+      "bytes": 110488744,
+      "sha256": "3312c142bd492e7f89ef840086bef0be1de3dfd9356c03ad30eab9878ad758bd"
+    },
+    "desktopFeatures": [
+      "custom-protocol"
+    ],
+    "browseFeatures": [],
+    "localFeatures": {
+      "freeshow_audio": [],
+      "freeshow_midi": [],
+      "freeshow_files": [],
+      "freeshow_thumbnails": [],
+      "freeshow_imports": [],
+      "freeshow_cover_http": [],
+      "freeshow_media_copy": [],
+      "freeshow_assets": [],
+      "freeshow_opus": [],
+      "freeshow_remotes": [],
+      "freeshow_asset_plans": [],
+      "freeshow_media_copy_effects": [],
+      "freeshow_ffmpeg_download": [],
+      "freeshow_import_effects": [],
+      "freeshow_thumbnail_effects": [],
+      "freeshow_midi_ports": [
+        "default",
+        "native"
+      ],
+      "freeshow_ltc": [],
+      "freeshow_api": [],
+      "freeshow_cover_images": [],
+      "freeshow_timecode": [],
+      "freeshow_metadata_wire": [],
+      "freeshow_now_playing": [],
+      "freeshow_core": [],
+      "freeshow_icecast": [],
+      "freeshow_ai_status": [],
+      "freeshow_system": [],
+      "freeshow_encoders": [],
+      "freeshow_spotify": [],
+      "freeshow_audio_pipeline": [],
+      "freeshow_discovery": [],
+      "freeshow_browse": [],
+      "freeshow_media": [],
+      "freeshow_exif": [],
+      "freeshow_scriptures": [],
+      "freeshow_ai_local": [],
+      "freeshow_documents": [],
+      "freeshow_network": [],
+      "freeshow-desktop": [
+        "custom-protocol"
+      ]
+    },
+    "resources": [
+      {
+        "path": "controller/client.js",
+        "bytes": 120451,
+        "sha256": "4e97dd9fbbb85433250bbf1dffdf9eff959f554ceeee0a345fd06f7047ac8cbc"
+      },
+      {
+        "path": "controller/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "controller/index.html",
+        "bytes": 724,
+        "sha256": "7ee566ef9c0d705f074842b863fc404d18eda59654f8530ea9d867db082da4b8"
+      },
+      {
+        "path": "controller/manifest.json",
+        "bytes": 1140,
+        "sha256": "bd378c1db5f22dcb57c29df7983532fc3283544ceae14fe1f08bd91cc4c93cdb"
+      },
+      {
+        "path": "controller/styles.css",
+        "bytes": 5119,
+        "sha256": "5c9c7e953558697b67c144cf1094ba8a9190d5b62cf6126f8fe9583db0ed7d61"
+      },
+      {
+        "path": "controller/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      },
+      {
+        "path": "remote/client.js",
+        "bytes": 538536,
+        "sha256": "54548607c0d8d67b1e853d3d92c9316bee67c8ec1cfaad44adc6d238310851fc"
+      },
+      {
+        "path": "remote/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "remote/index.html",
+        "bytes": 759,
+        "sha256": "dfeaf0799c8cf595653ff1ec7c05704a7ad4ba61e2d5dc51417c644e98a54a4d"
+      },
+      {
+        "path": "remote/manifest.json",
+        "bytes": 1123,
+        "sha256": "6c97e0daf5743cc7268ddb429462ef1825306c5021b3122c541a55c2e96b948e"
+      },
+      {
+        "path": "remote/styles.css",
+        "bytes": 95888,
+        "sha256": "ff952338033431b584c665f440048d0d1ba8235b7d2529ec5e45ccfdffcac1d2"
+      },
+      {
+        "path": "remote/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      },
+      {
+        "path": "stage/client.js",
+        "bytes": 237034,
+        "sha256": "2bdbe95ae3c8b4ca22125fb050609e01cd38d3e42defca5eb155e2ba071e135a"
+      },
+      {
+        "path": "stage/html/navigation.js",
+        "bytes": 8635,
+        "sha256": "7f47e63c0e048addfc9794d8cdb33dc5e15e8888b52f07cd37ff0a641a7f71a1"
+      },
+      {
+        "path": "stage/html/show.css",
+        "bytes": 1643,
+        "sha256": "7c9b53c6416c8a51afc3af78b475b459cc3034ba320f45dbaa54c0d42d20a177"
+      },
+      {
+        "path": "stage/icon.png",
+        "bytes": 4902,
+        "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+      },
+      {
+        "path": "stage/index.html",
+        "bytes": 719,
+        "sha256": "602201ef24291a61b7bd37b5a7f275a2853041f386fcfbefafcaa94e3f18c7af"
+      },
+      {
+        "path": "stage/manifest.json",
+        "bytes": 1128,
+        "sha256": "f18464a42544a481e82863733c785c03912884c772f8c9afe1af27e6ceca2bd0"
+      },
+      {
+        "path": "stage/styles.css",
+        "bytes": 20200,
+        "sha256": "4b2d6d2163081aab0044825c8bafe49ce242290699349b79d64f4f2051642bb4"
+      },
+      {
+        "path": "stage/sw.js",
+        "bytes": 7939,
+        "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+      }
+    ],
+    "isolatedFromSubsequentCargoWrites": true,
+    "compilerProvenanceAttested": false
+  },
+  "compilerProvenanceAttested": false,
+  "verification": {
+    "workspaceRustPassed": 600,
+    "nativeRustPassed": 401,
+    "nativeTargetsExecuted": 44,
+    "nodePassed": 684,
+    "nodeTotal": 689,
+    "nodeForeignSkips": 5,
+    "frontendPassed": 20,
+    "aiFeatureRunPassed": 18,
+    "aiFeatureOnlyAdditional": 3,
+    "aiFeatureCommonRepeated": 15,
+    "desktopFixtureJsPassed": 4,
+    "desktopFixturePythonPassed": 4,
+    "binaryFreezeControlsPassed": 5,
+    "workspaceAndNativeStrictClippy": true,
+    "productionFrontendAndNormalBuild": true,
+    "sourceSnapshotCheck": true,
+    "fullParityGate": "expected failure: migration incomplete",
+    "countsAreSeparateExecutionsNotFeatureCompletion": true
+  },
+  "desktop": {
+    "observations": 195,
+    "menuCases": 4,
+    "dropScales": [
+      1,
+      2
+    ],
+    "diagnostics": {
+      "unsupported_command": 27,
+      "cover_unsupported": 1,
+      "midi_backend_unavailable": 4,
+      "io_error": 1,
+      "stale_generation": 15,
+      "stale_library": 1
+    },
+    "spotify": {
+      "phases": {
+        "ordinary": {
+          "sourceBefore": {
+            "phase": "ordinary",
+            "commands": [
+              {
+                "command": "playpause"
+              },
+              {
+                "command": "next"
+              },
+              {
+                "command": "prev"
+              },
+              {
+                "command": "pause"
+              },
+              {
+                "command": "setVolume",
+                "valueBits": "3fe0000000000001"
+              },
+              {
+                "command": "seek",
+                "valueBits": "40080000431bde83"
+              }
+            ],
+            "replies": [
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-playpause",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-next",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-prev",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-pause",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-setVolume",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-seek",
+                "sendUndefined": true
+              }
+            ],
+            "effects": [
+              {
+                "name": "PlayPause",
+                "args": []
+              },
+              {
+                "name": "Next",
+                "args": []
+              },
+              {
+                "name": "Previous",
+                "args": []
+              },
+              {
+                "name": "Pause",
+                "args": []
+              },
+              {
+                "name": "Set",
+                "args": [
+                  "org.mpris.MediaPlayer2.Player",
+                  "Volume",
+                  0.5000000000000001
+                ]
+              },
+              {
+                "name": "Get",
+                "args": [
+                  "org.mpris.MediaPlayer2.Player",
+                  "Metadata"
+                ]
+              },
+              {
+                "name": "SetPosition",
+                "args": [
+                  "/fixture/track_01",
+                  3000001
+                ]
+              }
+            ],
+            "scheduled": [
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Pause",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set string:org.mpris.MediaPlayer2.Player string:'Volume' variant:double:0.5000000000000001",
+              "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get string:org.mpris.MediaPlayer2.Player string:'Metadata'",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetPosition objpath:/fixture/track_01 int64:3000001"
+            ],
+            "sourceErrors": 0,
+            "earlyBeforeSeekEffect": true,
+            "update": null,
+            "cleanup": {
+              "sourceChildrenSettled": true,
+              "peerAndPrivateBusWaited": true
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "hashes": {
+                "src/electron/utils/spotify.ts": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+                "src/electron/IPC/responsesMain.ts": "70372b48b698f74f239b82f92e48dde69880a7c4d78af1a9f0e1723313fb57a3",
+                "src/electron/IPC/main.ts": "11afb38cdc1ca36134b48b7457da2cd27078dedd8b6d7a54cf24e0ecc0608609"
+              },
+              "platform": "linux",
+              "node": "22.21.1"
+            }
+          },
+          "before": {
+            "lastCommandError": null,
+            "drained": false,
+            "closing": false,
+            "activePid": 0,
+            "commandsCompleted": 0,
+            "completed": 8,
+            "spawned": 9,
+            "retained": 0,
+            "reaped": 9,
+            "commandPids": [],
+            "observers": 0,
+            "commands": 0,
+            "terminalError": null,
+            "capability": {
+              "state": "available"
+            },
+            "running": true,
+            "joined": false,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+            },
+            "queries": 8,
+            "commandFailures": 0
+          },
+          "context": {
+            "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+            "libraryGeneration": 0,
+            "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+          },
+          "callbacks": [
+            {
+              "sent": {
+                "command": "playpause"
+              },
+              "action": "command",
+              "context": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "phase": "ordinary",
+              "callbacks": [
+                {
+                  "messageKeys": [
+                    "channel",
+                    "data"
+                  ],
+                  "listener": "spotify-command-probe-ordinary-playpause",
+                  "args": 2,
+                  "callbackContext": {
+                    "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                    "libraryGeneration": 0,
+                    "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+                  },
+                  "message": {
+                    "channel": "SPOTIFY_COMMAND",
+                    "data": true
+                  }
+                }
+              ],
+              "current": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "sendUndefined": true
+            },
+            {
+              "sent": {
+                "command": "next"
+              },
+              "action": "command",
+              "context": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "phase": "ordinary",
+              "callbacks": [
+                {
+                  "messageKeys": [
+                    "channel",
+                    "data"
+                  ],
+                  "listener": "spotify-command-probe-ordinary-next",
+                  "args": 2,
+                  "callbackContext": {
+                    "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                    "libraryGeneration": 0,
+                    "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+                  },
+                  "message": {
+                    "channel": "SPOTIFY_COMMAND",
+                    "data": true
+                  }
+                }
+              ],
+              "current": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "sendUndefined": true
+            },
+            {
+              "sent": {
+                "command": "prev"
+              },
+              "action": "command",
+              "context": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "phase": "ordinary",
+              "callbacks": [
+                {
+                  "messageKeys": [
+                    "channel",
+                    "data"
+                  ],
+                  "listener": "spotify-command-probe-ordinary-prev",
+                  "args": 2,
+                  "callbackContext": {
+                    "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                    "libraryGeneration": 0,
+                    "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+                  },
+                  "message": {
+                    "channel": "SPOTIFY_COMMAND",
+                    "data": true
+                  }
+                }
+              ],
+              "current": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "sendUndefined": true
+            },
+            {
+              "sent": {
+                "command": "pause"
+              },
+              "action": "command",
+              "context": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "phase": "ordinary",
+              "callbacks": [
+                {
+                  "messageKeys": [
+                    "channel",
+                    "data"
+                  ],
+                  "listener": "spotify-command-probe-ordinary-pause",
+                  "args": 2,
+                  "callbackContext": {
+                    "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                    "libraryGeneration": 0,
+                    "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+                  },
+                  "message": {
+                    "channel": "SPOTIFY_COMMAND",
+                    "data": true
+                  }
+                }
+              ],
+              "current": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "sendUndefined": true
+            },
+            {
+              "sent": {
+                "valueBits": "3fe0000000000001",
+                "command": "setVolume"
+              },
+              "action": "command",
+              "context": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "phase": "ordinary",
+              "callbacks": [
+                {
+                  "messageKeys": [
+                    "channel",
+                    "data"
+                  ],
+                  "listener": "spotify-command-probe-ordinary-setVolume",
+                  "args": 2,
+                  "callbackContext": {
+                    "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                    "libraryGeneration": 0,
+                    "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+                  },
+                  "message": {
+                    "channel": "SPOTIFY_COMMAND",
+                    "data": true
+                  }
+                }
+              ],
+              "current": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "sendUndefined": true
+            },
+            {
+              "sent": {
+                "valueBits": "40080000431bde83",
+                "command": "seek"
+              },
+              "action": "command",
+              "context": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "phase": "ordinary",
+              "callbacks": [
+                {
+                  "messageKeys": [
+                    "channel",
+                    "data"
+                  ],
+                  "listener": "spotify-command-probe-ordinary-seek",
+                  "args": 2,
+                  "callbackContext": {
+                    "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                    "libraryGeneration": 0,
+                    "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+                  },
+                  "message": {
+                    "channel": "SPOTIFY_COMMAND",
+                    "data": true
+                  }
+                }
+              ],
+              "current": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "sendUndefined": true
+            }
+          ],
+          "pending": false,
+          "runtimeStart": 3,
+          "browserStart": 0,
+          "rejectedRoutes": {
+            "action": "routes",
+            "rejections": [
+              {
+                "code": "spotify_raw_body",
+                "route": "ipc_dispatch"
+              },
+              {
+                "code": "spotify_raw_body",
+                "route": "spotify_command"
+              }
+            ],
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+            },
+            "phase": "ordinary",
+            "callbacks": [],
+            "current": {
+              "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+            },
+            "sendUndefined": null
+          },
+          "earlyBeforeSeekEffect": true,
+          "after": {
+            "lastCommandError": null,
+            "drained": false,
+            "closing": false,
+            "activePid": 0,
+            "commandsCompleted": 6,
+            "completed": 8,
+            "spawned": 16,
+            "retained": 0,
+            "reaped": 16,
+            "commandPids": [],
+            "observers": 0,
+            "commands": 6,
+            "terminalError": null,
+            "capability": {
+              "state": "available"
+            },
+            "running": true,
+            "joined": false,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+            },
+            "queries": 8,
+            "commandFailures": 0
+          },
+          "effects": [
+            {
+              "name": "PlayPause",
+              "args": []
+            },
+            {
+              "name": "Next",
+              "args": []
+            },
+            {
+              "name": "Previous",
+              "args": []
+            },
+            {
+              "name": "Pause",
+              "args": []
+            },
+            {
+              "name": "Set",
+              "args": [
+                "org.mpris.MediaPlayer2.Player",
+                "Volume",
+                0.5000000000000001
+              ]
+            },
+            {
+              "name": "Get",
+              "args": [
+                "org.mpris.MediaPlayer2.Player",
+                "Metadata"
+              ]
+            },
+            {
+              "name": "SetPosition",
+              "args": [
+                "/fixture/track_01",
+                3000001
+              ]
+            }
+          ],
+          "peerExit": {
+            "pid": 847344,
+            "returncode": 0,
+            "waited": true
+          },
+          "sourceAfter": {
+            "phase": "ordinary",
+            "commands": [
+              {
+                "command": "playpause"
+              },
+              {
+                "command": "next"
+              },
+              {
+                "command": "prev"
+              },
+              {
+                "command": "pause"
+              },
+              {
+                "command": "setVolume",
+                "valueBits": "3fe0000000000001"
+              },
+              {
+                "command": "seek",
+                "valueBits": "40080000431bde83"
+              }
+            ],
+            "replies": [
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-playpause",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-next",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-prev",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-pause",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-setVolume",
+                "sendUndefined": true
+              },
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-ordinary-seek",
+                "sendUndefined": true
+              }
+            ],
+            "effects": [
+              {
+                "name": "PlayPause",
+                "args": []
+              },
+              {
+                "name": "Next",
+                "args": []
+              },
+              {
+                "name": "Previous",
+                "args": []
+              },
+              {
+                "name": "Pause",
+                "args": []
+              },
+              {
+                "name": "Set",
+                "args": [
+                  "org.mpris.MediaPlayer2.Player",
+                  "Volume",
+                  0.5000000000000001
+                ]
+              },
+              {
+                "name": "Get",
+                "args": [
+                  "org.mpris.MediaPlayer2.Player",
+                  "Metadata"
+                ]
+              },
+              {
+                "name": "SetPosition",
+                "args": [
+                  "/fixture/track_01",
+                  3000001
+                ]
+              }
+            ],
+            "scheduled": [
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Pause",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set string:org.mpris.MediaPlayer2.Player string:'Volume' variant:double:0.5000000000000001",
+              "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get string:org.mpris.MediaPlayer2.Player string:'Metadata'",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetPosition objpath:/fixture/track_01 int64:3000001"
+            ],
+            "sourceErrors": 0,
+            "earlyBeforeSeekEffect": true,
+            "update": null,
+            "cleanup": {
+              "sourceChildrenSettled": true,
+              "peerAndPrivateBusWaited": true
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "hashes": {
+                "src/electron/utils/spotify.ts": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+                "src/electron/IPC/responsesMain.ts": "70372b48b698f74f239b82f92e48dde69880a7c4d78af1a9f0e1723313fb57a3",
+                "src/electron/IPC/main.ts": "11afb38cdc1ca36134b48b7457da2cd27078dedd8b6d7a54cf24e0ecc0608609"
+              },
+              "platform": "linux",
+              "node": "22.21.1"
+            }
+          },
+          "commandRuntimeErrors": 0,
+          "browserErrors": 0
+        },
+        "held-switch": {
+          "sourceBefore": {
+            "phase": "held-switch",
+            "commands": [
+              {
+                "command": "seek",
+                "valueBits": "40080000431bde83"
+              }
+            ],
+            "replies": [
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-held-switch-seek",
+                "sendUndefined": true
+              }
+            ],
+            "effects": [
+              {
+                "name": "Get",
+                "args": [
+                  "org.mpris.MediaPlayer2.Player",
+                  "Metadata"
+                ]
+              },
+              {
+                "name": "SetPosition",
+                "args": [
+                  "/fixture/track_01",
+                  3000001
+                ]
+              }
+            ],
+            "scheduled": [
+              "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get string:org.mpris.MediaPlayer2.Player string:'Metadata'",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetPosition objpath:/fixture/track_01 int64:3000001"
+            ],
+            "sourceErrors": 0,
+            "earlyBeforeSeekEffect": true,
+            "update": {
+              "handlerSha256": "40ea283582bef5ce94246a165805c7fc5b295dc9b87dd483bf30874f713b54d4",
+              "effects": [
+                [
+                  "config.set",
+                  "dataPath",
+                  "/fixture/new"
+                ],
+                [
+                  "createStores",
+                  "/fixture/old"
+                ]
+              ],
+              "returnsUndefined": true,
+              "whileSeekMetadataHeld": true
+            },
+            "cleanup": {
+              "sourceChildrenSettled": true,
+              "peerAndPrivateBusWaited": true
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "hashes": {
+                "src/electron/utils/spotify.ts": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+                "src/electron/IPC/responsesMain.ts": "70372b48b698f74f239b82f92e48dde69880a7c4d78af1a9f0e1723313fb57a3",
+                "src/electron/IPC/main.ts": "11afb38cdc1ca36134b48b7457da2cd27078dedd8b6d7a54cf24e0ecc0608609"
+              },
+              "platform": "linux",
+              "node": "22.21.1"
+            }
+          },
+          "before": {
+            "lastCommandError": null,
+            "drained": false,
+            "closing": false,
+            "activePid": 0,
+            "commandsCompleted": 6,
+            "completed": 66,
+            "spawned": 74,
+            "retained": 0,
+            "reaped": 74,
+            "commandPids": [],
+            "observers": 0,
+            "commands": 6,
+            "terminalError": null,
+            "capability": {
+              "state": "available"
+            },
+            "running": true,
+            "joined": false,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+            },
+            "queries": 66,
+            "commandFailures": 0
+          },
+          "context": {
+            "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+            "libraryGeneration": 0,
+            "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+          },
+          "callbacks": [
+            {
+              "sent": {
+                "valueBits": "40080000431bde83",
+                "command": "seek"
+              },
+              "action": "command",
+              "context": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "phase": "held-switch",
+              "callbacks": [
+                {
+                  "messageKeys": [
+                    "channel",
+                    "data"
+                  ],
+                  "listener": "spotify-command-probe-held-switch-seek",
+                  "args": 2,
+                  "callbackContext": {
+                    "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                    "libraryGeneration": 0,
+                    "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+                  },
+                  "message": {
+                    "channel": "SPOTIFY_COMMAND",
+                    "data": true
+                  }
+                }
+              ],
+              "current": {
+                "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+                "libraryGeneration": 0,
+                "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+              },
+              "sendUndefined": true
+            }
+          ],
+          "pending": false,
+          "runtimeStart": 18,
+          "browserStart": 0,
+          "startedMonotonic": 504329.978349988,
+          "heldStatus": {
+            "lastCommandError": null,
+            "drained": false,
+            "closing": false,
+            "activePid": 0,
+            "commandsCompleted": 6,
+            "completed": 66,
+            "spawned": 75,
+            "retained": 1,
+            "reaped": 74,
+            "commandPids": [
+              853225
+            ],
+            "observers": 0,
+            "commands": 7,
+            "terminalError": null,
+            "capability": {
+              "state": "available"
+            },
+            "running": true,
+            "joined": false,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+            },
+            "queries": 66,
+            "commandFailures": 0
+          },
+          "selectedContext": {
+            "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/other-library",
+            "libraryGeneration": 1,
+            "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+          },
+          "releaseAfterSeconds": 0.8937783190049231,
+          "earlyBeforeSeekEffect": true,
+          "after": {
+            "lastCommandError": null,
+            "drained": false,
+            "closing": false,
+            "activePid": 0,
+            "commandsCompleted": 7,
+            "completed": 66,
+            "spawned": 76,
+            "retained": 0,
+            "reaped": 76,
+            "commandPids": [],
+            "observers": 0,
+            "commands": 7,
+            "terminalError": null,
+            "capability": {
+              "state": "available"
+            },
+            "running": true,
+            "joined": false,
+            "context": {
+              "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/selected-data",
+              "libraryGeneration": 0,
+              "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+            },
+            "queries": 66,
+            "commandFailures": 0
+          },
+          "effects": [
+            {
+              "name": "Get",
+              "args": [
+                "org.mpris.MediaPlayer2.Player",
+                "Metadata"
+              ]
+            },
+            {
+              "name": "SetPosition",
+              "args": [
+                "/fixture/track_01",
+                3000001
+              ]
+            }
+          ],
+          "peerExit": {
+            "pid": 853086,
+            "returncode": 0,
+            "waited": true
+          },
+          "sourceAfter": {
+            "phase": "held-switch",
+            "commands": [
+              {
+                "command": "seek",
+                "valueBits": "40080000431bde83"
+              }
+            ],
+            "replies": [
+              {
+                "message": {
+                  "channel": "SPOTIFY_COMMAND",
+                  "data": true
+                },
+                "messageKeys": [
+                  "channel",
+                  "data"
+                ],
+                "args": 2,
+                "listener": "spotify-command-probe-held-switch-seek",
+                "sendUndefined": true
+              }
+            ],
+            "effects": [
+              {
+                "name": "Get",
+                "args": [
+                  "org.mpris.MediaPlayer2.Player",
+                  "Metadata"
+                ]
+              },
+              {
+                "name": "SetPosition",
+                "args": [
+                  "/fixture/track_01",
+                  3000001
+                ]
+              }
+            ],
+            "scheduled": [
+              "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get string:org.mpris.MediaPlayer2.Player string:'Metadata'",
+              "dbus-send --type=method_call --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetPosition objpath:/fixture/track_01 int64:3000001"
+            ],
+            "sourceErrors": 0,
+            "earlyBeforeSeekEffect": true,
+            "update": {
+              "handlerSha256": "40ea283582bef5ce94246a165805c7fc5b295dc9b87dd483bf30874f713b54d4",
+              "effects": [
+                [
+                  "config.set",
+                  "dataPath",
+                  "/fixture/new"
+                ],
+                [
+                  "createStores",
+                  "/fixture/old"
+                ]
+              ],
+              "returnsUndefined": true,
+              "whileSeekMetadataHeld": true
+            },
+            "cleanup": {
+              "sourceChildrenSettled": true,
+              "peerAndPrivateBusWaited": true
+            },
+            "provenance": {
+              "sourceCommit": "2d94defcf98175e4f5c9504e7f4fd1d33c35c975",
+              "hashes": {
+                "src/electron/utils/spotify.ts": "75d1ceab68e46c2a21dfc5a61f4e667f1d7d130e7b34b377938b7a97082918fd",
+                "src/electron/IPC/responsesMain.ts": "70372b48b698f74f239b82f92e48dde69880a7c4d78af1a9f0e1723313fb57a3",
+                "src/electron/IPC/main.ts": "11afb38cdc1ca36134b48b7457da2cd27078dedd8b6d7a54cf24e0ecc0608609"
+              },
+              "platform": "linux",
+              "node": "22.21.1"
+            }
+          },
+          "commandRuntimeErrors": 0,
+          "browserErrors": 0
+        }
+      },
+      "scope": "actual private Linux GIO peer, no account or physical playback",
+      "nativeCommandDeadlineMs": 2000
+    },
+    "sourceComparedAiAndCataloguePhases": 3,
+    "persistedImportedShows": 15,
+    "coverHttpResponses": 141,
+    "jpegSourcePixelComparisons": 2,
+    "closeDrain": {
+      "pid": 846320,
+      "finalSave": {
+        "closeWhenFinished": true,
+        "at": 108106.00000000001,
+        "token": "35811f32-29be-4110-be58-9960cc816f42:7",
+        "names": [
+          "Second library",
+          "Uncached during backup",
+          "After queued save"
+        ]
+      },
+      "pending": {
+        "phaseJobLimit": 32,
+        "phaseFinishCapacity": 4,
+        "phaseAdmissionClosed": false,
+        "retainedPhaseJobs": 0,
+        "phaseJobCapacity": 4,
+        "queuedJobs": 2,
+        "queuedReads": 0,
+        "activeJob": {
+          "phase": "backupCompression",
+          "channel": "MAIN",
+          "command": "SAVE"
+        },
+        "queueCapacity": 8,
+        "readQueueCapacity": 8,
+        "activeReads": 0,
+        "context": {
+          "dataPath": "/tmp/freeshow-desktop-test-xus35zcx/other-library",
+          "libraryGeneration": 1,
+          "runtimeId": "617b372a-914b-4f58-8099-ad89d8bc2406"
+        },
+        "acceptingRequests": true,
+        "phaseCapacity": 4,
+        "workerRunning": true,
+        "readWorkers": 2,
+        "retainedPhases": 0,
+        "retainedPhaseObservers": 0
+      },
+      "backup": "/tmp/freeshow-desktop-test-xus35zcx/other-library/Backups/2026-10-19_18-08-1_auto.zip",
+      "configWritePersisted": true,
+      "processExited": true
+    }
+  },
+  "independentAudit": {
+    "sealed": true,
+    "report": {
+      "path": "/mnt/data/cache/freeshow-rust-build/spotify-cleanup/gui-185d6c63-reviewed/independent-audit/FINAL-20261019T181516Z-822ec110.json",
+      "bytes": 18313,
+      "sha256": "f10a63e22cb61b9b56f732cd50f664053f94c286a323232500f8e42bbc917f4c"
+    },
+    "negativeControlsPassed": 37,
+    "reportContent": {
+      "schemaVersion": 1,
+      "phase": "FINAL",
+      "sealed": true,
+      "completeForDeclaredScope": true,
+      "at": "2026-10-19T18:15:16.045277+00:00",
+      "root": "/home/rob-admin/GitHub/freeshow-worktrees/spotify-cleanup-integration",
+      "archive": "/mnt/data/cache/freeshow-rust-build/spotify-cleanup/gui-185d6c63",
+      "provenance": {
+        "actualBinary": {
+          "source": "/mnt/data/cache/freeshow-rust-build/device-id-integration/target/debug/freeshow-desktop",
+          "path": "/mnt/data/cache/freeshow-rust-build/spotify-cleanup/final-normal-a37f555e/target/debug/freeshow-desktop",
+          "bytes": 110488744,
+          "sha256": "3312c142bd492e7f89ef840086bef0be1de3dfd9356c03ad30eab9878ad758bd",
+          "independentSha256Verified": true,
+          "ELF64LittleEndianX86_64": true
+        },
+        "buildLog": {
+          "path": "/tmp/freeshow-spotify-cleanup-final-normal-binary-build.log",
+          "sha256": "53bfb2738cfd962b359d338ae442675ccdd657947157d584b3880f5b54ca65d6",
+          "compilerArtifacts": 572,
+          "localArtifacts": 38,
+          "desktopFeatures": [
+            "custom-protocol"
+          ],
+          "browseFeatures": [],
+          "noLocalTestHarnessFeature": true
+        },
+        "receipt": {
+          "path": "/tmp/freeshow-spotify-cleanup-final-normal-binary-receipt.json",
+          "sha256": "6147376cb1c37a021e82f13b92ae3433da4e252db4c6db0a55655e4fc22b7b7d"
+        },
+        "completeResources": [
+          {
+            "path": "controller/client.js",
+            "bytes": 120451,
+            "sha256": "4e97dd9fbbb85433250bbf1dffdf9eff959f554ceeee0a345fd06f7047ac8cbc"
+          },
+          {
+            "path": "controller/icon.png",
+            "bytes": 4902,
+            "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+          },
+          {
+            "path": "controller/index.html",
+            "bytes": 724,
+            "sha256": "7ee566ef9c0d705f074842b863fc404d18eda59654f8530ea9d867db082da4b8"
+          },
+          {
+            "path": "controller/manifest.json",
+            "bytes": 1140,
+            "sha256": "bd378c1db5f22dcb57c29df7983532fc3283544ceae14fe1f08bd91cc4c93cdb"
+          },
+          {
+            "path": "controller/styles.css",
+            "bytes": 5119,
+            "sha256": "5c9c7e953558697b67c144cf1094ba8a9190d5b62cf6126f8fe9583db0ed7d61"
+          },
+          {
+            "path": "controller/sw.js",
+            "bytes": 7939,
+            "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+          },
+          {
+            "path": "remote/client.js",
+            "bytes": 538536,
+            "sha256": "54548607c0d8d67b1e853d3d92c9316bee67c8ec1cfaad44adc6d238310851fc"
+          },
+          {
+            "path": "remote/icon.png",
+            "bytes": 4902,
+            "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+          },
+          {
+            "path": "remote/index.html",
+            "bytes": 759,
+            "sha256": "dfeaf0799c8cf595653ff1ec7c05704a7ad4ba61e2d5dc51417c644e98a54a4d"
+          },
+          {
+            "path": "remote/manifest.json",
+            "bytes": 1123,
+            "sha256": "6c97e0daf5743cc7268ddb429462ef1825306c5021b3122c541a55c2e96b948e"
+          },
+          {
+            "path": "remote/styles.css",
+            "bytes": 95888,
+            "sha256": "ff952338033431b584c665f440048d0d1ba8235b7d2529ec5e45ccfdffcac1d2"
+          },
+          {
+            "path": "remote/sw.js",
+            "bytes": 7939,
+            "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+          },
+          {
+            "path": "stage/client.js",
+            "bytes": 237034,
+            "sha256": "2bdbe95ae3c8b4ca22125fb050609e01cd38d3e42defca5eb155e2ba071e135a"
+          },
+          {
+            "path": "stage/html/navigation.js",
+            "bytes": 8635,
+            "sha256": "7f47e63c0e048addfc9794d8cdb33dc5e15e8888b52f07cd37ff0a641a7f71a1"
+          },
+          {
+            "path": "stage/html/show.css",
+            "bytes": 1643,
+            "sha256": "7c9b53c6416c8a51afc3af78b475b459cc3034ba320f45dbaa54c0d42d20a177"
+          },
+          {
+            "path": "stage/icon.png",
+            "bytes": 4902,
+            "sha256": "5f23584e1457c7b001fd92ab8cf6080c38ef255122ecf93c4161ec907936a87f"
+          },
+          {
+            "path": "stage/index.html",
+            "bytes": 719,
+            "sha256": "602201ef24291a61b7bd37b5a7f275a2853041f386fcfbefafcaa94e3f18c7af"
+          },
+          {
+            "path": "stage/manifest.json",
+            "bytes": 1128,
+            "sha256": "f18464a42544a481e82863733c785c03912884c772f8c9afe1af27e6ceca2bd0"
+          },
+          {
+            "path": "stage/styles.css",
+            "bytes": 20200,
+            "sha256": "4b2d6d2163081aab0044825c8bafe49ce242290699349b79d64f4f2051642bb4"
+          },
+          {
+            "path": "stage/sw.js",
+            "bytes": 7939,
+            "sha256": "1d30b11dff698a501bf723a4690435d60feecedf7f2af5cb5f45478ff6645901"
+          }
+        ],
+        "resourcesVerifiedActualBytesAndCompletePathSet": true,
+        "rootHead": "185d6c635c6d286089295b427731121ff952c6c9",
+        "nativeProductionBase": "a37f555e",
+        "laterTrackedChanges": [
+          ".github/workflows/rust-parity.yml",
+          "docs/migration/PLAN.md",
+          "docs/migration/PROGRESS.md",
+          "docs/migration/native-ai-spotify.md",
+          "docs/migration/native-spotify-commands.md",
+          "docs/migration/parity-status.json",
+          "docs/migration/workers/spotify-command-gui.md",
+          "tests/desktop/smoke.py",
+          "tests/desktop/spotify_command_fixture.test.mjs",
+          "tests/desktop/spotify_command_fixture_test.py",
+          "tests/desktop/spotify_command_oracle.mjs",
+          "tests/desktop/spotify_command_peer.py",
+          "tests/desktop/spotify_command_probe.js"
+        ],
+        "currentSourceHashes": {
+          "src-tauri/src/spotify.rs": "003c832637c78f1d8fc74e83ccc63d3530a575bf2fe20f4aa169346e150cef0f",
+          "src-tauri/src/spotify_input.rs": "128eeabfa63b53166a012ca2c64a0f79444ed42b44cb6264384228abde047f55",
+          "src-tauri/src/imports.rs": "7045f7a7e72e664a26a9b7ef7cf94236f9549622d8dfb8538fb2ae516eec702f",
+          "src-tauri/src/main.rs": "235d138fd1e7e2e803590ac5e4437b1935a1fa3ebce54715547e17514234ed57",
+          "src/frontend/rust/spotify.ts": "d7d762b3adb95a2d1439a5e9f37adaf01d8b658153ffa9ed57902957fd90f361",
+          "src/frontend/rust/bridge.ts": "8327dc183183040557bddb84792a643e2df1386a2b4e9fd93281c430edcf7c67",
+          "crates/freeshow-spotify/src/service.rs": "f814116b2909a897fbc3c87dca2e7a8e7f129abf484198bf6770a4680102ff85",
+          "crates/freeshow-imports/src/service.rs": "ac181fc313b1f9f07c400c6306bb7681aa97da577fd34ea30bf77a502bce85cd",
+          "scripts/migration/freeze-desktop-binary.py": "e233326f045dc975cae87330cc13d299172625c698c9a3d8716afb0312eb8827",
+          "scripts/migration/build-frontend.mjs": "72e2cd1352791fdea5dc90f27416b559364b0880a4603daf1d0591904c39abdf",
+          "Cargo.lock": "1ba852f0786b8f38d8ffef4308a630ee72b80579af2b7f9875a03b7475862fa2",
+          "src-tauri/Cargo.lock": "e791c2d34df384a537d671b33e932094ab5a9e34519ebd8a0a6f1567e6a0fb41"
+        },
+        "compilerProvenanceAttested": false,
+        "scope": "Actual local frozen ELF and both complete resource trees independently read and hashed. Compiler features/log and checkout hashes are observations, not compiler-input attestation; mutable original Cargo output may have subsequently changed."
+      },
+      "checks": {
+        "archiveFiles": 66,
+        "archiveWithOwnManifest": 67,
+        "archiveManifestSha256": "cf164eda0290368c0ec9eca10f7d60b9bee6d9ba6b5af7bfefbd4bd344ce4877",
+        "archiveVerifiedTwice": true,
+        "editorSteps": 195,
+        "menus": 4,
+        "dropScales": [
+          1,
+          2
+        ],
+        "spotifyPhases": 2,
+        "spotifyCallbacks": 7,
+        "spotifyPeerEffects": 9,
+        "nonrawRouteRejections": 2,
+        "heldReleaseSeconds": 0.8937783190049231,
+        "knownNativeCommandChildPidsAbsentAtAudit": true,
+        "actualPeerPidsAbsentAtAudit": true,
+        "AIPhases": 3,
+        "cataloguePhases": 3,
+        "sourceImportRequests": 9,
+        "persistedShows": 15,
+        "newUnicodeShows": 10,
+        "nowPlayingCases": 6,
+        "folderCases": 3,
+        "coverPhases": 14,
+        "coverHTTPRequests": 141,
+        "jpegCapturedPixelComparisons": 2,
+        "sourceRgbaBuffersIndependentlyVerified": 2,
+        "expectedRuntimeDiagnostics": 49,
+        "actualQuitPid": 846320,
+        "actualQuitPidAbsentAtAudit": true,
+        "passedNegativeControls": 37
+      },
+      "sourceRgbaEvidence": [
+        {
+          "name": "texture-17x11-no-icc",
+          "width": 17,
+          "height": 11,
+          "rgbaBytes": 748,
+          "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+          "jpegInputSha256": "f760426cb44ef09fe12dc8f0639d6b999ffacb5a07cc210ae6f9c2c3fab21a02",
+          "actualSourceBytesIndependentlyVerified": true
+        },
+        {
+          "name": "texture-64x48",
+          "width": 64,
+          "height": 48,
+          "rgbaBytes": 12288,
+          "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+          "jpegInputSha256": "071bf14ecbdf0b50dee73b016ba84f4c96c93fda66048e07adada16ff0a24c46",
+          "actualSourceBytesIndependentlyVerified": true
+        }
+      ],
+      "sourceImageReceiptSha256": "2f1327d2d2c3eea38dd0f05f4fd05afd50440f437aba53d0f92dd7019402ceda",
+      "diagnostics": [
+        {
+          "code": "cover_unsupported",
+          "channel": "NOW_PLAYING",
+          "command": null,
+          "count": 1
+        },
+        {
+          "code": "io_error",
+          "channel": "MAIN",
+          "command": "SAVE",
+          "count": 1
+        },
+        {
+          "code": "midi_backend_unavailable",
+          "channel": "MAIN",
+          "command": "GET_MIDI_INPUTS",
+          "count": 2
+        },
+        {
+          "code": "midi_backend_unavailable",
+          "channel": "MAIN",
+          "command": "GET_MIDI_OUTPUTS",
+          "count": 2
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "ACTIONS",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "ACTION_TAGS",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "AUDIO_CHANNELS_DATA",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "AUDIO_ROUTING",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "FOLDERS",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "PROJECT",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "SCRIPTURE",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "TIMERS",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "TIMER_TAGS",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "VARIABLES",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "REMOTE",
+          "command": "VARIABLE_TAGS",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "STAGE",
+          "command": "EVENTS",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "STAGE",
+          "command": "METRONOME",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "STAGE",
+          "command": "TIMERS",
+          "count": 1
+        },
+        {
+          "code": "stale_generation",
+          "channel": "STAGE",
+          "command": "VARIABLES",
+          "count": 1
+        },
+        {
+          "code": "stale_library",
+          "channel": "MAIN",
+          "command": "SAVE",
+          "count": 1
+        },
+        {
+          "code": "unsupported_command",
+          "channel": "OUTPUT",
+          "command": "CAPTURE",
+          "count": 19
+        },
+        {
+          "code": "unsupported_command",
+          "channel": "OUTPUT",
+          "command": "SET_VALUE",
+          "count": 8
+        }
+      ],
+      "negativeControls": {
+        "spotify": [
+          "false-reply",
+          "numeric-true",
+          "wrong-listener",
+          "wrong-arguments",
+          "captured-key-order",
+          "private-callback-field",
+          "private-message-field",
+          "duplicate-callback",
+          "nonvoid-send",
+          "wrong-runtime",
+          "wrong-generation",
+          "wrong-path",
+          "wrong-request-origin",
+          "changed-bits",
+          "retained-ready-result",
+          "live-command-child",
+          "unreaped-child",
+          "unfinished-continuation"
+        ],
+        "AIAndImports": [
+          "status-ready",
+          "status-type",
+          "status-message",
+          "status-listener",
+          "status-runtime",
+          "status-path",
+          "status-generation",
+          "status-private",
+          "status-arguments",
+          "status-key-order",
+          "content",
+          "extra-private",
+          "path",
+          "type",
+          "captured-key-order"
+        ],
+        "archiveManifest": [
+          "changed-size",
+          "changed-hash",
+          "duplicate-path",
+          "missing-path"
+        ]
+      },
+      "subreports": [
+        {
+          "path": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/ai-imports-actual-20261019T1811Z.json",
+          "sha256": "797be816ed35306d236da57e8e65ac02dc84a816985df46e941b36ccd0283abe",
+          "bytes": 16118
+        },
+        {
+          "path": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/spotify-actual-20261019T1814Z.json",
+          "sha256": "b9279129e772063bbd64414f460878ffe8e9323d9a656a5b390ff802299bc7f2",
+          "bytes": 3498
+        },
+        {
+          "path": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/now-playing-actual-20261019T1814Z.json",
+          "sha256": "111b445d92ebf42d9d957678f3f9fc5ce913e60952ef1c94de9392e2aeb3235f",
+          "bytes": 704
+        },
+        {
+          "path": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/cover-actual-20261019T1814Z.json",
+          "sha256": "385cb3b14d0ba275b60c6a883c02221352825eeb6a0bd12e58f5ef60c15f55d5",
+          "bytes": 802
+        },
+        {
+          "path": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/pixel-actual-20261019T1814Z.json",
+          "sha256": "9a52a0e691f9ad51b8e313e864ac992442945011f222403bad88f5ac4f0e2d9d",
+          "bytes": 1174
+        }
+      ],
+      "finishedInputSnapshots": [
+        {
+          "source": "/tmp/freeshow-spotify-cleanup-gui-desktop.log",
+          "snapshot": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/finished-inputs/freeshow-spotify-cleanup-gui-desktop.log",
+          "bytes": 12479,
+          "sha256": "88cccfec6b2555e932c5b648a2239ee4bf655ba3d8129cff66af10f2aa772d8b"
+        },
+        {
+          "source": "/tmp/freeshow-spotify-cleanup-gui-menu.log",
+          "snapshot": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/finished-inputs/freeshow-spotify-cleanup-gui-menu.log",
+          "bytes": 5579,
+          "sha256": "26ed12b6159b37178a29130553e9e4ac93343432c04c604499f68230b3977836"
+        },
+        {
+          "source": "/tmp/freeshow-spotify-cleanup-gui-drop-1.log",
+          "snapshot": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/finished-inputs/freeshow-spotify-cleanup-gui-drop-1.log",
+          "bytes": 5674,
+          "sha256": "1f3ab11efb8a2c1fd07bf1462e5bdc93e6ccf05cd03c9a17e1755d4745a0cdcc"
+        },
+        {
+          "source": "/tmp/freeshow-spotify-cleanup-gui-drop-2.log",
+          "snapshot": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/finished-inputs/freeshow-spotify-cleanup-gui-drop-2.log",
+          "bytes": 5674,
+          "sha256": "168716a261add20a73eb82b430bd48dd31aa58521fee32b53ce22ae502a3283c"
+        },
+        {
+          "source": "/tmp/freeshow-spotify-cleanup-final-normal-binary-receipt.json",
+          "snapshot": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/finished-inputs/freeshow-spotify-cleanup-final-normal-binary-receipt.json",
+          "bytes": 4821,
+          "sha256": "6147376cb1c37a021e82f13b92ae3433da4e252db4c6db0a55655e4fc22b7b7d"
+        },
+        {
+          "source": "/tmp/freeshow-spotify-cleanup-final-normal-binary-build.log",
+          "snapshot": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/finished-inputs/freeshow-spotify-cleanup-final-normal-binary-build.log",
+          "bytes": 520387,
+          "sha256": "53bfb2738cfd962b359d338ae442675ccdd657947157d584b3880f5b54ca65d6"
+        },
+        {
+          "source": "/tmp/freeshow-spotify-cleanup-final-normal-binary-build-stderr.log",
+          "snapshot": "/mnt/data/cache/freeshow-native-audits/spotify-cleanup-185d6c63/finished-inputs/freeshow-spotify-cleanup-final-normal-binary-build-stderr.log",
+          "bytes": 448,
+          "sha256": "b371471a38cb057648404e2a1f1c0562a7dbe4416f5049fa8094e87cedc8b2a6"
+        }
+      ],
+      "limits": [
+        "Normal local frozen ELF and20remote resource files independently hashed; compiler features/current source snapshots observed, not cryptographically attested compiler inputs.",
+        "GUI artifacts are observed callbacks/capturedkeyarrays/fullcontexts and actual recorded private-peer effects; auditors did not launch/repeat a WebView or native app.",
+        "Fresh original TypeScript command replay used its own actual private GIO peer/session bus; no Spotify account, user session, physical playback or credentials.",
+        "Native command child counters show actual wait/reap/settlement and no retained result; ordinary joined=false/drained=false are not relabeled runtime/threadjoin. Captured fixture peer wait0 and presently absent known PIDs corroborate cleanup.",
+        "GTK library-switch release is the actual recorded0.893778319s within configured2s budget with no command errors; this is functional deadline evidence, not a performance improvement or general scheduling equivalence.",
+        "Fifteen persisted imported files independently reread/hashes/IDs/names/lyrics/selected unknown fields checked against source fixtures; not arbitrary importer/full schema or every dynamic ShowObj byte parity.",
+        "AI inventory is inert32bytes/missing pinned model, catalogue is five declarations only; readiness/backendhealth/auth/inference not verified.",
+        "JPEG source RGBA buffers independently inflated/hashed; captured native filesystem/pixel observations match. Native generated PNG bytes and original temporary media/profile files were not separately archived, and compressed PNG parity is expressly false.",
+        "Cover141checks apply recorded bounded GET/HEAD/range/fresh/options subset with all tested assertions; no unrestricted fullHTTP/multicast registration guarantee.",
+        "Quit captured final snapshot during real backup compression with queued jobs, persisted write/backup proof and actual process disappearance before operatorfinally. Per-owner workerthreadjoin is not independently reconstructed from processExit/zero-retention alone.",
+        "No full application parity, performance gain, account/hardware or foreign-platform GUI certification."
+      ]
+    }
+  },
+  "archives": {
+    "original": "/mnt/data/cache/freeshow-rust-build/spotify-cleanup/gui-185d6c63",
+    "originalFileCountExcludingManifest": 66,
+    "reviewed": "/mnt/data/cache/freeshow-rust-build/spotify-cleanup/gui-185d6c63-reviewed",
+    "filesExcludingReviewedManifest": 125,
+    "reviewedManifest": {
+      "path": "/mnt/data/cache/freeshow-rust-build/spotify-cleanup/gui-185d6c63-reviewed/reviewed-files.json",
+      "bytes": 21375,
+      "sha256": "622af75a810c6a8db8dca7b07728555f3de03d970e17e96bfd5e25a3b9a36055"
+    },
+    "files": [
+      {
+        "path": "desktop/ai-spotify.json",
+        "bytes": 26296,
+        "sha256": "91f01b6ca8b2ad5c791e1bd1683f4f55251ae975226f6e1ff6441fa66b8c6b5e"
+      },
+      {
+        "path": "desktop/api.json",
+        "bytes": 43880,
+        "sha256": "e0cdf97913a673fd03717d8a18d2dc0a7d2ecf0de919cb76e629d64ce243329f"
+      },
+      {
+        "path": "desktop/assets.json",
+        "bytes": 3021,
+        "sha256": "fb72ec30b7e4318a4d2674c357449b2ce1f9062b4a6e1e15a802fb5471b78593"
+      },
+      {
+        "path": "desktop/audio-metadata.json",
+        "bytes": 2614,
+        "sha256": "054c9bbfe241d5ad205085444c6d0bb3e19e5f07b3ffdfacc72dba8cb27e8039"
+      },
+      {
+        "path": "desktop/audio-stream.json",
+        "bytes": 200049,
+        "sha256": "9a094d1f7d07c27b005d983c25df78b6a66ce297fc9a7c9584de3fb68df5bcde"
+      },
+      {
+        "path": "desktop/browse.json",
+        "bytes": 8750,
+        "sha256": "0f91a810b62156143cfaf5fcb2eccb5b29e486849679870e5235dabeddc249e0"
+      },
+      {
+        "path": "desktop/close-drain.json",
+        "bytes": 1155,
+        "sha256": "146057bb6497bb894dfac42f56eca0165fa51a5ae9bc268228a39e319d98cdb1"
+      },
+      {
+        "path": "desktop/device-providers.json",
+        "bytes": 27775,
+        "sha256": "89b9af58fb9006f11b93b50d14a1f71d38c499e2f8743bc01faf527869985886"
+      },
+      {
+        "path": "desktop/driver.log",
+        "bytes": 24114,
+        "sha256": "e51df225bdeb9e574bb4d3f566714ba760de0a0b1212d066bec27725ec82841c"
+      },
+      {
+        "path": "desktop/editor.png",
+        "bytes": 101895,
+        "sha256": "19f8604fd79b390421e838727bb96625cf1e8249005c84548b3b57ca9b2d0009"
+      },
+      {
+        "path": "desktop/encoders.json",
+        "bytes": 25497,
+        "sha256": "bbd7c50f46f1b942340c02a0eb10240d7d5e9525e625e2afe7dbdfe5bce9f465"
+      },
+      {
+        "path": "desktop/ffmpeg-download.json",
+        "bytes": 3181,
+        "sha256": "9cfbadb4788b1e4459df720898ef867725a6adadd536ff0a98b35dc50f9e6557"
+      },
+      {
+        "path": "desktop/file-reads.json",
+        "bytes": 3974,
+        "sha256": "ccc23d6a13c02325cdbcf497ae969eacd641818d176fe29df5b0cb2a6a07156f"
+      },
+      {
+        "path": "desktop/imported-shows/Native CSV.show",
+        "bytes": 1075,
+        "sha256": "5d5eb81f8f5bbec2f164b83284aadc17b93fef0b92c8d9a8739260586e9f807d"
+      },
+      {
+        "path": "desktop/imported-shows/Native ChordPro PRO 敬拜.show",
+        "bytes": 779,
+        "sha256": "5dcb60d5fab023b9040b524c6372fa8e55d441b69505f48c85f34d0cb85e8cbb"
+      },
+      {
+        "path": "desktop/imported-shows/Native ChordPro.show",
+        "bytes": 744,
+        "sha256": "147b92628d17f22b30aa851150b3145d2285f30358237c2875f2442887e5dced"
+      },
+      {
+        "path": "desktop/imported-shows/Native EasySlides Second 敬拜.show",
+        "bytes": 643,
+        "sha256": "44208eb19b19daa893dcc123e1568af9f7a340e4ca434012fd3b2129657f6255"
+      },
+      {
+        "path": "desktop/imported-shows/Native EasySlides 敬拜.show",
+        "bytes": 709,
+        "sha256": "b7b112a820051082d867fc0fc951f86f426408ce419434915edb580fbeb3b99c"
+      },
+      {
+        "path": "desktop/imported-shows/Native MediaShout 敬拜.show",
+        "bytes": 856,
+        "sha256": "999a4fcf5c776e23d1be325a30e20fa0b80fc5272b6da00cccd4680842814f72"
+      },
+      {
+        "path": "desktop/imported-shows/Native OpenLP 敬拜.show",
+        "bytes": 965,
+        "sha256": "252c8300ee43311b23a68e28d9f80f7d355d50fc3506bb74a8572b36735c9fb1"
+      },
+      {
+        "path": "desktop/imported-shows/Native OpenSong 敬拜.show",
+        "bytes": 1015,
+        "sha256": "3f85a26dda7553d71ad5c69e8cfbcf082ea81ad343d64f976aa90c59c4b0bcff"
+      },
+      {
+        "path": "desktop/imported-shows/Native Quelea 敬拜.show",
+        "bytes": 785,
+        "sha256": "1e39f8cca9651ba360446878547418eb8121005a9690ca251b55dfd4129b8d9a"
+      },
+      {
+        "path": "desktop/imported-shows/Native SongBeamer 敬拜.show",
+        "bytes": 956,
+        "sha256": "3a5b25d3fcdb3a7064ae87716081d00ed08a942cdde5be62d82b2c2fe7ca1df0"
+      },
+      {
+        "path": "desktop/imported-shows/Native VerseVIEW 敬拜.show",
+        "bytes": 815,
+        "sha256": "61f0061d3816ba6013f4a2ef697e1e5f4b2333fd2219f41136506a19f829143b"
+      },
+      {
+        "path": "desktop/imported-shows/Native VideoPsalm 敬拜.show",
+        "bytes": 1124,
+        "sha256": "623d1bf1ac40573f554044ad9a4d8413a19d364f712b1d793fd0912f12d79e73"
+      },
+      {
+        "path": "desktop/imported-shows/Native bundle show.show",
+        "bytes": 1225,
+        "sha256": "1503c19766124e0b46eefb0edd45113697272acb69865ddb16b81cace5666bcb"
+      },
+      {
+        "path": "desktop/imported-shows/Native show import.show",
+        "bytes": 1107,
+        "sha256": "ed5fc81e9c80f21cb1494f3c9d8230e7153b416510231ca108e1c0dfcd335ae1"
+      },
+      {
+        "path": "desktop/imported-shows/Native text 敬拜.show",
+        "bytes": 715,
+        "sha256": "b448cd1f6587672adb9cbdc42b314e5940fde4ada21eac6226c780bdc5803c04"
+      },
+      {
+        "path": "desktop/imports.json",
+        "bytes": 48208,
+        "sha256": "2fa631d7becba2fd161565d0c43d260995449a9289a0efe7f307e660622bc018"
+      },
+      {
+        "path": "desktop/library-switch.png",
+        "bytes": 110314,
+        "sha256": "9cf86c2ea56d664325ddbdd787da244a333b22704e49a2773a1ec55792af2dd5"
+      },
+      {
+        "path": "desktop/maximize-reply.json",
+        "bytes": 166,
+        "sha256": "11f9fa0d08332d48fa892565525f5eead973ff55e3f9f528b3721262be96e8f0"
+      },
+      {
+        "path": "desktop/media-copy.json",
+        "bytes": 10213,
+        "sha256": "b555c4ed9d0113552f9638068ecdf962cd145dba090eae7812b7516aeb694451"
+      },
+      {
+        "path": "desktop/media-folder-reset.json",
+        "bytes": 589,
+        "sha256": "53f510cc06da8426a7f09faabf1cd0f7437ad8b33b5ed244dbd53bfae8e60be9"
+      },
+      {
+        "path": "desktop/media-locate.json",
+        "bytes": 2055,
+        "sha256": "9bd9f071c072a95d02604222d5326ff8fb2b0d5d91e102eb9a4b93d21dffa8cd"
+      },
+      {
+        "path": "desktop/media-probe.json",
+        "bytes": 10028,
+        "sha256": "33e8208702bf5240cd664d83595c87ac0d9c43377d7dfb8fda9089468a315381"
+      },
+      {
+        "path": "desktop/midi.json",
+        "bytes": 4312,
+        "sha256": "af4682eccaf97df17de6a4df70f2acc6ce531190eded0828c32fa60d87abd930"
+      },
+      {
+        "path": "desktop/network-queries.json",
+        "bytes": 16785,
+        "sha256": "220fa4dc8b0a9dfe6c5540e9b1df7567f970da62a4adfc686653304a13da33c5"
+      },
+      {
+        "path": "desktop/now-playing-folder-alerts.json",
+        "bytes": 13869,
+        "sha256": "b45e6dab9d9e7fa8ac9ec39781a00f289fcfeb2b8e3bcbb6af9ada8313fd78cb"
+      },
+      {
+        "path": "desktop/now-playing.json",
+        "bytes": 154997,
+        "sha256": "79cf9e28b32a1edf862a4f6db6b843c5f4d19da970d134995b002652c94c64e7"
+      },
+      {
+        "path": "desktop/osc-loopback.json",
+        "bytes": 133,
+        "sha256": "21206a466ca3e260f87a12949274e813b3afcc2e35dbd64c8fb8c6eef41d0ad0"
+      },
+      {
+        "path": "desktop/output-chorus.png",
+        "bytes": 6745,
+        "sha256": "5ea0cc78f530a5b20dacb48adf1ad1d80865a5179f14bc5bbd7a7b6fd6131b4d"
+      },
+      {
+        "path": "desktop/output-scripture.png",
+        "bytes": 8223,
+        "sha256": "a33b99e0e02fd07f825412e5635d3b7a00a779ee4c7baace0e2ca858cc9ad3e7"
+      },
+      {
+        "path": "desktop/output-targeted-primary.png",
+        "bytes": 8807,
+        "sha256": "b3d367889d0884512f43c6b86f3b0a9ed245a890fb2ddab2129180d3e9f5b250"
+      },
+      {
+        "path": "desktop/output-targeted-secondary.png",
+        "bytes": 6745,
+        "sha256": "5ea0cc78f530a5b20dacb48adf1ad1d80865a5179f14bc5bbd7a7b6fd6131b4d"
+      },
+      {
+        "path": "desktop/output-verse.png",
+        "bytes": 8746,
+        "sha256": "b40cfb3c797ba56ab94340f86ed0bae9448fc972ece5f20b5f3c400168d37a78"
+      },
+      {
+        "path": "desktop/receipt.json",
+        "bytes": 330535,
+        "sha256": "52902a8fbefeac3bcc0b57885265622d1f470a73371330c9995d089281792766"
+      },
+      {
+        "path": "desktop/remote-covers.json",
+        "bytes": 128194,
+        "sha256": "38157a530fc1abf6bbf50307b94bbde6c39876173782b0c33fb1bd6d8d79161f"
+      },
+      {
+        "path": "desktop/remotes.json",
+        "bytes": 84697,
+        "sha256": "4b875aaa37407ae0792199a5fec333f70f8c652bb5c028d1ade5ebccdd704c72"
+      },
+      {
+        "path": "desktop/responsiveness.json",
+        "bytes": 26807,
+        "sha256": "b05a44630fc56c2f781dc8271ccd9db01060ada8f286480336a41e43728b209c"
+      },
+      {
+        "path": "desktop/save-revision-race.json",
+        "bytes": 3063,
+        "sha256": "99fa3602c004d83ce010a11dd8ee4a52c83d32d67aef47df491b610aad0c3ff3"
+      },
+      {
+        "path": "desktop/saved-before-dialog.show",
+        "bytes": 2174,
+        "sha256": "3a65d86d1783ad0c29baaabc3a1a91603f63013e4ffc7a59971181cc99c042a6"
+      },
+      {
+        "path": "desktop/saved.show",
+        "bytes": 2174,
+        "sha256": "3a65d86d1783ad0c29baaabc3a1a91603f63013e4ffc7a59971181cc99c042a6"
+      },
+      {
+        "path": "desktop/scriptures.json",
+        "bytes": 14123,
+        "sha256": "25a55f72d0433eeefc1c63d9fb430c775e686804fc6e85e72877e054dc2782fa"
+      },
+      {
+        "path": "desktop/spotify-commands.json",
+        "bytes": 31564,
+        "sha256": "57ccd44951330fe495c5ebc0ab32fbe6ec8fbec8f2b9952803d1c7009604747b"
+      },
+      {
+        "path": "desktop/stale-save-recovery.json",
+        "bytes": 1033,
+        "sha256": "c14dada90c56f010e23b75b86dbe85376b05bf43e2b033ed63fa3fb6aff2a881"
+      },
+      {
+        "path": "desktop/system-info.json",
+        "bytes": 2375,
+        "sha256": "bbbf523cc4343bfffc2f4b953f794d052e3d6d60e493999ba6222ac5be4e7823"
+      },
+      {
+        "path": "desktop/thumbnails.json",
+        "bytes": 18486,
+        "sha256": "984691e11549a6e66af79cdeda3e4b6b9fbbf17fd09a806df53d852d29fd70f0"
+      },
+      {
+        "path": "desktop/timecode.json",
+        "bytes": 441026,
+        "sha256": "ed0b81fa5b003ba659cbab84abfa3b134cc95dcfca30315a112bc4baba326f0b"
+      },
+      {
+        "path": "desktop/uncached-show-read.json",
+        "bytes": 3155,
+        "sha256": "f9881e194ed0b97bcc73a47d9a7bf9682d352f39f3744d602183bb99a92f9251"
+      },
+      {
+        "path": "files.json",
+        "bytes": 10360,
+        "sha256": "cf164eda0290368c0ec9eca10f7d60b9bee6d9ba6b5af7bfefbd4bd344ce4877"
+      },
+      {
+        "path": "independent-audit/FINAL-20261019T181516Z-822ec110.json",
+        "bytes": 18313,
+        "sha256": "f10a63e22cb61b9b56f732cd50f664053f94c286a323232500f8e42bbc917f4c"
+      },
+      {
+        "path": "independent-audit/ai-imports-actual-20261019T1811Z.json",
+        "bytes": 16118,
+        "sha256": "797be816ed35306d236da57e8e65ac02dc84a816985df46e941b36ccd0283abe"
+      },
+      {
+        "path": "independent-audit/audit-ai-imports.mjs",
+        "bytes": 24430,
+        "sha256": "fd9224f6587b79d8ec5daad7fe4f6fb136ecaf9d69192a2827493de2deb1d6f9"
+      },
+      {
+        "path": "independent-audit/audit-final.py",
+        "bytes": 12550,
+        "sha256": "d050c9346bf53eb373600588a538d6413fc4eafb2798510d33cf1932464d39b9"
+      },
+      {
+        "path": "independent-audit/audit-provenance.py",
+        "bytes": 5055,
+        "sha256": "8e4117e94ebd04017802aa66b6fcfd9d9a7bf7f1e6aa42b83ea1f7c6273b9c0a"
+      },
+      {
+        "path": "independent-audit/audit-retained.py",
+        "bytes": 10177,
+        "sha256": "0782d5c70c1f52e0c246f18ec14a0712b3ea60e39b5e93b6d1e3c142c55e3c8f"
+      },
+      {
+        "path": "independent-audit/audit-spotify.mjs",
+        "bytes": 10287,
+        "sha256": "6d01953c1d084bb4e516c29a124d545baa6d3f9b5c7fe4da650aa52dca73eadc"
+      },
+      {
+        "path": "independent-audit/cover-actual-20261019T1814Z.json",
+        "bytes": 802,
+        "sha256": "385cb3b14d0ba275b60c6a883c02221352825eeb6a0bd12e58f5ef60c15f55d5"
+      },
+      {
+        "path": "independent-audit/finished-inputs/freeshow-spotify-cleanup-final-normal-binary-build-stderr.log",
+        "bytes": 448,
+        "sha256": "b371471a38cb057648404e2a1f1c0562a7dbe4416f5049fa8094e87cedc8b2a6"
+      },
+      {
+        "path": "independent-audit/finished-inputs/freeshow-spotify-cleanup-final-normal-binary-build.log",
+        "bytes": 520387,
+        "sha256": "53bfb2738cfd962b359d338ae442675ccdd657947157d584b3880f5b54ca65d6"
+      },
+      {
+        "path": "independent-audit/finished-inputs/freeshow-spotify-cleanup-final-normal-binary-receipt.json",
+        "bytes": 4821,
+        "sha256": "6147376cb1c37a021e82f13b92ae3433da4e252db4c6db0a55655e4fc22b7b7d"
+      },
+      {
+        "path": "independent-audit/finished-inputs/freeshow-spotify-cleanup-gui-desktop.log",
+        "bytes": 12479,
+        "sha256": "88cccfec6b2555e932c5b648a2239ee4bf655ba3d8129cff66af10f2aa772d8b"
+      },
+      {
+        "path": "independent-audit/finished-inputs/freeshow-spotify-cleanup-gui-drop-1.log",
+        "bytes": 5674,
+        "sha256": "1f3ab11efb8a2c1fd07bf1462e5bdc93e6ccf05cd03c9a17e1755d4745a0cdcc"
+      },
+      {
+        "path": "independent-audit/finished-inputs/freeshow-spotify-cleanup-gui-drop-2.log",
+        "bytes": 5674,
+        "sha256": "168716a261add20a73eb82b430bd48dd31aa58521fee32b53ce22ae502a3283c"
+      },
+      {
+        "path": "independent-audit/finished-inputs/freeshow-spotify-cleanup-gui-menu.log",
+        "bytes": 5579,
+        "sha256": "26ed12b6159b37178a29130553e9e4ac93343432c04c604499f68230b3977836"
+      },
+      {
+        "path": "independent-audit/now-playing-actual-20261019T1814Z.json",
+        "bytes": 704,
+        "sha256": "111b445d92ebf42d9d957678f3f9fc5ce913e60952ef1c94de9392e2aeb3235f"
+      },
+      {
+        "path": "independent-audit/pixel-actual-20261019T1814Z.json",
+        "bytes": 1174,
+        "sha256": "9a52a0e691f9ad51b8e313e864ac992442945011f222403bad88f5ac4f0e2d9d"
+      },
+      {
+        "path": "independent-audit/provisional-20261019T180914Z-c04cd6eb.json",
+        "bytes": 7011,
+        "sha256": "a36f8869b993965d85a29e338a7f58bf53361e8bc172296c1fc401e45e879a31"
+      },
+      {
+        "path": "independent-audit/spotify-actual-20261019T1814Z.json",
+        "bytes": 3498,
+        "sha256": "b9279129e772063bbd64414f460878ffe8e9323d9a656a5b390ff802299bc7f2"
+      },
+      {
+        "path": "native-drop/driver-1x.log",
+        "bytes": 1676,
+        "sha256": "b6947b9389a857d148d4ccee4a13db4597655d2101a7e4ea45f97b0857b300ca"
+      },
+      {
+        "path": "native-drop/driver-2x.log",
+        "bytes": 1676,
+        "sha256": "f8c38a54ea67e2134f3dc65fd16ff7bdef9604f75ddab92674cd7cb28fd5f68c"
+      },
+      {
+        "path": "native-drop/receipt-1x.json",
+        "bytes": 4755,
+        "sha256": "0371f3817c8abb21708adbd6ab4956910403b91e6cfe852b51760bd43e41e6db"
+      },
+      {
+        "path": "native-drop/receipt-2x.json",
+        "bytes": 4755,
+        "sha256": "d9a505abb31f2d16f66f8139024ad7a35a59e3262cc1bf55bc6aa7e79b809e30"
+      },
+      {
+        "path": "native-menu/driver.log",
+        "bytes": 2216,
+        "sha256": "2fa137766cde86d168e258c3c06321b9f1c5ff95b68041702864c3213fe59bc5"
+      },
+      {
+        "path": "native-menu/quit-observation.json",
+        "bytes": 145531,
+        "sha256": "0c4550e0b61ccc7cc3f8df3482fcc0167947431fbe48d22cfa66c592a3c42975"
+      },
+      {
+        "path": "native-menu/receipt.json",
+        "bytes": 807,
+        "sha256": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98"
+      },
+      {
+        "path": "normal-binary-receipt.json",
+        "bytes": 4821,
+        "sha256": "6147376cb1c37a021e82f13b92ae3433da4e252db4c6db0a55655e4fc22b7b7d"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-ablation-tests.log",
+        "bytes": 2038,
+        "sha256": "86ee93d5ac8474a9bdb908daab15eb914f718848debe94c7e56d03d496088e7f"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-ai-local-tests.log",
+        "bytes": 1816,
+        "sha256": "4d5f56e315f1fff19480eb0b21f50fdc5144568702443c45f2dbe3377eb1254f"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-ai-status-feature-tests.log",
+        "bytes": 2442,
+        "sha256": "8b7072da800cf1d25c12b9907e0cc1f3501f60107038d265a928c105d03a2569"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-bridge-command-focused.log",
+        "bytes": 1860,
+        "sha256": "75943b4c2e2dd05c693e0bd17553e6da347b96cffca3871c462dd6f97c425614"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-bridge-negative-boxed-number.log",
+        "bytes": 999,
+        "sha256": "c6808a4098ccfc4b138a9bd297e121353e45db884641cc45e9e9b530284992b2"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-bridge-negative-generic-transport.log",
+        "bytes": 1013,
+        "sha256": "a2be26e8c509e250c9f1deb93797df642fdcbc9ae297a70daf4ae3899e655e54"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-bridge-negative-library-fence.log",
+        "bytes": 1052,
+        "sha256": "ee891d1faa0093c0fa1e9e711410ea1479d5bab46a81f71f7a90dc8879136e40"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-bridge-restored.log",
+        "bytes": 13911,
+        "sha256": "596609d105e5c8785af7045be0e9a81442feee9aeaff642abe80410a5346f407"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-bridge-tests.log",
+        "bytes": 13902,
+        "sha256": "64d515157ede8a65ff4805894c02193a5f9782eea7bda9b4d3892e4f97929ea7"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-all-target-build.log",
+        "bytes": 5369,
+        "sha256": "bc0961fcd2e3148bdb2f27f62109df4e0d0809bc34901877d08512c41b36b3b1"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-frontend-production.log",
+        "bytes": 5313,
+        "sha256": "be2df56711f1056f43e60449f0f6d865d2f51c12e8206297669b19e784c676db"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-full-gate.log",
+        "bytes": 13616,
+        "sha256": "2372095a107f78ff25d740eefde629b2225f752704d9399283f172cf4a3ff24a"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-full-source-tests-required.log",
+        "bytes": 187723,
+        "sha256": "7cf80c756e67a023d15a407f762005cdd1794ddbd8648ea612dd0b5fc0803e1c"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-gui-fixture-js-tests.log",
+        "bytes": 1161,
+        "sha256": "24ec45d0bb4db3d41bbed8e223515bb247fdaac185b59f4a1c8099e347498ac5"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-gui-fixture-python-tests.log",
+        "bytes": 720,
+        "sha256": "984e47314e23d0a90aac99971d27b99b0860811fbfee398a466f9a3f3bc0bdd9"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-native-clippy.log",
+        "bytes": 180,
+        "sha256": "1746a0a353edfab3a93c139c6f7de0dd2614d9e320f9743a4f15eff980feef2c"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-native-tests.log",
+        "bytes": 47802,
+        "sha256": "06c3c59a3948258842c1a2c67e11a244c16b438c8d8772f622b2179ec9f1fcfe"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-normal-binary-build-stderr.log",
+        "bytes": 448,
+        "sha256": "b371471a38cb057648404e2a1f1c0562a7dbe4416f5049fa8094e87cedc8b2a6"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-normal-binary-build.log",
+        "bytes": 520387,
+        "sha256": "53bfb2738cfd962b359d338ae442675ccdd657947157d584b3880f5b54ca65d6"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-snapshot.log",
+        "bytes": 60,
+        "sha256": "a66ca856b09339fa757b9da8b0fbc7f7526ed631662c01869fd2034724eb89a9"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-workspace-clippy.log",
+        "bytes": 5369,
+        "sha256": "8c90814202f726935d8db022c2073b24e3c8a08821f74449d3b2bee98e71d5f1"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-final-workspace-tests.log",
+        "bytes": 78593,
+        "sha256": "48bba39b68dbc8c90d5815fa5883bb1f8aedc1e735c599adbca242683b4b341d"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-freeze-tests.log",
+        "bytes": 103,
+        "sha256": "3507612a5e67de7f909c5daf665e72ae48703638023e5a20bbbf698936a10064"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-frontend-tests.log",
+        "bytes": 659,
+        "sha256": "529bb9e482228419083ac7415d994f845bdec5a113a27f8e07ef13df928e26b1"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-gui-desktop.log",
+        "bytes": 12479,
+        "sha256": "88cccfec6b2555e932c5b648a2239ee4bf655ba3d8129cff66af10f2aa772d8b"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-gui-drop-1.log",
+        "bytes": 5674,
+        "sha256": "1f3ab11efb8a2c1fd07bf1462e5bdc93e6ccf05cd03c9a17e1755d4745a0cdcc"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-gui-drop-2.log",
+        "bytes": 5674,
+        "sha256": "168716a261add20a73eb82b430bd48dd31aa58521fee32b53ce22ae502a3283c"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-gui-fixture-js-tests.log",
+        "bytes": 1161,
+        "sha256": "62b0fefd4c029806526a15abd1a218e7ead295558014740ce47e1d2058b66a84"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-gui-fixture-python-tests.log",
+        "bytes": 720,
+        "sha256": "290340c46f3b7e1a0c60cb50172393a3c50a7a79dee3eeb5543790d8ba7ce323"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-gui-menu.log",
+        "bytes": 5579,
+        "sha256": "26ed12b6159b37178a29130553e9e4ac93343432c04c604499f68230b3977836"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-host-initial-instantaneous-check.log",
+        "bytes": 519,
+        "sha256": "9e8145ee88a50203df33c27242f8eab8895908e1f67f537e357a5eabc3d0aacb"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-host-negative-fence-only.log",
+        "bytes": 1641,
+        "sha256": "82adfa5fa65bd94e15ec678ab2c9db3d4273d3f56a74e15b43be53d5441927a9"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-imports-core-tests.log",
+        "bytes": 3196,
+        "sha256": "0c4395aa87e67151a3ba927befa1b5e79e476a29bc095fd7f36fedccc841d994"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-imports-host-restored.log",
+        "bytes": 1086,
+        "sha256": "00877e7b69f97af224a23f8f1bad27a2b191f2896557da37f95eba02791b760a"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-imports-host-tests.log",
+        "bytes": 6247,
+        "sha256": "8d53a30faf1ef64e1c75901cd8cd3545fb7ad52ee71f7a86b5985220fea396e2"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-native-clippy.log",
+        "bytes": 5341,
+        "sha256": "5026fe63f05ba628085eee5a132af738e214dabb343d0dca4d68113dbd692061"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-native-focused.log",
+        "bytes": 2628,
+        "sha256": "8506b9fb5a84bc4ee715cad00fa3f9be791d336a5f95d1b9177d2fbb27e403ef"
+      },
+      {
+        "path": "verification-logs/freeshow-spotify-cleanup-native-wired-clippy.log",
+        "bytes": 180,
+        "sha256": "69ebb59279e5294fb1f27e03b835c8848411d48045c206bf039a9262695b9154"
+      }
+    ]
+  },
+  "failedAndCounterfactualChecksPreserved": [
+    "Initial bridge test expected eight diagnostics; seven is correct because missing/foreign runtime and stale state-restoration replies are ignored. The corrected origin/key tests and final full suite pass.",
+    "First ordinary-fence import mutation passed an immediate is_finished check. The test now polls the actual future; repeated mutation fails and restored full host tests pass.",
+    "Three deliberate bridge mutations and the strengthened ordinary-fence-only host mutation fail as expected. Logs are archived without counting their successes as final production checks.",
+    "The strict complete parity gate fails as intended; 14 feature areas remain partial."
+  ],
+  "previousPublishedCi": {
+    "head": "5434778f4e820345070bcbe8cf7793791cd40d5e",
+    "runId": 39293892950,
+    "conclusions": {
+      "success": 3,
+      "failure": 2,
+      "cancelledBeforeRunner": 1
+    },
+    "sealedObservation": "docs/migration/baselines/ai-status-imports-ci-observations.json",
+    "freshCurrentCi": "pending publication"
+  },
+  "scopeLimits": [
+    "Normal local frozen ELF and20remote resource files independently hashed; compiler features/current source snapshots observed, not cryptographically attested compiler inputs.",
+    "GUI artifacts are observed callbacks/capturedkeyarrays/fullcontexts and actual recorded private-peer effects; auditors did not launch/repeat a WebView or native app.",
+    "Fresh original TypeScript command replay used its own actual private GIO peer/session bus; no Spotify account, user session, physical playback or credentials.",
+    "Native command child counters show actual wait/reap/settlement and no retained result; ordinary joined=false/drained=false are not relabeled runtime/threadjoin. Captured fixture peer wait0 and presently absent known PIDs corroborate cleanup.",
+    "GTK library-switch release is the actual recorded0.893778319s within configured2s budget with no command errors; this is functional deadline evidence, not a performance improvement or general scheduling equivalence.",
+    "Fifteen persisted imported files independently reread/hashes/IDs/names/lyrics/selected unknown fields checked against source fixtures; not arbitrary importer/full schema or every dynamic ShowObj byte parity.",
+    "AI inventory is inert32bytes/missing pinned model, catalogue is five declarations only; readiness/backendhealth/auth/inference not verified.",
+    "JPEG source RGBA buffers independently inflated/hashed; captured native filesystem/pixel observations match. Native generated PNG bytes and original temporary media/profile files were not separately archived, and compressed PNG parity is expressly false.",
+    "Cover141checks apply recorded bounded GET/HEAD/range/fresh/options subset with all tested assertions; no unrestricted fullHTTP/multicast registration guarantee.",
+    "Quit captured final snapshot during real backup compression with queued jobs, persisted write/backup proof and actual process disappearance before operatorfinally. Per-owner workerthreadjoin is not independently reconstructed from processExit/zero-retention alone.",
+    "No full application parity, performance gain, account/hardware or foreign-platform GUI certification.",
+    "The four GUI launches use the frozen normal binary and resources. Cargo test artifacts never replace that isolated executable.",
+    "Current Bible integration is in a separate worktree and is not included in this runtime or GUI receipt.",
+    "Local normal GUI evidence and prior CI are separate; no current foreign execution is inferred."
+  ]
+}
