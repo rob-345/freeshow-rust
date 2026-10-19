@@ -56,6 +56,9 @@ impl Drop for ChildGuard {
     }
 }
 fn oracle(paths: &[String]) -> Value {
+    oracle_transport(paths, false)
+}
+fn oracle_transport(paths: &[String], crlf: bool) -> Value {
     let root = std::env::var_os("FREESHOW_BROWSE_WINDOWS_ORACLE_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
@@ -70,17 +73,21 @@ fn oracle(paths: &[String]) -> Value {
     let input = temporary.path().join("input.json");
     let output = temporary.path().join("output.json");
     fs::write(&input, serde_json::to_vec(paths).unwrap()).unwrap();
+    let mut command = Command::new(
+        std::env::var_os("FREESHOW_BROWSE_WINDOWS_NODE").unwrap_or_else(|| "node".into()),
+    );
+    command.arg(root.join("tests/parity/lib/browse-windows-oracle.mjs"));
+    if crlf {
+        command.arg("--crlf-source-control");
+    }
     let mut child = ChildGuard(
-        Command::new(
-            std::env::var_os("FREESHOW_BROWSE_WINDOWS_NODE").unwrap_or_else(|| "node".into()),
-        )
-        .arg(root.join("tests/parity/lib/browse-windows-oracle.mjs"))
-        .current_dir(&root)
-        .stdin(fs::File::open(input).unwrap())
-        .stdout(fs::File::create(&output).unwrap())
-        .stderr(Stdio::inherit())
-        .spawn()
-        .unwrap(),
+        command
+            .current_dir(&root)
+            .stdin(fs::File::open(input).unwrap())
+            .stdout(fs::File::create(&output).unwrap())
+            .stderr(Stdio::inherit())
+            .spawn()
+            .unwrap(),
     );
     child.finish();
     let mut bytes = Vec::new();
@@ -92,6 +99,14 @@ fn oracle(paths: &[String]) -> Value {
     assert!(bytes.len() <= 512 * 1024);
     let value: Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(value["node"], "22.21.1");
+    assert_eq!(
+        value["sourceSha256"],
+        "98e563c55026d2dbbdd217ee9b94962ed7fc8b82d893795355bd7dc0f54fc5de"
+    );
+    assert_eq!(
+        value["lineEndingControls"],
+        json!({"crlfAccepted":true,"sourceMutationRejected":true})
+    );
     assert_eq!(
         value["platform"], "win32",
         "Linux simulation is not native Windows evidence"
@@ -359,7 +374,7 @@ fn real_windows_junction_and_available_file_symlink_follow_actual_source_targets
 }
 
 #[test]
-fn real_windows_share_lock_is_not_guessed_missing_when_source_byname_api_may_succeed() {
+fn real_windows_exclusive_data_lock_still_allows_actual_source_and_native_attribute_stat() {
     let temp = tempfile::tempdir().unwrap();
     let file = temp.path().join("share-locked.wav");
     fs::write(&file, b"protected by a real sharing handle").unwrap();
@@ -368,18 +383,31 @@ fn real_windows_share_lock_is_not_guessed_missing_when_source_byname_api_may_suc
         .share_mode(0)
         .open(&file)
         .unwrap();
-    let source = oracle(&[file.to_str().unwrap().into()]);
-    let error = stat(file.to_str().unwrap(), &mut budget(BrowseConfig::default()))
-        .err()
-        .unwrap();
-    assert_eq!(error.code, "unsupported_stat_backend");
-    assert!(error.message.contains("open failed"));
+    // A real data-read conflict proves the fixture lock is active. Win32 does
+    // not apply this sharing restriction to FILE_READ_ATTRIBUTES requests.
+    assert_eq!(File::open(&file).unwrap_err().raw_os_error(), Some(32));
+    let source = compare(&[file.to_str().unwrap().into()]);
+    assert!(!source["values"][0]["value"].is_null());
     eprintln!(
-        "actual source share-lock behavior (API dependent, intentionally unsupported): {}",
+        "actual source/native metadata success under exclusive data lock: {}",
         source["values"][0]
     );
     drop(guard);
     compare(&[file.to_str().unwrap().into()]);
+}
+
+#[test]
+fn real_windows_oracle_crlf_transport_preserves_values_and_strict_source_gate() {
+    let temp = tempfile::tempdir().unwrap();
+    let file = temp.path().join("source-transport.wav");
+    fs::write(&file, b"actual immutable source after CRLF normalization").unwrap();
+    let paths = [file.to_str().unwrap().to_owned()];
+    let checkout = oracle(&paths);
+    let crlf = oracle_transport(&paths, true);
+    assert_eq!(checkout["sourceTransport"], "checkout");
+    assert_eq!(crlf["sourceTransport"], "forced-crlf");
+    assert_eq!(checkout["sourceSha256"], crlf["sourceSha256"]);
+    assert_eq!(checkout["values"], crlf["values"]);
 }
 
 #[test]

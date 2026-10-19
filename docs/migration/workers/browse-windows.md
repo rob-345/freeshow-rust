@@ -68,8 +68,14 @@ Only actual open `FILE_NOT_FOUND`/`PATH_NOT_FOUND`, including a regular-file
 ancestor or dangling link, become source null. Empty string also follows the
 actual source failure. Other open/metadata failures remain explicit unsupported:
 Node can use a newer by-name stat or directory fallback even when this metadata
-handle cannot open. In particular an actual share lock is not fabricated as
-missing. This is a documented capability gap for denied/sharing/filter cases.
+handle cannot open. An exclusive data-read sharing lock does not establish that
+this attribute-only metadata open fails: Win32 explicitly exempts attribute/EA
+access from the sharing restriction. The corrected fixture first proves a real
+second data read fails with sharing violation32, then requires actual source
+and native metadata success with the lock still held. It neither skips nor
+substitutes a synthetic success. Actual attribute-denial/filter/API-failure
+runtime evidence remains open; this followup does not add ACL manipulation,
+injected API errors or expand the production fallback contract.
 
 ## Coordinator wiring
 
@@ -118,10 +124,11 @@ TypeScript/node_modules, and the upstream git object:
 cargo test -p freeshow-browse --lib stats::windows::tests -- --nocapture
 ```
 
-Ten native tests cover ordinary/empty files, directories, Unicode, hardlinks,
+Eleven native tests cover ordinary/empty files, directories, Unicode, hardlinks,
 allocation, readonly modes, raw path variants, fractional/post-2038/u32-boundary
 times, deliberately gated exceptional times, actual missing/non-directory
-errors, junction following, sharing failure, full identity/53-bit rounding,
+errors, junction following, metadata success under a verified exclusive data
+lock, strict CRLF source transport, full identity/53-bit rounding,
 cancel/budgets, actual worker FILE_INFO/rejected other commands, and joined
 service shutdown. Only file-symlink fixtures may narrowly skip actual Windows
 privilege error1314; mandatory junction tests still execute.
@@ -130,7 +137,30 @@ Each source comparison executes the actual immutable FreeShow `getFileStats` and
 `getFileInfo` in one realm with actual native `fs`, then observes real
 `structuredClone`. The helper checks source SHA256
 `98e563c55026d2dbbdd217ee9b94962ed7fc8b82d893795355bd7dc0f54fc5de`
-against the pinned git object. Its bounded receipts include exact Number bits,
+against the pinned git object. Checked-out and git-show text both normalize
+CRLF to LF before strict hash certification and actual AST extraction. The
+normalized hash is also checked against the fixed SHA above, so an unrelated
+source edit cannot pass by changing both inputs. Every helper invocation runs
+the actual certification gate against CRLF on either side, and proves the same
+gate rejects an appended non-line-ending source mutation.
+
+`--crlf-source-control` forces both transports to CRLF in memory before the
+same certification/AST/execution path. The new Windows fixture compares all
+actual source values, diagnostics, key/type and Number-bit receipts from normal
+and forced-CRLF invocations on the same real regular file. Portable Linux
+controls passed both modes against one real Unicode-named file, one missing
+file and empty string (six actual helper outcomes), including equal returned
+values, the exact normalized source SHA and rejection of a true source edit.
+This is line-ending/source-transport evidence, not Windows filesystem proof.
+
+The followup independently cross-lints the actual updated native test bodies
+using `/tmp/freeshow-browse-windows-evidence-check/Cargo.toml` with the same
+suggested parent wiring, a private target and Windows GNU all-target strict
+Clippy. Production Windows stat implementation and shared files stay unchanged.
+Actual Windows execution, including exclusive-lock success and the new native
+transport comparison, still requires the command above in native CI.
+
+Its bounded receipts include exact Number bits,
 not a duplicated expected-stat algorithm or a tolerance comparison. Child
 fixtures are sequential per invocation, deadline-bound, and killed/reaped on
 failure; pipe buffering cannot deadlock the test because receipts use private
