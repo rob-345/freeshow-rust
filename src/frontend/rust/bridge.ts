@@ -10,6 +10,7 @@ import { createAudioPortBridge, type AudioPortOptions } from "./audioPortBridge"
 import { encodeAudioFrame } from "./audioRaw"
 import { createTimecodeBridge, type TimecodeBridgeOptions, type TimecodePublication } from "./timecodeBridge"
 import { encodeTimecodeCommand, encodeTimecodeLtc } from "./timecodeWire"
+import { createNowPlayingBridge, type NowPlayingTransport, type NowPlayingPublication } from "./nowPlayingBridge"
 
 type Receiver = (data: any, listenerId?: string) => void
 export type RuntimeContext = {
@@ -31,6 +32,7 @@ export type RuntimeEvent = {
     }
     nativeAudio?: { id: string; run: string; ownUndefinedError: boolean }
     nativeTimecode?: Omit<TimecodePublication, "event">
+    nativeNowPlaying?: Omit<NowPlayingPublication, "event">
     nativeRemote?: {
         deliveryId: string
         run: string
@@ -47,6 +49,7 @@ const remoteChannels = new Set(["REMOTE", "STAGE", "CONTROLLER"])
 const remoteCommands = new Set(["START", "STOP", "SERVER_DATA"])
 const midiCommands = new Set(["GET_MIDI_INPUTS", "GET_MIDI_OUTPUTS", "SEND_MIDI", "RECEIVE_MIDI", "CLOSE_MIDI"])
 const timecodeCommands = new Set(["TIMECODE_START", "TIMECODE_STOP", "TIMECODE_VALUE", "TIMECODE_STATUS", "TIMECODE_AUDIO_DATA"])
+const nowPlayingCommands = new Set(["NOW_PLAYING", "NOW_PLAYING_UNSET", "OPEN_NOW_PLAYING"])
 export type TimecodeTransport = Pick<TimecodeBridgeOptions, "command" | "audio" | "complete" | "retire">
 export type RemoteCompletion = (id: string, accepted: boolean) => Promise<unknown>
 export type MidiCompletion = (id: string, accepted: boolean) => Promise<unknown>
@@ -54,12 +57,13 @@ export type AudioTransport = Pick<AudioPortOptions, "postPort" | "transport" | "
     completeStatus: (context: RuntimeContext, id: string, accepted: boolean) => Promise<unknown>
 }
 
-export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext, captureTransport?: CaptureTransport, remoteCompletion?: RemoteCompletion, midiCompletion?: MidiCompletion, audioTransport?: AudioTransport, timecodeTransport?: TimecodeTransport) {
+export function createRustApi(transport: Transport, reportError: (error: unknown, request: unknown) => void, initialContext?: RuntimeContext, captureTransport?: CaptureTransport, remoteCompletion?: RemoteCompletion, midiCompletion?: MidiCompletion, audioTransport?: AudioTransport, timecodeTransport?: TimecodeTransport, nowPlayingTransport?: NowPlayingTransport) {
     const receivers = new Map<string, Set<Receiver>>()
     const named = new Map<string, { channel: string; receiver: Receiver }>()
     let context = initialContext ? { ...initialContext } : undefined
     const audio = audioTransport ? createAudioPortBridge({ ...audioTransport, getContext: () => context, report: (error) => reportError(error, { channel: "AUDIO" }) }) : undefined
     const timecode = timecodeTransport ? createTimecodeBridge({ ...timecodeTransport, getContext: () => context, deliver: (message) => deliver("MAIN", message), report: (error) => reportError(error, { channel: "TIMECODE" }) }) : undefined
+    const nowPlaying = nowPlayingTransport ? createNowPlayingBridge({ transport: nowPlayingTransport, getContext: () => context, deliver: (message) => deliver("MAIN", message), report: (error) => reportError(error, { channel: "NOW_PLAYING" }) }) : undefined
     const mediaUrls = createMediaUrlRegistry(
         () => context,
         (error) => reportError(error, { channel: "native-assets" })
@@ -115,6 +119,15 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
     }
 
     function dispatch(event: RuntimeEvent, origin?: { channel: string; data?: any }) {
+        if (event.nativeNowPlaying) {
+            if (!nowPlaying) {
+                reportError({ code: "now_playing_unavailable", message: "Native now-playing is unavailable in this window" }, event)
+                return
+            }
+            const sourceEvent = { channel: event.channel, message: event.message, context: event.context, ...(event.listenerId === undefined ? {} : { listenerId: event.listenerId }) }
+            nowPlaying.publish({ ...event.nativeNowPlaying, event: sourceEvent })
+            return
+        }
         if (event.nativeTimecode) {
             if (!timecode) {
                 reportError({ code: "timecode_unavailable", message: "Native timecode is unavailable in this window" }, event)
@@ -209,10 +222,12 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
             // A path query can finish earlier and must not retag old UI data.
             const rootSelection = origin?.channel === "MAIN" && origin.data?.channel === "UPDATE_DATA_PATH"
             if (context && event.context.libraryGeneration > context.libraryGeneration && !(rootSelection && event.channel === "MAIN" && event.message.channel === "DATA_PATH")) return
-            const changed = context && (context.libraryGeneration !== event.context.libraryGeneration || context.dataPath !== event.context.dataPath)
+            const previous = context
+            const changed = previous && (previous.libraryGeneration !== event.context.libraryGeneration || previous.dataPath !== event.context.dataPath)
             context = { ...event.context }
             if (changed && audio) audio.contextChanged().catch((error) => reportError(error, { channel: "native-audio-retirement" }))
             if (changed && timecode) timecode.contextChanged().catch((error) => reportError(error, { channel: "native-timecode-retirement" }))
+            if (changed && nowPlaying) nowPlaying.contextChanged(previous).catch((error) => reportError(error, { channel: "native-now-playing-retirement" }))
         }
         if (event.nativeAssets && (!event.context || !mediaUrls.publish(event.context, event.nativeAssets))) {
             reportError({ code: "assets_publication", message: "Native media grants could not be published" }, event)
@@ -255,6 +270,11 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                     else reportError({ code: "timecode_unavailable", message: "Native timecode is unavailable in this window" }, { channel: "TIMECODE" })
                     return
                 }
+                if (channel === "MAIN" && nowPlayingCommands.has(data?.channel)) {
+                    if (nowPlaying) nowPlaying.handle(data)
+                    else reportError({ code: "now_playing_unavailable", message: "Native now-playing is unavailable in this window" }, { channel: "NOW_PLAYING" })
+                    return
+                }
                 if (channel === "MAIN" && data?.channel === "SAVE_IMAGE" && captures.complete(data.data)) return
                 const mediaCopy = channel === "MAIN" && ["BUNDLE_MEDIA_FILES", "MEDIA_FOLDER_COPY"].includes(data?.channel)
                 // Electron serializes at send time. Output updates often reuse
@@ -286,7 +306,7 @@ export function createRustApi(transport: Transport, reportError: (error: unknown
                 const complete = ready
                     .then(async () => {
                         if (channel === "MAIN" && data?.channel === "CLOSE") {
-                            await Promise.all([audio?.close().catch((error) => reportError(error, { channel: "native-audio-retirement" })), timecode?.close().catch((error) => reportError(error, { channel: "native-timecode-retirement" }))])
+                            await Promise.all([audio?.close().catch((error) => reportError(error, { channel: "native-audio-retirement" })), timecode?.close().catch((error) => reportError(error, { channel: "native-timecode-retirement" })), nowPlaying?.close().catch((error) => reportError(error, { channel: "native-now-playing-retirement" }))])
                             // Native CLOSE still attempts every independent owner
                             // after a frontend drain error, retaining actual retry.
                         }
@@ -366,6 +386,13 @@ export async function installRustBridge(target: Window = window) {
                   audio: (bytes, mode, frozen) => tauri.core.invoke("timecode_audio", encodeTimecodeLtc(bytes, mode, frozen)),
                   complete: (frozen, id, accepted) => tauri.core.invoke("timecode_complete", { context: frozen, id, accepted }),
                   retire: (frozen, terminal) => tauri.core.invoke("timecode_retire", { context: frozen, terminal })
+              }
+            : undefined,
+        nativeWindow.label === "main"
+            ? {
+                  command: (body) => tauri.core.invoke("now_playing_command", body),
+                  complete: (frozen, id, accepted) => tauri.core.invoke("now_playing_complete", { context: frozen, id, accepted }),
+                  retire: (frozen, terminal) => tauri.core.invoke("now_playing_retire", { context: frozen, terminal })
               }
             : undefined
     )

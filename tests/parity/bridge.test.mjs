@@ -32,6 +32,12 @@ const timecodeBridge = ts.transpileModule(fs.readFileSync(path.join(root, "src/f
 const timecodeBridgeModule = `data:text/javascript;base64,${Buffer.from(timecodeBridge).toString("base64")}`
 const timecodeWire = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/timecodeWire.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
 const timecodeWireModule = `data:text/javascript;base64,${Buffer.from(timecodeWire).toString("base64")}`
+function inlineModule(name, imports = {}) {
+    let code = ts.transpileModule(fs.readFileSync(path.join(root, `src/frontend/rust/${name}.ts`), "utf8"), { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText
+    for (const [dependency, url] of Object.entries(imports)) code = code.replace(`from "./${dependency}"`, `from "${url}"`)
+    return `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`
+}
+const nowPlayingBridgeModule = inlineModule("nowPlayingBridge", { metadata: inlineModule("metadata"), nowPlayingWire: inlineModule("nowPlayingWire") })
 const javascript = ts
     .transpileModule(source, {
         compilerOptions: {
@@ -49,8 +55,145 @@ const javascript = ts
     .replace('from "./audioRaw"', `from "${audioRawModule}"`)
     .replace('from "./timecodeBridge"', `from "${timecodeBridgeModule}"`)
     .replace('from "./timecodeWire"', `from "${timecodeWireModule}"`)
+    .replace('from "./nowPlayingBridge"', `from "${nowPlayingBridgeModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("installed now-playing retains send-time numeric identity and source void replies through private raw IPC", async () => {
+    const context = { runtimeId: "now-playing-raw", libraryGeneration: 3, dataPath: "/library" },
+        calls = [],
+        errors = [],
+        replies = []
+    const target = {
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent: (event) => errors.push(event.detail),
+        __TAURI__: {
+            core: {
+                invoke: async (name, args) => {
+                    calls.push({ name, args })
+                    return name === "runtime_context" ? context : []
+                }
+            },
+            webviewWindow: { getCurrentWebviewWindow: () => ({ label: "main" }) },
+            event: { listen: async () => () => {} }
+        }
+    }
+    await installRustBridge(target)
+    target.api.receive("MAIN", (...reply) => replies.push(reply))
+    const payload = { filePath: "/song.mp3", name: "Original", duration: Infinity, unknownLang: ["Artist", "Title", "Album"] }
+    assert.equal(target.api.send("MAIN", { channel: "NOW_PLAYING", data: payload }, "source-void"), undefined)
+    payload.name = "Changed"
+    payload.duration = 3
+    payload.unknownLang[0] = "Changed"
+    target.api.send("MAIN", { channel: "NOW_PLAYING_UNSET" })
+    target.api.send("MAIN", { channel: "OPEN_NOW_PLAYING" })
+    await tick()
+    const bodies = calls
+        .filter((call) => call.name === "now_playing_command")
+        .map((call) => {
+            assert.ok(call.args instanceof Uint8Array)
+            return JSON.parse(new TextDecoder().decode(call.args))
+        })
+    assert.equal(bodies.length, 3)
+    assert.deepEqual(bodies[0], { version: 1, context, command: { kind: "set", data: { filePath: "/song.mp3", name: "Original", duration: null, unknownLang: ["Artist", "Title", "Album"] }, duration: { kind: "PositiveInfinity" } } })
+    assert.deepEqual(
+        bodies.slice(1).map((body) => body.command),
+        [{ kind: "unset" }, { kind: "open" }]
+    )
+    assert.equal(
+        calls.some((call) => call.name === "ipc_dispatch"),
+        false
+    )
+    assert.deepEqual(replies, [])
+    assert.deepEqual(errors, [])
+})
+
+test("shared now-playing dispatch restores original metadata types before callbacks and keeps private receipts outside payloads", async () => {
+    const context = { runtimeId: "now-playing-events", libraryGeneration: 1, dataPath: "/one" },
+        messages = [],
+        completions = [],
+        errors = []
+    const bridge = createRustApi(
+        async () => [],
+        (error) => errors.push(error),
+        context,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {
+            command: async () => {},
+            retire: async () => {},
+            complete: async (context, id, accepted) => completions.push({ context, id, accepted })
+        }
+    )
+    bridge.api.receive("MAIN", (message, listenerId) => messages.push({ message, listenerId }))
+    const event = (sequence, data, hydration, extra = {}) => ({ channel: "MAIN", context, message: { channel: "AUDIO_METADATA", data }, nativeNowPlaying: { id: `native-now-playing-${String(sequence).padStart(32, "0")}`, sequence: String(sequence), hydration }, ...extra })
+    const hydration = { undefinedPaths: ["/metadata/absent"], specialNumbers: [{ path: "/metadata/year", kind: "NaN" }], byteBuffers: ["/metadata/picture/0/data"], objectKeys: [{ path: "/metadata", keys: ["absent", "year", "picture"] }] }
+    const original = { filePath: "/song.mp3", metadata: { year: null, picture: [{ format: "image/png", data: "AQID" }], absent: null } }
+    bridge.dispatch(event(1, original, hydration))
+    const replay = event(1, { filePath: "/song.mp3", metadata: {} }, { undefinedPaths: [], specialNumbers: [], byteBuffers: [] })
+    bridge.dispatch(replay)
+    bridge.dispatch(event(2, { filePath: "/song.mp3", metadata: {} }, { undefinedPaths: [], specialNumbers: [], byteBuffers: [] }, { context: { ...context, dataPath: "/foreign" } }))
+    bridge.dispatch(event(3, { filePath: "/song.mp3", metadata: { picture: [{ data: "invalid" }] } }, { undefinedPaths: [], specialNumbers: [], byteBuffers: ["/metadata/picture/0/data"] }))
+    await tick()
+    assert.equal(messages.length, 1)
+    assert.deepEqual(Object.keys(messages[0].message), ["channel", "data"])
+    assert.equal(messages[0].listenerId, undefined)
+    assert.deepEqual(Object.keys(messages[0].message.data.metadata), ["absent", "year", "picture"])
+    assert.ok(Object.hasOwn(messages[0].message.data.metadata, "absent"))
+    assert.equal(messages[0].message.data.metadata.absent, undefined)
+    assert.ok(Number.isNaN(messages[0].message.data.metadata.year))
+    assert.equal(messages[0].message.data.metadata.picture[0].data.constructor, Uint8Array)
+    assert.deepEqual([...messages[0].message.data.metadata.picture[0].data], [1, 2, 3])
+    assert.deepEqual(
+        completions.map(({ accepted }) => accepted),
+        [true, false]
+    )
+    assert.deepEqual(bridge.api.getRuntimeContext(), context)
+    assert.equal(errors.length, 1)
+})
+
+test("now-playing library retirement captures the old full context and native CLOSE survives a settled frontend drain failure", async () => {
+    const old = { runtimeId: "now-playing-life", libraryGeneration: 1, dataPath: "/one" },
+        next = { ...old, libraryGeneration: 2, dataPath: "/two" },
+        retirements = [],
+        calls = [],
+        errors = []
+    const bridge = createRustApi(
+        async (request) => {
+            calls.push(request)
+            return request.data.channel === "UPDATE_DATA_PATH" ? [{ channel: "MAIN", context: next, message: { channel: "DATA_PATH", data: next.dataPath } }] : []
+        },
+        (error) => errors.push(error),
+        old,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {
+            command: async () => {},
+            complete: async () => {},
+            retire: async (context, terminal) => {
+                retirements.push({ context, terminal })
+                if (terminal) throw new Error("actual retained owner diagnostic")
+            }
+        }
+    )
+    bridge.api.send("MAIN", { channel: "UPDATE_DATA_PATH", data: next.dataPath })
+    await tick()
+    await tick()
+    assert.deepEqual(retirements, [{ context: old, terminal: false }])
+    bridge.api.send("MAIN", { channel: "CLOSE" })
+    await tick()
+    await tick()
+    assert.deepEqual(retirements[1], { context: next, terminal: true })
+    assert.equal(calls.at(-1).data.channel, "CLOSE")
+    assert.equal(errors.length, 1)
+})
 
 test("installed retained timecode sends typed numbers and exact reused views through private raw IPC without source ACKs", async () => {
     const context = { runtimeId: "timecode-raw", libraryGeneration: 0, dataPath: "/library" },

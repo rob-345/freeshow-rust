@@ -23,6 +23,7 @@ freeshow-network = { path = "../crates/freeshow-network" }
 freeshow-audio = { path = "../crates/freeshow-audio" }
 freeshow-now-playing = { path = "../crates/freeshow-now-playing" }
 freeshow-cover-images = { path = "../crates/freeshow-cover-images" }
+freeshow-metadata-wire = { path = "../crates/freeshow-metadata-wire" }
 freeshow-audio-pipeline = { path = "../crates/freeshow-audio-pipeline" }
 freeshow-icecast = { path = "../crates/freeshow-icecast" }
 freeshow-opus = { path = "../crates/freeshow-opus" }
@@ -53,6 +54,7 @@ tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tokio = { version = "1", features = ["sync", "macros"] }
 tokio-util = { version = "0.7", features = ["rt"] }
+futures-util = "0.3"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 glib = "0.18"

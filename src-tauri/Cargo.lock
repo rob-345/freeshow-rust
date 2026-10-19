@@ -1443,6 +1443,7 @@ dependencies = [
  "freeshow-media",
  "freeshow-media-copy",
  "freeshow-media-copy-effects",
+ "freeshow-metadata-wire",
  "freeshow-midi",
  "freeshow-midi-ports",
  "freeshow-network",
@@ -1454,6 +1455,7 @@ dependencies = [
  "freeshow-thumbnail-effects",
  "freeshow-thumbnails",
  "freeshow-timecode",
+ "futures-util",
  "glib",
  "libc",
  "png 0.18.1",
@@ -1641,6 +1643,16 @@ dependencies = [
  "serde_json",
  "sha2",
  "tokio-util",
+]
+
+[[package]]
+name = "freeshow-metadata-wire"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "freeshow-audio",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

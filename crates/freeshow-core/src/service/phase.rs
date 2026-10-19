@@ -452,6 +452,7 @@ pub(super) fn validate_events(events: &[Event]) -> Result<()> {
             event.native_midi.as_ref(),
             event.native_audio.as_ref(),
             event.native_timecode.as_ref(),
+            event.native_now_playing.as_ref(),
         ]
         .into_iter()
         .flatten()

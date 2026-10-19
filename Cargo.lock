@@ -839,6 +839,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeshow-metadata-wire"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "freeshow-audio",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "freeshow-midi"
 version = "0.1.0"
 dependencies = [
