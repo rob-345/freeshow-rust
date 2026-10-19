@@ -251,16 +251,38 @@ def run():
             if identity_baseline is None:
                 identity_baseline = persisted
             assert persisted == identity_baseline, "Global identity changed across editor lifecycle"
+            oracle_args = [os.environ.get("FREESHOW_TEST_NODE", "node"),"tests/desktop/provider_catalogue_oracle.mjs"]
+            expected = json.loads(subprocess.check_output([*oracle_args,"--expected",phase],cwd=ROOT,env=env,text=True,timeout=15))
+            runtime_before = script("return (window.__testRuntimeErrors || []).length")
             observed = script((ROOT / "tests/desktop/device_provider_probe.js").read_text(), {"phase":phase,"expectedIdentity":persisted})
             assert observed["context"] == observed["current"] == invoke("runtime_context"), observed
             assert observed["identity"]["equalsPersisted"] and observed["identity"]["nonempty"] and not observed["identity"]["legacyFallback"], "Retained identity callback did not match persistence"
             assert observed["identity"]["type"] == "string"
             assert observed["providers"]["data"] == {} and observed["providers"]["keys"] == [], observed
-            assert sorted(observed["callbacks"]) == ["DEVICE_ID","PROVIDER_CONNECTIONS"]
+            channels = ["DEVICE_ID","GET_CONTENT_PROVIDERS","PROVIDER_CONNECTIONS"]
+            assert sorted(observed["callbacks"]) == channels, observed
+            assert observed["sendUndefined"] == {channel:True for channel in channels}, observed
+            for key, suffix in [("identity","identity"),("providers","providers"),("catalogue","catalogue")]:
+                callback = observed[key]
+                assert callback["messageKeys"] == ["channel","data"] and callback["args"] == 2, callback
+                assert callback["listener"] == "device-provider-probe-" + phase + "-" + suffix, callback
+                assert callback["callbackContext"] == observed["context"], callback
+            assert observed["catalogue"]["data"] == expected["catalogue"]["data"], observed["catalogue"]
+            assert observed["catalogue"]["rowKeys"] == expected["catalogue"]["rowKeys"], observed["catalogue"]
+            comparison_input = {"phase":phase,"context":observed["context"],"current":observed["current"],"catalogue":observed["catalogue"],"sendUndefined":observed["sendUndefined"]["GET_CONTENT_PROVIDERS"]}
+            verified = json.loads(subprocess.run([*oracle_args,"--verify",phase],input=json.dumps(comparison_input),cwd=ROOT,env=env,text=True,capture_output=True,check=True,timeout=15).stdout)
+            assert verified["comparison"] == {"matches":True,"completeRows":5,"completeFields":15,"keyOrderMatched":True,"exactListenerMatched":True,"fullCallbackContextMatched":True,"voidSendMatched":True}, verified
+            assert verified["catalogue"] == expected["catalogue"], verified
+            confirmed = json.loads(subprocess.check_output([*oracle_args,"--expected",phase],cwd=ROOT,env=env,text=True,timeout=15))
+            assert confirmed == expected, "Immutable source catalogue changed around actual native callbacks"
+            command_errors = script("return (window.__testRuntimeErrors || []).slice(arguments[0]).filter(entry=>['DEVICE_ID','PROVIDER_CONNECTIONS','GET_CONTENT_PROVIDERS'].includes(entry.request?.data?.channel || entry.request?.message?.channel))", runtime_before)
+            assert command_errors == [], command_errors
             assert json.loads((temp / "app/config.json").read_text()).get("machineId") == identity_baseline, "Query changed identity"
+            observed["catalogueSource"] = {"before":expected,"verified":verified["comparison"],"after":confirmed,"declarationOnly":True,"authenticationOrBackendHealthVerified":False}
+            observed["commandRuntimeErrors"] = 0
             device_provider_receipts[phase] = observed
-            (ARTIFACTS / "device-providers.json").write_text(json.dumps({"phases":device_provider_receipts,"rawIdentityArchived":False,"sameGlobalIdentityAcrossPhases":True},ensure_ascii=False,indent=2))
-            steps.append("Retained device identity and empty stored-provider callbacks preserve persistence, context and original listener: " + phase)
+            (ARTIFACTS / "device-providers.json").write_text(json.dumps({"phases":device_provider_receipts,"rawIdentityArchived":False,"sameGlobalIdentityAcrossPhases":True,"catalogueDeclarationOnly":True,"providerBackendHealthVerified":False},ensure_ascii=False,indent=2))
+            steps.append("Retained device identity, empty stored-provider and immutable declared-catalogue callbacks preserve persistence, current context, key order, listener and void send: " + phase)
 
         ai_spotify_receipts = {}
         def probe_ai_spotify(phase):
