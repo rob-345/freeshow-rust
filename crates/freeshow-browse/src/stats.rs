@@ -58,10 +58,24 @@ pub(crate) fn stat(path: &str, budget: &mut Budget) -> Result<Option<Stat>> {
         "Linux statx unavailable; fallback stat contract is not yet verified",
     ))
 }
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 pub(crate) fn stat(_: &str, _: &mut Budget) -> Result<Option<Stat>> {
     Err(BrowseError::new(
         "unsupported_platform",
-        "Native stat contract is verified on Linux only",
+        "Native stat backend is unavailable on this platform",
     ))
+}
+
+#[cfg(target_os = "macos")]
+#[path = "stats/macos.rs"]
+mod macos;
+#[cfg(target_os = "macos")]
+pub(crate) use macos::stat;
+
+#[cfg(target_os = "windows")]
+#[path = "stats/windows.rs"]
+mod windows;
+#[cfg(target_os = "windows")]
+pub(crate) fn stat(path: &str, budget: &mut Budget) -> Result<Option<Stat>> {
+    windows::stat(path, budget)
 }

@@ -113,6 +113,15 @@ sequential, with a ten-second observer deadline and actual kill/reap on failure;
 regular private stdio files avoid pipe backpressure, with bounded input/output.
 No product child or per-request worker is introduced.
 
+Coordinator review removed an unnecessary real-filesystem assertion that
+backdated modification and creation times must differ. Apple's
+[HFS implementation](https://raw.githubusercontent.com/apple-oss-distributions/hfs/main/core/hfs_vnops.c)
+can move creation time back with modification time; APFS behavior was not
+reproduced locally. Real fixtures compare the actual source birthtime bits,
+while the synthetic projection retains deliberately distinct field values.
+The backend does not substitute one timestamp for another or require their
+inequality.
+
 Native macOS execution remains pending. Local strict Apple ARM all-target
 Clippy verifies the actual new module/tests against a private copy of the
 existing crate plus the proposed shared wiring. The real macOS runner must

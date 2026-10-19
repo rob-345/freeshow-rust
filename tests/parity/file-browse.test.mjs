@@ -279,9 +279,17 @@ test("pure source similarity preserves UTF-16 arithmetic on every supported buil
     for (const [index, item] of cases.entries()) assert.deepEqual(actual[index].data, clean(source(item.left, item.right)))
 })
 
-if (!linux)
+if (!["linux", "darwin", "win32"].includes(process.platform))
     test("unverified filesystem platforms return explicit unsupported status", () => {
         const results = rust([request("FILE_INFO", "missing"), request("READ_FOLDER", { path: [] }), request("GET_SIMILAR", { paths: [] })])
+        assert.ok(results.every((item) => item.error.code === "unsupported_platform"))
+    })
+
+if (process.platform === "win32")
+    test("Windows file information preserves the original empty-path result while folder and similarity workflows stay explicitly unavailable", async () => {
+        const [info] = await compare([request("FILE_INFO", "")])
+        assert.equal(info.data, null)
+        const results = rust([request("READ_FOLDER", { path: [] }), request("GET_SIMILAR", { paths: [] })])
         assert.ok(results.every((item) => item.error.code === "unsupported_platform"))
     })
 

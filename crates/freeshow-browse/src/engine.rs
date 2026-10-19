@@ -219,10 +219,12 @@ fn similar(original: &[String], budget: &mut Budget) -> Result<Value> {
     ))
 }
 pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<BrowseReply> {
-    if !cfg!(target_os = "linux") {
+    if !cfg!(any(target_os = "linux", target_os = "macos"))
+        && !(cfg!(target_os = "windows") && matches!(&request, Request::FileInfo(_)))
+    {
         return Err(BrowseError::new(
             "unsupported_platform",
-            "Browse filesystem contract is verified on Linux only",
+            "Requested native browse workflow is unavailable on this platform",
         ));
     }
     budget.check()?;
@@ -230,7 +232,21 @@ pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<BrowseRep
     let data = match request {
         Request::FileInfo(path) => match stats::stat(&path, budget)? {
             Some(stat) => {
-                json!({"path":path,"stat":stat.json,"extension":paths::extension(&path).trim_start_matches('.').to_lowercase(),"folder":stat.directory})
+                // The Windows stat backend also certifies verbatim drive paths.
+                // Keep their source basename extension without routing them
+                // through the stricter future lexical/folder path capability.
+                let base = if cfg!(target_os = "windows") {
+                    path.trim_end_matches(['/', '\\'])
+                        .rsplit(['/', '\\'])
+                        .next()
+                        .unwrap_or("")
+                } else {
+                    &path
+                };
+                let extension = paths::extension(base)
+                    .trim_start_matches('.')
+                    .to_lowercase();
+                json!({"path":path,"stat":stat.json,"extension":extension,"folder":stat.directory})
             }
             None => Value::Null,
         },
