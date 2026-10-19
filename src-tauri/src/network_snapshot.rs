@@ -123,6 +123,10 @@ struct Shared {
     #[cfg(test)]
     before_capture: Mutex<Option<(std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>)>>,
     #[cfg(test)]
+    before_reply: Mutex<Option<(std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>)>>,
+    #[cfg(test)]
+    settled_replies: AtomicU64,
+    #[cfg(test)]
     fail_interfaces: AtomicBool,
     #[cfg(test)]
     fail_hostname: AtomicBool,
@@ -142,8 +146,10 @@ struct Work {
     budget: Budget,
     reply: oneshot::Sender<Completion>,
     queued: Queued,
-    permit: OwnedSemaphorePermit,
     keepalive: Box<dyn Send>,
+    // Fields drop in declaration order. Keep admission through actual consumer
+    // guard disposal, including queued Work dropped by worker unwinding.
+    permit: OwnedSemaphorePermit,
 }
 struct Queued(Arc<Shared>);
 impl Drop for Queued {
@@ -153,8 +159,8 @@ impl Drop for Queued {
 }
 struct Completion {
     result: Result<Answer>,
-    permit: OwnedSemaphorePermit,
     keepalive: Box<dyn Send>,
+    permit: OwnedSemaphorePermit,
 }
 // Publish terminal failure before unwinding drops this work's reply and consumer
 // lease. Otherwise a woken consumer could observe an apparently healthy owner.
@@ -176,8 +182,8 @@ impl Drop for WorkFailureGuard {
 /// completed result is collected/dropped, including abandoned IPC waiters.
 pub struct Captured<T> {
     value: T,
-    _permit: OwnedSemaphorePermit,
     _keepalive: Box<dyn Send>,
+    _permit: OwnedSemaphorePermit,
 }
 impl<T> Captured<T> {
     pub fn value(&self) -> &T {
@@ -250,6 +256,10 @@ impl NetworkSnapshots {
             #[cfg(test)]
             before_capture: Mutex::new(None),
             #[cfg(test)]
+            before_reply: Mutex::new(None),
+            #[cfg(test)]
+            settled_replies: AtomicU64::new(0),
+            #[cfg(test)]
             fail_interfaces: AtomicBool::new(false),
             #[cfg(test)]
             fail_hostname: AtomicBool::new(false),
@@ -262,77 +272,95 @@ impl NetworkSnapshots {
             .name("freeshow-network-snapshot".into())
             .spawn(move || {
                 let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    while let Ok(Work {
-                        operation,
-                        mut budget,
-                        reply,
-                        queued,
-                        permit,
-                        keepalive,
-                    }) = receiver.recv()
-                    {
-                        drop(queued);
-                        state.active.store(1, Ordering::Release);
-                        let _failure = WorkFailureGuard(state.clone());
-                        let result = (|| {
-                            budget.check()?;
+                    while let Ok(work) = receiver.recv() {
+                        {
+                            let Work {
+                                operation,
+                                mut budget,
+                                reply,
+                                queued,
+                                permit,
+                                keepalive,
+                            } = work;
+                            drop(queued);
+                            state.active.store(1, Ordering::Release);
+                            let _failure = WorkFailureGuard(state.clone());
+                            let result = (|| {
+                                budget.check()?;
+                                #[cfg(test)]
+                                {
+                                    let hook = state.before_capture.lock().unwrap().take();
+                                    if let Some((entered, release)) = hook {
+                                        let _ = entered.send(());
+                                        let _ = release.recv();
+                                    }
+                                }
+                                budget.check()?;
+                                let answer = match operation {
+                                    Operation::Snapshot => {
+                                        let interfaces = capture_interfaces(&mut budget)?;
+                                        #[cfg(test)]
+                                        if state.fail_hostname.load(Ordering::Acquire) {
+                                            return Err(native_error(
+                                                "Controlled hostname failure",
+                                            ));
+                                        }
+                                        let hostname = native_hostname(&mut budget)?;
+                                        Answer::Snapshot(NetworkSnapshot {
+                                            hostname,
+                                            interfaces,
+                                        })
+                                    }
+                                    Operation::Addresses => {
+                                        let interfaces = capture_interfaces(&mut budget)?;
+                                        // Source MAIN.IP never reads/validates hostname.
+                                        let snapshot = NetworkSnapshot {
+                                            hostname: "localhost".into(),
+                                            interfaces,
+                                        };
+                                        let ips = freeshow_discovery::get_local_ips(&snapshot)
+                                            .map_err(|e| {
+                                                error(
+                                                    if e.code == "discovery_source_shape" {
+                                                        "network_source_shape"
+                                                    } else {
+                                                        "network_snapshot_invalid"
+                                                    },
+                                                    e.message,
+                                                )
+                                            })?;
+                                        Answer::Addresses(ips)
+                                    }
+                                    #[cfg(test)]
+                                    Operation::Panic => {
+                                        panic!("controlled network snapshot worker panic")
+                                    }
+                                };
+                                check_output(&answer, &mut budget, worker_limits.output_bytes)?;
+                                budget.check()?;
+                                Ok(answer)
+                            })();
+                            state.active.store(0, Ordering::Release);
                             #[cfg(test)]
                             {
-                                let hook = state.before_capture.lock().unwrap().take();
+                                let hook = state.before_reply.lock().unwrap().take();
                                 if let Some((entered, release)) = hook {
                                     let _ = entered.send(());
                                     let _ = release.recv();
                                 }
                             }
-                            budget.check()?;
-                            let answer = match operation {
-                                Operation::Snapshot => {
-                                    let interfaces = capture_interfaces(&mut budget)?;
-                                    #[cfg(test)]
-                                    if state.fail_hostname.load(Ordering::Acquire) {
-                                        return Err(native_error("Controlled hostname failure"));
-                                    }
-                                    let hostname = native_hostname(&mut budget)?;
-                                    Answer::Snapshot(NetworkSnapshot {
-                                        hostname,
-                                        interfaces,
-                                    })
-                                }
-                                Operation::Addresses => {
-                                    let interfaces = capture_interfaces(&mut budget)?;
-                                    // Source MAIN.IP never reads/validates hostname.
-                                    let snapshot = NetworkSnapshot {
-                                        hostname: "localhost".into(),
-                                        interfaces,
-                                    };
-                                    let ips = freeshow_discovery::get_local_ips(&snapshot)
-                                        .map_err(|e| {
-                                            error(
-                                                if e.code == "discovery_source_shape" {
-                                                    "network_source_shape"
-                                                } else {
-                                                    "network_snapshot_invalid"
-                                                },
-                                                e.message,
-                                            )
-                                        })?;
-                                    Answer::Addresses(ips)
-                                }
-                                #[cfg(test)]
-                                Operation::Panic => {
-                                    panic!("controlled network snapshot worker panic")
-                                }
-                            };
-                            check_output(&answer, &mut budget, worker_limits.output_bytes)?;
-                            budget.check()?;
-                            Ok(answer)
-                        })();
-                        state.active.store(0, Ordering::Release);
-                        let _ = reply.send(Completion {
-                            result,
-                            permit,
-                            keepalive,
-                        });
+                            // send's Err owns the whole Completion if its receiver
+                            // was dropped. Dispose it before any reply-settled fence.
+                            drop(reply.send(Completion {
+                                result,
+                                permit,
+                                keepalive,
+                            }));
+                        }
+                        // The whole Work frame, including budget/failure
+                        // guards and any failed-send Completion, is disposed.
+                        #[cfg(test)]
+                        state.settled_replies.fetch_add(1, Ordering::Release);
                     }
                 }));
                 if result.is_err() {
@@ -535,6 +563,14 @@ impl NetworkSnapshots {
         release: std::sync::mpsc::Receiver<()>,
     ) {
         *self.inner.shared.before_capture.lock().unwrap() = Some((entered, release));
+    }
+    #[cfg(test)]
+    fn pause_next_reply(
+        &self,
+        entered: std::sync::mpsc::Sender<()>,
+        release: std::sync::mpsc::Receiver<()>,
+    ) {
+        *self.inner.shared.before_reply.lock().unwrap() = Some((entered, release));
     }
     #[cfg(test)]
     pub(crate) fn fail_interfaces(&self, value: bool) {
@@ -1001,6 +1037,16 @@ fn native_hostname(_budget: &mut Budget) -> Result<String> {
 mod tests {
     use super::*;
     use std::{future::Future, pin::Pin, task::Poll};
+    struct PermitWitness {
+        slots: Arc<Semaphore>,
+        observed: Arc<AtomicUsize>,
+    }
+    impl Drop for PermitWitness {
+        fn drop(&mut self) {
+            self.observed
+                .store(self.slots.available_permits(), Ordering::Release);
+        }
+    }
     async fn wait_for(mut condition: impl FnMut() -> bool) {
         tokio::time::timeout(Duration::from_secs(3), async {
             while !condition() {
@@ -1042,7 +1088,10 @@ mod tests {
         assert_eq!(service.status()["active"], 1);
         assert_eq!(service.status()["admitted"], 2);
         release.send(()).unwrap();
-        wait_for(|| service.status()["active"] == 0 && service.status()["queued"] == 0).await;
+        // active/queued describe capture/dequeue, not completion publication.
+        // Wait for both actual oneshot transfers/disposals before assuming that
+        // dropping an unpolled receiver synchronously drops its ready result.
+        wait_for(|| service.inner.shared.settled_replies.load(Ordering::Acquire) == 2).await;
         assert_eq!(
             service.status()["admitted"],
             2,
@@ -1065,6 +1114,167 @@ mod tests {
         let other = service.snapshot(SnapshotControl::default()).await.unwrap();
         assert!(!other.into_value().hostname.is_empty());
         drop(captured);
+        assert_eq!(service.status()["admitted"], 0);
+        service.shutdown().await.unwrap();
+    }
+    #[tokio::test]
+    async fn idle_capture_counters_do_not_prove_reply_disposal_or_worker_join() {
+        let service = NetworkSnapshots::start(SnapshotLimits {
+            capacity: 1,
+            shutdown_timeout: Duration::from_millis(20),
+            ..SnapshotLimits::default()
+        })
+        .unwrap();
+        let (entered, ready) = mpsc::channel();
+        let (release, gate) = mpsc::channel();
+        service.pause_next_reply(entered, gate);
+        let mut pending = Box::pin(service.addresses_owned(SnapshotControl::default(), ()));
+        std::future::poll_fn(|cx| {
+            assert!(matches!(pending.as_mut().poll(cx), Poll::Pending));
+            Poll::Ready(())
+        })
+        .await;
+        wait_for(|| ready.try_recv().is_ok()).await;
+        // This is the exact window formerly mistaken for a ready oneshot.
+        assert_eq!(service.status()["active"], 0);
+        assert_eq!(service.status()["queued"], 0);
+        assert_eq!(
+            service.inner.shared.settled_replies.load(Ordering::Acquire),
+            0
+        );
+        drop(pending);
+        assert_eq!(service.status()["admitted"], 1);
+        assert_eq!(
+            service
+                .addresses_owned(SnapshotControl::default(), ())
+                .await
+                .err()
+                .unwrap()
+                .code,
+            "network_snapshot_busy"
+        );
+        assert_eq!(
+            service.shutdown().await.err().unwrap().code,
+            "network_snapshot_shutdown_timeout"
+        );
+        assert_eq!(service.status()["workerRunning"], true);
+        assert_eq!(service.status()["admitted"], 1);
+        release.send(()).unwrap();
+        service.shutdown().await.unwrap();
+        assert_eq!(
+            service.inner.shared.settled_replies.load(Ordering::Acquire),
+            1
+        );
+        assert_eq!(service.status()["admitted"], 0);
+        assert_eq!(service.status()["workerRunning"], false);
+    }
+
+    #[tokio::test]
+    async fn abandoned_reply_keeps_admission_through_actual_consumer_guard_disposal() {
+        struct HeldDrop {
+            slots: Arc<Semaphore>,
+            entered: Option<oneshot::Sender<usize>>,
+            release: mpsc::Receiver<()>,
+        }
+        impl Drop for HeldDrop {
+            fn drop(&mut self) {
+                let _ = self
+                    .entered
+                    .take()
+                    .unwrap()
+                    .send(self.slots.available_permits());
+                // A bounded gate holds the actual fixed OS worker's destructor,
+                // not a simulation of resource disposal or an extra thread.
+                let _ = self.release.recv_timeout(Duration::from_secs(3));
+            }
+        }
+        let service = NetworkSnapshots::start(SnapshotLimits {
+            capacity: 1,
+            shutdown_timeout: Duration::from_millis(20),
+            ..SnapshotLimits::default()
+        })
+        .unwrap();
+        let (capture_entered, capture_ready) = mpsc::channel();
+        let (capture_release, capture_gate) = mpsc::channel();
+        service.pause_next(capture_entered, capture_gate);
+        let (entered, ready) = oneshot::channel();
+        let (release, gate) = mpsc::channel();
+        let guard = HeldDrop {
+            slots: service.inner.slots.clone(),
+            entered: Some(entered),
+            release: gate,
+        };
+        let mut pending = Box::pin(service.addresses_owned(SnapshotControl::default(), guard));
+        std::future::poll_fn(|cx| {
+            assert!(matches!(pending.as_mut().poll(cx), Poll::Pending));
+            Poll::Ready(())
+        })
+        .await;
+        wait_for(|| capture_ready.try_recv().is_ok()).await;
+        drop(pending);
+        capture_release.send(()).unwrap();
+        let available = tokio::time::timeout(Duration::from_secs(2), ready)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            available, 0,
+            "the consumer destructor must begin while its original permit is still held"
+        );
+        assert_eq!(service.status()["admitted"], 1);
+        assert_eq!(
+            service.inner.shared.settled_replies.load(Ordering::Acquire),
+            0
+        );
+        assert_eq!(
+            service
+                .addresses_owned(SnapshotControl::default(), ())
+                .await
+                .err()
+                .unwrap()
+                .code,
+            "network_snapshot_busy"
+        );
+        assert_eq!(
+            service.shutdown().await.err().unwrap().code,
+            "network_snapshot_shutdown_timeout"
+        );
+        assert_eq!(service.status()["admitted"], 1);
+        release.send(()).unwrap();
+        service.shutdown().await.unwrap();
+        assert_eq!(
+            service.inner.shared.settled_replies.load(Ordering::Acquire),
+            1
+        );
+        assert_eq!(service.status()["admitted"], 0);
+        assert_eq!(service.status()["workerRunning"], false);
+    }
+    #[tokio::test]
+    async fn collected_result_releases_consumer_guard_before_admission() {
+        let service = NetworkSnapshots::start(SnapshotLimits {
+            capacity: 1,
+            ..SnapshotLimits::default()
+        })
+        .unwrap();
+        let observed = Arc::new(AtomicUsize::new(usize::MAX));
+        let captured = service
+            .addresses_owned(
+                SnapshotControl::default(),
+                PermitWitness {
+                    slots: service.inner.slots.clone(),
+                    observed: observed.clone(),
+                },
+            )
+            .await
+            .unwrap();
+        assert_eq!(service.status()["admitted"], 1);
+        assert_eq!(observed.load(Ordering::Acquire), usize::MAX);
+        drop(captured);
+        assert_eq!(
+            observed.load(Ordering::Acquire),
+            0,
+            "the actual collected result guard drops before its admission permit"
+        );
         assert_eq!(service.status()["admitted"], 0);
         service.shutdown().await.unwrap();
     }
@@ -1246,7 +1456,14 @@ mod tests {
         let owner = service.clone();
         let panic = tokio::spawn(async move { owner.panic_worker().await });
         wait_for(|| ready.try_recv().is_ok()).await;
-        let mut queued = Box::pin(service.addresses_owned(SnapshotControl::default(), ()));
+        let observed = Arc::new(AtomicUsize::new(usize::MAX));
+        let mut queued = Box::pin(service.addresses_owned(
+            SnapshotControl::default(),
+            PermitWitness {
+                slots: service.inner.slots.clone(),
+                observed: observed.clone(),
+            },
+        ));
         std::future::poll_fn(|cx| {
             assert!(matches!(queued.as_mut().poll(cx), Poll::Pending));
             Poll::Ready(())
@@ -1258,6 +1475,8 @@ mod tests {
         assert!(queued.await.is_err());
         let first = service.shutdown().await.err().unwrap();
         assert_eq!(first.code, "network_snapshot_worker");
+        assert_eq!(observed.load(Ordering::Acquire), service.inner.limits.capacity - 1,
+            "queued Work retains its original permit through actual guard disposal after worker panic");
         let next = service.shutdown().await.err().unwrap();
         assert_eq!(next.message, first.message);
         assert_eq!(
