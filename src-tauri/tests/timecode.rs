@@ -1006,6 +1006,9 @@ async fn global_status_gate_survives_context_renewal_and_old_private_callbacks_a
     f.ack(&value);
     let status = f.event().await;
     assert_eq!(status.event.message.data, Some(json!("play")));
+    let previous_sequence = status.delivery.sequence.parse::<u64>().unwrap();
+    assert!(previous_sequence > value.delivery.sequence.parse::<u64>().unwrap());
+    assert!(serde_json::to_value(&status).unwrap()["delivery"]["sequence"].is_string());
     let old = f.context();
     f.switch().await;
     f.native.context_changed().await.unwrap();
@@ -1018,6 +1021,7 @@ async fn global_status_gate_survives_context_renewal_and_old_private_callbacks_a
     f.controls()[1].emit("in", &[250]);
     let value = f.event().await;
     assert_eq!(value.event.message.channel, "TIMECODE_VALUE");
+    assert!(value.delivery.sequence.parse::<u64>().unwrap() > previous_sequence);
     f.ack(&value);
     // The original shared status remains play; native queue is fully observed after
     // an ordered STATUS/log barrier rather than an arbitrary timing sleep.

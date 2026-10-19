@@ -150,6 +150,14 @@ MTC fixtures emit finite values; the shared Number representation keeps any futu
 special-number transport explicit. Incoming top-level undefined STATUS remains
 native data-only logging intent, not an invented renderer event.
 
+Private `delivery.sequence` is a positive decimal-string u64 assigned by the
+ordered publication owner from one process-wide checked counter. It does not reset
+on router/context renewal or native host replacement. The renderer keeps one last
+accepted sequence across context changes and rejects values less than or equal to
+it before retained delivery. Gaps are valid. UUID completion remains the native
+one-use authority; sequence exhaustion is an explicit resource failure. No source
+event or source handler sees this private field.
+
 ## Aggregate bounds and execution limits
 
 Host FIFO and retained whole jobs/results:16. A permit survives completed results

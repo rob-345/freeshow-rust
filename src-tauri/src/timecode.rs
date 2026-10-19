@@ -28,6 +28,9 @@ const JOBS: usize = 16;
 const PORTS: usize = 16;
 const PUBLICATIONS: usize = 16;
 const PUBLICATION_BYTES: usize = 1024 * 1024;
+// Single ordered host publication, across drained router/context renewals and
+// native host replacement. Decimal strings avoid renderer u64 precision loss.
+static NEXT_PUBLICATION: AtomicU64 = AtomicU64::new(0);
 type Result<T> = std::result::Result<T, WireError>;
 type Failure = (&'static str, String);
 type Factory = Arc<dyn Fn() -> ports::Result<Box<dyn ports::Backend>> + Send + Sync>;
@@ -92,6 +95,7 @@ pub struct NativeTimecodeDelivery {
     pub id: String,
     pub context: RuntimeContext,
     pub run: u64,
+    pub sequence: String,
 }
 #[derive(Debug, Serialize)]
 pub enum Observation {
@@ -1254,6 +1258,8 @@ impl Run {
                 id: format!("timecode-{}", uuid::Uuid::new_v4()),
                 context: self.context.clone(),
                 run: self.id,
+                // Reserve the maximum serialized sequence width before queueing.
+                sequence: u64::MAX.to_string(),
             },
         };
         let size = wire_size(&publication)?;
@@ -1276,13 +1282,25 @@ impl Run {
         if self.waiting.is_some() {
             return Ok(());
         }
-        while let Some(notice) = self.notices.pop_front() {
+        while let Some(mut notice) = self.notices.pop_front() {
             self.notice_bytes -= notice.bytes;
             let c = &notice.publication.delivery.context;
             if self.retiring || shared.current(c).is_err() {
                 self.stale = self.stale.saturating_add(1);
                 continue;
             }
+            let sequence = NEXT_PUBLICATION
+                .try_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+                    value.checked_add(1)
+                })
+                .map_err(|_| {
+                    error(
+                        "timecode_publication_limit",
+                        "Publication sequence exhausted",
+                    )
+                })?
+                + 1;
+            notice.publication.delivery.sequence = sequence.to_string();
             let id = notice.publication.delivery.id.clone();
             let context = c.clone();
             let (reply, receive) = oneshot::channel();
