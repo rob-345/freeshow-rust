@@ -1074,7 +1074,7 @@ async fn dispatch_native(
                 .dispatch(&state.library, request, window.label())
                 .await;
         }
-        if command == "PROVIDER_CONNECTIONS" {
+        if matches!(command, "PROVIDER_CONNECTIONS" | "GET_CONTENT_PROVIDERS") {
             let state = app.state::<AppState>();
             return state
                 .provider_connections

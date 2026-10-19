@@ -9,6 +9,7 @@ import ts from "typescript"
 import { root, upstreamFunctions } from "./oracle.mjs"
 import { corpus, generatedCorpus } from "../../crates/freeshow-exif/tools/fixtures.mjs"
 import { Driver as SpotifyDriver, sourceOracle as spotifyOracle } from "./spotify-oracle.mjs"
+import { catalogueOracle, assertNoCatalogueActivity } from "./provider-catalogue-oracle.mjs"
 
 const source = fs.readFileSync(path.join(root, "src/frontend/rust/bridge.ts"), "utf8")
 const nativeDrop = ts.transpileModule(fs.readFileSync(path.join(root, "src/frontend/rust/nativeDrop.ts"), "utf8"), {
@@ -63,6 +64,55 @@ const javascript = ts
     .replace('from "./spotify"', `from "${spotifyModule}"`)
 const { createRustApi, installRustBridge } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`)
 const tick = () => new Promise((resolve) => setImmediate(resolve))
+
+test("provider catalogue callbacks preserve actual source declarations, listeners and command snapshots through caller reuse", async () => {
+    const context = { runtimeId: "catalogue-source", libraryGeneration: 3, dataPath: "/selected" }
+    for (const phase of ["ordinary", "before-transport", "after-transport"]) {
+        const source = catalogueOracle(),
+            payload = { channel: "GET_CONTENT_PROVIDERS", data: { providers: [{ providerId: "untrusted", authenticated: true }] } },
+            snapshot = structuredClone(payload),
+            listener = "catalogue-" + phase,
+            original = await source.dispatch(payload.data, listener),
+            expected = JSON.parse(JSON.stringify(original[0])),
+            sourceKeys = Array.from(original[0][1].data, (row) => Object.keys(row)),
+            messages = [],
+            errors = [],
+            requests = []
+        assertNoCatalogueActivity(source.calls)
+        let finish
+        const bridge = createRustApi(
+            async (request) => {
+                requests.push(request)
+                return new Promise((resolve) => {
+                    finish = resolve
+                })
+            },
+            (...error) => errors.push(error),
+            context
+        )
+        assert.equal(bridge.api.send("MAIN", payload, listener), undefined)
+        bridge.api.receive("MAIN", (...args) => messages.push(args))
+        if (phase !== "before-transport") await tick()
+        if (phase !== "ordinary") {
+            payload.channel = "GET_OS"
+            payload.data.providers[0].providerId = "reused"
+        }
+        if (phase === "before-transport") await tick()
+        assert.equal(requests.length, 1)
+        assert.deepEqual(requests[0], { channel: "MAIN", data: snapshot, listenerId: listener, context })
+        finish([{ channel: "MAIN", message: expected[1], listenerId: expected[2], context }])
+        await tick()
+        assert.equal(expected[0], "MAIN")
+        assert.deepEqual(messages, [expected.slice(1)])
+        assert.deepEqual(Object.keys(messages[0][0]), ["channel", "data"])
+        assert.deepEqual(
+            messages[0][0].data.map((row) => Object.keys(row)),
+            sourceKeys
+        )
+        assert.deepEqual(errors, [])
+        assert.deepEqual(bridge.api.getRuntimeContext(), context)
+    }
+})
 
 function spotifyEvent(context, listenerId, wire, extra = {}) {
     return {

@@ -1,7 +1,7 @@
-//! Stored provider indications read actual global ACCESS on the existing
-//! ordered owner. No provider backend, OAuth listener, worker or timer is added.
+//! The fixed catalogue has no IO. Stored indications read actual global ACCESS
+//! on the existing ordered owner. Neither starts a provider backend or listener.
 use freeshow_core::{
-    protocol::{Event, Request},
+    protocol::{Event, NativeLifetime, Request},
     service::LibraryService,
     Error, WireError,
 };
@@ -225,7 +225,10 @@ impl ProviderConnections {
                 "Only the main window may request provider connection",
             ));
         }
-        if request.channel != "MAIN" || request.data["channel"] != "PROVIDER_CONNECTIONS" {
+        let catalogue = request.data["channel"] == "GET_CONTENT_PROVIDERS";
+        if request.channel != "MAIN"
+            || (!catalogue && request.data["channel"] != "PROVIDER_CONNECTIONS")
+        {
             return Err(WireError::new(
                 "unsupported_command",
                 "Unknown provider connection command",
@@ -240,6 +243,31 @@ impl ProviderConnections {
             .is_some_and(|id| id.len() > 8192)
         {
             return Err(WireError::from(resource()));
+        }
+        if catalogue {
+            // Only source declarations: no credential/store/backend inspection,
+            // library queue, new task, worker or timer. The existing four whole
+            // slots also bound complete catalogue replies through serialization.
+            request.data = serde_json::json!({"channel":"GET_CONTENT_PROVIDERS"});
+            let control = JobControl {
+                deadline: Instant::now() + Duration::from_secs(2),
+                cancel: CancelToken::default(),
+            };
+            let lease = self.begin(&control)?;
+            check(&control).map_err(WireError::from)?;
+            let mut event = Event::reply(
+                "MAIN",
+                "GET_CONTENT_PROVIDERS",
+                native::catalogue(),
+                request.listener_id.clone(),
+            );
+            event.native_lifetime = Some(NativeLifetime::new(lease));
+            let mut events = vec![event];
+            library
+                .contextualize(&request, &mut events)
+                .map_err(WireError::from)?;
+            check(&control).map_err(WireError::from)?;
+            return Ok(events);
         }
         // The source handler ignores its payload; do not retain it in the ordered
         // queue. Frozen context and original correlation remain unchanged.
