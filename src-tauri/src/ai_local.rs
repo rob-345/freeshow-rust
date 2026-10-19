@@ -22,6 +22,13 @@ struct State {
 #[derive(Clone)]
 pub struct NativeInventory {
     state: Arc<Mutex<State>>,
+    #[cfg(test)]
+    after_begin: Arc<Mutex<Option<AfterBegin>>>,
+}
+#[cfg(test)]
+struct AfterBegin {
+    entered: tokio::sync::oneshot::Sender<CancelToken>,
+    release: tokio::sync::oneshot::Receiver<()>,
 }
 struct Caller {
     id: u64,
@@ -56,6 +63,8 @@ impl NativeInventory {
                 service: None,
                 failure,
             })),
+            #[cfg(test)]
+            after_begin: Arc::new(Mutex::new(None)),
         }
     }
     fn begin(&self, context: RuntimeContext) -> Result<(Ticket, Caller), WireError> {
@@ -170,6 +179,16 @@ impl NativeInventory {
             ));
         }
         let (ticket, _caller) = self.begin(request.context.clone().unwrap())?;
+        #[cfg(test)]
+        {
+            // Hold the actual admitted Ticket/Caller, without replacing the
+            // filesystem query or requiring a per-request production task.
+            let gate = self.after_begin.lock().unwrap().take();
+            if let Some(gate) = gate {
+                let _ = gate.entered.send(_caller.cancel.clone());
+                let _ = gate.release.await;
+            }
+        }
         let read = ticket.finish().await.map_err(error)?;
         let rows = read.result().map_err(|e| error(e.clone()))?;
         let data = serde_json::to_value(rows)
@@ -183,6 +202,32 @@ impl NativeInventory {
             .contextualize(&request, &mut events)
             .map_err(WireError::from)?;
         Ok(events)
+    }
+    #[cfg(test)]
+    #[allow(dead_code, reason = "Used by the isolated native integration tests")]
+    pub fn test_hold_after_begin(
+        &self,
+    ) -> (
+        tokio::sync::oneshot::Receiver<CancelToken>,
+        tokio::sync::oneshot::Sender<()>,
+    ) {
+        let (entered, observed) = tokio::sync::oneshot::channel();
+        let (release, held) = tokio::sync::oneshot::channel();
+        let mut slot = self.after_begin.lock().unwrap();
+        assert!(
+            slot.is_none(),
+            "Only one post-admission test gate may be set"
+        );
+        *slot = Some(AfterBegin {
+            entered,
+            release: held,
+        });
+        (observed, release)
+    }
+    #[cfg(test)]
+    #[allow(dead_code, reason = "Used by the isolated native integration tests")]
+    pub fn test_registered(&self) -> usize {
+        self.state.lock().unwrap().active.len()
     }
     #[cfg(test)]
     #[allow(dead_code)]
