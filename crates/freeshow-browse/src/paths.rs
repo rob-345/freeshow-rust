@@ -1,4 +1,6 @@
-//! POSIX Node path semantics. The initial runtime contract is gated to Linux.
+//! POSIX Node paths; Windows workflows use the dedicated child module.
+#[cfg(target_os = "windows")]
+pub(crate) mod windows;
 pub fn basename(path: &str) -> &str {
     path.trim_end_matches('/').rsplit('/').next().unwrap_or("")
 }

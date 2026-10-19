@@ -508,7 +508,7 @@ fn full_native_identity_is_checked_before_lossy_js_integer_conversion() {
 }
 
 #[tokio::test]
-async fn file_info_runs_on_existing_fixed_worker_and_other_windows_commands_stay_gated() {
+async fn file_info_and_ordinary_listing_use_fixed_workers_with_separate_verbatim_capabilities() {
     let temp = tempfile::tempdir().unwrap();
     let file = temp.path().join("native.WAV");
     fs::write(&file, b"worker-owned metadata").unwrap();
@@ -545,11 +545,30 @@ async fn file_info_runs_on_existing_fixed_worker_and_other_windows_commands_stay
         assert_eq!(reply.data["extension"], expected["value"]["extension"]);
         compare_bits(&reply.data["stat"], expected, path);
     }
+    let canonical_root = temp.path().canonicalize().unwrap();
+    let verbatim_root = canonical_root.to_str().unwrap();
+    let ordinary_root = verbatim_root.strip_prefix(r"\\?\").unwrap();
+    let ordinary_file = Path::new(ordinary_root).join("native.WAV");
+    let folder = service
+        .dispatch("READ_FOLDER", &json!({"path":ordinary_root}))
+        .await
+        .unwrap();
+    assert_eq!(folder.data[ordinary_root]["isFolder"], true);
+    assert_eq!(
+        folder.data[ordinary_file.to_str().unwrap()]["stats"]["size"],
+        expected["value"]["stat"]["size"]
+    );
+    assert!(service
+        .dispatch("GET_SIMILAR", &json!({"paths":[ordinary_file]}))
+        .await
+        .unwrap()
+        .data
+        .is_array());
     for command in ["READ_FOLDER", "GET_SIMILAR"] {
         let payload = if command == "READ_FOLDER" {
-            json!({"path":temp.path()})
+            json!({"path":verbatim_root})
         } else {
-            json!({"paths":[file]})
+            json!({"paths":[canonical_root.join("native.WAV")]})
         };
         assert_eq!(
             service
@@ -558,7 +577,7 @@ async fn file_info_runs_on_existing_fixed_worker_and_other_windows_commands_stay
                 .err()
                 .unwrap()
                 .code,
-            "unsupported_platform"
+            "unsupported_windows_path"
         );
     }
     service.shutdown().await.unwrap();

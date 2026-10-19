@@ -1,6 +1,8 @@
 use crate::{paths, stats, *};
 use serde_json::{json, Map};
 use std::collections::HashSet;
+#[cfg(target_os = "windows")]
+mod windows;
 const IMAGE: &[&str] = &[
     "jpg", "jpeg", "png", "gif", "bmp", "svg", "webp", "tiff", "tif", "jfif", "avif", "heic",
 ];
@@ -219,6 +221,10 @@ fn similar(original: &[String], budget: &mut Budget) -> Result<Value> {
     ))
 }
 pub(crate) fn process(request: Request, budget: &mut Budget) -> Result<BrowseReply> {
+    #[cfg(target_os = "windows")]
+    if matches!(&request, Request::Folder { .. } | Request::Similar(_)) {
+        return windows::process(request, budget);
+    }
     if !cfg!(any(target_os = "linux", target_os = "macos"))
         && !(cfg!(target_os = "windows") && matches!(&request, Request::FileInfo(_)))
     {

@@ -286,11 +286,11 @@ if (!["linux", "darwin", "win32"].includes(process.platform))
     })
 
 if (process.platform === "win32")
-    test("Windows file information preserves the original empty-path result while folder and similarity workflows stay explicitly unavailable", async () => {
-        const [info] = await compare([request("FILE_INFO", "")])
+    test("Windows file information and empty folder/similarity requests preserve actual source results", async () => {
+        const [info, folders, similar] = await compare([request("FILE_INFO", ""), request("READ_FOLDER", { path: [] }), request("GET_SIMILAR", { paths: [] })])
         assert.equal(info.data, null)
-        const results = rust([request("READ_FOLDER", { path: [] }), request("GET_SIMILAR", { paths: [] })])
-        assert.ok(results.every((item) => item.error.code === "unsupported_platform"))
+        assert.deepEqual(folders.data, {})
+        assert.deepEqual(similar.data, [])
     })
 
 test("committed packaged IPC evidence records immutable source declarations with normalized line endings", () => {
