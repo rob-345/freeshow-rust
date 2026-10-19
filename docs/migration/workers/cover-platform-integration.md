@@ -31,6 +31,17 @@ two discovery tests because its worktree had no installed Node dependencies and
 selected host Node 24. Reusing the existing dependency tree and pinned Node
 22.21.1 passed both unchanged tests and the complete 49-case harness.
 
+After merging the reviewed modules into the main branch, strict native all-target
+Clippy, the production binary build and all 352 Linux native executions passed
+across 36 test targets (two new OS-specific targets contain no Linux tests).
+The rebuilt 187-step Linux editor, four menus and both drop scales passed again.
+Independent receipt validation preserved all six ordinary now-playing cases,
+three folder-failure sequences, both exact JPEG RGBA hashes, fourteen cover
+phases/141 HTTP responses, unchanged blockers/old-library sentinel and actual
+pending-write/backup Quit. The editor retains 55 expected diagnostics. The
+portable JPEG/parser suite remains current because this integration changes
+only native modules, platform dependency features, tests and documentation.
+
 The dedicated 12 macOS fixtures and 12 Windows async fixtures/four Windows unit
 checks have only been cross-compiled locally. Native CI execution remains
 required. These checks do not establish foreign browser, physical delivery,

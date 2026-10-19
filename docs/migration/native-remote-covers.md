@@ -2,9 +2,11 @@
 
 The Rust desktop now configures a native fixed-cover source for each retained
 MAIN START run. REMOTE, STAGE and CONTROLLER use the same bounded source contract.
-The current anchored filesystem backend is verified on Linux. Other platforms
-return an explicit unsupported preparation; compilation is not filesystem or GUI
-parity. Complete remote-cover parity remains unfinished.
+The anchored filesystem backend has actual runtime evidence on Linux. The newer
+local integration also dispatches to reviewed Darwin and Windows backends with
+dedicated native tests; actual OS execution remains pending. Other systems return
+an explicit unsupported preparation. Compilation is not filesystem or GUI parity.
+Complete remote-cover parity remains unfinished.
 
 `remote_cover.rs` captures the full native library context, the existing ordered
 library owner, fixed-file preparation and independent folder notifications. No
@@ -22,6 +24,17 @@ casts. Unsupported representation projection becomes a retained failed state;
 it cannot erase a genuine earlier folder-mkdir observation. This is not an
 immutable snapshot guarantee after headers: later file mutation can still fail
 body reads.
+
+The new Darwin backend uses actual no-follow directory/file descriptors; alias
+roots such as `/var` and `/tmp` remain outside its certified path contract. The
+Windows backend uses rooted native opens and actual full directory identities,
+rejecting unsupported reparse/remote/device volumes and unrepresentable leaf
+identities. Windows HTTP projection accepts true native modified seconds only
+in `0..=u32::MAX` with canonical nanoseconds. Exceptional dates remain accurate
+raw guards but fail with `cover_mtime` before headers instead of guessing pinned
+Node's overflow semantics. Dedicated tests require exact stored native dates
+before source ETag comparisons. These backends add no threads or handle clones.
+[Integration evidence and remaining limits](workers/cover-platform-integration.md).
 
 The source-compared HTTP planner preserves tested GET, HEAD, single/combined
 ranges, conditional requests, weak ETag, Last-Modified, fixed PNG MIME, zero bytes,

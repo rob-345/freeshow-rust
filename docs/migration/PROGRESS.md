@@ -15,8 +15,10 @@ captures only the selected library and an actual per-run emitter; the fixed
 `Audio/NowPlayingCover.png` path never comes from HTTP or renderer input. Two
 existing file workers retain preparation, pre-header validation, streaming and
 independent notification cleanup through actual body disposition and thread
-joins. The verified anchored filesystem backend is Linux; other OS backends
-remain explicitly unsupported. [Native contract and gaps](native-remote-covers.md).
+joins. Linux has actual runtime evidence. Reviewed macOS and Windows anchored
+backends are now integrated locally, with actual OS execution still required;
+other systems remain explicitly unsupported.
+[Native contract and gaps](native-remote-covers.md).
 
 The source-compared HTTP planner preserves tested GET/HEAD, ranges, conditional
 responses, weak ETags, Last-Modified, missing files and automatic OPTIONS.
@@ -89,6 +91,14 @@ all three HTTP ports serve the current bytes. Compressed PNG bytes differ.
 [ID3 correction](workers/audio-id3-recovery.md) and
 [FLAC correction](workers/audio-flac-comments.md) retain exact limits and gaps.
 This newer local milestone still requires its own complete CI run.
+
+JPEG/parser milestone `b283c334` is published in the draft PR and its
+[six-job CI run](https://github.com/rob-345/freeshow-rust/actions/runs/39245511801)
+is in progress. The newer local platform-cover integration preserves the same
+owners and adds dedicated Darwin/Windows tests, actual Source/TCP host coverage
+on both platforms, and a Windows HTTP timestamp gate to the source-certified
+unsigned-seconds interval. Cross-compiled tests are not native filesystem
+verification. [Platform integration](workers/cover-platform-integration.md).
 
 Now-playing remains partial: broader image/metadata/resize fidelity, root
 common-picture insertion position, fixed-cover HTTP parser/date/error-rendering
