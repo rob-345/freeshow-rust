@@ -1,10 +1,14 @@
-//! Desktop Spotify state, not the Spotify Web API or an authenticated account.
+//! Linux desktop Spotify state and bounded command transport, not the Spotify Web API.
+mod commands;
 mod parser;
 mod process;
 mod service;
+pub use commands::{CommandOutcome, PreparedCommand};
 pub use parser::{parse_linux, NumberKind, NumberRestoration, State, WireState};
 use serde::Serialize;
-pub use service::{Receipt, SpotifyService, Ticket};
+pub use service::{
+    CommandControl, CommandFinished, CommandReceipt, Receipt, SpotifyService, Ticket,
+};
 use std::{
     ffi::OsString,
     path::{Path, PathBuf},
@@ -124,7 +128,7 @@ impl Backend {
         let unavailable = if !cfg!(target_os = "linux") {
             Some(Error::new(
                 "spotify_unsupported",
-                "Only Linux state queries are implemented",
+                "Only Linux desktop Spotify transport is implemented",
             ))
         } else if address.is_none_or(|v| !v.starts_with("unix:") || v.contains(';')) {
             Some(Error::new(
@@ -211,6 +215,12 @@ pub struct Status {
     pub retained: usize,
     pub observers: usize,
     pub active_pid: u32,
+    /// Bounded actual command child registry, separate from the sequential query lane.
+    pub command_pids: Vec<u32>,
+    pub commands: u64,
+    pub commands_completed: u64,
+    pub command_failures: u64,
+    pub last_command_error: Option<Error>,
     pub spawned: u64,
     pub reaped: u64,
     pub queries: u64,

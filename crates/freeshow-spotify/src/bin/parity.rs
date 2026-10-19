@@ -23,6 +23,7 @@ fn main() {
     let mut service = None;
     let owner = Owner::new("spotify-test", 1, Path::new("/fixture/library")).unwrap();
     let mut tickets = HashMap::<u64, Ticket>::new();
+    let mut commands = HashMap::<u64, CommandReceipt>::new();
     let mut next = 0u64;
     let mut stdin = io::stdin().lock();
     loop {
@@ -95,6 +96,55 @@ fn main() {
                         .cancel();
                     Ok(Value::Null)
                 }
+                "prepareCommand" | "command" => {
+                    let name = input["command"].as_str().ok_or_else(invalid)?;
+                    let value = if !["setVolume", "seek"].contains(&name) {
+                        None
+                    } else if let Some(bits) = input["valueBits"].as_str() {
+                        Some(f64::from_bits(
+                            u64::from_str_radix(bits, 16).map_err(|_| invalid())?,
+                        ))
+                    } else if input.get("value").is_some() {
+                        Some(input["value"].as_f64().ok_or_else(invalid)?)
+                    } else {
+                        None
+                    };
+                    let command = PreparedCommand::new(name, value)?;
+                    if input["op"] == "prepareCommand" {
+                        return Ok(json!({"prepared":format!("{command:?}")}));
+                    }
+                    let s = service.as_ref().ok_or_else(invalid)?;
+                    let ms = input["deadlineMs"].as_u64().unwrap_or(10000).min(10000);
+                    let receipt = s.begin_command(
+                        &owner,
+                        command,
+                        Instant::now() + Duration::from_millis(ms),
+                    )?;
+                    let reply = receipt.reply(&owner)?;
+                    next = next.checked_add(1).ok_or_else(invalid)?;
+                    commands.insert(next, receipt);
+                    Ok(json!({"id":next,"reply":reply}))
+                }
+                "finishCommand" => {
+                    let receipt = commands
+                        .remove(&input["id"].as_u64().ok_or_else(invalid)?)
+                        .ok_or_else(invalid)?;
+                    let finished = runtime.block_on(receipt.finish())?;
+                    Ok(json!(finished.result(&owner)?))
+                }
+                "dropCommand" => {
+                    commands
+                        .remove(&input["id"].as_u64().ok_or_else(invalid)?)
+                        .ok_or_else(invalid)?;
+                    Ok(Value::Null)
+                }
+                "cancelCommand" => {
+                    commands
+                        .get(&input["id"].as_u64().ok_or_else(invalid)?)
+                        .ok_or_else(invalid)?
+                        .cancel();
+                    Ok(Value::Null)
+                }
                 "status" => Ok(json!(service.as_ref().ok_or_else(invalid)?.status())),
                 "close" => {
                     runtime.block_on(service.as_ref().ok_or_else(invalid)?.shutdown())?;
@@ -111,6 +161,7 @@ fn main() {
         io::stdout().flush().unwrap();
     }
     tickets.clear();
+    commands.clear();
     if let Some(service) = service {
         let _ = runtime.block_on(service.shutdown());
     }

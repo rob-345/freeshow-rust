@@ -719,3 +719,505 @@ mod linux {
         assert_eq!(next.status().observers, 0);
     }
 }
+
+#[test]
+fn native_command_numeric_and_track_id_subset_is_explicit() {
+    use crate::commands::{track_id, Command};
+    for (value, expected) in [
+        (0.0, "0"),
+        (-0.0, "0"),
+        (1e-7, "1e-7"),
+        (1e21, "1e+21"),
+        (-1.25, "-1.25"),
+    ] {
+        let Command::SetVolume(text) = PreparedCommand::new("setVolume", Some(value)).unwrap().0
+        else {
+            panic!()
+        };
+        assert_eq!(text, expected);
+    }
+    for (value, expected) in [
+        (-0.0000005, "0"),
+        (0.0000005, "1"),
+        (-0.0000015, "-1"),
+        (0.0000015, "2"),
+    ] {
+        let Command::Seek(text) = PreparedCommand::new("seek", Some(value)).unwrap().0 else {
+            panic!()
+        };
+        assert_eq!(text, expected);
+    }
+    for value in [None, Some(f64::NAN), Some(f64::INFINITY)] {
+        assert_eq!(
+            PreparedCommand::new("setVolume", value).err().unwrap().code,
+            "spotify_command_unsupported"
+        );
+    }
+    assert!(PreparedCommand::new("seek", Some(1e20)).is_err());
+    assert!(PreparedCommand::new("play", None).is_err());
+    assert!(
+        PreparedCommand::new("pause", Some(f64::NAN)).is_ok(),
+        "source ignores unrelated value"
+    );
+    assert_eq!(
+        track_id("string \"mpris:trackid\" variant string \"/track/01\"").unwrap(),
+        Some("/track/01")
+    );
+    assert_eq!(
+        track_id("string \"mpris:trackid\" variant object path \"/track/01\"").unwrap(),
+        None
+    );
+    assert_eq!(
+        track_id("string\u{feff}\"mpris:trackid\" variant string \"/\"").unwrap(),
+        Some("/")
+    );
+    assert_eq!(
+        track_id("string\u{85}\"mpris:trackid\" variant string \"/ok\"").unwrap(),
+        None
+    );
+    for path in ["/x y", "/x;touch", "/x//y", "/x/", "/é", "relative"] {
+        assert_eq!(
+            track_id(&format!(
+                "string \"mpris:trackid\" variant string \"{path}\""
+            ))
+            .unwrap_err()
+            .code,
+            "spotify_command_unsupported"
+        );
+    }
+}
+#[cfg(target_os = "linux")]
+#[tokio::test(flavor = "current_thread")]
+async fn command_ready_results_keep_global_quota_and_native_seals_after_actual_join() {
+    let _serial = TEST_OWNER.lock().unwrap();
+    let own = owner();
+    let service = SpotifyService::start(
+        own.clone(),
+        Backend {
+            executable: Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/stdout.sh"),
+            env: vec![],
+            unavailable: None,
+        },
+        Limits::default(),
+    )
+    .unwrap();
+    service.ready().await.unwrap();
+    let mut completed = Vec::new();
+    for _ in 0..JOB_CAPACITY {
+        let accepted = service
+            .begin_command(
+                &own,
+                PreparedCommand::new("pause", None).unwrap(),
+                Instant::now() + Duration::from_secs(1),
+            )
+            .unwrap();
+        assert!(accepted.reply(&own).unwrap());
+        assert_eq!(accepted.reply(&owner()).unwrap_err().code, "spotify_stale");
+        let finished = accepted.finish().await.unwrap();
+        assert_eq!(finished.result(&own).unwrap(), &CommandOutcome::Sent);
+        assert_eq!(finished.result(&owner()).unwrap_err().code, "spotify_stale");
+        completed.push(finished);
+    }
+    assert_eq!(service.status().retained, 4);
+    assert_eq!(
+        service
+            .begin_state(&own, Instant::now())
+            .err()
+            .unwrap()
+            .code,
+        "spotify_busy"
+    );
+    assert_eq!(
+        service
+            .begin_command(
+                &own,
+                PreparedCommand::new("pause", None).unwrap(),
+                Instant::now()
+            )
+            .err()
+            .unwrap()
+            .code,
+        "spotify_busy"
+    );
+    service.shutdown().await.unwrap();
+    assert!(service.status().drained);
+    let next_owner = owner();
+    let next = SpotifyService::start(
+        next_owner.clone(),
+        Backend {
+            executable: Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/stdout.sh"),
+            env: vec![],
+            unavailable: None,
+        },
+        Limits::default(),
+    )
+    .unwrap();
+    assert_eq!(
+        next.begin_command(
+            &next_owner,
+            PreparedCommand::new("pause", None).unwrap(),
+            Instant::now()
+        )
+        .err()
+        .unwrap()
+        .code,
+        "spotify_busy"
+    );
+    drop(completed);
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while next.status().retained != 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    next.shutdown().await.unwrap();
+}
+
+#[cfg(target_os = "linux")]
+mod command_lifecycle {
+    use super::*;
+    fn backend() -> Backend {
+        Backend {
+            executable: Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/sleep.sh"),
+            env: vec![],
+            unavailable: None,
+        }
+    }
+    async fn observed(service: &SpotifyService, condition: impl Fn(&Status) -> bool) {
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while !condition(&service.status()) {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+    }
+    #[tokio::test(flavor = "current_thread")]
+    async fn independent_query_and_commands_hold_real_children_and_drop_is_not_cancellation() {
+        let _serial = TEST_OWNER.lock().unwrap();
+        let own = owner();
+        let s = SpotifyService::start(
+            own.clone(),
+            backend(),
+            Limits {
+                query_timeout: Duration::from_secs(5),
+                ..Limits::default()
+            },
+        )
+        .unwrap();
+        s.ready().await.unwrap();
+        let state = s
+            .begin_state(&own, Instant::now() + Duration::from_secs(5))
+            .unwrap();
+        let a = s
+            .begin_command(
+                &own,
+                PreparedCommand::new("pause", None).unwrap(),
+                Instant::now() + Duration::from_secs(5),
+            )
+            .unwrap();
+        let b = s
+            .begin_command(
+                &own,
+                PreparedCommand::new("next", None).unwrap(),
+                Instant::now() + Duration::from_secs(5),
+            )
+            .unwrap();
+        observed(&s, |v| v.active_pid != 0 && v.command_pids.len() == 2).await;
+        let before = s.status();
+        for pid in std::iter::once(before.active_pid).chain(before.command_pids.clone()) {
+            assert!(Path::new(&format!("/proc/{pid}")).exists());
+        }
+        let a_control = a.control();
+        let b_control = b.control();
+        assert!(!a_control.settled());
+        assert!(!b_control.settled());
+        assert!(a.reply(&own).unwrap());
+        drop(a);
+        drop(b.finish());
+        assert_eq!(
+            s.status().command_pids.len(),
+            2,
+            "dropping early receipt or unpolled completion never cancels actual accepted commands"
+        );
+        assert_eq!(s.status().retained, 3);
+        let (entered, release) = gate(&s.0.shared.reap_gate);
+        s.close();
+        entered.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), s.shutdown())
+                .await
+                .is_err()
+        );
+        assert!(!s.status().drained);
+        assert!(!a_control.settled());
+        assert!(
+            !b_control.settled(),
+            "held actual reap is not a settlement witness"
+        );
+        assert_eq!(
+            s.status().retained,
+            3,
+            "actual held reap still owns all effects"
+        );
+        release.send(()).unwrap();
+        s.shutdown().await.unwrap();
+        assert!(s.status().drained);
+        assert!(a_control.settled());
+        assert!(b_control.settled());
+        assert_eq!(s.status().commands_completed, 2);
+        for pid in std::iter::once(before.active_pid).chain(before.command_pids) {
+            assert!(!Path::new(&format!("/proc/{pid}")).exists());
+        }
+        assert_eq!(
+            s.status().retained,
+            1,
+            "uncollected state result still owns its lease"
+        );
+        drop(state);
+        assert_eq!(
+            s.status().retained,
+            0,
+            "live monitoring handles do not retain job permits"
+        );
+        let next_owner = owner();
+        let next = SpotifyService::start(
+            next_owner.clone(),
+            backend(),
+            Limits {
+                query_timeout: Duration::from_secs(5),
+                ..Limits::default()
+            },
+        )
+        .unwrap();
+        next.ready().await.unwrap();
+        let accepted = next
+            .begin_command(
+                &next_owner,
+                PreparedCommand::new("pause", None).unwrap(),
+                Instant::now() + Duration::from_secs(5),
+            )
+            .unwrap();
+        let next_control = accepted.control();
+        observed(&next, |status| status.command_pids.len() == 1).await;
+        a_control.cancel();
+        b_control.cancel();
+        assert!(
+            !next_control.token.is_cancelled(),
+            "old sealed controls cannot cancel a replacement run"
+        );
+        assert!(!next_control.settled());
+        next_control.cancel();
+        let finished = accepted.finish().await.unwrap();
+        assert_eq!(
+            finished.result(&next_owner).unwrap_err().code,
+            "spotify_cancelled"
+        );
+        observed(&next, |_| next_control.settled()).await;
+        drop(finished);
+        next.shutdown().await.unwrap();
+        assert!(next.status().drained);
+    }
+    #[tokio::test(flavor = "current_thread")]
+    async fn concurrent_command_panic_keeps_all_child_anchors_until_kill_wait_and_sticky_join() {
+        let _serial = TEST_OWNER.lock().unwrap();
+        let own = owner();
+        let s = SpotifyService::start(
+            own.clone(),
+            backend(),
+            Limits {
+                query_timeout: Duration::from_secs(5),
+                ..Limits::default()
+            },
+        )
+        .unwrap();
+        s.ready().await.unwrap();
+        for _ in 0..2 {
+            drop(
+                s.begin_command(
+                    &own,
+                    PreparedCommand::new("pause", None).unwrap(),
+                    Instant::now() + Duration::from_secs(5),
+                )
+                .unwrap(),
+            );
+        }
+        observed(&s, |v| v.command_pids.len() == 2).await;
+        let (entered, release) = gate(&s.0.shared.reap_gate);
+        s.0.shared.panic_after_spawn.store(true, Ordering::Release);
+        let third = s
+            .begin_command(
+                &own,
+                PreparedCommand::new("next", None).unwrap(),
+                Instant::now() + Duration::from_secs(5),
+            )
+            .unwrap();
+        entered.recv_timeout(Duration::from_secs(5)).unwrap();
+        drop(third);
+        let held = s.status();
+        assert_eq!(held.command_pids.len(), 3);
+        assert_eq!(held.retained, 3);
+        assert!(!held.drained);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), s.shutdown())
+                .await
+                .is_err()
+        );
+        assert!(!s.status().joined);
+        release.send(()).unwrap();
+        let error = s.shutdown().await.unwrap_err();
+        assert_eq!(error.code, "spotify_owner_panicked");
+        let done = s.status();
+        assert!(done.drained);
+        assert_eq!(done.retained, 0);
+        assert_eq!(done.commands_completed, 3);
+        assert_eq!(done.spawned, 4);
+        assert_eq!(done.reaped, 4);
+        for pid in held.command_pids {
+            assert!(!Path::new(&format!("/proc/{pid}")).exists());
+        }
+        assert_eq!(s.shutdown().await.unwrap_err(), error);
+    }
+    #[tokio::test(flavor = "current_thread")]
+    async fn queued_control_survives_early_reply_drop_and_actual_settlement_is_not_thread_join() {
+        let _serial = TEST_OWNER.lock().unwrap();
+        let own = owner();
+        let (after_spawn, entered, release) = new_gate();
+        let s = SpotifyService::start_configured(
+            own.clone(),
+            backend(),
+            Limits::default(),
+            StartHooks {
+                after_spawn: Some(after_spawn),
+                ..StartHooks::default()
+            },
+        )
+        .unwrap();
+        entered.recv_timeout(Duration::from_secs(5)).unwrap();
+        let receipt = s
+            .begin_command(
+                &own,
+                PreparedCommand::new("pause", None).unwrap(),
+                Instant::now() + Duration::from_secs(2),
+            )
+            .unwrap();
+        assert!(receipt.reply(&own).unwrap());
+        let control = receipt.control();
+        drop(receipt);
+        assert!(!control.settled());
+        assert_eq!(s.status().retained, 1);
+        control.cancel();
+        assert!(
+            !control.settled(),
+            "a queued cancellation signal is not actual disposal/settlement"
+        );
+        let (exiting, release_exit) = gate(&s.0.shared.exit_gate);
+        s.close();
+        assert!(!control.settled());
+        release.send(()).unwrap();
+        exiting.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert!(control.settled());
+        assert_eq!(s.status().commands_completed, 1);
+        assert_eq!(
+            s.status().spawned,
+            1,
+            "cancelled queued work never entered a command child"
+        );
+        assert_eq!(s.status().reaped, 1);
+        assert_eq!(s.status().retained, 0, "monitoring never owns job quota");
+        assert!(!s.status().joined);
+        assert!(!s.status().drained);
+        release_exit.send(()).unwrap();
+        s.shutdown().await.unwrap();
+        assert!(s.status().drained);
+    }
+    #[tokio::test(flavor = "current_thread")]
+    async fn aggregate_scheduler_unwind_keeps_actual_child_leases_outside_dropped_futures() {
+        let _serial = TEST_OWNER.lock().unwrap();
+        let own = owner();
+        let s = SpotifyService::start(
+            own.clone(),
+            backend(),
+            Limits {
+                query_timeout: Duration::from_secs(5),
+                ..Limits::default()
+            },
+        )
+        .unwrap();
+        s.ready().await.unwrap();
+        let mut controls = Vec::new();
+        for _ in 0..2 {
+            let accepted = s
+                .begin_command(
+                    &own,
+                    PreparedCommand::new("pause", None).unwrap(),
+                    Instant::now() + Duration::from_secs(5),
+                )
+                .unwrap();
+            controls.push(accepted.control());
+            drop(accepted);
+        }
+        observed(&s, |v| v.command_pids.len() == 2).await;
+        let (entered, release) = gate(&s.0.shared.reap_gate);
+        s.0.shared.panic_scheduler.store(true, Ordering::Release);
+        drop(
+            s.begin_command(
+                &own,
+                PreparedCommand::new("next", None).unwrap(),
+                Instant::now() + Duration::from_secs(5),
+            )
+            .unwrap(),
+        );
+        entered.recv_timeout(Duration::from_secs(5)).unwrap();
+        let held = s.status();
+        assert_eq!(held.command_pids.len(), 2);
+        assert_eq!(
+            held.retained, 2,
+            "dropped futures cannot release the only actual-child quota anchors"
+        );
+        assert!(!held.drained);
+        assert!(
+            controls.iter().all(|control| !control.settled()),
+            "future Drop is not actual child settlement"
+        );
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), s.shutdown())
+                .await
+                .is_err()
+        );
+        release.send(()).unwrap();
+        assert_eq!(
+            s.shutdown().await.unwrap_err().code,
+            "spotify_owner_panicked"
+        );
+        assert!(s.status().drained);
+        assert!(controls.iter().all(CommandControl::settled));
+        assert_eq!(s.status().retained, 0);
+        assert_eq!(s.status().spawned, 3);
+        assert_eq!(s.status().reaped, 3);
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn known_backend_capability_absence_never_gets_an_early_command_true() {
+    let _serial = TEST_OWNER.lock().unwrap();
+    let own = owner();
+    let service = SpotifyService::start(own.clone(), unavailable(), Limits::default()).unwrap();
+    service.ready().await.unwrap();
+    assert_eq!(
+        service
+            .begin_command(
+                &own,
+                PreparedCommand::new("pause", None).unwrap(),
+                Instant::now() + Duration::from_secs(1)
+            )
+            .err()
+            .unwrap()
+            .code,
+        "spotify_test_unavailable"
+    );
+    assert_eq!(service.status().commands, 0);
+    assert_eq!(service.status().retained, 0);
+    service.shutdown().await.unwrap();
+}

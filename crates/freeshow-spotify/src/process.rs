@@ -10,6 +10,37 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
+pub(crate) struct Active {
+    pub(crate) child: Option<Child>,
+    pub(crate) command: Option<usize>,
+    pub(crate) lease: Option<Arc<tokio::sync::OwnedSemaphorePermit>>,
+    pub(crate) settlement: Option<Arc<std::sync::atomic::AtomicBool>>,
+}
+impl Active {
+    pub(crate) fn new(command: Option<usize>) -> Self {
+        Self {
+            child: None,
+            command,
+            lease: None,
+            settlement: None,
+        }
+    }
+    pub(crate) fn finish_job(&mut self) {
+        // A monitoring handle is deliberately not a permit/join/disposal proof.
+        // Settle the actual child/continuation before publishing this witness.
+        self.lease.take();
+        if let Some(settlement) = self.settlement.take() {
+            settlement.store(true, std::sync::atomic::Ordering::Release);
+        }
+    }
+    fn pid(&self, shared: &Shared, value: u32) {
+        match self.command {
+            Some(index) => &shared.command_pids[index],
+            None => &shared.pid,
+        }
+        .store(value, std::sync::atomic::Ordering::Release);
+    }
+}
 pub(crate) struct Output {
     pub stdout: Vec<u8>,
     pub stderr: Vec<u8>,
@@ -42,7 +73,7 @@ pub(crate) async fn run(
     deadline: Instant,
     cancel: &CancellationToken,
     shared: &Arc<Shared>,
-    active: &mut Option<Child>,
+    active: &mut Active,
 ) -> Result<Output> {
     if cancel.is_cancelled() {
         return Err(Error::new("spotify_cancelled", "Native query cancelled"));
@@ -62,22 +93,24 @@ pub(crate) async fn run(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
-    *active = Some(command.spawn().map_err(|_| {
+    active.child = Some(command.spawn().map_err(|_| {
         Error::new(
             "spotify_binary_unavailable",
             "Native dbus-send process could not start",
         )
     })?);
-    let child = active.as_mut().expect("anchored child");
+    let child = active.child.as_mut().expect("anchored child");
     let count = shared.spawned.try_update(
         std::sync::atomic::Ordering::AcqRel,
         std::sync::atomic::Ordering::Acquire,
         |n| n.checked_add(1),
     );
-    shared.pid.store(
-        child.id().unwrap_or(0),
-        std::sync::atomic::Ordering::Release,
-    );
+    let pid = child.id().unwrap_or(0);
+    match active.command {
+        Some(index) => &shared.command_pids[index],
+        None => &shared.pid,
+    }
+    .store(pid, std::sync::atomic::Ordering::Release);
     shared.notify_spawn();
     #[cfg(test)]
     shared.hold_after_spawn();
@@ -124,8 +157,8 @@ pub(crate) async fn run(
     settle(active, shared, result.is_err()).await;
     result
 }
-pub(crate) async fn settle(active: &mut Option<Child>, shared: &Arc<Shared>, kill: bool) {
-    if let Some(child) = active.as_mut() {
+pub(crate) async fn settle(active: &mut Active, shared: &Arc<Shared>, kill: bool) {
+    if let Some(child) = active.child.as_mut() {
         if kill {
             let _ = child.start_kill();
         }
@@ -146,7 +179,7 @@ pub(crate) async fn settle(active: &mut Option<Child>, shared: &Arc<Shared>, kil
                 }
             }
         }
-        shared.pid.store(0, std::sync::atomic::Ordering::Release);
+        active.pid(shared, 0);
         if shared
             .reaped
             .try_update(
@@ -161,6 +194,6 @@ pub(crate) async fn settle(active: &mut Option<Child>, shared: &Arc<Shared>, kil
                 "Reap counter exhausted",
             ));
         }
-        active.take();
+        active.child.take();
     }
 }
