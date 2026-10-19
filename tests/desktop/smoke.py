@@ -65,7 +65,7 @@ def free_api_port():
 
 
 def run():
-    for name in ["now-playing.json", "timecode.json", "audio-stream.json", "midi.json", "network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
+    for name in ["now-playing.json", "timecode.json", "audio-stream.json", "midi.json", "network-queries.json", "media-copy.json", "scriptures.json", "output-scripture.png", "receipt.json", "editor.png", "saved.show", "saved-before-dialog.show", "output-verse.png", "output-chorus.png", "output-targeted-primary.png", "output-targeted-secondary.png", "library-switch.png", "stale-save-recovery.json", "responsiveness.json", "uncached-show-read.json", "save-revision-race.json", "close-drain.json", "media-probe.json", "audio-metadata.json", "media-locate.json", "media-folder-reset.json", "system-info.json", "device-providers.json", "api.json", "imports.json", "assets.json", "thumbnails.json", "file-reads.json", "remotes.json", "encoders.json", "browse.json", "osc-loopback.json", "failed.png", "failed-desktop.png", "failed-dom.txt", "failed-output-dom.txt", "failed-output-state.json", "failed-errors.json"]:
         (ARTIFACTS / name).unlink(missing_ok=True)
     binary = Path(os.environ.get("FREESHOW_DESKTOP_BIN", ROOT / "target/debug/freeshow-desktop"))
     (ARTIFACTS / "ffmpeg-download.json").unlink(missing_ok=True)
@@ -229,6 +229,26 @@ def run():
             result = script("return window.__TAURI__.core.invoke(arguments[0],arguments[1]).then(value=>({ok:true,value})).catch(error=>({ok:false,error}))", name, arguments or {})
             assert result["ok"], result
             return result.get("value")
+
+        identity_baseline = None
+        device_provider_receipts = {}
+        def probe_device_providers(phase):
+            nonlocal identity_baseline
+            persisted = json.loads((temp / "app/config.json").read_text()).get("machineId")
+            assert isinstance(persisted, str) and persisted and persisted != "fallback-machine-id", "Startup identity was not persisted"
+            if identity_baseline is None:
+                identity_baseline = persisted
+            assert persisted == identity_baseline, "Global identity changed across editor lifecycle"
+            observed = script((ROOT / "tests/desktop/device_provider_probe.js").read_text(), {"phase":phase,"expectedIdentity":persisted})
+            assert observed["context"] == observed["current"] == invoke("runtime_context"), observed
+            assert observed["identity"]["equalsPersisted"] and observed["identity"]["nonempty"] and not observed["identity"]["legacyFallback"], "Retained identity callback did not match persistence"
+            assert observed["identity"]["type"] == "string"
+            assert observed["providers"]["data"] == {} and observed["providers"]["keys"] == [], observed
+            assert sorted(observed["callbacks"]) == ["DEVICE_ID","PROVIDER_CONNECTIONS"]
+            assert json.loads((temp / "app/config.json").read_text()).get("machineId") == identity_baseline, "Query changed identity"
+            device_provider_receipts[phase] = observed
+            (ARTIFACTS / "device-providers.json").write_text(json.dumps({"phases":device_provider_receipts,"rawIdentityArchived":False,"sameGlobalIdentityAcrossPhases":True},ensure_ascii=False,indent=2))
+            steps.append("Retained device identity and empty stored-provider callbacks preserve persistence, context and original listener: " + phase)
 
         def output_handle(output_id):
             registry = invoke("output_status")
@@ -426,6 +446,7 @@ def run():
             (ARTIFACTS / "editor.png").write_bytes(base64.b64decode(screenshot))
             (ARTIFACTS / "saved.show").write_text(json.dumps(saved, ensure_ascii=False, indent=2))
             assert script("return window.__testErrors") == []
+            probe_device_providers("normal")
             # Restart the actual application with the same profile and data.
             http("DELETE", f"/session/{session}")
             session = None
@@ -466,6 +487,7 @@ def run():
             script("window.__selectedRoot=null;window.api.receive('MAIN',m=>{if(m.channel==='DATA_PATH')window.__selectedRoot=m.data},'root-check');window.api.send('MAIN',{channel:'DATA_PATH'})")
             wait(lambda: script("return window.__selectedRoot === arguments[0]", str(data_dir)), "Selected data library reopened after restart")
             attach_errors()
+            probe_device_providers("restarted")
             configured_media_folder = data_dir.parent / "Native media folder 敬拜"
             media_folder_reset = script("""
                 return (async()=>{
@@ -1296,6 +1318,7 @@ def run():
             steps.append("Native API automatically restarts for the selected library and returns its same-ID show")
             probe_remotes('switched','Second library lyric')
             switched_cover_context = invoke("runtime_context")
+            probe_device_providers("switched")
             assert switched_cover_context != old_context and old_cover_sentinel.read_bytes() == old_cover_bytes
             assert not (Path(switched_cover_context["dataPath"]) / "Audio/NowPlayingCover.png").exists()
             switched_cover = probe_selected_cover("switched-library")
