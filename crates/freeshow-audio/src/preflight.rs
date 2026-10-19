@@ -127,7 +127,7 @@ fn id3(header: &[u8], bytes: &[u8], config: &AudioConfig) -> Result<(), AudioErr
     }
     Ok(())
 }
-fn comments(bytes: &[u8], config: &AudioConfig) -> Result<(), AudioError> {
+fn comments(bytes: &[u8], config: &AudioConfig) -> Result<(usize, usize), AudioError> {
     let get = |offset: usize| {
         bytes
             .get(offset..offset + 4)
@@ -141,6 +141,7 @@ fn comments(bytes: &[u8], config: &AudioConfig) -> Result<(), AudioError> {
     let mut position = 4usize.checked_add(vendor).ok_or(AudioError::Input)?;
     let count = get(position)?;
     position += 4;
+    let start = position;
     if count > config.tag_limit {
         return Err(resource("declared Vorbis comment count"));
     }
@@ -154,13 +155,14 @@ fn comments(bytes: &[u8], config: &AudioConfig) -> Result<(), AudioError> {
             .filter(|end| *end <= bytes.len())
             .ok_or(AudioError::Input)?;
     }
-    Ok(())
+    Ok((count, start))
 }
 pub(crate) fn format<R: Read + Seek>(
     reader: &mut R,
     format: FileType,
     config: &AudioConfig,
-) -> Result<(), AudioError> {
+) -> Result<crate::flac_comments::Plan, AudioError> {
+    let mut flac_comments = crate::flac_comments::Plan::default();
     seek(reader, SeekFrom::Start(0))?;
     match format {
         FileType::Flac => {
@@ -181,7 +183,8 @@ pub(crate) fn format<R: Read + Seek>(
                 let length = u32::from_be_bytes([0, header[1], header[2], header[3]]) as usize;
                 if header[0] & 127 == 4 {
                     let bytes = block(reader, length, config)?;
-                    comments(&bytes, config)?;
+                    let (count, start) = comments(&bytes, config)?;
+                    flac_comments.append(&bytes, count, start, config)?;
                 } else {
                     seek(reader, SeekFrom::Current(length as i64))?;
                 }
@@ -300,7 +303,7 @@ pub(crate) fn format<R: Read + Seek>(
         _ => {}
     }
     seek(reader, SeekFrom::Start(0))?;
-    Ok(())
+    Ok(flac_comments)
 }
 
 // Iterative because AtomInfo::read -> parse_freeform -> freeform_chunk ->

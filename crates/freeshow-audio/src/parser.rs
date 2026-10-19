@@ -182,7 +182,7 @@ fn parse_reader_hint<R: Read + Seek>(
     reader
         .seek(SeekFrom::Start(0))
         .map_err(|_| AudioError::Input)?;
-    crate::preflight::format(reader, file_type, config)?;
+    let flac_comments = crate::preflight::format(reader, file_type, config)?;
     let options = ParseOptions::new()
         .read_properties(false)
         .read_cover_art(false)
@@ -205,11 +205,9 @@ fn parse_reader_hint<R: Read + Seek>(
             if let Some(tag) = file.id3v2() {
                 id3(&mut collector, tag, &text_plan)?;
             }
-            if let Some(tag) = file.vorbis_comments() {
-                for (key, value) in tag.items() {
-                    collector.add("vorbis", &key.to_uppercase(), value.into());
-                }
-            }
+            // Lofty exposes only the last comment block. The source accumulates
+            // every physical block/item after leading ID3, at Vorbis priority.
+            flac_comments.collect(&mut collector);
         }
         FileType::Vorbis => {
             let file = lofty::ogg::VorbisFile::read_from(reader, options).map_err(parser_error)?;
