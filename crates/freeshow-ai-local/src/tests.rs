@@ -92,6 +92,9 @@ async fn actual_budget_failures_are_explicit_and_reclaim_whole_slots() {
         fs::write(engine.join("child").join("a"), [1]).unwrap();
         fs::write(engine.join("b"), [2]).unwrap();
         assert_eq!(query(&service).await.err().unwrap().code, "ai_local_limit");
+        // Reply receipt can precede disposal of the native worker's own frame.
+        // Observe its actual lease release before asserting reclaimed capacity.
+        observed(|| service.status().retained == 0).await;
         assert_eq!(service.status().retained, 0);
         service.shutdown().await.unwrap();
     }
