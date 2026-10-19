@@ -50,7 +50,7 @@
         "video MessagePort transport, sustained browser audio queue bounds and actual capture/worklet delivery",
         "backend-initiated request correlation outside the run-scoped inbound API",
         "all command payload variants",
-        "mutable IPC payload snapshot semantics outside output, remotes, media copy/bundling, AUDIO and save",
+        "mutable IPC payload snapshot semantics outside output, remotes, media copy/bundling, AUDIO, save, Spotify state and provider catalogue",
         "multi-window context propagation for remaining window types; output recreation is covered",
         "cancellation of pending requests after library changes",
         "IPC payload-byte and waiting-caller limits",
@@ -446,7 +446,11 @@
         "tests/desktop/device_provider_probe.js",
         "docs/migration/baselines/device-provider-linux-local.json",
         "tests/parity/provider-shows.test.mjs",
-        "crates/freeshow-provider-shows/src/tests.rs"
+        "crates/freeshow-provider-shows/src/tests.rs",
+        "tests/parity/provider-catalogue.test.mjs",
+        "src-tauri/tests/provider_catalogue.rs",
+        "tests/desktop/provider_catalogue_oracle.mjs",
+        "docs/migration/baselines/provider-catalogue-linux-local.json"
       ],
       "remaining": [
         "ChurchApps and Google Drive sync",
@@ -457,7 +461,7 @@
         "provider authentication, refresh, OAuth listeners and real backend lifecycle",
         "Conf nonobject root normalization, concurrent external store replacement and native foreign-platform provider workflows"
       ],
-      "scope": "Native MAIN.PROVIDER_CONNECTIONS reads actual bounded global app-data ACCESS on the existing ordered owner, preserves the pinned registry stored-scope truthiness/order and original listener/full context, and never exposes credentials or authenticates providers. Six actual host tests and eight immutable-source Node suites cover actual files, failure/missing distinctions, secret omission and accepted cancellation/deadline/seal ownership. Full provider workflows remain incomplete. Three actual normal Linux editor phases preserve empty-provider callbacks and listener/full context before restart, after restart and after a real library switch; no account/backend is authenticated. The bounded pure ChurchApps show-builder foundation is now a root workspace member; nine source suites compare 159 whole cases, original UID/Date call counts, ordered own values and certified Unicode/ISO semantics, while twelve Rust cases cover bounded preparation/private aggregate output. It has no native importer, provider IO, persistence or frontend restoration contract."
+      "scope": "Native MAIN.PROVIDER_CONNECTIONS reads actual bounded global app-data ACCESS on the existing ordered owner, preserves the pinned registry stored-scope truthiness/order and original listener/full context, and never exposes credentials or authenticates providers. Six actual host tests and eight immutable-source Node suites cover actual files, failure/missing distinctions, secret omission and accepted cancellation/deadline/seal ownership. Full provider workflows remain incomplete. Three actual normal Linux editor phases preserve empty-provider callbacks and listener/full context before restart, after restart and after a real library switch; no account/backend is authenticated. The bounded pure ChurchApps show-builder foundation is now a root workspace member; nine source suites compare 159 whole cases, original UID/Date call counts, ordered own values and certified Unicode/ISO semantics, while twelve Rust cases cover bounded preparation/private aggregate output. It has no native importer, provider IO, persistence or frontend restoration contract. Native MAIN.GET_CONTENT_PROVIDERS now returns all five immutable declarations without IO, library admission or new runtime/task/thread. Four shared whole-result permits survive Event clones and native encoding; four host tests preserve main role/full context/listener/seal and complete during an actually held library commit. Two Rust and six actual-source Node suites plus retained bridge snapshot tests cover complete rows/order/types and credential/network traps. Three actual isolated normal Linux phases compare every declared field, captured key arrays, exact original callback/listener, undefined send and native full context against source before/after actual restart/library selection. Declared capability flags do not certify native provider backends or authentication. Current local checks pass565 workspace Rust+652Node+20frontend and382native entries;194desktop observations include an additional readiness poll, with49other diagnostics. Foreign GUI/current CI/full parity/performance remain incomplete."
     },
     {
       "id": "ai",

@@ -2,7 +2,21 @@
 
 Status: **active, incomplete**. Full feature parity and application performance improvement have not been demonstrated. The complete parity gate intentionally fails.
 
-The latest local milestone binds `MAIN.AI_GET_BIN` and Linux
+`MAIN.GET_CONTENT_PROVIDERS` now returns all five pinned provider declarations
+through the retained desktop bridge without library, credential or network IO.
+Four shared whole-result slots survive event cloning/native encoding; actual
+held-library and context/seal tests pass. Three actual normal Linux phases
+compare every field, type, key array, callback/listener and full context against
+the immutable source before and after restart/library switching. These flags
+declare source capabilities; they do not certify working provider backends.
+The local milestone passes **565 workspace Rust + 652 source Node + 20 frontend
+checks and 382 native entry executions**. The isolated normal desktop passes
+**194 recorded steps**, four menus and both drop scales; the extra recorded step
+is a readiness observation. Forty-nine other diagnostics remain. Cross-platform
+CI and full feature/performance parity remain open.
+[Contract and evidence](native-provider-catalogue.md).
+
+The preceding local milestone binds `MAIN.AI_GET_BIN` and Linux
 `MAIN.SPOTIFY_GET_STATE` to separate lazy, fixed native owners. Four complete
 leases retain real work/results through native event encoding; actual shutdown
 joins and full request-context checks survive caller cancellation and library
