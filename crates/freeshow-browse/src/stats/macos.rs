@@ -174,7 +174,19 @@ mod tests {
         let expected = evidence::oracle("--project", &serde_json::json!([row(&a), row(&b)]));
         for (index, native) in [a, b].iter().enumerate() {
             let projected = project(native);
-            evidence::assert_value(&projected.json, &expected["results"][index]["data"]);
+            let source = &expected["results"][index];
+            evidence::assert_value(&projected.json, &source["data"], &source["numberBits"]);
+            let mut shape_only = source["data"].clone();
+            shape_only["mtimeMs"] = Value::from(0);
+            evidence::assert_value(&projected.json, &shape_only, &source["numberBits"]);
+            // A one-bit change must fail even when source JSON data is intact.
+            let mut changed = source["numberBits"].clone();
+            let bits = u64::from_str_radix(changed["/mtimeMs"].as_str().unwrap(), 16).unwrap();
+            changed["/mtimeMs"] = Value::String(format!("{:016x}", bits ^ 1));
+            assert!(std::panic::catch_unwind(|| {
+                evidence::assert_value(&projected.json, &source["data"], &changed);
+            })
+            .is_err());
             assert_eq!(projected.directory, index == 1);
         }
     }

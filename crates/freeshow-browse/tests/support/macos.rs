@@ -59,31 +59,52 @@ pub fn oracle(mode: &str, input: &Value) -> Value {
     assert!(status.success(), "real source oracle failed: {errors}");
     serde_json::from_str(&output).unwrap()
 }
-pub fn assert_value(actual: &Value, expected: &Value) {
-    match (actual, expected) {
-        (Value::Number(a), Value::Number(b)) => {
-            assert_eq!(
-                a.as_f64().unwrap().to_bits(),
-                b.as_f64().unwrap().to_bits(),
-                "exact source binary64 value"
-            )
-        }
-        (Value::Array(a), Value::Array(b)) => {
-            assert_eq!(a.len(), b.len());
-            for (a, b) in a.iter().zip(b) {
-                assert_value(a, b);
-            }
-        }
-        (Value::Object(a), Value::Object(b)) => {
-            assert_eq!(a.len(), b.len(), "all source properties must survive");
-            for (key, value) in a {
-                assert_value(
-                    value,
-                    b.get(key)
-                        .unwrap_or_else(|| panic!("missing source field {key}")),
+pub fn assert_value(actual: &Value, expected: &Value, number_bits: &Value) {
+    fn visit(
+        actual: &Value,
+        expected: &Value,
+        path: &str,
+        remaining: &mut serde_json::Map<String, Value>,
+    ) {
+        match (actual, expected) {
+            (Value::Number(a), Value::Number(_)) => {
+                // The expected JSON numeral establishes type only. Its parsed
+                // decimal value is not source binary64 evidence.
+                let source = remaining
+                    .remove(path)
+                    .unwrap_or_else(|| panic!("missing source numeric bits at {path}"));
+                assert_eq!(
+                    format!("{:016x}", a.as_f64().unwrap().to_bits()),
+                    source.as_str().expect("source bits must be hex text"),
+                    "exact source binary64 bits at {path}"
                 );
             }
+            (Value::Array(a), Value::Array(b)) => {
+                assert_eq!(a.len(), b.len());
+                for (index, (a, b)) in a.iter().zip(b).enumerate() {
+                    visit(a, b, &format!("{path}/{index}"), remaining);
+                }
+            }
+            (Value::Object(a), Value::Object(b)) => {
+                assert_eq!(a.len(), b.len(), "all source properties must survive");
+                for (key, value) in a {
+                    let escaped = key.replace('~', "~0").replace('/', "~1");
+                    visit(
+                        value,
+                        b.get(key)
+                            .unwrap_or_else(|| panic!("missing source field {key}")),
+                        &format!("{path}/{escaped}"),
+                        remaining,
+                    );
+                }
+            }
+            _ => assert_eq!(actual, expected),
         }
-        _ => assert_eq!(actual, expected),
     }
+    let mut remaining = number_bits
+        .as_object()
+        .expect("source numeric bits must be an object")
+        .clone();
+    visit(actual, expected, "", &mut remaining);
+    assert!(remaining.is_empty(), "unused source numeric bit evidence");
 }

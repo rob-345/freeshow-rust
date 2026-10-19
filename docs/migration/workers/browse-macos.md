@@ -88,6 +88,23 @@ than a duplicated timestamp formula. It covers unsigned wrapping, >2^53 values,
 signed unusual subseconds, independent ctime/birthtime, and time extremes. It is
 pure arithmetic evidence, not an observation of an enormous real file/time.
 
+Both `--project` and `--requests` capture each actual Node Number's IEEE-754
+binary64 bits as 16-digit big-endian hex before JSON serialization. The bounded
+per-result `numberBits` object uses escaped JSON pointers. Rust comparisons use
+source JSON numbers for type/shape only and compare native bits directly to
+these strings; they never trust decimal numbers re-parsed by serde_json as the
+numeric oracle. Every bit entry must be consumed, and every native numeric
+field requires one. The existing synthetic projection test corrupts one IEEE
+bit and requires rejection with the source JSON unchanged. Portable controls
+verify emitted bits for actual Node arithmetic and real source filesystem
+fields, JSON transport preservation, and pointer escaping. Test counts remain
+six native integration fixtures, two module tests, and two portable Node tests.
+An additional worker-private Linux harness executed this same Rust comparison
+helper against actual Node projection receipts: changed decimal data with intact
+bits passes, while a one-bit change and missing/extra bit entries are rejected.
+That control verifies the comparison machinery only, with no Darwin filesystem
+claim or additional committed test count.
+
 The portable Node suite validates this exact source extraction and executes the
 actual immutable POSIX handlers on a bounded local tree. Its local filesystem
 platform is reported without a Darwin/native-parity label. The native oracle's

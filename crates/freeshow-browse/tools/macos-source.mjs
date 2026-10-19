@@ -55,6 +55,24 @@ function clone(value) {
     stats(copied)
     return copied
 }
+// Capture the source Number before JSON's decimal transport. Consumers must
+// compare these bits, not a decimal parsed back into another binary64 value.
+export function numberBits(value) {
+    const bits = Object.create(null),
+        bytes = Buffer.alloc(8)
+    let count = 0
+    function visit(value, pointer) {
+        if (typeof value === "number") {
+            assert.ok(++count <= 65536)
+            bytes.writeDoubleBE(value)
+            bits[pointer] = bytes.toString("hex")
+        } else if (value && typeof value === "object") {
+            for (const [key, item] of Object.entries(value)) visit(item, `${pointer}/${key.replace(/~/g, "~0").replace(/\//g, "~1")}`)
+        }
+    }
+    visit(value, "")
+    return bits
+}
 export function project(rows) {
     assert.ok(Array.isArray(rows) && rows.length <= 32)
     const results = rows.map((row) => {
@@ -67,7 +85,8 @@ export function project(rows) {
             // Node binary64 conversion. No expected timestamp formula is copied.
             return Number(index < 10 ? BigInt.asUintN(64, integer) : integer)
         })
-        return { data: clone(nodeStats(new Float64Array(values))) }
+        const data = clone(nodeStats(new Float64Array(values)))
+        return { data, numberBits: numberBits(data) }
     })
     return { revision, fileHash, nodeHash, mode: "pure-node-projection", actualFilesystemObserved: false, results }
 }
@@ -110,7 +129,7 @@ export async function sourceResults(cases) {
                           .map(([key]) => key)
                           .sort()
                     : []
-        results.push({ data, undefinedNoMedia })
+        results.push({ data, numberBits: numberBits(data), undefinedNoMedia })
     }
     assert.deepEqual(thumbnailAttempts, [], "this stat corpus must not silently substitute thumbnail generation")
     return { platform: process.platform, errors, results }

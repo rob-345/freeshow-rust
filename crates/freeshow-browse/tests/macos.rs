@@ -80,7 +80,11 @@ async fn compare(service: &BrowseService, cases: &[Value]) -> Value {
                 source["results"][index]["undefinedNoMedia"]
             );
         }
-        evidence::assert_value(&actual, &source["results"][index]["data"]);
+        evidence::assert_value(
+            &actual,
+            &source["results"][index]["data"],
+            &source["results"][index]["numberBits"],
+        );
     }
     source
 }
