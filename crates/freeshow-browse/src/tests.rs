@@ -1,6 +1,451 @@
 use super::*;
 use serde_json::json;
 use std::sync::{Arc, Barrier};
+
+type Queued = std::pin::Pin<Box<dyn std::future::Future<Output = Result<BrowseReply>> + Send>>;
+fn queued(service: &BrowseService, path: &str, cancel: CancellationToken) -> Queued {
+    let service = service.clone();
+    let payload = json!(path);
+    Box::pin(async move {
+        service
+            .dispatch_queued_with_cancel("FILE_INFO", &payload, cancel)
+            .await
+    })
+}
+fn pending(future: &mut Queued) {
+    let mut context = std::task::Context::from_waker(std::task::Waker::noop());
+    assert!(future.as_mut().poll(&mut context).is_pending());
+}
+struct WorkerGates {
+    entered: tokio::sync::mpsc::Receiver<(String, Instant)>,
+    releases: std::collections::HashMap<String, std::sync::mpsc::SyncSender<()>>,
+}
+impl WorkerGates {
+    fn install(service: &BrowseService, paths: &[String]) -> Self {
+        let (entered, receive) = tokio::sync::mpsc::channel(16);
+        let mut releases = std::collections::HashMap::new();
+        let mut gates = std::collections::HashMap::new();
+        for path in paths {
+            let (release, gate) = std::sync::mpsc::sync_channel(1);
+            releases.insert(path.clone(), release);
+            gates.insert(path.clone(), gate);
+        }
+        let gates = std::sync::Mutex::new(gates);
+        *service.inner.worker_hooks.entered.lock().unwrap() =
+            Some(Arc::new(move |_, request, started| {
+                let Request::FileInfo(path) = request else {
+                    panic!("Expected the real FILE_INFO worker boundary")
+                };
+                let gate = gates.lock().unwrap().remove(path);
+                let _ = entered.try_send((path.clone(), started));
+                if let Some(gate) = gate {
+                    let _ = gate.recv();
+                }
+            }));
+        Self {
+            entered: receive,
+            releases,
+        }
+    }
+    async fn expect_entry(&mut self, path: &str) {
+        let entered = tokio::time::timeout(Duration::from_secs(5), self.entered.recv())
+            .await
+            .expect("Actual browse worker did not enter")
+            .unwrap();
+        assert_eq!(entered.0, path);
+    }
+    async fn expect_pending_entry(&mut self, path: &str, work: &mut Queued) -> Instant {
+        tokio::time::timeout(Duration::from_secs(5), async {
+            tokio::select! {
+                result = work => panic!("Held worker replied before its gate: {result:?}"),
+                entered = self.entered.recv() => {
+                    let (entered, started) = entered.unwrap();
+                    assert_eq!(entered, path);
+                    started
+                },
+            }
+        })
+        .await
+        .expect("Actual browse worker did not enter the admitted FIFO work")
+    }
+    fn release(&mut self, path: &str) {
+        self.releases.remove(path).unwrap().send(()).unwrap();
+    }
+}
+async fn worker_permits(service: &BrowseService, expected: usize) {
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while service.inner.permits.available_permits() != expected {
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .expect("Actual browse work did not return its execution permit");
+}
+fn gate_paths(root: &std::path::Path, count: usize) -> Vec<String> {
+    (0..count)
+        .map(|index| {
+            root.join(format!("missing-{index}.mp3"))
+                .to_str()
+                .unwrap()
+                .into()
+        })
+        .collect()
+}
+
+#[test]
+fn queued_without_runtime_rejects_before_retaining_or_dispatching_work() {
+    use std::task::Poll;
+    let service = BrowseService::new(BrowseConfig::default()).unwrap();
+    let mut work = queued(&service, "missing", CancellationToken::new());
+    let mut context = std::task::Context::from_waker(std::task::Waker::noop());
+    let Poll::Ready(result) = work.as_mut().poll(&mut context) else {
+        panic!("Queued admission without a runtime remained pending")
+    };
+    assert_eq!(result.unwrap_err().code, "runtime_required");
+    assert_eq!(service.waiting_count(), 0);
+    assert_eq!(service.inner.permits.available_permits(), 2);
+    drop(work);
+    tokio::runtime::Builder::new_current_thread()
+        .enable_time()
+        .build()
+        .unwrap()
+        .block_on(service.shutdown())
+        .unwrap();
+    assert_eq!(service.retained_worker_count(), 0);
+}
+
+#[tokio::test]
+async fn queued_public_test_harness_observes_actual_owners_and_drop_releases_gates() {
+    let root = tempfile::tempdir().unwrap();
+    let paths = gate_paths(root.path(), 10);
+    let service = BrowseService::new(BrowseConfig::default()).unwrap();
+    let (mut entered, releases) = service.hold_workers_for_test().unwrap();
+    assert_eq!(
+        service.hold_workers_for_test().unwrap_err().code,
+        "browse_busy"
+    );
+    let mut held = vec![];
+    for path in &paths[..2] {
+        let mut work = queued(&service, path, CancellationToken::new());
+        pending(&mut work);
+        held.push(work);
+    }
+    let mut seen = std::collections::BTreeSet::new();
+    for _ in 0..2 {
+        let index = tokio::time::timeout(Duration::from_secs(5), entered.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(seen.insert(index));
+    }
+    assert_eq!(seen.into_iter().collect::<Vec<_>>(), [0, 1]);
+    assert_eq!(service.inner.permits.available_permits(), 0);
+    let mut waiters = vec![];
+    for path in &paths[2..] {
+        let mut work = queued(&service, path, CancellationToken::new());
+        pending(&mut work);
+        waiters.push(work);
+    }
+    assert_eq!(service.queued_waiters_for_test(), 8);
+    drop(waiters);
+    drop(held);
+    assert_eq!(service.queued_waiters_for_test(), 0);
+    assert_eq!(
+        service.inner.permits.available_permits(),
+        0,
+        "The actual native gates remain held after caller Drop"
+    );
+    drop(releases);
+    worker_permits(&service, 2).await;
+    service.shutdown().await.unwrap();
+    assert_eq!(service.retained_worker_count(), 0);
+    assert!(
+        entered.try_recv().is_err(),
+        "The one-shot owner gates multiplied"
+    );
+}
+
+#[tokio::test]
+async fn queued_two_real_workers_and_eight_waiters_are_bounded_and_fifo() {
+    let root = tempfile::tempdir().unwrap();
+    let service = BrowseService::new(BrowseConfig::default()).unwrap();
+    let paths = gate_paths(root.path(), 10);
+    let mut gates = WorkerGates::install(&service, &paths);
+    let mut first = queued(&service, &paths[0], CancellationToken::new());
+    pending(&mut first);
+    gates.expect_entry(&paths[0]).await;
+    let mut second = queued(&service, &paths[1], CancellationToken::new());
+    pending(&mut second);
+    gates.expect_entry(&paths[1]).await;
+    assert_eq!(service.inner.permits.available_permits(), 0);
+    assert_eq!(service.waiting_count(), 0);
+    let mut waiters = std::collections::VecDeque::new();
+    let mut registered = vec![];
+    for path in &paths[2..] {
+        let mut waiter = queued(&service, path, CancellationToken::new());
+        let before = Instant::now();
+        pending(&mut waiter); // Registers the actual FIFO semaphore waiter now.
+        registered.push((before, Instant::now()));
+        waiters.push_back(waiter);
+        assert_eq!(service.waiting_count(), waiters.len());
+    }
+    assert_eq!(service.retained_worker_count(), 2);
+    assert_eq!(
+        service
+            .dispatch("FILE_INFO", &json!("missing"))
+            .await
+            .unwrap_err()
+            .code,
+        "browse_busy"
+    );
+    assert_eq!(
+        service
+            .dispatch_queued("FILE_INFO", &json!(null))
+            .await
+            .unwrap_err()
+            .code,
+        "browse_busy",
+        "The ninth waiter is rejected before retaining/parsing malformed work"
+    );
+    gates.release(&paths[0]);
+    assert!(first.await.unwrap().data.is_null());
+    for (index, path) in paths[2..].iter().enumerate() {
+        if waiters.len() > 1 {
+            pending(waiters.back_mut().unwrap());
+            assert!(
+                gates.entered.try_recv().is_err(),
+                "A later FIFO waiter overtook the head"
+            );
+        }
+        let mut head = waiters.pop_front().unwrap();
+        let started = gates.expect_pending_entry(path, &mut head).await;
+        let (before, after) = registered[index];
+        assert!(
+            started >= before && started <= after,
+            "The total work budget was restarted after the real admission wait"
+        );
+        assert_eq!(service.waiting_count(), 7 - index);
+        gates.release(path);
+        assert!(head.await.unwrap().data.is_null());
+    }
+    gates.release(&paths[1]);
+    second.await.unwrap();
+    service.shutdown().await.unwrap();
+    assert_eq!(service.retained_worker_count(), 0);
+}
+
+#[tokio::test]
+async fn queued_cancellation_and_caller_drop_remove_waiters_without_native_entry() {
+    let root = tempfile::tempdir().unwrap();
+    let service = BrowseService::new(BrowseConfig::default()).unwrap();
+    let paths = gate_paths(root.path(), 4);
+    let mut gates = WorkerGates::install(&service, &paths);
+    let mut held = vec![];
+    for path in &paths[..2] {
+        let mut work = queued(&service, path, CancellationToken::new());
+        pending(&mut work);
+        gates.expect_entry(path).await;
+        held.push(work);
+    }
+    let cancel = CancellationToken::new();
+    let mut cancelled = queued(&service, &paths[2], cancel.clone());
+    let mut abandoned = queued(&service, &paths[3], CancellationToken::new());
+    pending(&mut cancelled);
+    pending(&mut abandoned);
+    assert_eq!(service.waiting_count(), 2);
+    cancel.cancel();
+    assert_eq!(cancelled.await.unwrap_err().code, "cancelled");
+    assert_eq!(service.waiting_count(), 1);
+    drop(abandoned);
+    assert_eq!(service.waiting_count(), 0);
+    for path in &paths[..2] {
+        gates.release(path);
+    }
+    for work in held {
+        work.await.unwrap();
+    }
+    service.shutdown().await.unwrap();
+    assert!(
+        gates.entered.try_recv().is_err(),
+        "Canceled waiters entered a native worker"
+    );
+    assert_eq!(service.retained_worker_count(), 0);
+}
+
+#[tokio::test]
+async fn queued_total_deadline_expires_wait_and_result_without_releasing_held_workers() {
+    let root = tempfile::tempdir().unwrap();
+    let service = BrowseService::new(BrowseConfig {
+        timeout: Duration::from_millis(100),
+        ..BrowseConfig::default()
+    })
+    .unwrap();
+    let paths = gate_paths(root.path(), 4);
+    let mut gates = WorkerGates::install(&service, &paths[..3]);
+    let mut held = vec![];
+    for path in &paths[..2] {
+        let mut work = queued(&service, path, CancellationToken::new());
+        pending(&mut work);
+        gates.expect_entry(path).await;
+        held.push(work);
+    }
+    let mut expired = queued(&service, &paths[2], CancellationToken::new());
+    pending(&mut expired);
+    assert_eq!(service.waiting_count(), 1);
+    assert_eq!(expired.await.unwrap_err().code, "browse_resource_limit");
+    assert_eq!(service.waiting_count(), 0);
+    for work in held {
+        assert_eq!(work.await.unwrap_err().code, "browse_resource_limit");
+    }
+    assert_eq!(
+        service.inner.permits.available_permits(),
+        0,
+        "Timeout did not stop the actual held native work"
+    );
+    for path in &paths[..2] {
+        gates.release(path);
+    }
+    worker_permits(&service, 2).await;
+    let reply = service
+        .dispatch_queued("FILE_INFO", &json!(paths[3]))
+        .await
+        .unwrap();
+    assert!(reply.data.is_null());
+    gates.expect_entry(&paths[3]).await;
+    service.shutdown().await.unwrap();
+    assert!(
+        gates.entered.try_recv().is_err(),
+        "An expired waiter was dispatched later"
+    );
+}
+
+#[tokio::test]
+async fn queued_shutdown_cancels_waiters_and_retains_real_workers_after_observer_drop() {
+    let root = tempfile::tempdir().unwrap();
+    let service = BrowseService::new(BrowseConfig::default()).unwrap();
+    let paths = gate_paths(root.path(), 10);
+    let mut gates = WorkerGates::install(&service, &paths);
+    let mut held = vec![];
+    for path in &paths[..2] {
+        let mut work = queued(&service, path, CancellationToken::new());
+        pending(&mut work);
+        gates.expect_entry(path).await;
+        held.push(work);
+    }
+    let mut waiters = vec![];
+    for path in &paths[2..] {
+        let mut work = queued(&service, path, CancellationToken::new());
+        pending(&mut work);
+        waiters.push(work);
+    }
+    {
+        use std::future::Future;
+        let mut shutdown = Box::pin(service.shutdown());
+        let mut context = std::task::Context::from_waker(std::task::Waker::noop());
+        assert!(shutdown.as_mut().poll(&mut context).is_pending());
+    }
+    for work in waiters {
+        assert_eq!(work.await.unwrap_err().code, "browse_shutdown");
+    }
+    for work in held {
+        assert_eq!(work.await.unwrap_err().code, "browse_shutdown");
+    }
+    assert_eq!(service.waiting_count(), 0);
+    assert_eq!(service.inner.permits.available_permits(), 0);
+    assert_eq!(service.retained_worker_count(), 2);
+    assert_eq!(
+        service
+            .dispatch_queued("FILE_INFO", &json!(paths[2]))
+            .await
+            .unwrap_err()
+            .code,
+        "browse_shutdown"
+    );
+    for path in &paths[..2] {
+        gates.release(path);
+    }
+    service.shutdown().await.unwrap();
+    assert!(gates.entered.try_recv().is_err());
+    assert_eq!(service.retained_worker_count(), 0);
+}
+
+#[tokio::test]
+async fn queued_canceled_or_dropped_result_keeps_permit_until_actual_worker_return() {
+    for cancel_waiter in [true, false] {
+        let root = tempfile::tempdir().unwrap();
+        let service = BrowseService::new(BrowseConfig::default()).unwrap();
+        let (entered, reached) = tokio::sync::oneshot::channel();
+        let (release, gate) = std::sync::mpsc::sync_channel(1);
+        let boundary = std::sync::Mutex::new(Some((entered, gate)));
+        *service.inner.worker_hooks.returned.lock().unwrap() = Some(Arc::new(move || {
+            let boundary = boundary.lock().unwrap().take();
+            if let Some((entered, gate)) = boundary {
+                let _ = entered.send(());
+                let _ = gate.recv();
+            }
+        }));
+        let cancel = CancellationToken::new();
+        let paths = gate_paths(root.path(), 2);
+        let mut work = queued(&service, &paths[0], cancel.clone());
+        pending(&mut work);
+        tokio::time::timeout(Duration::from_secs(5), reached)
+            .await
+            .unwrap()
+            .unwrap();
+        if cancel_waiter {
+            cancel.cancel();
+            assert_eq!(work.await.unwrap_err().code, "cancelled");
+        } else {
+            drop(work);
+        }
+        assert_eq!(
+            service.inner.permits.available_permits(),
+            1,
+            "Engine result/caller Drop is not actual worker return"
+        );
+        assert!(service
+            .dispatch_queued("FILE_INFO", &json!(paths[1]))
+            .await
+            .unwrap()
+            .data
+            .is_null());
+        worker_permits(&service, 1).await;
+        assert_eq!(service.inner.permits.available_permits(), 1);
+        release.send(()).unwrap();
+        worker_permits(&service, 2).await;
+        service.shutdown().await.unwrap();
+        assert_eq!(service.retained_worker_count(), 0);
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn queued_prepare_retains_source_thumbnail_slots_and_dispatch_rejection() {
+    let root = tempfile::tempdir().unwrap();
+    std::fs::write(root.path().join("picture.png"), b"source thumbnail intent").unwrap();
+    let service = BrowseService::new(BrowseConfig::default()).unwrap();
+    let payload = json!({"path":root.path(),"generateThumbnails":true});
+    let original = service
+        .prepare_listing_with_cancel(&payload, CancellationToken::new())
+        .await
+        .unwrap();
+    let queued = service
+        .prepare_listing_queued_with_cancel(&payload, CancellationToken::new())
+        .await
+        .unwrap();
+    assert_eq!(queued.data, original.data);
+    assert_eq!(queued.thumbnail_intents, original.thumbnail_intents);
+    assert_eq!(queued.thumbnail_intents.len(), 1);
+    assert_eq!(queued.diagnostics.len(), original.diagnostics.len());
+    let error = service
+        .dispatch_queued("READ_FOLDER", &payload)
+        .await
+        .unwrap_err();
+    assert_eq!(error.code, "thumbnail_unavailable");
+    assert_eq!(error.thumbnail_intents, original.thumbnail_intents);
+    service.shutdown().await.unwrap();
+}
+
 fn budget(config: BrowseConfig) -> Budget {
     Budget {
         config,
