@@ -123,5 +123,7 @@ MP3 APIC/FLAC PICTURE files against an actual packaged SET/UNSET recording, with
 exact installed PNG RGBA hashes and explicit unequal compressed bytes. The
 [desktop evidence](jpeg-desktop-evidence.md#coordinator-integration-evidence)
 and [local receipt](../baselines/jpeg-desktop-linux.json) distinguish real GUI
-observations from the independent decoder/ownership tests. The newer complete
-CI run remains required.
+observations from the independent decoder/ownership tests. Published `b283c334`
+passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39245511801);
+the [CI receipt](../baselines/jpeg-desktop-ci-linux.json) records independently
+validated downloaded artifacts, including both exact source RGBA hashes.

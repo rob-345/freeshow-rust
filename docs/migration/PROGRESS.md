@@ -90,11 +90,16 @@ all three HTTP ports serve the current bytes. Compressed PNG bytes differ.
 [JPEG capability](workers/cover-jpeg.md), [recording/replay](workers/jpeg-desktop-evidence.md),
 [ID3 correction](workers/audio-id3-recovery.md) and
 [FLAC correction](workers/audio-flac-comments.md) retain exact limits and gaps.
-This newer local milestone still requires its own complete CI run.
+Published JPEG/parser milestone `b283c334` now passes
+[all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39245511801).
+Downloaded actual Linux artifacts independently confirm both exact JPEG RGBA
+hashes, all nine now-playing/folder cases, fourteen cover phases/141 responses,
+original visible messages, metadata/counter advances, unchanged blocker and
+old-library hashes, menus/drops and real process exit. Its complete editor
+receipt retains 54 expected diagnostics.
+[Durable CI receipt](baselines/jpeg-desktop-ci-linux.json).
 
-JPEG/parser milestone `b283c334` is published in the draft PR and its
-[six-job CI run](https://github.com/rob-345/freeshow-rust/actions/runs/39245511801)
-is in progress. The newer local platform-cover integration preserves the same
+The newer local platform-cover integration preserves the same
 owners and adds dedicated Darwin/Windows tests, actual Source/TCP host coverage
 on both platforms, and a Windows HTTP timestamp gate to the source-certified
 unsigned-seconds interval. Cross-compiled tests are not native filesystem

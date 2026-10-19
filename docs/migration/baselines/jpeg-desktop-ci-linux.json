@@ -1,0 +1,100 @@
+{
+    "schema": 1,
+    "kind": "ci-functional-verification",
+    "runUrl": "https://github.com/rob-345/freeshow-rust/actions/runs/39245511801",
+    "commit": "b283c334ee6ba13aebc2339bfe14d2f5680ee1c6",
+    "allSixJobsSuccess": true,
+    "jobs": [
+        {
+            "name": "native (windows-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39245511801/job/118036370937"
+        },
+        {
+            "name": "core (ubuntu-24.04)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39245511801/job/118036371139"
+        },
+        {
+            "name": "native (macos-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39245511801/job/118036371148"
+        },
+        {
+            "name": "desktop-linux",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39245511801/job/118036371280"
+        },
+        {
+            "name": "core (windows-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39245511801/job/118036371354"
+        },
+        {
+            "name": "core (macos-latest)",
+            "conclusion": "success",
+            "url": "https://github.com/rob-345/freeshow-rust/actions/runs/39245511801/job/118036371555"
+        }
+    ],
+    "linuxEditorSteps": 187,
+    "menus": 4,
+    "dropScales": [1, 2],
+    "ordinaryNowPlayingCases": 6,
+    "folderFailureCases": 3,
+    "fullEditorDiagnostics": 54,
+    "processExited": true,
+    "jpegRecordingSha256": "8155b7815489c80428fbb5c7af103f0469f44d37c254db939c62f660d1796d5f",
+    "jpegCases": [
+        {
+            "id": "jpeg-apic",
+            "width": 17,
+            "height": 11,
+            "rgbaSha256": "16aaaea16ec707cdfd1a7a963e6bafe1737a81dfdbfd0992002f23ac9a3615ce",
+            "nativePngSha256": "863ac4eaedf7af663dee1d4de7ba340a9b961bbafd87160edead11a610ea52a5",
+            "nativePngBytes": 518,
+            "compressedPngBytesEqualObserved": false,
+            "fullSourceSetCompared": true,
+            "actualFilesystemRead": true,
+            "unsetVerified": true
+        },
+        {
+            "id": "jpeg-flac",
+            "width": 64,
+            "height": 48,
+            "rgbaSha256": "4d638d0d9992d7aa73451ba3c95f76249e049f4308002a8e251d87a21730a177",
+            "nativePngSha256": "1ef8cbf0180f54f0b30a38f86ff68a4805bffe10dce52a44fbfb238f487a0317",
+            "nativePngBytes": 8138,
+            "compressedPngBytesEqualObserved": false,
+            "fullSourceSetCompared": true,
+            "actualFilesystemRead": true,
+            "unsetVerified": true
+        }
+    ],
+    "coverHttp": {
+        "coverPhases": 14,
+        "httpRequests": 141,
+        "httpStatusCounts": {
+            "200": 60,
+            "404": 63,
+            "206": 9,
+            "304": 9
+        },
+        "exactOriginalFolderAlerts": 3,
+        "coverRuntimeErrors": 0,
+        "coverBrowserErrors": 0,
+        "sourceAcks": 0,
+        "finalRetentionVerifiedZero": true,
+        "unchangedBlockerAndOldLibraryCoverHashesVerified": true
+    },
+    "artifactHashes": {
+        "desktop/receipt.json": "b6415500713b0cd0fcf23b084bbdf190676a62bcf11ca999db69df7b34f5a15f",
+        "desktop/now-playing.json": "514ca25360730627b18752e54081d3b0fcd07afbeb0023e0d36e0dc36a018b86",
+        "desktop/now-playing-folder-alerts.json": "fdce573bfc6bc44c771560a75ef150d0a915be82a40703fba83be8df3092c187",
+        "desktop/remote-covers.json": "71ef5e660d39af4ba0d50a5820bb5c46da324086709f5391ff4eebcffd2053f5",
+        "desktop/close-drain.json": "26976e043d92ea433124c7a3edb508434b21ab470981f23832cea9ca2882f01b",
+        "native-menu/receipt.json": "c2325c7489f879d0031397377331bb5a6c2428c9201f7d91af0cea9866b61e98",
+        "native-drop/receipt-1x.json": "d1ce85375caecbeb1f13800ad028adfcbb33ffd3183da51ca31c29fe583f987b",
+        "native-drop/receipt-2x.json": "2c0df7d6ba25a164288439d9a8a73f9d9f54787cb255659cf46e2ef3a49653ee"
+    },
+    "scope": "Downloaded actual Linux native editor artifacts independently compared with immutable packaged Electron recording, original typed metadata/text/folder callbacks, both exact JPEG RGBA hashes, actual HTTP bytes and final Quit. Compressed PNG differs. Ordinary zero retention is not a terminal join; separate native ownership tests establish actual joins. Broad formats, other OS JPEG consumers, browser/hardware and full parity/performance remain incomplete."
+}

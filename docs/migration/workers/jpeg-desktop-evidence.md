@@ -100,6 +100,10 @@ steps, four menus and both drop scales. Fourteen cover phases make 141 actual HT
 requests. All original folder-alert/blocker, library-switch, backup and real Quit
 checks remain intact; the whole editor retains 55 expected diagnostics.
 [Durable local receipt](../baselines/jpeg-desktop-linux.json) records executable,
-original recording, pixel and complete artifact hashes. Native Windows/macOS and
-the complete CI run remain separate acceptance work; no performance gain is
-claimed.
+original recording, pixel and complete artifact hashes. Published `b283c334`
+passes [all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39245511801).
+Independent downloaded-artifact validation confirms both exact RGBA hashes and
+complete native editor, HTTP, folder, menu/drop and Quit observations; the
+whole CI editor retains 54 expected diagnostics.
+[Durable CI receipt](../baselines/jpeg-desktop-ci-linux.json).
+Other OS JPEG consumers remain unsupported. No performance gain is claimed.

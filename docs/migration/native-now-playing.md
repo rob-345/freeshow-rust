@@ -88,8 +88,14 @@ Independently validated downloaded artifacts preserve its seven now-playing
 cases, ten cover phases/93 HTTP responses, exact visible messages, callbacks,
 counter advances, unchanged blocker/old-library hashes, menus/drops and exit.
 Its complete editor receipt retains 54 expected diagnostics. The current
-187-step local JPEG/parser run additionally verifies two JPEG cases and fourteen
-cover phases/141 HTTP requests; this newer milestone needs its own complete CI.
+187-step JPEG/parser run additionally verifies two JPEG cases and fourteen
+cover phases/141 HTTP requests. Published `b283c334` passes
+[all six CI jobs](https://github.com/rob-345/freeshow-rust/actions/runs/39245511801);
+independent downloaded-artifact validation confirms both source RGBA hashes,
+typed metadata/text, real UNSET, all cover/folder phases, counter advances,
+unchanged blocker/old-library hashes, menus/drops and final exit. Its whole-editor
+receipt retains 54 expected diagnostics.
+[Durable CI receipt](baselines/jpeg-desktop-ci-linux.json).
 [Native remote-cover contract and evidence](native-remote-covers.md).
 
 ## Remaining acceptance gaps
